@@ -1,0 +1,365 @@
+/* ===================== HEADER CONTROLS AT TOP ===================== */
+/* Fixed header bar - unified pill-shaped capsule */
+.header-controls-bottom {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    z-index: 1000;
+    background: linear-gradient(135deg, rgba(15, 20, 40, 0.95) 0%, rgba(25, 30, 55, 0.95) 100%);
+    backdrop-filter: blur(20px);
+    padding: 10px 20px;
+    border-radius: 9999px;
+    border: 1px solid rgba(100, 120, 180, 0.3);
+    box-shadow:
+        0 4px 30px rgba(0, 0, 0, 0.4),
+        0 0 20px rgba(100, 120, 200, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* All items inside header styled as pill shapes */
+.header-controls-bottom>* {
+    border-radius: 9999px !important;
+}
+
+@keyframes satellite-float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+.header-controls-bottom .balance-pills-container {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+}
+
+.header-controls-bottom .balance-pill {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 0.8rem;
+}
+
+/* Hide original header when using new layout */
+.staking-header.hidden-header {
+    display: none;
+}
+
+/* ===================== GLOBAL SCROLLBAR HIDING ===================== */
+html,
+body {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+
+/* ===================== RESPONSIVE PANEL LAYOUT ===================== */
+@media (min-width: 1200px) {
+    .orbs-menu-container {
+        max-width: 100vw;
+        overflow: visible;
+    }
+
+    .circular-panel-component:not(.circular-panel-expanded) {
+        max-width: 320px;
+    }
+}
+
+@media (max-width: 1199px) and (min-width: 769px) {
+    .orbs-menu-container {
+        transform: scale(0.9);
+    }
+
+    .circular-panel-component:not(.circular-panel-expanded) {
+        max-width: 280px;
+        transform: scale(0.95);
+    }
+}
+
+@media (max-width: 768px) {
+    .staking-page {
+        padding: 0.5rem;
+        padding-bottom: 100px;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+
+    .orbs-menu-container {
+        transform: scale(0.7);
+        transform-origin: center top;
+        margin-top: -50px;
+    }
+
+    .circular-panel-component:not(.circular-panel-expanded) {
+        max-width: 200px !important;
+        min-width: 180px !important;
+        transform: scale(0.85);
+    }
+
+    .circular-panel-expanded {
+        width: 95vw !important;
+        max-width: 95vw !important;
+        min-width: auto !important;
+        height: auto !important;
+        min-height: 70vh;
+        min-height: 70dvh;
+        /* iOS Safari fix */
+        max-height: 90vh;
+        max-height: 90dvh;
+        /* iOS Safari fix */
+        overflow-y: auto !important;
+    }
+
+    /* Fixed header on mobile - SCALED DOWN to fit all content */
+    .header-controls-bottom {
+        position: fixed;
+        top: 4px;
+        left: 50%;
+        transform: translateX(-50%) scale(0.8);
+        transform-origin: center top;
+        width: auto;
+        max-width: none;
+        flex-wrap: nowrap !important;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        border-radius: 20px;
+        overflow: visible !important;
+        z-index: 9999 !important;
+    }
+
+    /* ALL CHILDREN - COMPACT SIZE (26px) */
+    .header-controls-bottom>*,
+    .header-controls-bottom button,
+    .header-controls-bottom a,
+    .header-controls-bottom select,
+    .header-controls-bottom [class*="connect"],
+    .header-controls-bottom [class*="network"],
+    .header-controls-bottom [class*="chain"],
+    .header-controls-bottom [class*="lang"],
+    .header-controls-bottom .balance-pill,
+    .header-controls-bottom .back-button-inline {
+        height: 26px !important;
+        min-height: 26px !important;
+        max-height: 26px !important;
+        padding: 0 5px !important;
+        font-size: 9px !important;
+        border-radius: 13px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+    }
+
+    /* Balance pills container - compact */
+    .header-controls-bottom .balance-pills-container {
+        flex-wrap: nowrap !important;
+        gap: 3px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Balance pill specific */
+    .header-controls-bottom .balance-pill {
+        gap: 3px;
+        min-width: auto;
+        padding: 0 4px !important;
+    }
+
+    .header-controls-bottom .balance-value {
+        font-size: 8px !important;
+        font-weight: 600;
+    }
+
+    .header-controls-bottom .balance-label {
+        display: none !important;
+    }
+
+    /* Icon sizes - smaller */
+    .header-controls-bottom img,
+    .header-controls-bottom svg {
+        width: 12px !important;
+        height: 12px !important;
+    }
+
+    /* Dropdown arrows */
+    .header-controls-bottom [class*="chevron"],
+    .header-controls-bottom [class*="arrow"] {
+        width: 12px !important;
+        height: 12px !important;
+    }
+
+    .energy-sphere-wrapper {
+        width: 180px;
+        height: 180px;
+    }
+
+    .sphere-core {
+        width: 80px;
+        height: 80px;
+    }
+}
+
+@media (max-width: 480px) {
+
+    /* Header EVEN SMALLER on 480px - scale 0.7 */
+    .header-controls-bottom {
+        transform: translateX(-50%) scale(0.7) !important;
+        padding: 5px 8px;
+        gap: 3px;
+    }
+
+    /* ALL CHILDREN - smaller on 480px */
+    .header-controls-bottom>*,
+    .header-controls-bottom button,
+    .header-controls-bottom a,
+    .header-controls-bottom select,
+    .header-controls-bottom [class*="connect"],
+    .header-controls-bottom [class*="network"],
+    .header-controls-bottom [class*="chain"],
+    .header-controls-bottom [class*="lang"],
+    .header-controls-bottom .balance-pill,
+    .header-controls-bottom .back-button-inline {
+        height: 26px !important;
+        min-height: 26px !important;
+        max-height: 26px !important;
+        padding: 0 5px !important;
+        font-size: 9px !important;
+    }
+
+    .header-controls-bottom .balance-value {
+        font-size: 8px !important;
+    }
+
+    /* Icons smaller on 480px */
+    .header-controls-bottom img,
+    .header-controls-bottom svg {
+        width: 12px !important;
+        height: 12px !important;
+    }
+
+    .orbs-menu-container {
+        transform: scale(0.6);
+        margin-top: -80px;
+    }
+
+    .circular-panel-component:not(.circular-panel-expanded) {
+        max-width: 170px !important;
+        min-width: 160px !important;
+        transform: scale(0.75);
+    }
+
+    .circular-panel-expanded {
+        width: 98vw !important;
+        padding: 1rem !important;
+    }
+}
+
+/* ===================== PREVENT OVERFLOW ===================== */
+.staking-page {
+    overflow-x: hidden !important;
+    max-width: 100vw;
+}
+
+.radial-menu-wrapper {
+    overflow: visible !important;
+    max-width: 100vw;
+    /* Base padding */
+    padding-top: 180px;
+    transition: padding-top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* Bouncy smooth transition */
+}
+
+/* State positions */
+.radial-menu-wrapper.layout-default {
+    padding-top: 77px;
+    /* Sphere high up */
+}
+
+.radial-menu-wrapper.layout-menu-open {
+    padding-top: 420px;
+    /* Sphere moves down for orbs */
+}
+
+.radial-menu-wrapper.layout-panel-open {
+    padding-top: 750px;
+    /* Sphere moves further down for panel */
+}
+
+/* Allow orbs to be visible outside container */
+.orbs-menu-container {
+    overflow: visible !important;
+    max-width: 100vw;
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Orbs slide down effect when panel is open */
+.layout-panel-open .orbs-menu-container {
+    transform: translateY(50px) scale(0.95);
+}
+
+.expanded-panel-overlay {
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
+/* ===================== BACK BUTTON INLINE ===================== */
+.back-button-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(99, 102, 241, 0.3) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.4);
+    border-radius: 9999px;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.back-button-inline:hover {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.5) 0%, rgba(99, 102, 241, 0.5) 100%);
+    border-color: rgba(168, 85, 247, 0.7);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+}
+
+/* ===================== MOBILE LAYOUT OVERRIDES ===================== */
+@media (max-width: 768px) {
+    .radial-menu-wrapper.layout-default {
+        padding-top: 140px;
+    }
+
+    .radial-menu-wrapper.layout-menu-open {
+        padding-top: 280px;
+    }
+
+    .radial-menu-wrapper.layout-panel-open {
+        padding-top: 380px;
+    }
+}

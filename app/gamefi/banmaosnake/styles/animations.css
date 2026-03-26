@@ -1,0 +1,558 @@
+/* ===== SNAKE GAME ANIMATIONS ===== */
+
+/* Base Animations */
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-3px);
+    }
+
+    75% {
+        transform: translateX(3px);
+    }
+}
+
+@keyframes glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 40px rgba(34, 211, 238, 0.8);
+    }
+}
+
+@keyframes textGlow {
+
+    0%,
+    100% {
+        text-shadow: 0 0 5px currentColor;
+    }
+
+    50% {
+        text-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+    }
+}
+
+@keyframes borderPulse {
+
+    0%,
+    100% {
+        border-color: rgba(34, 211, 238, 0.3);
+    }
+
+    50% {
+        border-color: rgba(34, 211, 238, 0.8);
+    }
+}
+
+/* Flying coin animation */
+@keyframes flyToWallet {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+
+    70% {
+        opacity: 1;
+        transform: translate(150px, -200px) scale(0.6);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(150px, -200px) scale(0.3);
+    }
+}
+
+@keyframes balanceGlow {
+    0% {
+        color: #fbbf24;
+        text-shadow: 0 0 10px #fbbf24;
+    }
+
+    50% {
+        color: #4ade80;
+        text-shadow: 0 0 30px #4ade80, 0 0 50px #22d3ee;
+        transform: scale(1.2);
+    }
+
+    100% {
+        color: #fbbf24;
+        text-shadow: none;
+    }
+}
+
+.balance-highlight {
+    animation: balanceGlow 1s ease-out;
+}
+
+/* Score Popup Animation - Extended for better visibility */
+@keyframes scorePopup {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    20% {
+        opacity: 1;
+        transform: translateY(-15px) scale(1.4);
+    }
+
+    60% {
+        opacity: 1;
+        transform: translateY(-30px) scale(1.2);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+}
+
+.score-popup {
+    position: absolute;
+    font-weight: 900;
+    pointer-events: none;
+    animation: scorePopup 1.5s ease-out forwards;
+    text-shadow: 0 0 15px currentColor, 0 0 30px currentColor, 0 2px 4px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+}
+
+.score-popup--coin {
+    color: #fbbf24;
+    font-size: 22px;
+}
+
+.score-popup--power {
+    color: #22d3ee;
+    font-size: 28px;
+}
+
+.score-popup--combo {
+    color: #a855f7;
+    font-size: 32px;
+}
+
+.score-popup--gas {
+    color: #4ade80;
+    font-size: 20px;
+}
+
+/* Combo Counter Animation */
+@keyframes comboPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+@keyframes comboShake {
+
+    0%,
+    100% {
+        transform: translateX(0) rotate(0deg);
+    }
+
+    25% {
+        transform: translateX(-2px) rotate(-2deg);
+    }
+
+    75% {
+        transform: translateX(2px) rotate(2deg);
+    }
+}
+
+.combo-counter {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    font-weight: 900;
+    color: #a855f7;
+    text-shadow: 0 0 20px #a855f7, 0 0 40px #a855f7;
+    animation: comboPulse 0.3s ease-in-out;
+    z-index: 50;
+}
+
+.combo-counter--high {
+    animation: comboShake 0.15s ease-in-out infinite;
+    color: #f97316;
+    text-shadow: 0 0 20px #f97316;
+}
+
+/* Particle Animation */
+@keyframes particleFly {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(0);
+    }
+}
+
+.particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: particleFly 0.6s ease-out forwards;
+}
+
+/* Modal Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes pulse-subtle {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.85;
+    }
+}
+
+/* Badge-specific animations */
+@keyframes diamond-sparkle {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 8px #60a5fa) brightness(1);
+    }
+
+    50% {
+        filter: drop-shadow(0 0 20px #60a5fa) drop-shadow(0 0 40px #93c5fd) brightness(1.3);
+    }
+}
+
+@keyframes gold-shine {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 8px #fbbf24) brightness(1);
+    }
+
+    50% {
+        filter: drop-shadow(0 0 15px #fbbf24) brightness(1.2);
+    }
+}
+
+@keyframes silver-shimmer {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 5px #cbd5e1) brightness(1);
+    }
+
+    50% {
+        filter: drop-shadow(0 0 12px #e2e8f0) brightness(1.15);
+    }
+}
+
+@keyframes bronze-glow {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 5px #f97316) brightness(1);
+    }
+
+    50% {
+        filter: drop-shadow(0 0 10px #fb923c) brightness(1.1);
+    }
+}
+
+/* Badge tier classes */
+.badge-diamond {
+    animation: diamond-sparkle 2s ease-in-out infinite;
+}
+
+.badge-gold {
+    animation: gold-shine 2.5s ease-in-out infinite;
+}
+
+.badge-silver {
+    animation: silver-shimmer 3s ease-in-out infinite;
+}
+
+.badge-bronze {
+    animation: bronze-glow 3s ease-in-out infinite;
+}
+
+.badge-supporter {
+    transition: all 0.3s ease;
+}
+
+.badge-supporter:hover {
+    filter: drop-shadow(0 0 10px #a855f7) brightness(1.2);
+}
+
+/* Achievement Badge Animation */
+@keyframes achievementSlide {
+    0% {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+
+    15% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    85% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+}
+
+.achievement-badge {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.95), rgba(245, 158, 11, 0.9));
+    border-radius: 12px;
+    border: 2px solid #fbbf24;
+    box-shadow: 0 8px 30px rgba(251, 191, 36, 0.4), 0 0 30px rgba(251, 191, 36, 0.3);
+    animation: achievementSlide 3s ease-in-out forwards;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #000;
+    font-weight: 700;
+}
+
+/* Super Mode Glow Effect */
+.super-mode-glow {
+    animation: superPulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes superPulse {
+    0% {
+        filter: drop-shadow(0 0 8px #0ff) brightness(1);
+    }
+
+    100% {
+        filter: drop-shadow(0 0 20px #0ff) brightness(1.2);
+    }
+}
+
+/* Background Stars */
+@keyframes starTwinkle {
+
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.5);
+    }
+}
+
+/* Donor list floating animation */
+@keyframes donorFloat {
+
+    0%,
+    100% {
+        transform: translateY(1px);
+    }
+
+    50% {
+        transform: translateY(-1px);
+    }
+}
+
+.donor-float-0 {
+    animation: donorFloat 1.8s ease-in-out infinite;
+}
+
+.donor-float-1 {
+    animation: donorFloat 2s ease-in-out infinite 0.2s;
+}
+
+.donor-float-2 {
+    animation: donorFloat 1.6s ease-in-out infinite 0.4s;
+}
+
+.donor-float-3 {
+    animation: donorFloat 2.2s ease-in-out infinite 0.1s;
+}
+
+.donor-float-4 {
+    animation: donorFloat 1.9s ease-in-out infinite 0.3s;
+}
+
+.hover-leaderboard:hover {
+    animation: none !important;
+}
+
+/* Heartbeat animation for purple heart */
+@keyframes heartbeat {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    15% {
+        transform: scale(1.15);
+    }
+
+    30% {
+        transform: scale(1);
+    }
+
+    45% {
+        transform: scale(1.1);
+    }
+
+    60% {
+        transform: scale(1);
+    }
+}
+
+.heart-beat {
+    display: inline-block;
+    animation: heartbeat 1.2s ease-in-out infinite;
+    filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.6));
+}
+
+/* Game Logo Floating Animation */
+@keyframes logoFloat {
+
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg) scale(1);
+    }
+
+    25% {
+        transform: translateY(-6px) rotate(2deg) scale(1.02);
+    }
+
+    50% {
+        transform: translateY(-10px) rotate(0deg) scale(1.05);
+    }
+
+    75% {
+        transform: translateY(-6px) rotate(-2deg) scale(1.02);
+    }
+}
+
+.logo-float {
+    animation: logoFloat 3s ease-in-out infinite;
+    filter: drop-shadow(0 8px 20px rgba(34, 211, 238, 0.4));
+    transition: filter 0.3s ease;
+}
+
+.logo-float:hover {
+    animation-play-state: paused;
+    filter: drop-shadow(0 12px 30px rgba(34, 211, 238, 0.6));
+    transform: scale(1.1) !important;
+}
+
+/* Game border pulse when playing */
+.game-border-pulse {
+    animation: borderPulse 1.5s infinite ease-in-out;
+}

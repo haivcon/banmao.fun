@@ -1,0 +1,13 @@
+[
+  {
+    "address": "0x5c6253e43c834ed82916256681aa70eb8692eddb",
+    "name": "abc",
+    "avatar": 12,
+    "totalClaimed": "410000000000000000000",
+    "claimCount": 5,
+    "lastClaimTime": 1766745061918,
+    "telegram": "haivcon",
+    "twitter": "@haivcon",
+    "highestClaim": "340000000000000000000"
+  }
+]

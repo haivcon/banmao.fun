@@ -1,0 +1,408 @@
+.hub-profile-container {
+    background: var(--card-bg, #fff);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color, #eaeaea);
+}
+
+.col-dark .hub-profile-container {
+    background: #1c1c1f;
+    border-color: #2c2c30;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Banner --- */
+.hub-profile-banner {
+    width: 100%;
+    height: 180px;
+    background-size: cover;
+    background-position: center;
+    background-color: #e5e7eb;
+    position: relative;
+}
+
+.col-dark .hub-profile-banner {
+    background-color: #374151;
+}
+
+.hub-profile-back-btn,
+.hub-profile-edit-cover-btn {
+    position: absolute;
+    top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.5);
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: background 0.2s;
+}
+
+.hub-profile-back-btn {
+    left: 16px;
+}
+
+.hub-profile-edit-cover-btn {
+    right: 16px;
+}
+
+.hub-profile-back-btn:hover,
+.hub-profile-edit-cover-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+/* --- Info Section --- */
+.hub-profile-info-section {
+    position: relative;
+    padding: 0 24px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.hub-profile-avatar-wrap {
+    margin-top: -48px;
+    margin-bottom: 16px;
+    padding: 4px;
+    background: var(--card-bg, #fff);
+    border-radius: 50%;
+    z-index: 2;
+}
+
+.col-dark .hub-profile-avatar-wrap {
+    background: #1c1c1f;
+}
+
+.hub-profile-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: bold;
+    overflow: hidden;
+}
+
+.hub-profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hub-profile-details {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.hub-profile-name {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-color, #111827);
+}
+
+.col-dark .hub-profile-name {
+    color: #f9fafb;
+}
+
+.hub-profile-address {
+    margin: 4px 0 12px;
+    font-size: 14px;
+    color: #6b7280;
+    font-family: monospace;
+}
+
+.hub-profile-bio {
+    margin: 0;
+    font-size: 15px;
+    color: var(--text-color, #374151);
+    line-height: 1.5;
+    max-width: 600px;
+}
+
+.col-dark .hub-profile-bio {
+    color: #d1d5db;
+}
+
+/* --- Stats --- */
+.hub-profile-stats {
+    display: flex;
+    gap: 32px;
+    width: 100%;
+}
+
+.hub-stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.hub-stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-color, #111827);
+}
+
+.col-dark .hub-stat-value {
+    color: #fff;
+}
+
+.hub-stat-label {
+    font-size: 13px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+/* --- Profile Tabs --- */
+.hub-profile-tabs {
+    display: flex;
+    border-top: 1px solid var(--border-color, #eaeaea);
+    background: var(--card-bg, #fff);
+}
+
+.col-dark .hub-profile-tabs {
+    border-top-color: #2c2c30;
+    background: #1c1c1f;
+}
+
+.hub-ptab {
+    flex: 1;
+    padding: 16px;
+    background: none;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.hub-ptab:hover {
+    color: var(--text-color, #111827);
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.col-dark .hub-ptab:hover {
+    color: #e5e7eb;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.hub-ptab.active {
+    color: #ec4899;
+    border-bottom-color: #ec4899;
+}
+
+/* --- Skeletons --- */
+.hub-profile-header-skeleton {
+    background: var(--card-bg, #fff);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color, #eaeaea);
+}
+
+.col-dark .hub-profile-header-skeleton {
+    background: #1c1c1f;
+    border-color: #2c2c30;
+}
+
+.hub-ph-banner-skel {
+    height: 180px;
+    background: var(--border-color, #e5e7eb);
+    animation: pulse 1.5s infinite;
+}
+
+.col-dark .hub-ph-banner-skel {
+    background: #374151;
+}
+
+.hub-ph-info-skel {
+    padding: 0 24px 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.hub-ph-avatar-skel {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: var(--border-color, #e5e7eb);
+    margin-top: -48px;
+    margin-bottom: 16px;
+    border: 4px solid var(--card-bg, #fff);
+    animation: pulse 1.5s infinite;
+}
+
+.col-dark .hub-ph-avatar-skel {
+    background: #4b5563;
+    border-color: #1c1c1f;
+}
+
+.hub-ph-text-skel {
+    width: 200px;
+    height: 24px;
+    background: var(--border-color, #e5e7eb);
+    border-radius: 4px;
+    margin-bottom: 12px;
+    animation: pulse 1.5s infinite;
+}
+
+.col-dark .hub-ph-text-skel {
+    background: #374151;
+}
+
+.hub-ph-text-skel.short {
+    width: 120px;
+    height: 16px;
+}
+
+/* ——— Phase 5 Upgrades ——— */
+
+/* 1. Banner Gradient Overlay */
+.hub-profile-banner::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60%;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+    pointer-events: none;
+}
+
+.col-light .hub-profile-banner::after {
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.7), transparent);
+}
+
+/* 2. Avatar Glow */
+.hub-profile-avatar-wrap {
+    box-shadow: 0 0 0 4px var(--card-bg, #fff), 0 0 24px rgba(236, 72, 153, 0.4);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hub-profile-avatar-wrap:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 4px var(--card-bg, #fff), 0 0 32px rgba(236, 72, 153, 0.6);
+}
+
+.col-dark .hub-profile-avatar-wrap {
+    box-shadow: 0 0 0 4px #1c1c1f, 0 0 24px rgba(236, 72, 153, 0.3);
+}
+
+/* 3. Repositioned Actions */
+.hub-profile-name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.hub-profile-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.hub-action-btn {
+    padding: 8px 16px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hub-msg-btn {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-color, #111827);
+    border: 1px solid var(--border-color, #eaeaea);
+}
+
+.col-dark .hub-msg-btn {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.hub-msg-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.col-dark .hub-msg-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.hub-following-btn {
+    background: rgba(0, 0, 0, 0.05) !important;
+    color: var(--text-color, #111827) !important;
+    box-shadow: none !important;
+}
+
+.col-dark .hub-following-btn {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #fff !important;
+}
+
+/* 4. Stats Redesign */
+.hub-stat-value {
+    font-size: 22px;
+}
+
+.hub-stat-gradient {
+    background: linear-gradient(135deg, #f59e0b, #ec4899);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    text-shadow: 0 2px 10px rgba(236, 72, 153, 0.2);
+}
+
+/* 5. Animated Tabs */
+.hub-profile-tabs {
+    position: relative;
+}
+
+.hub-ptab {
+    position: relative;
+    border-bottom: none !important;
+    /* Override old border */
+}
+
+.hub-ptab::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 60%;
+    height: 3px;
+    background: #ec4899;
+    border-radius: 3px 3px 0 0;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hub-ptab.active::after {
+    transform: translateX(-50%) scaleX(1);
+}

@@ -1,0 +1,1321 @@
+/* =====================================================================
+   BANMAO STAKING - MOBILE STYLES
+   Dedicated CSS file for mobile responsiveness
+   All elements match PC version with mobile-optimized sizing
+   ===================================================================== */
+
+/* ===================== MOBILE BASE (768px and below) ===================== */
+@media (max-width: 768px) {
+
+    /* Global reset for mobile to ensure padding doesn't push containers */
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box !important;
+    }
+
+    /* ----- PAGE LAYOUT ----- */
+    .staking-page {
+        padding: 0 !important;
+        /* Zero out padding to prevent offset */
+        padding-top: 60px !important;
+        padding-bottom: 100px !important;
+        overflow-y: auto;
+        min-height: 100vh;
+        min-height: 100dvh;
+        /* iOS Safari fix — 100vh includes URL bar height */
+        width: 100% !important;
+        max-width: 100% !important;
+        position: relative !important;
+        margin: 0 !important;
+    }
+
+    /* ----- FIXED HEADER - NO SCALE TRANSFORM (fixes RainbowKit modal stacking) ----- */
+    .header-controls-bottom {
+        position: fixed;
+        top: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+        /* NO scale() — it creates stacking context that traps RainbowKit modal */
+        width: auto;
+        max-width: calc(100vw - 16px);
+        flex-wrap: nowrap !important;
+        justify-content: center;
+        align-items: center;
+        gap: 3px;
+        padding: 4px 8px;
+        border-radius: 16px;
+        overflow: visible !important;
+        z-index: 9999 !important;
+        /* Lower z-index than RainbowKit modal (which uses higher values) */
+    }
+
+    /* All header children - smaller size to fit without transform scale */
+    .header-controls-bottom>*,
+    .header-controls-bottom button,
+    .header-controls-bottom a,
+    .header-controls-bottom select,
+    .header-controls-bottom [class*="connect"],
+    .header-controls-bottom [class*="network"],
+    .header-controls-bottom [class*="chain"],
+    .header-controls-bottom [class*="lang"],
+    .header-controls-bottom .balance-pill,
+    .header-controls-bottom .back-button-inline {
+        height: 22px !important;
+        min-height: 22px !important;
+        max-height: 22px !important;
+        padding: 0 4px !important;
+        font-size: 8px !important;
+        border-radius: 11px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+    }
+
+    /* Balance pills container */
+    .header-controls-bottom .balance-pills-container {
+        flex-wrap: nowrap !important;
+        gap: 3px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .header-controls-bottom .balance-pill {
+        gap: 3px;
+        min-width: auto;
+        padding: 0 4px !important;
+    }
+
+    .header-controls-bottom .balance-value {
+        font-size: 8px !important;
+        font-weight: 600;
+    }
+
+    .header-controls-bottom .balance-label {
+        display: none !important;
+        /* Hide label to save space */
+    }
+
+    /* Icon sizes in header */
+    .header-controls-bottom img,
+    .header-controls-bottom svg {
+        width: 12px !important;
+        height: 12px !important;
+    }
+
+    /* Fix Language Selector Dropdown on Mobile - AUTO SIZE & POSITION */
+    /* Smaller size and positioned within viewport */
+    .header-controls-bottom div.lang-dropdown,
+    div.lang-dropdown,
+    .defi-lang-dropdown {
+        height: auto !important;
+        min-height: auto !important;
+        max-height: 50vh !important;
+        /* Reduced from 400px */
+        min-width: 140px !important;
+        width: auto !important;
+        max-width: 200px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        white-space: normal !important;
+        padding: 8px 0 !important;
+        border-radius: 12px !important;
+        position: fixed !important;
+        top: auto !important;
+        bottom: auto !important;
+        right: 10px !important;
+        left: auto !important;
+        transform: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        background: rgba(10, 15, 30, 0.98) !important;
+        backdrop-filter: blur(24px) !important;
+        z-index: 2147483647 !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9), 0 0 15px rgba(34, 211, 238, 0.2) !important;
+        border: 1px solid rgba(34, 211, 238, 0.5) !important;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(34, 211, 238, 0.5) transparent;
+    }
+
+    /* Auto position based on viewport - prefer center of screen */
+    .defi-lang-dropdown {
+        top: 50% !important;
+        left: 50% !important;
+        right: auto !important;
+        transform: translate(-50%, -50%) !important;
+    }
+
+    /* Language option items - smaller on mobile */
+    .defi-lang-option {
+        padding: 8px 12px !important;
+        font-size: 12px !important;
+        gap: 8px !important;
+    }
+
+    .defi-lang-option .defi-lang-flag {
+        font-size: 14px !important;
+    }
+
+    /* Dropdown Header Label - Pseudo element for title */
+    .header-controls-bottom .lang-dropdown::before {
+        content: 'Select Language';
+        display: block;
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.5);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding: 0 16px 8px 16px;
+        margin-bottom: 4px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+    }
+
+    /* Custom scrollbar for dropdown */
+    .header-controls-bottom .lang-dropdown::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .header-controls-bottom .lang-dropdown::-webkit-scrollbar-thumb {
+        background: rgba(168, 85, 247, 0.5);
+        border-radius: 2px;
+    }
+
+    /* Option Styling */
+    .header-controls-bottom .lang-option {
+        height: 44px !important;
+        /* Large touch target */
+        min-height: 44px !important;
+        font-size: 13px !important;
+        padding: 0 20px !important;
+        margin: 2px 0 !important;
+        justify-content: flex-start !important;
+        width: 100% !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        color: #cfcfcf !important;
+        transition: all 0.2s ease !important;
+        position: relative !important;
+    }
+
+    /* Active State - Clearly Visible */
+    .header-controls-bottom .lang-option.active {
+        background: linear-gradient(90deg, rgba(168, 85, 247, 0.25) 0%, transparent 100%) !important;
+        color: #fff !important;
+        font-weight: 600 !important;
+        border-left: 3px solid #a855f7 !important;
+        /* Active indicator bar */
+    }
+
+    /* Flag Icon */
+    .header-controls-bottom .lang-flag {
+        font-size: 16px !important;
+        margin-right: 12px !important;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    }
+
+    /* ----- SIDEBARS (LEADERBOARD & SUPPORT POOL) - STRICT CENTERED ----- */
+    .left-sidebar-container {
+        display: block !important;
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+        width: calc(100% - 24px) !important;
+        max-width: 800px !important;
+        /* Standardized with right sidebar for consistency */
+        margin: 15px auto !important;
+        padding: 0 !important;
+        z-index: 90;
+        /* Lower than right sidebar to avoid overlap issues */
+        overflow: visible !important;
+    }
+
+    .right-sidebar-container {
+        display: block !important;
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+        width: calc(100% - 24px) !important;
+        max-width: 800px !important;
+        /* Increased from 340px/320px for better fit */
+        margin: 15px auto !important;
+        padding: 0 !important;
+        z-index: 100;
+        /* Higher priority to ensure modals are on top */
+        overflow: visible !important;
+    }
+
+    /* Support pool above leaderboard */
+    .right-sidebar-container {
+        order: 1;
+    }
+
+    .left-sidebar-container {
+        order: 2;
+    }
+
+    /* Sidebar panels - guaranteed centering */
+    .sidebar-panel,
+    .leaderboard-panel,
+    .supporter-panel,
+    .donate-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 auto 20px auto !important;
+        border-radius: 22px !important;
+        background: rgba(10, 25, 47, 0.95) !important;
+        box-sizing: border-box !important;
+        border: 2px solid rgba(0, 255, 170, 0.3) !important;
+        box-shadow: 0 0 20px rgba(0, 255, 170, 0.15) !important;
+    }
+
+    /* Prevent horizontal scroll at page level */
+    .staking-page {
+        overflow-x: hidden !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        position: relative !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Panel headers */
+    .sidebar-panel .panel-header,
+    .leaderboard-panel .panel-header {
+        padding: 12px 15px !important;
+        border-bottom: 1px solid rgba(0, 255, 170, 0.2);
+        text-align: center;
+    }
+
+    /* Panel content - virtual scroll for long lists */
+    .sidebar-panel .panel-content,
+    .leaderboard-panel .panel-content,
+    .supporter-panel .panel-content {
+        max-height: 200px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding: 10px !important;
+        /* Virtual scroll styling */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 255, 170, 0.4) transparent;
+    }
+
+    /* Webkit scrollbar styling */
+    .sidebar-panel .panel-content::-webkit-scrollbar,
+    .leaderboard-panel .panel-content::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .sidebar-panel .panel-content::-webkit-scrollbar-track,
+    .leaderboard-panel .panel-content::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+    }
+
+    .sidebar-panel .panel-content::-webkit-scrollbar-thumb,
+    .leaderboard-panel .panel-content::-webkit-scrollbar-thumb {
+        background: rgba(0, 255, 170, 0.4);
+        border-radius: 3px;
+    }
+
+    .sidebar-panel .panel-content::-webkit-scrollbar-thumb:hover,
+    .leaderboard-panel .panel-content::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 255, 170, 0.6);
+    }
+
+    /* Leaderboard list items */
+    .leaderboard-item,
+    .leader-row {
+        padding: 8px 10px !important;
+        margin-bottom: 5px !important;
+        border-radius: 8px !important;
+        background: rgba(0, 255, 170, 0.05) !important;
+    }
+
+    /* ----- ORBS MENU - STRICTLY CENTERED ----- */
+    .orbs-menu-container {
+        left: 50% !important;
+        transform: translateX(-50%) scale(0.8) !important;
+        transform-origin: center center;
+        margin-top: 0;
+        width: 0 !important;
+        height: 0 !important;
+        display: block !important;
+    }
+
+    /* ----- HIDE SMALL CIRCULAR PANELS ON MOBILE ----- */
+    /* Only show expanded panels, hide the small circular ones next to orbs */
+    .circular-panel-component:not(.circular-panel-expanded) {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+
+    /* ----- EXPANDED PANELS - MOBILE OPTIMIZED ----- */
+    /* CRITICAL: Override panels.css positioning completely */
+    .circular-panel-component.circular-panel-expanded,
+    .circular-panel-expanded {
+        /* Use relative in flex container, NOT fixed */
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        margin: 0 !important;
+        margin-top: 50px !important;
+        /* Clear the header */
+        transform: none !important;
+        /* Size */
+        width: calc(100vw - 30px) !important;
+        max-width: 340px !important;
+        height: auto !important;
+        min-height: auto !important;
+        max-height: calc(100vh - 120px) !important;
+        max-height: calc(100dvh - 120px) !important;
+        /* iOS Safari fix */
+        /* NOT circular on mobile - rectangular with rounded corners */
+        border-radius: 22px !important;
+        overflow: hidden !important;
+        z-index: 5000 !important;
+        background: linear-gradient(180deg,
+                rgba(10, 25, 47, 0.99) 0%,
+                rgba(5, 15, 35, 1) 100%) !important;
+        border: 2px solid rgba(0, 255, 170, 0.5) !important;
+        box-shadow: 0 0 30px rgba(0, 255, 170, 0.25) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 0 !important;
+        /* animation: none !important; -- REMOVED to enable effects */
+        animation: expandedPanelIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        pointer-events: all !important;
+    }
+
+    /* Panel header - full width centered */
+    .circular-panel-expanded .circular-panel-header {
+        position: relative !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        text-align: center !important;
+        padding: 12px 15px !important;
+        flex-shrink: 0 !important;
+        background: rgba(0, 255, 170, 0.1) !important;
+        border-bottom: 1px solid rgba(0, 255, 170, 0.3) !important;
+        left: auto !important;
+        right: auto !important;
+        transform: none !important;
+    }
+
+    .circular-panel-expanded .circular-panel-title {
+        font-size: 15px !important;
+        font-weight: bold !important;
+        color: #00ffaa !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        text-align: center !important;
+        display: block !important;
+        width: 100% !important;
+        white-space: nowrap !important;
+    }
+
+    /* CRITICAL: Override panels.css absolute positioning on content */
+    .circular-panel-expanded .circular-panel-content,
+    .circular-panel-expanded .stats-expanded-content {
+        position: relative !important;
+        /* NOT absolute */
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: auto !important;
+        transform: none !important;
+        /* Remove translateX(-50%) */
+        width: 100% !important;
+        max-width: none !important;
+        flex: 1 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding: 12px !important;
+        max-height: calc(100vh - 200px) !important;
+        box-sizing: border-box !important;
+        text-align: left !important;
+    }
+
+    /* Stats grid in expanded panel */
+    .circular-panel-expanded .stats-grid-extended,
+    .circular-panel-expanded .stats-grid-personal {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+    }
+
+    /* Stat items */
+    .circular-panel-expanded .stat-item {
+        padding: 8px !important;
+        font-size: 11px !important;
+        border-radius: 8px !important;
+        background: rgba(0, 255, 170, 0.05) !important;
+    }
+
+    .circular-panel-expanded .stat-label {
+        font-size: 9px !important;
+        opacity: 0.8;
+    }
+
+    .circular-panel-expanded .stat-value {
+        font-size: 12px !important;
+        font-weight: bold;
+    }
+
+    /* Close button */
+    .circular-panel-expanded .circular-panel-close {
+        margin-top: 10px;
+        padding: 10px 25px !important;
+        border-radius: 22px !important;
+        background: rgba(0, 255, 170, 0.2) !important;
+        border: 1px solid rgba(0, 255, 170, 0.4) !important;
+        color: #00ffaa !important;
+        font-size: 12px !important;
+        flex-shrink: 0;
+    }
+
+    /* Stat Tooltip - Center on screen */
+    .stat-tooltip {
+        position: absolute !important;
+        top: 50% !important;
+        left: 0 !important;
+        right: 0 !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        transform: translateY(-50%) !important;
+        bottom: auto !important;
+        width: 85% !important;
+        /* Reduced from calc(100vw - 40px) */
+        max-width: 280px !important;
+        /* Reduced from 300px */
+        height: auto !important;
+        max-height: 250px !important;
+        min-width: auto !important;
+        z-index: 10000 !important;
+        padding: 14px 18px !important;
+        border-radius: 22px !important;
+        background: rgba(10, 20, 40, 0.98) !important;
+        border: 2px solid rgba(0, 255, 170, 0.6) !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8) !important;
+        display: block !important;
+    }
+
+    .stat-tooltip-title {
+        font-size: 14px !important;
+        color: #00ffaa !important;
+        text-align: center !important;
+    }
+
+    .stat-tooltip-desc {
+        font-size: 12px !important;
+        text-align: center !important;
+    }
+
+    .stat-tooltip-hint {
+        text-align: center !important;
+    }
+
+    /* ----- COMPACT PANEL ELEMENTS ----- */
+    /* Lock grid - 2x2 layout */
+    .circular-panel-expanded .lock-grid,
+    .lock-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+        margin: 6px 0 !important;
+    }
+
+    /* Lock cards - compact */
+    .circular-panel-expanded .lock-card,
+    .lock-card {
+        padding: 6px 8px !important;
+        min-height: 32px !important;
+        font-size: 11px !important;
+        border-radius: 22px !important;
+    }
+
+    .circular-panel-expanded .lock-card-name,
+    .lock-card-name {
+        font-size: 11px !important;
+    }
+
+    .circular-panel-expanded .lock-card-multiplier,
+    .lock-card-multiplier {
+        font-size: 10px !important;
+    }
+
+    /* Info boxes - compact */
+    .circular-panel-expanded .stake-info-grid,
+    .stake-info-grid {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .circular-panel-expanded .info-box,
+    .info-box {
+        padding: 6px 8px !important;
+        border-radius: 22px !important;
+    }
+
+    .circular-panel-expanded .info-box-label,
+    .info-box-label {
+        font-size: 9px !important;
+    }
+
+    .circular-panel-expanded .info-box-value,
+    .info-box-value {
+        font-size: 12px !important;
+    }
+
+    /* Input group - compact */
+    .circular-panel-expanded .input-group,
+    .input-group {
+        margin-bottom: 6px !important;
+    }
+
+    .circular-panel-expanded .stake-input,
+    .stake-input {
+        padding: 8px 10px !important;
+        font-size: 14px !important;
+        border-radius: 22px !important;
+        min-height: 36px !important;
+    }
+
+    .circular-panel-expanded .input-token,
+    .input-token {
+        font-size: 10px !important;
+    }
+
+    /* Preset row - compact */
+    .circular-panel-expanded .preset-row,
+    .preset-row {
+        gap: 4px !important;
+        margin-top: 4px !important;
+    }
+
+    .circular-panel-expanded .preset-row button,
+    .preset-row button {
+        padding: 4px 8px !important;
+        font-size: 10px !important;
+        min-height: 28px !important;
+        border-radius: 6px !important;
+    }
+
+    /* Section headers */
+    .circular-panel-expanded .section-title,
+    .section-title {
+        font-size: 11px !important;
+        margin: 6px 0 4px 0 !important;
+    }
+
+    /* Main action button */
+    .circular-panel-expanded .btn-stake,
+    .circular-panel-expanded .btn-unstake,
+    .circular-panel-expanded .btn-claim,
+    .circular-panel-expanded .btn-approve,
+    .btn-stake,
+    .btn-unstake {
+        padding: 10px 16px !important;
+        font-size: 13px !important;
+        min-height: 40px !important;
+        border-radius: 22px !important;
+        margin-top: 8px !important;
+    }
+
+    /* Panel title - ensure visible */
+    .circular-panel-expanded .circular-panel-title {
+        font-size: 15px !important;
+        white-space: nowrap !important;
+    }
+
+    /* Backdrop overlay - positions panel below header */
+    .expanded-panel-overlay {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: rgba(0, 0, 0, 0.85) !important;
+        z-index: 4999 !important;
+        display: flex !important;
+        align-items: flex-start !important;
+        /* Align to top */
+        justify-content: center !important;
+        /* Center horizontally */
+        padding-top: 10px !important;
+        /* Space for panel's margin-top */
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+        padding-bottom: 10px !important;
+        box-sizing: border-box !important;
+        pointer-events: all !important;
+        overflow-y: auto !important;
+    }
+
+    /* Panel overlay backdrop */
+    .radial-menu-wrapper::after {
+        content: '';
+        display: none;
+    }
+
+    /* When any panel is expanded, show backdrop */
+    .radial-menu-wrapper:has([class*="expanded"])::after {
+        content: '';
+        display: block;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 4999;
+        pointer-events: auto;
+    }
+
+    /* ----- ENERGY SPHERE - STRICTLY CENTERED ----- */
+    .energy-sphere-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        padding: 15px 0 25px 0 !important;
+        margin: 0 auto 20px auto !important;
+        /* Enforce auto margins */
+        transform: scale(0.85) !important;
+    }
+
+    .energy-sphere-wrapper {
+        width: 280px !important;
+        /* Increased from 200px */
+        height: 280px !important;
+    }
+
+    /* Override inline styles on sphere rings */
+    .sphere-ring {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .sphere-ring-1 {
+        width: 70% !important;
+        height: 70% !important;
+    }
+
+    .sphere-ring-2 {
+        width: 85% !important;
+        height: 85% !important;
+    }
+
+    .sphere-ring-3 {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    .sphere-core {
+        width: 90px !important;
+        /* Increased from 70px */
+        height: 90px !important;
+    }
+
+    .sphere-core-stats {
+        width: 90% !important;
+        height: 90% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        padding: 2px !important;
+        transform: scale(0.8) !important;
+        /* Reduced from 0.85 */
+        transform-origin: center center !important;
+    }
+
+    .sphere-stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 1px !important;
+        width: 100% !important;
+    }
+
+    .sphere-stat-value {
+        font-size: 9px !important;
+    }
+
+    .sphere-stat-label {
+        font-size: 5.5px !important;
+    }
+
+    .sphere-status-indicator {
+        font-size: 9px !important;
+        margin-top: 2px !important;
+    }
+
+    .sphere-core-stats .stat-row {
+        margin: 1px 0 !important;
+        line-height: 1.1 !important;
+    }
+
+    /* ----- RADIAL MENU WRAPPER - CENTERED ----- */
+    .radial-menu-wrapper {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        padding-bottom: 20px !important;
+        margin: 0 !important;
+        min-height: auto;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        overflow-x: hidden !important;
+    }
+
+    /* ----- ORBS MENU CONTAINER - ABSOLUTE CENTER ----- */
+    .orbs-menu-container {
+        position: absolute !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* ----- MENU ORB SIZES ----- */
+    .menu-orb {
+        width: 55px !important;
+        height: 55px !important;
+        font-size: 20px !important;
+    }
+
+    .menu-orb .orb-label {
+        font-size: 8px !important;
+    }
+
+    /* ----- STAT CARDS ----- */
+    .staking-stats {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .stat-card {
+        flex: 1 1 100%;
+        max-width: 100%;
+        padding: 12px 16px;
+    }
+
+    .stat-value {
+        font-size: 18px;
+    }
+
+    .stat-label {
+        font-size: 10px;
+    }
+
+    /* ----- STAKE FORM ----- */
+    .stake-form {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 16px !important;
+    }
+
+    .stake-input,
+    input[type="text"],
+    input[type="number"] {
+        font-size: 16px !important;
+        /* Prevent iOS zoom */
+        padding: 12px 16px !important;
+    }
+
+    /* ----- LOCK OPTIONS ----- */
+    .lock-options {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .lock-option {
+        flex: 1 1 calc(50% - 4px);
+        min-height: 44px;
+        /* Touch-friendly */
+        padding: 10px;
+    }
+
+    /* ----- BUTTONS ----- */
+    .stake-btn,
+    .unstake-btn,
+    .claim-btn,
+    .compound-btn {
+        min-height: 44px;
+        /* Touch-friendly */
+        font-size: 14px;
+        padding: 12px 20px;
+    }
+
+    /* ----- YOUR STAKES LIST ----- */
+    .your-stakes {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .stake-entry {
+        padding: 12px;
+    }
+
+    .stake-entry .amount {
+        font-size: 16px;
+    }
+
+    .stake-entry .lock-badge {
+        font-size: 10px;
+        padding: 4px 8px;
+    }
+
+    /* ----- BALANCE PILLS (in content) ----- */
+    .balance-pill {
+        height: 32px;
+        padding: 0 10px;
+        font-size: 11px;
+    }
+
+    .balance-value {
+        font-size: 11px;
+    }
+
+    .balance-label {
+        font-size: 8px;
+    }
+
+    /* ----- CONNECT CARD ----- */
+    .connect-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 16px !important;
+    }
+
+    /* ----- SUPPORTER PANEL ----- */
+    .supporter-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* ----- iOS INPUT ZOOM PREVENTION ----- */
+    /* iOS Safari auto-zooms when input font-size < 16px */
+    input[type="text"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="email"],
+    input[type="password"],
+    textarea,
+    select,
+    .stake-input,
+    .unstake-input,
+    .donate-input {
+        font-size: 16px !important;
+    }
+
+    /* ----- SIDEBAR SCROLL IMPROVEMENTS ----- */
+    .left-sidebar-container,
+    .right-sidebar-container {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+
+    .sidebar-panel .panel-content {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+
+    /* ----- TOUCH TARGETS - Minimum 44px (Apple/Google standard) ----- */
+    .menu-orb {
+        min-width: 44px !important;
+        min-height: 44px !important;
+    }
+
+    .panel-close-btn,
+    .close-btn,
+    [class*="close"] {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .defi-lang-btn,
+    .back-button-inline {
+        min-height: 44px !important;
+    }
+
+}
+
+/* END supporter modal overrides */
+
+/* END of @media (max-width: 768px) main block */
+
+
+/* ===================== VERY SMALL SCREENS (480px and below) ===================== */
+/* Extracted from nested block for maximum browser compatibility */
+@media (max-width: 480px) {
+
+    /* ----- HEADER EVEN SMALLER ----- */
+    .header-controls-bottom {
+        transform: translateX(-50%) scale(0.7) !important;
+        padding: 5px 8px;
+        gap: 3px;
+    }
+
+    .header-controls-bottom>*,
+    .header-controls-bottom button,
+    .header-controls-bottom a,
+    .header-controls-bottom select,
+    .header-controls-bottom [class*="connect"],
+    .header-controls-bottom [class*="network"],
+    .header-controls-bottom [class*="chain"],
+    .header-controls-bottom [class*="lang"],
+    .header-controls-bottom .balance-pill,
+    .header-controls-bottom .back-button-inline {
+        height: 24px !important;
+        min-height: 24px !important;
+        max-height: 24px !important;
+        padding: 0 4px !important;
+        font-size: 8px !important;
+    }
+
+    .header-controls-bottom img,
+    .header-controls-bottom svg {
+        width: 10px !important;
+        height: 10px !important;
+    }
+
+    /* ----- ORBS SMALLER & CENTERED ----- */
+    .orbs-menu-container {
+        left: 50% !important;
+        transform: translateX(-50%) scale(0.6) !important;
+        margin-top: -40px;
+    }
+
+    .menu-orb {
+        width: 55px !important;
+        height: 55px !important;
+        font-size: 20px !important;
+    }
+
+    /* ----- ENERGY SPHERE SMALLER ----- */
+    .energy-sphere-container {
+        transform: scale(0.65);
+        padding: 5px 0 30px 0;
+    }
+
+    .energy-sphere-wrapper {
+        width: 120px;
+        height: 120px;
+    }
+
+    .sphere-core {
+        width: 60px;
+        height: 60px;
+    }
+
+    /* ----- SPHERE CONTENT MOBILE OVERRIDES ----- */
+    /* Force overflow hidden to clip any excess */
+    .sphere-core-stats {
+        overflow: hidden !important;
+        padding: 15px !important;
+    }
+
+    .sphere-stats-grid {
+        padding: 5px 0 !important;
+        transform: scale(0.85);
+        transform-origin: center center;
+    }
+
+    .sphere-top-stats,
+    .sphere-bottom-stats {
+        gap: 5px !important;
+        font-size: 10px !important;
+    }
+
+    .sphere-top-stats>div,
+    .sphere-bottom-stats>div {
+        padding: 0 3px !important;
+    }
+
+    /* Status indicator smaller */
+    .sphere-status-indicator {
+        font-size: 7px !important;
+        margin-top: 2px !important;
+    }
+
+
+    /* ----- SIDEBAR PANELS COMPACT ----- */
+    .sidebar-panel .panel-content {
+        max-height: 200px;
+    }
+
+    /* ----- STAT CARDS COMPACT ----- */
+    .stat-card {
+        padding: 10px 14px;
+    }
+
+    .stat-value {
+        font-size: 16px;
+    }
+
+    .stat-label {
+        font-size: 9px;
+    }
+
+    /* ----- LOCK OPTIONS SINGLE COLUMN ----- */
+    .lock-option {
+        flex: 1 1 100%;
+    }
+}
+
+/* ===================== TOUCH DEVICE IMPROVEMENTS ===================== */
+/* Extracted from nested block for maximum browser compatibility */
+@media (hover: none) and (pointer: coarse) {
+
+    /* Larger touch targets */
+    .lock-option,
+    .stake-btn,
+    .unstake-btn,
+    .claim-btn,
+    .compound-btn,
+    .menu-orb,
+    .panel-close-btn,
+    button {
+        min-height: 44px;
+    }
+
+    /* Remove hover effects on touch */
+    .balance-pill:hover,
+    .stat-card:hover,
+    .stake-entry:hover,
+    .menu-orb:hover {
+        transform: none;
+    }
+}
+
+/* ===================== LANDSCAPE MOBILE ===================== */
+/* Extracted from nested block for maximum browser compatibility */
+@media (max-width: 768px) and (orientation: landscape) {
+
+    .staking-page {
+        padding-top: 50px;
+    }
+
+    .energy-sphere-container {
+        transform: scale(0.75);
+    }
+
+    .orbs-menu-container {
+        left: 50% !important;
+        transform: translateX(-50%) scale(0.6) !important;
+    }
+
+    /* Sidebars side by side in landscape */
+    .left-sidebar-container,
+    .right-sidebar-container {
+        width: 48% !important;
+        display: inline-flex !important;
+    }
+}
+
+/* ===================== PREVENT OVERFLOW ===================== */
+@media (max-width: 768px) {
+
+    html,
+    body {
+        overflow-x: hidden !important;
+    }
+
+    .staking-page {
+        overflow-x: hidden !important;
+        max-width: 100vw;
+    }
+
+    * {
+        max-width: 100vw;
+    }
+}
+
+/* ----- SUPPORTER DETAIL MODAL OVERRIDES (Mobile) ----- */
+@media (max-width: 768px) {
+
+    .donate-detail-modal {
+        z-index: 10000 !important;
+    }
+
+    .donate-detail-content {
+        width: 92% !important;
+        max-width: 320px !important;
+        padding: 16px !important;
+        border-radius: 22px !important;
+    }
+
+    .donate-detail-address {
+        padding: 8px 10px !important;
+        font-size: 9px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .donate-tx-item {
+        font-size: 10px !important;
+        padding: 8px 0 !important;
+    }
+
+    .donate-tx-amount {
+        font-size: 9px !important;
+    }
+
+    .donate-total {
+        font-size: 10px !important;
+        margin-top: 15px !important;
+        padding-top: 10px !important;
+    }
+
+    /* ----- SUPPORT POOL BUTTON OVERLAP FIX ----- */
+    .donate-section {
+        padding: 12px !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        z-index: 100 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .donate-input-group {
+        display: flex !important;
+        gap: 8px !important;
+        align-items: center !important;
+    }
+
+    .donate-input {
+        min-width: 0 !important;
+        /* Allow input to shrink */
+        flex: 1 !important;
+    }
+
+    .donate-btn {
+        flex-shrink: 0 !important;
+        /* Prevent button from squeezing */
+        padding: 10px 16px !important;
+    }
+
+    /* ----- DETAIL MODALS - ALWAYS ON TOP ----- */
+    /* Must be higher than all sidebars and panels */
+    .staker-detail-modal,
+    .donate-detail-modal {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        z-index: 2147483647 !important;
+        /* Maximum z-index */
+        background: rgba(0, 0, 0, 0.9) !important;
+        backdrop-filter: blur(10px) !important;
+    }
+
+    .staker-detail-content,
+    .donate-detail-content {
+        position: relative !important;
+        z-index: 2147483647 !important;
+        max-width: 95vw !important;
+        max-height: 80vh !important;
+        margin: auto !important;
+    }
+
+}
+
+/* ===================== RAINBOWKIT MODAL - SIZING FIX ===================== */
+/* Fix modal centering and scale on small screens */
+@media (max-width: 500px) {
+
+    /* Force modal overlay to be full screen with flex centering */
+    [aria-modal="true"],
+    [role="dialog"] {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        /* iOS Safari fix */
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Scale down the modal container — target RainbowKit specifically */
+    [data-rk] [role="dialog"]>*,
+    [data-rk] [aria-modal="true"]>*,
+    [data-rk] [aria-modal="true"]>div,
+    [data-rk] [aria-modal="true"]>div>div,
+    /* Fallback for direct aria-modal (in case data-rk isn't present) */
+    [role="dialog"]>* {
+        position: relative !important;
+        left: auto !important;
+        right: auto !important;
+        top: auto !important;
+        bottom: auto !important;
+        height: fit-content !important;
+        max-height: 85vh !important;
+        max-height: 85dvh !important;
+        transform: scale(0.75) !important;
+        transform-origin: center center !important;
+        overflow-y: auto !important;
+        margin: 0 !important;
+    }
+}
+
+/* ===================== REDUCED MOTION — ACCESSIBILITY & PERFORMANCE ===================== */
+/* Disable non-essential animations for users who prefer reduced motion */
+/* Also helps performance on low-end mobile devices */
+@media (prefers-reduced-motion: reduce) {
+
+    /* Disable all transitions and animations globally */
+    .sphere-ring,
+    .sphere-ring-1,
+    .sphere-ring-2,
+    .sphere-ring-3,
+    .orbit-particle,
+    .coin-particle-fly,
+    .energy-sphere-wrapper,
+    .energy-sphere-container {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    /* Keep essential UI transitions but make them instant */
+    .circular-panel-expanded,
+    .expanded-panel-overlay,
+    .menu-orb {
+        transition-duration: 0.01s !important;
+    }
+
+    /* Remove glow/pulse animations */
+    .sphere-core,
+    .stat-card,
+    .balance-pill {
+        animation: none !important;
+    }
+}

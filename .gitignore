@@ -1,0 +1,38 @@
+# Dependencies
+node_modules
+
+# Next.js
+.next
+out
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE / Editor
+.agent
+.vscode
+
+# Build cache
+tsconfig.tsbuildinfo
+
+# Local database
+local.db
+*.db
+
+# Debug & temp files
+debug-*.ts
+debug-*.mjs
+tmp_*.js
+build_error*.txt
+build_log*.txt
+fix_*.py
+generate-*.js
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Lock file (chọn 1: nếu dùng npm thì bỏ yarn.lock, ngược lại)
+yarn.lock

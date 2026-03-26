@@ -1,0 +1,561 @@
+/* ===== SNAKE GAME RESPONSIVE SYSTEM ===== */
+
+/* CSS CUSTOM PROPERTIES - RESPONSIVE FOUNDATION */
+:root {
+    /* Fluid Typography - scales smoothly between mobile and desktop */
+    --text-2xs: clamp(8px, 2vw, 10px);
+    --text-xs: clamp(10px, 2.5vw, 12px);
+    --text-sm: clamp(11px, 2.8vw, 14px);
+    --text-base: clamp(13px, 3.2vw, 16px);
+    --text-lg: clamp(15px, 3.8vw, 18px);
+    --text-xl: clamp(18px, 4.5vw, 24px);
+    --text-2xl: clamp(22px, 5.5vw, 32px);
+    --text-3xl: clamp(28px, 7vw, 42px);
+
+    /* Fluid Spacing - adapts to screen size */
+    --space-2xs: clamp(2px, 0.5vw, 4px);
+    --space-xs: clamp(4px, 1vw, 8px);
+    --space-sm: clamp(6px, 1.5vw, 12px);
+    --space-md: clamp(10px, 2.5vw, 16px);
+    --space-lg: clamp(14px, 3.5vw, 24px);
+    --space-xl: clamp(20px, 5vw, 40px);
+
+    /* Fluid Border Radius */
+    --radius-sm: clamp(6px, 1.5vw, 10px);
+    --radius-md: clamp(10px, 2.5vw, 16px);
+    --radius-lg: clamp(14px, 3.5vw, 24px);
+    --radius-xl: clamp(18px, 4.5vw, 32px);
+
+    /* Adaptive Panel Widths */
+    --panel-width: clamp(200px, 28vw, 320px);
+    --panel-width-mobile: min(100%, 520px);
+
+    /* Game Canvas Max Size */
+    --canvas-max: min(660px, calc(100vw - 32px), calc(100vh - 280px));
+
+    /* Touch Target Minimum (WCAG) */
+    --touch-min: max(44px, 11vw);
+
+    /* Button sizes */
+    --btn-height-sm: clamp(32px, 8vw, 40px);
+    --btn-height-md: clamp(40px, 10vw, 48px);
+    --btn-height-lg: clamp(48px, 12vw, 56px);
+}
+
+/* DPI-aware scaling for low-density screens */
+@media (max-resolution: 150dpi) {
+    :root {
+        --text-xs: clamp(11px, 2.8vw, 13px);
+        --text-sm: clamp(12px, 3vw, 15px);
+        --text-base: clamp(14px, 3.5vw, 17px);
+        --space-xs: clamp(5px, 1.2vw, 10px);
+        --space-sm: clamp(8px, 2vw, 14px);
+    }
+}
+
+/* High DPI screens - slightly smaller elements */
+@media (min-resolution: 200dpi) {
+    :root {
+        --text-xs: clamp(9px, 2.2vw, 11px);
+        --text-sm: clamp(10px, 2.5vw, 13px);
+        --touch-min: max(40px, 10vw);
+    }
+}
+
+/* Scrollbar hidden */
+::-webkit-scrollbar {
+    display: none;
+}
+
+html,
+body {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent overflow globally */
+* {
+    box-sizing: border-box;
+}
+
+.overflow-protect {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* ===== RESPONSIVE SYSTEM ===== */
+
+/* Game wrapper responsive */
+.game-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+}
+
+/* Canvas scaling system */
+.game-canvas-wrapper {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+/* Mobile Small (320-480px) */
+@media (max-width: 480px) {
+    .desktop-only {
+        display: none !important;
+    }
+
+    .hover-scale:hover,
+    .hover-glow:hover,
+    .hover-btn:hover {
+        transform: none;
+    }
+
+    .game-canvas-wrapper canvas {
+        width: 100% !important;
+        max-width: calc(100vw - 24px) !important;
+        height: auto !important;
+    }
+
+    .side-panel {
+        max-width: 100% !important;
+        padding: 8px !important;
+    }
+
+    .dpad-mobile button {
+        width: 77px !important;
+        height: 77px !important;
+        font-size: 33px !important;
+    }
+
+    .game-header {
+        padding: 8px 12px !important;
+    }
+
+    .stat-value {
+        font-size: 18px !important;
+    }
+
+    .menu-title {
+        font-size: 20px !important;
+    }
+
+    .main-content {
+        flex-wrap: wrap !important;
+    }
+
+    .side-panel {
+        width: 100% !important;
+        max-width: calc(100vw - 32px) !important;
+        flex: 0 0 100% !important;
+    }
+
+    .panel-stats {
+        order: 1 !important;
+    }
+
+    .panel-leaderboard {
+        order: 2 !important;
+    }
+}
+
+/* Tablet Small (481-600px) */
+@media (min-width: 481px) and (max-width: 600px) {
+    .desktop-only {
+        display: none !important;
+    }
+
+    .hover-scale:hover,
+    .hover-glow:hover,
+    .hover-btn:hover {
+        transform: none;
+    }
+
+    .game-canvas-wrapper canvas {
+        width: 100% !important;
+        max-width: calc(100vw - 32px) !important;
+        height: auto !important;
+    }
+
+    .main-content {
+        flex-wrap: wrap !important;
+    }
+
+    .side-panel {
+        width: calc(50% - 12px) !important;
+        max-width: calc(50% - 12px) !important;
+        flex: 0 0 calc(50% - 12px) !important;
+    }
+
+    .panel-stats {
+        order: 1 !important;
+    }
+
+    .panel-leaderboard {
+        order: 2 !important;
+    }
+}
+
+/* Tablet (601-768px) */
+@media (min-width: 601px) and (max-width: 768px) {
+    .desktop-only {
+        display: none !important;
+    }
+
+    .hover-scale:hover,
+    .hover-glow:hover,
+    .hover-btn:hover {
+        transform: none;
+    }
+
+    .game-canvas-wrapper canvas {
+        max-width: min(660px, calc(100vw - 40px)) !important;
+        height: auto !important;
+    }
+
+    .main-content {
+        flex-wrap: wrap !important;
+    }
+
+    .side-panel {
+        width: calc(50% - 12px) !important;
+        max-width: calc(50% - 12px) !important;
+        flex: 0 0 calc(50% - 12px) !important;
+    }
+
+    .panel-stats {
+        order: 1 !important;
+    }
+
+    .panel-leaderboard {
+        order: 2 !important;
+    }
+}
+
+/* Small PC / Large Tablet (769-1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .mobile-only {
+        display: none !important;
+    }
+
+    .side-panel {
+        width: 220px !important;
+        max-width: 220px !important;
+    }
+
+    .game-canvas-wrapper canvas {
+        max-width: 560px !important;
+    }
+
+    .main-content {
+        gap: 20px !important;
+        padding: 12px 16px !important;
+    }
+}
+
+/* Medium PC (1025-1280px) */
+@media (min-width: 1025px) and (max-width: 1280px) {
+    .mobile-only {
+        display: none !important;
+    }
+
+    .side-panel {
+        width: 260px !important;
+        max-width: 260px !important;
+    }
+
+    .main-content {
+        gap: 28px !important;
+    }
+}
+
+/* Standard PC (1281-1440px) */
+@media (min-width: 1281px) and (max-width: 1440px) {
+    .mobile-only {
+        display: none !important;
+    }
+
+    .side-panel {
+        width: 280px !important;
+        max-width: 280px !important;
+    }
+}
+
+/* Large PC (1441px+) */
+@media (min-width: 1441px) {
+    .mobile-only {
+        display: none !important;
+    }
+
+    .side-panel {
+        width: 320px !important;
+        max-width: 320px !important;
+    }
+
+    .main-content {
+        gap: 48px !important;
+    }
+}
+
+/* Height-based adjustments for short screens */
+@media (max-height: 700px) {
+    .game-canvas-wrapper canvas {
+        max-height: calc(100vh - 250px) !important;
+        width: auto !important;
+    }
+
+    .side-panel {
+        max-height: calc(100vh - 150px) !important;
+        overflow-y: auto !important;
+    }
+}
+
+/* Landscape mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .game-canvas-wrapper canvas {
+        max-height: calc(100vh - 120px) !important;
+        max-width: 50vw !important;
+    }
+
+    .dpad-mobile {
+        display: none !important;
+    }
+}
+
+/* ===== RESPONSIVE UTILITY CLASSES ===== */
+
+/* Fluid Typography Classes */
+.text-fluid-xs {
+    font-size: var(--text-xs) !important;
+}
+
+.text-fluid-sm {
+    font-size: var(--text-sm) !important;
+}
+
+.text-fluid-base {
+    font-size: var(--text-base) !important;
+}
+
+.text-fluid-lg {
+    font-size: var(--text-lg) !important;
+}
+
+.text-fluid-xl {
+    font-size: var(--text-xl) !important;
+}
+
+.text-fluid-2xl {
+    font-size: var(--text-2xl) !important;
+}
+
+/* Fluid Spacing */
+.gap-fluid-xs {
+    gap: var(--space-xs) !important;
+}
+
+.gap-fluid-sm {
+    gap: var(--space-sm) !important;
+}
+
+.gap-fluid-md {
+    gap: var(--space-md) !important;
+}
+
+.gap-fluid-lg {
+    gap: var(--space-lg) !important;
+}
+
+.p-fluid-xs {
+    padding: var(--space-xs) !important;
+}
+
+.p-fluid-sm {
+    padding: var(--space-sm) !important;
+}
+
+.p-fluid-md {
+    padding: var(--space-md) !important;
+}
+
+.p-fluid-lg {
+    padding: var(--space-lg) !important;
+}
+
+/* Touch-friendly targets - ONLY on touch devices/mobile */
+@media (pointer: coarse),
+(max-width: 768px) {
+    .touch-target {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+/* Game Canvas Responsive Container */
+.game-canvas-responsive {
+    width: 100%;
+    max-width: var(--canvas-max);
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-canvas-responsive canvas {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Responsive Panel */
+.panel-responsive {
+    width: var(--panel-width);
+    max-width: 100%;
+    padding: var(--space-sm);
+    border-radius: var(--radius-md);
+}
+
+@media (max-width: 768px) {
+    .panel-responsive {
+        width: var(--panel-width-mobile);
+    }
+}
+
+/* Responsive Button */
+.btn-responsive {
+    min-height: var(--btn-height-md);
+    padding: var(--space-xs) var(--space-md);
+    font-size: var(--text-sm);
+    border-radius: var(--radius-md);
+}
+
+.btn-responsive-lg {
+    min-height: var(--btn-height-lg);
+    padding: var(--space-sm) var(--space-lg);
+    font-size: var(--text-base);
+}
+
+/* D-Pad Responsive */
+.dpad-responsive {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(var(--touch-min), 1fr));
+    gap: var(--space-xs);
+    max-width: min(280px, 85vw);
+    margin: 0 auto;
+}
+
+.dpad-responsive button {
+    aspect-ratio: 1;
+    min-width: var(--touch-min);
+    font-size: var(--text-xl);
+    border-radius: var(--radius-md);
+}
+
+/* Header Responsive */
+.header-responsive {
+    padding: var(--space-sm) var(--space-md);
+}
+
+@media (max-width: 480px) {
+    .header-responsive {
+        padding: var(--space-xs) var(--space-sm);
+    }
+}
+
+/* ===== PANEL ORDERING FOR MOBILE ===== */
+.panel-donor {
+    order: 3;
+}
+
+.panel-game {
+    order: 1;
+}
+
+.panel-leaderboard {
+    order: 2;
+}
+
+.panel-stats {
+    order: 0;
+}
+
+@media (max-width: 768px) {
+    .panel-donor {
+        order: 2 !important;
+    }
+
+    .panel-game {
+        order: 1 !important;
+    }
+
+    .panel-leaderboard {
+        order: 3 !important;
+    }
+
+    .panel-stats {
+        order: 4 !important;
+    }
+}
+
+/* ===== ULTRA-SMALL DEVICES (320px) ===== */
+/* iPhone SE, Galaxy S8 Mini, etc. */
+@media (max-width: 359px) {
+    :root {
+        --text-xs: clamp(9px, 2.2vw, 11px);
+        --text-sm: clamp(10px, 2.5vw, 12px);
+        --touch-min: max(40px, 10vw);
+    }
+
+    .game-canvas-wrapper canvas {
+        max-width: calc(100vw - 16px) !important;
+    }
+
+    .side-panel {
+        padding: 6px !important;
+        max-width: calc(100vw - 16px) !important;
+    }
+
+    .dpad-mobile button {
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 24px !important;
+    }
+
+    .game-header {
+        padding: 6px 8px !important;
+    }
+
+    .stat-value {
+        font-size: 14px !important;
+    }
+
+    .stat-label {
+        font-size: 9px !important;
+    }
+
+    .menu-title {
+        font-size: 16px !important;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        padding: 8px 12px !important;
+        font-size: 11px !important;
+    }
+
+    .leaderboard-item {
+        padding: 6px 8px !important;
+        font-size: 10px !important;
+    }
+
+    .player-name {
+        max-width: 80px !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}

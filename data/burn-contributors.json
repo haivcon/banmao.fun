@@ -1,0 +1,275 @@
+{
+  "contributors": [
+    {
+      "address": "0x92809f2837f708163d375960063c8a3156fceacb",
+      "name": "Burner 0x9280...eacb",
+      "avatar": 0,
+      "totalBurned": "1000000000000000000000000",
+      "burnCount": 1,
+      "donations": [
+        {
+          "txHash": "0x8f2cb0e14f03928743590d1ec8e78f11a492b87780ef766933cbfb496958e0de",
+          "amount": "1000000000000000000000000",
+          "timestamp": 1756724059000
+        }
+      ]
+    },
+    {
+      "address": "0xc6ef30e0bec5945e0133352cffcf0a7e2b14e6fc",
+      "name": "Burner 0xc6ef...e6fc",
+      "avatar": 0,
+      "totalBurned": "30000000000000000000000",
+      "burnCount": 1,
+      "donations": [
+        {
+          "txHash": "0x7e673df8a1966c5411b4039d1338111298eb09ecd2d61b7c0ca5ddf3d8b61386",
+          "amount": "30000000000000000000000",
+          "timestamp": 1758118306000
+        }
+      ]
+    },
+    {
+      "address": "0x82773977443f021830a6ac532fd0f80be86a5f30",
+      "name": "Burner 0x8277...5f30",
+      "avatar": 0,
+      "totalBurned": "200000000000000000000000",
+      "burnCount": 2,
+      "donations": [
+        {
+          "txHash": "0x0c296b76dbb69265948dc44d41785eb2e9a18edd8debc7831d5f93598a11a926",
+          "amount": "100000000000000000000000",
+          "timestamp": 1757853021000
+        },
+        {
+          "txHash": "0x5a3d95412a4a8107d6f0c5c69d3d4d14d1148be17bda7522dc73cd6fcc9ed0a2",
+          "amount": "100000000000000000000000",
+          "timestamp": 1760625733000
+        }
+      ]
+    },
+    {
+      "address": "0x5c6253e43c834ed82916256681aa70eb8692eddb",
+      "name": "Burner 0x5c62...eddb",
+      "avatar": 0,
+      "totalBurned": "10000000000000000000000",
+      "burnCount": 10,
+      "donations": [
+        {
+          "txHash": "0x64d87b1347ef6f8e17caca042849bab028ea45435e46f8e3d74ab2c9ede0d123",
+          "amount": "1000000000000000000000",
+          "timestamp": 1769920049000
+        },
+        {
+          "txHash": "0x347480148b49d8e29fed53f302aa36b472143ea3ea1048b54782055ec4aeed6b",
+          "amount": "1000000000000000000000",
+          "timestamp": 1769920222000
+        },
+        {
+          "txHash": "0x485c21c6f18912c78047dd0f0a09f7c0a262b5ca1c65226ea85cbfcd1d95715d",
+          "amount": "1000000000000000000000",
+          "timestamp": 1769945051000
+        },
+        {
+          "txHash": "0xd0dbf5aa7b6fac89b2be87b221beb178a78d8d6bd49f91aa8dc77d04d83f6714",
+          "amount": "1000000000000000000000",
+          "timestamp": 1769961784000
+        },
+        {
+          "txHash": "0x820429f2c31350085608e4509650d0a5092af5042841acdc714eb75688a4c23d",
+          "amount": "1000000000000000000000",
+          "timestamp": 1769962862000
+        },
+        {
+          "txHash": "0x5a16981b2161b79e4b710bc5ad283118630bea85ace57d67513476ebf479bc46",
+          "amount": "1000000000000000000000",
+          "timestamp": 1769962968000
+        },
+        {
+          "txHash": "0x7c812d9e588d72a1e93103aab30579b5c17ac93f313bd7f7f0fb458d0c95faf4",
+          "amount": "1000000000000000000000",
+          "timestamp": 1769963067000
+        },
+        {
+          "txHash": "0xb320f132f868ee23ba9c3631e66f3ceda4a10a18597cdb33519209391008b6cc",
+          "amount": "1000000000000000000000",
+          "timestamp": 1769963349000
+        },
+        {
+          "txHash": "0x3e9be46d1ccf194e03beda1c5aef6008157fd76007599b9567f1339a16bc84f0",
+          "amount": "1000000000000000000000",
+          "timestamp": 1769964045000
+        },
+        {
+          "txHash": "0xed4ffdd195f563935ff0ca772416bd2046b44ff2c6ed213b940526724d605812",
+          "amount": "1000000000000000000000",
+          "timestamp": 1769964254000
+        }
+      ]
+    },
+    {
+      "address": "0xf2029af20d71b99ea1fcb3fe19e6752a63d83a33",
+      "name": "Burner 0xf202...3a33",
+      "avatar": 0,
+      "totalBurned": "450000000000000000000000",
+      "burnCount": 2,
+      "donations": [
+        {
+          "txHash": "0xb69ad6aa13a1dfa0b322f678d53f703fe13b77c231a8bc6e3b7442dc6f19fb4b",
+          "amount": "350000000000000000000000",
+          "timestamp": 1758415286000
+        },
+        {
+          "txHash": "0xd1a20bf870b520942acb01b99f586de3ffcfc5bc7d36708594d49321056cdc75",
+          "amount": "100000000000000000000000",
+          "timestamp": 1758197112000
+        }
+      ]
+    },
+    {
+      "address": "0xb712ce47ee49a39669796762379e8fdf421ce205",
+      "name": "Burner 0xb712...e205",
+      "avatar": 0,
+      "totalBurned": "200000000000000000000000",
+      "burnCount": 1,
+      "donations": [
+        {
+          "txHash": "0x82f7bf5f4bf0f30679d6f2c5ff4012f42ec61ad45a3634ea2c4ae9d29c4cd006",
+          "amount": "200000000000000000000000",
+          "timestamp": 1757852499000
+        }
+      ]
+    },
+    {
+      "address": "0xa5b19098554c8192f0bb8f2f6621190dce7d49e1",
+      "name": "Burner 0xa5b1...49e1",
+      "avatar": 0,
+      "totalBurned": "100000000000000000000000",
+      "burnCount": 1,
+      "donations": [
+        {
+          "txHash": "0x4f6c0a55dc511410ad42788b5080c63f31a63d06c8e8e579f67f8022ea75efb9",
+          "amount": "100000000000000000000000",
+          "timestamp": 1757852223000
+        }
+      ]
+    },
+    {
+      "address": "0xf5e207ef603231715c0e1530d9a1ef75110eac80",
+      "name": "Burner 0xf5e2...ac80",
+      "avatar": 0,
+      "totalBurned": "50000000000000000000000",
+      "burnCount": 1,
+      "donations": [
+        {
+          "txHash": "0x85a0f99f17051cd7061de7d55c6308790d8058fb192ee93bafc408149b677410",
+          "amount": "50000000000000000000000",
+          "timestamp": 1757852881000
+        }
+      ]
+    },
+    {
+      "address": "0x69febaac1f3909e799f6c5910bc3e46362a896c6",
+      "name": "Burner 0x69fe...96c6",
+      "avatar": 0,
+      "totalBurned": "100000000000000000000000",
+      "burnCount": 1,
+      "donations": [
+        {
+          "txHash": "0x38dc2e20d1864917568036ae692240cd91f141aab432ee19b8a5c6a0ac2643fb",
+          "amount": "100000000000000000000000",
+          "timestamp": 1759018786000
+        }
+      ]
+    },
+    {
+      "address": "0xbf7f13f50ca8c39fd425a45418074d3f3314ebd9",
+      "name": "Burner 0xbf7f...ebd9",
+      "avatar": 0,
+      "totalBurned": "202111000000000000000000",
+      "burnCount": 2,
+      "donations": [
+        {
+          "txHash": "0x8b02b68dfc9094914a661a804e438a734c6699ca1c9a70b2a64b5d43793e87f8",
+          "amount": "102111000000000000000000",
+          "timestamp": 1759365968000
+        },
+        {
+          "txHash": "0x4e84fc534564c1122e608a48e798bfd669d4072437cd6e84ba0616e7414aeda0",
+          "amount": "100000000000000000000000",
+          "timestamp": 1769047041000
+        }
+      ]
+    },
+    {
+      "address": "0xd0a03fd4aa05bbf155111e622b9ad4e516210095",
+      "name": "Burner 0xd0a0...0095",
+      "avatar": 0,
+      "totalBurned": "222222000000000000000000",
+      "burnCount": 1,
+      "donations": [
+        {
+          "txHash": "0x6cea53ebcda0b57302f8edd2c2a1a2b5bc5c89d6d59ba695d2b838b3f0440d14",
+          "amount": "222222000000000000000000",
+          "timestamp": 1759498371000
+        }
+      ]
+    },
+    {
+      "address": "0xe72d66054eb4887263dfcc172dc9690a551d0049",
+      "name": "Burner 0xe72d...0049",
+      "avatar": 0,
+      "totalBurned": "10000000000000000000000",
+      "burnCount": 1,
+      "donations": [
+        {
+          "txHash": "0xbc5e4d87acac92a44edba3d98fd54b6261244c540dedee259aedcd7dc4de0044",
+          "amount": "10000000000000000000000",
+          "timestamp": 1759823692000
+        }
+      ]
+    },
+    {
+      "address": "0x38a1d5c1b1bdeeebe7ef248684462c26c6e176fe",
+      "name": "Burner 0x38a1...76fe",
+      "avatar": 0,
+      "totalBurned": "200000000000000000000000",
+      "burnCount": 1,
+      "donations": [
+        {
+          "txHash": "0xed1c49b32e34b46a13ef88620c9029e8644db689498c69d1332164695dfaafb9",
+          "amount": "200000000000000000000000",
+          "timestamp": 1769046060000
+        }
+      ]
+    },
+    {
+      "address": "0x1815899d5570534823acf11c4859355f0fd61cb1",
+      "name": "Burner 0x1815...1cb1",
+      "avatar": 0,
+      "totalBurned": "398956000000000000000000",
+      "burnCount": 1,
+      "donations": [
+        {
+          "txHash": "0xc89f4bcc8970c2d6c9bc1dbcb8509faa6eb33a2889a5cd2ec773bfbc0238410f",
+          "amount": "398956000000000000000000",
+          "timestamp": 1756728553000
+        }
+      ]
+    },
+    {
+      "address": "0xc878db43b55ced1261c5f000bee169b5a69c98bf",
+      "name": "Burner 0xc878...98bf",
+      "avatar": 0,
+      "totalBurned": "50000000000000000000000",
+      "burnCount": 1,
+      "donations": [
+        {
+          "txHash": "0xb701570ae2d08e77886e9146773dd74f12dbbb653c78f4dff5f540201d45faa0",
+          "amount": "50000000000000000000000",
+          "timestamp": 1756776970000
+        }
+      ]
+    }
+  ],
+  "lastUpdated": 1769964258018
+}

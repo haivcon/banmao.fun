@@ -1,0 +1,238 @@
+/* ===== SNAKE GAME COMPONENT STYLES ===== */
+
+/* ===== HOVER EFFECTS ===== */
+
+/* Scale hover - for cards and containers */
+.hover-scale {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-scale:hover {
+    transform: scale(1.03) translateY(-2px);
+    box-shadow: 0 12px 40px rgba(34, 211, 238, 0.25), 0 0 20px rgba(34, 211, 238, 0.15);
+    border-color: rgba(34, 211, 238, 0.5) !important;
+}
+
+/* Glow hover - for panels */
+.hover-glow {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-glow:hover {
+    box-shadow: 0 0 30px rgba(34, 211, 238, 0.4), 0 0 60px rgba(34, 211, 238, 0.2), 0 15px 40px rgba(0, 0, 0, 0.3);
+    transform: translateY(-3px);
+    border-color: rgba(34, 211, 238, 0.6) !important;
+}
+
+/* Button hover - lift and glow effect */
+.hover-btn {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.hover-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.hover-btn:hover::before {
+    left: 100%;
+}
+
+.hover-btn:hover {
+    transform: translateY(-4px) scale(1.02);
+    filter: brightness(1.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 20px currentColor;
+}
+
+.hover-btn:active {
+    transform: translateY(-1px) scale(0.98);
+    filter: brightness(0.95);
+}
+
+/* Stat card hover */
+.stat-card {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: default;
+}
+
+.stat-card:hover {
+    transform: scale(1.08) translateY(-3px);
+    background: linear-gradient(145deg, rgba(34, 211, 238, 0.2), rgba(34, 211, 238, 0.08)) !important;
+    border-color: rgba(34, 211, 238, 0.5) !important;
+    box-shadow: 0 8px 30px rgba(34, 211, 238, 0.2);
+}
+
+/* Text hover effects */
+.hover-text {
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.hover-text:hover {
+    color: #22d3ee !important;
+    text-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+    transform: scale(1.05);
+}
+
+/* Icon hover - bounce and glow */
+.hover-icon {
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.hover-icon:hover {
+    transform: scale(1.2) rotate(-5deg);
+    filter: drop-shadow(0 0 8px currentColor);
+}
+
+/* Link hover */
+.hover-link {
+    transition: all 0.2s ease;
+    position: relative;
+    text-decoration: none;
+}
+
+.hover-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #22d3ee, #4ade80);
+    transition: width 0.3s ease;
+}
+
+.hover-link:hover {
+    color: #22d3ee !important;
+}
+
+.hover-link:hover::after {
+    width: 100%;
+}
+
+/* Avatar button hover */
+.hover-avatar {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-avatar:hover {
+    transform: scale(1.15) rotate(5deg);
+    box-shadow: 0 0 20px currentColor;
+    z-index: 10;
+}
+
+/* Leaderboard item hover - NO SCALE to avoid clipping */
+.hover-leaderboard {
+    transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+.hover-leaderboard:hover {
+    background: rgba(168, 85, 247, 0.25) !important;
+    border-color: rgba(168, 85, 247, 0.7) !important;
+    box-shadow: 0 4px 20px rgba(168, 85, 247, 0.4), inset 0 0 15px rgba(168, 85, 247, 0.1) !important;
+}
+
+/* Social button hover */
+.hover-social {
+    transition: all 0.25s ease;
+}
+
+.hover-social:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Info item hover (community panel) */
+.info-item {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.info-item:hover {
+    transform: scale(1.2);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 0 15px currentColor;
+    filter: brightness(1.5);
+    z-index: 10;
+}
+
+/* Donor top 3 special hover - enhanced glow only */
+.donor-top3:hover {
+    box-shadow: 0 0 25px rgba(168, 85, 247, 0.5), 0 0 40px rgba(251, 191, 36, 0.2) !important;
+}
+
+/* Input focus */
+input:focus,
+textarea:focus {
+    border-color: #22d3ee !important;
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.3), inset 0 0 5px rgba(34, 211, 238, 0.1) !important;
+    outline: none;
+}
+
+/* Copy button hover */
+.hover-copy {
+    transition: all 0.15s ease;
+}
+
+.hover-copy:hover {
+    transform: scale(1.1);
+    background: rgba(34, 211, 238, 0.4) !important;
+}
+
+.hover-copy:active {
+    transform: scale(0.95);
+}
+
+/* Donor modal info row hover */
+.hover-info-row {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 8px;
+    padding: 10px 12px !important;
+    margin: -10px -12px;
+    margin-bottom: 2px;
+}
+
+.hover-info-row:hover {
+    transform: scale(1.02);
+    background: rgba(168, 85, 247, 0.1) !important;
+    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.2), inset 0 0 20px rgba(168, 85, 247, 0.05);
+}
+
+/* Modal button hover - enhanced glow */
+.hover-modal-btn {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.hover-modal-btn:hover {
+    transform: scale(1.03);
+    box-shadow: 0 8px 25px rgba(168, 85, 247, 0.4), 0 0 30px rgba(168, 85, 247, 0.2) !important;
+    filter: brightness(1.1);
+}
+
+.hover-modal-btn:active {
+    transform: scale(0.98);
+}
+
+/* Whale incentive hover - 3x zoom effect */
+.whale-incentive-hover {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center center;
+}
+
+.whale-incentive-hover:hover {
+    transform: scale(1.5);
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.95) !important;
+    border-radius: 12px;
+    padding: 12px !important;
+    box-shadow: 0 20px 60px rgba(251, 191, 36, 0.4), 0 0 40px rgba(251, 191, 36, 0.2);
+}

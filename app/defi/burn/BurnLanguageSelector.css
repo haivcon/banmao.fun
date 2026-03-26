@@ -1,0 +1,160 @@
+/* ===================== BURN LANGUAGE SELECTOR ===================== */
+
+.burn-lang-selector {
+    position: relative;
+}
+
+/* Main Button */
+.burn-lang-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 90px;
+}
+
+.burn-lang-btn:hover {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.15) 0%, rgba(249, 115, 22, 0.05) 100%);
+    border-color: rgba(249, 115, 22, 0.4);
+    transform: translateY(-1px);
+}
+
+.burn-lang-btn.open {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(249, 115, 22, 0.08) 100%);
+    border-color: rgba(249, 115, 22, 0.5);
+    box-shadow: 0 4px 20px rgba(249, 115, 22, 0.15);
+}
+
+.burn-lang-btn:focus-visible {
+    outline: 2px solid #f97316;
+    outline-offset: 2px;
+}
+
+.burn-lang-flag {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.burn-lang-code {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.burn-lang-chevron {
+    width: 14px;
+    height: 14px;
+    stroke: rgba(255, 255, 255, 0.6);
+    transition: transform 0.25s ease;
+    margin-left: auto;
+}
+
+.burn-lang-chevron.rotate {
+    transform: rotate(180deg);
+}
+
+/* Dropdown */
+.burn-lang-dropdown {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 41, 59, 0.98) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(249, 115, 22, 0.25);
+    border-radius: 16px;
+    padding: 8px;
+    min-width: 180px;
+    box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+        0 0 30px rgba(249, 115, 22, 0.1);
+    animation: dropdownFadeIn 0.2s ease;
+    overflow: hidden;
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.96);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Options */
+.burn-lang-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+}
+
+.burn-lang-option:hover {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(249, 115, 22, 0.04) 100%);
+    color: #fff;
+}
+
+.burn-lang-option.active {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+    color: #fff;
+}
+
+.burn-lang-option:focus-visible {
+    outline: 2px solid #f97316;
+    outline-offset: -2px;
+}
+
+.burn-lang-option-flag {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.burn-lang-option-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.burn-lang-check {
+    width: 16px;
+    height: 16px;
+    stroke: #f97316;
+    flex-shrink: 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .burn-lang-btn {
+        padding: 8px 12px;
+        min-width: 80px;
+    }
+
+    .burn-lang-code {
+        display: none;
+    }
+
+    .burn-lang-dropdown {
+        min-width: 160px;
+    }
+}

@@ -1,0 +1,8 @@
+{
+    "crons": [
+        {
+            "path": "/api/admin/cleanup-history?days=30",
+            "schedule": "0 0 * * *"
+        }
+    ]
+}

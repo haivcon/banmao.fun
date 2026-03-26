@@ -1,0 +1,384 @@
+/* shared.module.css - Reusable CSS Module styles for Banmao Slots */
+
+/* ============ Panel Base ============ */
+.panel {
+    background: var(--color-bg-panel, rgba(15, 5, 30, 0.95));
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--radius-lg, 12px);
+    padding: var(--spacing-md, 12px);
+    backdrop-filter: blur(12px);
+}
+
+.panelGlow {
+    background: var(--color-bg-panel, rgba(15, 5, 30, 0.95));
+    border: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--radius-lg, 12px);
+    padding: var(--spacing-md, 12px);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 25px rgba(139, 92, 246, 0.2),
+        0 0 50px rgba(139, 92, 246, 0.1);
+}
+
+.panelHeader {
+    font-size: var(--font-md, 12px);
+    font-weight: 700;
+    color: #00FFD0;
+    margin-bottom: var(--spacing-sm, 8px);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 0 0 10px rgba(0, 255, 208, 0.5);
+}
+
+/* ============ Buttons ============ */
+.btn {
+    border: none;
+    border-radius: var(--radius-md, 8px);
+    cursor: pointer;
+    font-weight: 700;
+    font-size: var(--font-sm, 10px);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs, 4px);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btnPrimary {
+    border: none;
+    border-radius: var(--radius-md, 8px);
+    cursor: pointer;
+    font-weight: 700;
+    font-size: var(--font-sm, 10px);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs, 4px);
+    background: linear-gradient(90deg, #00f5ff, #3b82f6);
+    color: #000;
+    padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+}
+
+.btnPrimary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btnPrimary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.4);
+}
+
+.btnSecondary {
+    border-radius: var(--radius-md, 8px);
+    cursor: pointer;
+    font-weight: 700;
+    font-size: var(--font-sm, 10px);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs, 4px);
+    background: rgba(0, 245, 255, 0.1);
+    color: #00f5ff;
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+}
+
+.btnSecondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btnSecondary:hover:not(:disabled) {
+    background: rgba(0, 245, 255, 0.2);
+    border-color: #00f5ff;
+}
+
+.btnGreen {
+    border: none;
+    border-radius: var(--radius-md, 8px);
+    cursor: pointer;
+    font-weight: 700;
+    font-size: var(--font-sm, 10px);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs, 4px);
+    background: linear-gradient(90deg, #22c55e, #10b981);
+    color: #000;
+    padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+}
+
+.btnGreen:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btnGreen:hover:not(:disabled) {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+}
+
+.btnRed {
+    border: none;
+    border-radius: var(--radius-md, 8px);
+    cursor: pointer;
+    font-weight: 700;
+    font-size: var(--font-sm, 10px);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xs, 4px);
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+    color: #fff;
+    padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+}
+
+.btnRed:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btnRed:hover:not(:disabled) {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+}
+
+.btnSmall {
+    padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
+    font-size: var(--font-xs, 9px);
+}
+
+.btnLarge {
+    padding: var(--spacing-md, 12px) var(--spacing-lg, 16px);
+    font-size: var(--font-lg, 14px);
+}
+
+/* ============ Inputs ============ */
+.input {
+    width: 100%;
+    padding: var(--spacing-sm, 8px);
+    background: var(--color-bg-dark, rgba(0, 0, 0, 0.4));
+    border: 1px solid var(--color-border-cyan, rgba(0, 245, 255, 0.3));
+    border-radius: var(--radius-md, 8px);
+    color: #fff;
+    font-size: var(--font-sm, 10px);
+    font-family: 'Space Mono', monospace;
+}
+
+.input:focus {
+    outline: none;
+    border-color: #00f5ff;
+    box-shadow: 0 0 15px rgba(0, 245, 255, 0.3);
+}
+
+.input::placeholder {
+    color: var(--color-text-muted, rgba(255, 255, 255, 0.6));
+}
+
+.inputSmall {
+    width: 100%;
+    padding: var(--spacing-xs, 4px) var(--spacing-sm, 8px);
+    background: var(--color-bg-dark, rgba(0, 0, 0, 0.4));
+    border: 1px solid var(--color-border-cyan, rgba(0, 245, 255, 0.3));
+    border-radius: var(--radius-md, 8px);
+    color: #fff;
+    font-size: var(--font-xs, 9px);
+    font-family: 'Space Mono', monospace;
+}
+
+/* ============ Text Styles ============ */
+.textCyan {
+    color: #00f5ff;
+}
+
+.textGreen {
+    color: #22c55e;
+}
+
+.textRed {
+    color: #ef4444;
+}
+
+.textGold {
+    color: #fbbf24;
+}
+
+.textMuted {
+    color: var(--color-text-muted, rgba(255, 255, 255, 0.6));
+}
+
+.textGlow {
+    text-shadow: 0 0 10px currentColor;
+}
+
+/* ============ Layout Helpers ============ */
+.flexCenter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flexBetween {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.flexColumn {
+    display: flex;
+    flex-direction: column;
+}
+
+.gap1 {
+    gap: var(--spacing-xs, 4px);
+}
+
+.gap2 {
+    gap: var(--spacing-sm, 8px);
+}
+
+.gap3 {
+    gap: var(--spacing-md, 12px);
+}
+
+.gap4 {
+    gap: var(--spacing-lg, 16px);
+}
+
+/* ============ Badges ============ */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: var(--font-xs, 9px);
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badgeSuccess {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: var(--font-xs, 9px);
+    font-weight: 700;
+    text-transform: uppercase;
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.badgeWarning {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: var(--font-xs, 9px);
+    font-weight: 700;
+    text-transform: uppercase;
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.4);
+}
+
+.badgeError {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: var(--font-xs, 9px);
+    font-weight: 700;
+    text-transform: uppercase;
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.badgeInfo {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: var(--font-xs, 9px);
+    font-weight: 700;
+    text-transform: uppercase;
+    background: rgba(0, 245, 255, 0.2);
+    color: #00f5ff;
+    border: 1px solid rgba(0, 245, 255, 0.4);
+}
+
+/* ============ Cards & Sections ============ */
+.infoRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-xs, 4px) 0;
+    border-bottom: 1px solid var(--color-border, rgba(255, 255, 255, 0.1));
+}
+
+.infoRow:last-child {
+    border-bottom: none;
+}
+
+.infoLabel {
+    font-size: var(--font-xs, 9px);
+    color: var(--color-text-muted, rgba(255, 255, 255, 0.6));
+    text-transform: uppercase;
+}
+
+.infoValue {
+    font-size: var(--font-sm, 10px);
+    font-weight: 600;
+    color: #fff;
+}
+
+/* ============ Animations ============ */
+.glow {
+    animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.pulse {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+}

@@ -1,0 +1,150 @@
+.hub-profile-modal {
+    max-width: 500px;
+    width: 90%;
+}
+
+.hub-ep-field {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hub-ep-field>label {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-color, #111827);
+}
+
+.col-dark .hub-ep-field>label {
+    color: #f9fafb;
+}
+
+/* Banner Upload */
+.hub-ep-banner-preview {
+    width: 100%;
+    height: 140px;
+    border-radius: 12px;
+    background-color: #f3f4f6;
+    background-size: cover;
+    background-position: center;
+    border: 2px dashed #d1d5db;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.col-dark .hub-ep-banner-preview {
+    background-color: #374151;
+    border-color: #4b5563;
+}
+
+.hub-ep-banner-preview span {
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+.hub-ep-upload-btn {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    transition: background 0.2s;
+}
+
+.hub-ep-upload-btn:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+/* Avatar Upload */
+.hub-ep-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.hub-ep-avatar-preview {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--border-color, #e5e7eb);
+}
+
+.col-dark .hub-ep-avatar-preview {
+    background-color: #374151;
+    border-color: #4b5563;
+}
+
+.hub-ep-avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.hub-ep-avatar-placeholder {
+    font-size: 32px;
+    font-weight: bold;
+    color: #9ca3af;
+}
+
+.col-dark .hub-ep-avatar-placeholder {
+    color: #6b7280;
+}
+
+/* Text Inputs */
+.hub-ep-input,
+.hub-ep-textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #d1d5db);
+    background: var(--card-bg, #fff);
+    color: var(--text-color, #111827);
+    font-family: inherit;
+    font-size: 15px;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.col-dark .hub-ep-input,
+.col-dark .hub-ep-textarea {
+    background: #111113;
+    border-color: #374151;
+    color: #fff;
+}
+
+.hub-ep-input:focus,
+.hub-ep-textarea:focus {
+    outline: none;
+    border-color: #ec4899;
+    box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+}
+
+.hub-ep-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.hub-ep-hint {
+    margin: 0;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.col-dark .hub-ep-hint {
+    color: #9ca3af;
+}

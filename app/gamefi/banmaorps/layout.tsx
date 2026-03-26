@@ -1,0 +1,30 @@
+// app/gamefi/banmaorps/layout.tsx
+// Server layout with proper manifest metadata for PWA install
+
+import type { Metadata } from "next";
+import GameLayoutClient from "./GameLayoutClient";
+
+export const metadata: Metadata = {
+    title: "BANMAO RPS",
+    description: "Play Rock–Paper–Scissors using $BANMAO on XLayer",
+    manifest: "/manifest-game.json",
+    themeColor: "#FFD700",
+    appleWebApp: {
+        capable: true,
+        statusBarStyle: "black-translucent",
+        title: "BANMAO RPS",
+    },
+    icons: {
+        icon: [
+            { url: "/games/rps/rps-icon-192x192.png", sizes: "192x192", type: "image/png" },
+            { url: "/games/rps/rps-icon-512x512.png", sizes: "512x512", type: "image/png" },
+        ],
+        apple: [
+            { url: "/games/rps/rps-icon-192x192.png", sizes: "192x192", type: "image/png" },
+        ],
+    },
+};
+
+export default function GameLayout({ children }: { children: React.ReactNode }) {
+    return <GameLayoutClient>{children}</GameLayoutClient>;
+}

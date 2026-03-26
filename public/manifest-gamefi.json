@@ -1,0 +1,107 @@
+{
+    "name": "GameFi $banmao",
+    "short_name": "GameFi",
+    "description": "Play Web3 games and earn $BANMAO tokens on XLayer. Explore Rock-Paper-Scissors, Snake, and more!",
+    "start_url": "/gamefi",
+    "scope": "/gamefi",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "background_color": "#0f172a",
+    "theme_color": "#22d3ee",
+    "categories": [
+        "games",
+        "entertainment"
+    ],
+    "lang": "en",
+    "dir": "ltr",
+    "icons": [
+        {
+            "src": "/pwa/gamefi/gamefi-icon-72x72.png",
+            "sizes": "72x72",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/pwa/gamefi/gamefi-icon-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/pwa/gamefi/gamefi-icon-128x128.png",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/pwa/gamefi/gamefi-icon-144x144.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/pwa/gamefi/gamefi-icon-152x152.png",
+            "sizes": "152x152",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/pwa/gamefi/gamefi-icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/pwa/gamefi/gamefi-icon-384x384.png",
+            "sizes": "384x384",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/pwa/gamefi/gamefi-icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/pwa/gamefi/gamefi-icon-maskable-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/pwa/gamefi/gamefi-icon-maskable-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Play RPS",
+            "short_name": "RPS",
+            "description": "Play Rock-Paper-Scissors",
+            "url": "/gamefi/banmaorps",
+            "icons": [
+                {
+                    "src": "/games/rps/rps-icon-96x96.png",
+                    "sizes": "96x96"
+                }
+            ]
+        },
+        {
+            "name": "Play Snake",
+            "short_name": "Snake",
+            "description": "Play Banmao Snake",
+            "url": "/gamefi/banmaosnake",
+            "icons": [
+                {
+                    "src": "/games/snake/snake-icon-96x96.png",
+                    "sizes": "96x96"
+                }
+            ]
+        }
+    ],
+    "related_applications": [],
+    "prefer_related_applications": false
+}

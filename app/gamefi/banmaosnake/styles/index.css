@@ -1,0 +1,6 @@
+/* ===== SNAKE GAME STYLES - MAIN ENTRY ===== */
+/* This file imports all CSS modules for the Snake game */
+
+@import './animations.css';
+@import './responsive.css';
+@import './components.css';

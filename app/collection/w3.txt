@@ -1,0 +1,22 @@
+Dự án BanmaoHub hiện tại đã có bộ khung "Social Web3" rất mạnh mẽ và chạy mượt mà (npm run build thành công không có lỗi).
+
+Để dự án bứt phá và thực sự tạo khác biệt so với các mạng xã hội truyền thống (như X hay Instagram), dưới đây là một số gợi ý nâng cấp mang đậm chất Web3 & Gamification mà chúng ta có thể hướng tới trong tương lai:
+
+🚀 1. Nội Dung Đặc Quyền (Token-Gated Content)
+Cho phép các Creators (Người Sáng Tạo) đăng ảnh hoặc video "Bị khóa".
+Điểm nổi bật: Chỉ những người dùng đang Hold một số lượng $BANMAO nhất định trong ví hoặc sở hữu NFT của Banmao mới có thể mở khóa và xem được nội dung. Đây là cách tuyệt vời để tăng nhu cầu mua token.
+🖼️ 2. Hệ Thống Mint Post Thành NFT (Collectibles)
+Thay vì chỉ Like và Tip, hãy cho phép người hâm mộ "Collect" (Sưu tầm) bài viết của người khác thành một NFT.
+Tác giả có thể đặt giới hạn (ví dụ: chỉ cho phép đúc 50 bản thu nhỏ của bài hát/video) với một mức giá $BANMAO cố định. Doanh thu chuyển thẳng vào ví tác giả. Điều này tạo mô hình giống với Lens Protocol hay Farcaster.
+💬 3. Chat Trực Tiếp 1-1 (Web3 Messaging)
+Tích hợp tính năng Nhắn Tin trực tiếp (Direct Message) giữa 2 địa chỉ ví.
+Mã hóa tin nhắn hoàn toàn bằng protocol Web3 (ví dụ: XMTP) để người dùng có thể nói chuyện riêng, bàn bạc chiến thuật chơi game hoặc mua bán tài sản số mà không cần thoát khỏi Banmao.
+🏅 4. Huy Hiệu Khen Thưởng (Badges / Achievements)
+Làm cho thẻ User sặc sỡ hơn! Tự động đánh giá và trao các huy hiệu (Badges) gắn cạnh tên tài khoản dựa vào thành tích.
+Ví dụ: Vòng nguyệt quế vàng cho Top 3 Tip, Bút lông xanh cho Top Creator, Trái tim đỏ cho người hay đi thả tim dạo. Điều này tạo tính ganh đua (Gamification) rất cao, giữ chân người dùng.
+🎥 5. Feed Cực Ngắn: Banmao Shorts (Lướt Video Dọc)
+Hiện tại Hub đang rất tốt với ảnh/bố cục Masonry. Nếu bạn muốn bùng nổ, hãy thêm một tính năng lướt video ngắn toàn màn hình (giống TikTok / Reels).
+Khi vuốt trên giao diện điện thoại, các nút Like/Tip/Follow/Comment sẽ nổi lên 1 bên cạnh khung hình, giúp người dùng cực kỳ dễ tương tác và đốt thời gian trên app.
+💾 6. Lưu Trữ Tệp Phi Tập Trung (Arweave / IPFS)
+Hiện tại ảnh/video đang dựa vào nền tảng Web2 (Cloudinary hoặc máy chủ thường).
+Nâng cấp cho phép Creators tick chọn "Lưu trên Blockchain". File sẽ được upload thẳng lên mạng lưới lưu trữ phi tập trung (IPFS / Arweave) để nó vĩnh viễn không bao giờ bị xóa, thật sự làm chủ dữ liệu của họ.

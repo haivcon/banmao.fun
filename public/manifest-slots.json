@@ -1,0 +1,104 @@
+{
+    "name": "BANMAO SLOTS",
+    "short_name": "BANMAO SLOTS",
+    "description": "Play Slots with $BANMAO tokens on XLayer. Spin the reels, match symbols, and win big jackpots!",
+    "start_url": "/gamefi/banmaoslots",
+    "scope": "/gamefi/banmaoslots",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "background_color": "#1a1a2e",
+    "theme_color": "#ff00ff",
+    "categories": [
+        "games",
+        "entertainment"
+    ],
+    "lang": "en",
+    "dir": "ltr",
+    "icons": [
+        {
+            "src": "/games/slots/slots-icon-72x72.png",
+            "sizes": "72x72",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/games/slots/slots-icon-96x96.png",
+            "sizes": "96x96",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/games/slots/slots-icon-128x128.png",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/games/slots/slots-icon-144x144.png",
+            "sizes": "144x144",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/games/slots/slots-icon-152x152.png",
+            "sizes": "152x152",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/games/slots/slots-icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/games/slots/slots-icon-384x384.png",
+            "sizes": "384x384",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/games/slots/slots-icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/games/slots/slots-icon-maskable-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/games/slots/slots-icon-maskable-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/games/slots/slots-icon.jpg",
+            "sizes": "512x512",
+            "type": "image/jpeg",
+            "form_factor": "wide",
+            "label": "BANMAO SLOTS Game"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Play Slots",
+            "short_name": "Play",
+            "description": "Start spinning BANMAO SLOTS",
+            "url": "/gamefi/banmaoslots",
+            "icons": [
+                {
+                    "src": "/games/slots/slots-icon-96x96.png",
+                    "sizes": "96x96"
+                }
+            ]
+        }
+    ],
+    "related_applications": [],
+    "prefer_related_applications": false
+}
