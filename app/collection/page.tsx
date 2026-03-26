@@ -428,6 +428,8 @@ export default function CollectionPage() {
     const [isMasonry, setIsMasonry] = useState(false);
     const [gridCols, setGridCols] = useState(isMobile ? 3 : 5);
     const [showSortMenu, setShowSortMenu] = useState(false);
+    const sortTriggerRef = useRef<HTMLButtonElement>(null);
+    const randomSeedRef = useRef(Math.random());
     const [isInfinite, setIsInfinite] = useState(false);
 
     // Lightbox state
@@ -1123,12 +1125,10 @@ export default function CollectionPage() {
         if (sortBy === "size") filtered = [...filtered].sort((a, b) => b.bytes - a.bytes);
         // newest = default order from API (already sorted by public_id asc), reverse for newest first
         if (sortBy === "newest") filtered = [...filtered].reverse();
-        // Random shuffle (seeded by date for consistency within a session)
+        // Random shuffle (seeded per session for consistency)
         if (sortBy === "random") {
             filtered = [...filtered];
-            const seed = new Date().toDateString();
-            let h = 0;
-            for (let i = 0; i < seed.length; i++) { h = ((h << 5) - h + seed.charCodeAt(i)) | 0; }
+            let h = Math.floor(randomSeedRef.current * 0x7fffffff);
             const rng = () => { h = (h * 1103515245 + 12345) & 0x7fffffff; return h / 0x7fffffff; };
             for (let i = filtered.length - 1; i > 0; i--) {
                 const j = Math.floor(rng() * (i + 1));
@@ -2011,6 +2011,7 @@ export default function CollectionPage() {
                             </div>
                             <div className="col-sort-dropdown">
                                 <button
+                                    ref={sortTriggerRef}
                                     className="col-sort-trigger"
                                     onClick={() => setShowSortMenu(!showSortMenu)}
                                 >
@@ -2619,22 +2620,30 @@ export default function CollectionPage() {
 
                 {/* Sort menu overlay — rendered at root to escape stacking contexts */}
                 {
-                    showSortMenu && (
-                        <div className={theme === "light" ? "col-light" : ""}>
-                            <div className="col-sort-backdrop" onClick={() => setShowSortMenu(false)} />
-                            <div className="col-sort-menu col-sort-menu-portal">
-                                {(["random", "name", "newest", "size"] as const).map(s => (
-                                    <button
-                                        key={s}
-                                        className={`col-sort-option ${sortBy === s ? "active" : ""}`}
-                                        onClick={(e) => { e.stopPropagation(); setSortBy(s); setCurrentPage(1); setShowSortMenu(false); }}
-                                    >
-                                        {s === "random" ? `🎲 ${t.sortRandom}` : s === "name" ? `↕ ${t.sortName}` : s === "newest" ? `🕐 ${t.sortNewest}` : `📦 ${t.sortSize}`}
-                                    </button>
-                                ))}
+                    showSortMenu && (() => {
+                        const rect = sortTriggerRef.current?.getBoundingClientRect();
+                        const menuTop = rect ? rect.bottom + 6 : 100;
+                        const menuRight = rect ? window.innerWidth - rect.right : 20;
+                        return (
+                            <div className={theme === "light" ? "col-light" : ""}>
+                                <div className="col-sort-backdrop" onClick={() => setShowSortMenu(false)} />
+                                <div
+                                    className="col-sort-menu col-sort-menu-portal"
+                                    style={{ position: "fixed", top: menuTop, right: menuRight, left: "auto" }}
+                                >
+                                    {(["random", "name", "newest", "size"] as const).map(s => (
+                                        <button
+                                            key={s}
+                                            className={`col-sort-option ${sortBy === s ? "active" : ""}`}
+                                            onClick={(e) => { e.stopPropagation(); setSortBy(s); setCurrentPage(1); setShowSortMenu(false); randomSeedRef.current = Math.random(); }}
+                                        >
+                                            {s === "random" ? `🎲 ${t.sortRandom}` : s === "name" ? `↕ ${t.sortName}` : s === "newest" ? `🕐 ${t.sortNewest}` : `📦 ${t.sortSize}`}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    )
+                        );
+                    })()
                 }
 
                 {/* Push Protocol Messenger Widget */}

@@ -5,8 +5,8 @@
 // Polyfill localStorage for SSR to prevent RainbowKit errors
 import "./gamefi/banmaorps/lib/serverStoragePolyfill";
 
-import { ReactNode, useMemo } from "react";
-import { WagmiProvider, createConfig, http, fallback } from "wagmi";
+import { ReactNode, useEffect, useMemo } from "react";
+import { WagmiProvider, createConfig, http, fallback, useAccount, useChainId, useSwitchChain } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
     RainbowKitProvider,
@@ -119,6 +119,25 @@ function getQueryClient() {
     return _queryClient;
 }
 
+// ==== Auto-switch to XLayer when wallet connects on wrong chain ====
+function AutoChainSwitch({ children }: { children: ReactNode }) {
+    const { isConnected } = useAccount();
+    const chainId = useChainId();
+    const { switchChain } = useSwitchChain();
+
+    useEffect(() => {
+        if (isConnected && chainId !== 196) {
+            try {
+                switchChain({ chainId: 196 });
+            } catch {
+                // User rejected or wallet doesn't support auto-switch — silently ignore
+            }
+        }
+    }, [isConnected, chainId, switchChain]);
+
+    return <>{children}</>;
+}
+
 export default function SharedProviders({ children }: { children: ReactNode }) {
     const theme = useMemo(
         () =>
@@ -135,7 +154,9 @@ export default function SharedProviders({ children }: { children: ReactNode }) {
         <WagmiProvider config={getWagmiConfig()}>
             <QueryClientProvider client={getQueryClient()}>
                 <RainbowKitProvider theme={theme} modalSize="compact" initialChain={196}>
-                    {children}
+                    <AutoChainSwitch>
+                        {children}
+                    </AutoChainSwitch>
                 </RainbowKitProvider>
             </QueryClientProvider>
         </WagmiProvider>
