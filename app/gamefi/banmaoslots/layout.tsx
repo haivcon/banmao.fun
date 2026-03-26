@@ -7,8 +7,9 @@ export const dynamic = 'force-dynamic';
 export const viewport: Viewport = {
     width: 'device-width',
     initialScale: 0.45,
-    maximumScale: 0.45,
-    userScalable: false,
+    minimumScale: 0.3,
+    maximumScale: 3.0,
+    userScalable: true,
     themeColor: '#0a0a1a',
 };
 
