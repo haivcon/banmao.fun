@@ -7,6 +7,7 @@ import type { Lang } from "../i18n";
 export interface ImageItem {
     src: string;
     thumb: string;
+    thumbSm: string;
     name: string;
     folder: string;
     bytes: number;
@@ -14,6 +15,8 @@ export interface ImageItem {
     isVideo: boolean;
     duration?: number;
     color?: DominantColor;
+    width?: number;
+    height?: number;
 }
 
 export const COLOR_NAMES = ["red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink", "white", "black"] as const;
@@ -61,6 +64,7 @@ interface HubStoreState {
     theme: "dark" | "light";
     viewMode: "gallery" | "hub";
     toast: string | null;
+    toastType: "" | "col-toast-success" | "col-toast-error";
 
     // Gallery
     allImages: ImageItem[];
@@ -72,13 +76,14 @@ interface HubStoreState {
     searchQuery: string;
     typeFilter: "all" | "images" | "videos";
     colorFilter: DominantColor | "all";
-    sortBy: "name" | "newest" | "size";
+    sortBy: "random" | "name" | "newest" | "size";
     favorites: Set<string>;
     favoritesOrder: string[];
     downloadCounts: Record<string, number>;
     gridCols: number;
     isMasonry: boolean;
     isInfinite: boolean;
+    translatedNames: Record<string, string>;
 
     // Hub Social
     hubPosts: any[];
@@ -138,26 +143,28 @@ interface HubStoreState {
 
     // Actions
     setLang: (lang: Lang) => void;
-    setTheme: (theme: "dark" | "light") => void;
+    setTheme: (fn: ("dark" | "light") | ((prev: "dark" | "light") => "dark" | "light")) => void;
     setViewMode: (mode: "gallery" | "hub") => void;
     setToast: (toast: string | null) => void;
+    setToastType: (toastType: "" | "col-toast-success" | "col-toast-error") => void;
 
     setAllImages: (images: ImageItem[]) => void;
     setFolders: (folders: string[]) => void;
     setLoading: (loading: boolean) => void;
     setTotalBytes: (bytes: number) => void;
     setActiveTab: (tab: string) => void;
-    setCurrentPage: (page: number) => void;
+    setCurrentPage: (fn: number | ((prev: number) => number)) => void;
     setSearchQuery: (query: string) => void;
     setTypeFilter: (filter: "all" | "images" | "videos") => void;
     setColorFilter: (filter: DominantColor | "all") => void;
-    setSortBy: (sort: "name" | "newest" | "size") => void;
-    setFavorites: (fn: (prev: Set<string>) => Set<string>) => void;
-    setFavoritesOrder: (fn: (prev: string[]) => string[]) => void;
-    setDownloadCounts: (fn: (prev: Record<string, number>) => Record<string, number>) => void;
+    setSortBy: (sort: "random" | "name" | "newest" | "size") => void;
+    setFavorites: (fn: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
+    setFavoritesOrder: (fn: string[] | ((prev: string[]) => string[])) => void;
+    setDownloadCounts: (fn: Record<string, number> | ((prev: Record<string, number>) => Record<string, number>)) => void;
     setGridCols: (cols: number) => void;
     setIsMasonry: (v: boolean) => void;
     setIsInfinite: (v: boolean) => void;
+    setTranslatedNames: (names: Record<string, string>) => void;
 
     setHubPosts: (fn: any[] | ((prev: any[]) => any[])) => void;
     setHubLoading: (loading: boolean) => void;
@@ -218,6 +225,7 @@ export const useHubStore = create<HubStoreState>((set) => ({
     theme: "dark",
     viewMode: "gallery",
     toast: null,
+    toastType: "",
 
     // Gallery
     allImages: [],
@@ -229,13 +237,14 @@ export const useHubStore = create<HubStoreState>((set) => ({
     searchQuery: "",
     typeFilter: "all",
     colorFilter: "all",
-    sortBy: "name",
+    sortBy: "random",
     favorites: new Set(),
     favoritesOrder: [],
     downloadCounts: {},
     gridCols: 5,
     isMasonry: false,
     isInfinite: false,
+    translatedNames: {},
 
     // Hub Social
     hubPosts: [],
@@ -295,26 +304,28 @@ export const useHubStore = create<HubStoreState>((set) => ({
 
     // Actions (simple setters)
     setLang: (lang) => set({ lang }),
-    setTheme: (theme) => set({ theme }),
+    setTheme: (fn) => set((state) => ({ theme: typeof fn === "function" ? fn(state.theme) : fn })),
     setViewMode: (viewMode) => set({ viewMode }),
     setToast: (toast) => set({ toast }),
+    setToastType: (toastType) => set({ toastType }),
 
     setAllImages: (allImages) => set({ allImages }),
     setFolders: (folders) => set({ folders }),
     setLoading: (loading) => set({ loading }),
     setTotalBytes: (totalBytes) => set({ totalBytes }),
     setActiveTab: (activeTab) => set({ activeTab }),
-    setCurrentPage: (currentPage) => set({ currentPage }),
+    setCurrentPage: (fn) => set((state) => ({ currentPage: typeof fn === "function" ? fn(state.currentPage) : fn })),
     setSearchQuery: (searchQuery) => set({ searchQuery }),
     setTypeFilter: (typeFilter) => set({ typeFilter }),
     setColorFilter: (colorFilter) => set({ colorFilter }),
     setSortBy: (sortBy) => set({ sortBy }),
-    setFavorites: (fn) => set((state) => ({ favorites: fn(state.favorites) })),
-    setFavoritesOrder: (fn) => set((state) => ({ favoritesOrder: fn(state.favoritesOrder) })),
-    setDownloadCounts: (fn) => set((state) => ({ downloadCounts: fn(state.downloadCounts) })),
+    setFavorites: (fn) => set((state) => ({ favorites: typeof fn === "function" ? fn(state.favorites) : fn })),
+    setFavoritesOrder: (fn) => set((state) => ({ favoritesOrder: typeof fn === "function" ? fn(state.favoritesOrder) : fn })),
+    setDownloadCounts: (fn) => set((state) => ({ downloadCounts: typeof fn === "function" ? fn(state.downloadCounts) : fn })),
     setGridCols: (gridCols) => set({ gridCols }),
     setIsMasonry: (isMasonry) => set({ isMasonry }),
     setIsInfinite: (isInfinite) => set({ isInfinite }),
+    setTranslatedNames: (translatedNames) => set({ translatedNames }),
 
     setHubPosts: (fn) => set((state) => ({ hubPosts: typeof fn === "function" ? fn(state.hubPosts) : fn })),
     setHubLoading: (hubLoading) => set({ hubLoading }),

@@ -3,15 +3,17 @@ import { NextResponse } from "next/server";
 /**
  * GET /api/collection
  *
- * Uses the Cloudinary Search API to list ALL image resources inside
- * a folder tree (recursive). Handles pagination automatically to
- * fetch beyond the 500-per-request limit.
+ * Cloudinary Search API with optional pagination.
  *
  * Query params:
- *   ?folder=banmao   (searches banmao and all subfolders)
+ *   ?folder=banmao           — searches banmao and all subfolders
+ *   ?limit=100&cursor=abc    — paginated mode (returns nextCursor)
+ *   ?folders_only=true       — returns unique folders only (no images)
  *
- * The CLOUDINARY_URL env var is parsed for credentials:
- *   cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+ * Without limit: fetches ALL images (backward compatible).
+ * With limit: returns up to `limit` images + nextCursor for pagination.
+ *
+ * CLOUDINARY_URL env: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
  */
 
 function parseCloudinaryUrl() {
@@ -36,22 +38,72 @@ interface CloudinaryResource {
     folder?: string;
 }
 
+function mapResource(r: CloudinaryResource) {
+    return {
+        public_id: r.public_id,
+        secure_url: r.secure_url,
+        format: r.format,
+        resource_type: r.resource_type || "image",
+        width: r.width,
+        height: r.height,
+        bytes: r.bytes,
+        duration: r.duration,
+        created_at: r.created_at,
+        folder: r.asset_folder || r.folder || "",
+    };
+}
+
+const CACHE_HEADERS = { "Cache-Control": "s-maxage=600, stale-while-revalidate=300" };
+
 export async function GET(request: Request) {
     try {
         const { searchParams } = new URL(request.url);
         const folder = searchParams.get("folder") || "";
+        const limitParam = searchParams.get("limit");
+        const cursorParam = searchParams.get("cursor");
+        const foldersOnly = searchParams.get("folders_only") === "true";
 
         const { apiKey, apiSecret, cloudName } = parseCloudinaryUrl();
-
-        const expression = folder
-            ? `folder:${folder}*`
-            : "resource_type:image";
-
+        const expression = folder ? `folder:${folder}*` : "resource_type:image";
         const searchUrl = `https://api.cloudinary.com/v1_1/${cloudName}/resources/search`;
-        const authHeader =
-            "Basic " + Buffer.from(`${apiKey}:${apiSecret}`).toString("base64");
+        const authHeader = "Basic " + Buffer.from(`${apiKey}:${apiSecret}`).toString("base64");
 
-        // Fetch all pages (max 500 per request)
+        // ——— Paginated mode: returns one page at a time ———
+        if (limitParam) {
+            const limit = Math.min(Math.max(parseInt(limitParam, 10) || 100, 1), 500);
+            const body: Record<string, unknown> = {
+                expression,
+                max_results: limit,
+                sort_by: [{ public_id: "asc" }],
+            };
+            if (cursorParam) body.next_cursor = cursorParam;
+
+            const response = await fetch(searchUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", Authorization: authHeader },
+                body: JSON.stringify(body),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error("Cloudinary API error:", response.status, errorText);
+                return NextResponse.json({ error: "Cloudinary API error", details: errorText }, { status: response.status });
+            }
+
+            const data = await response.json();
+            const images = (data.resources || []).map(mapResource);
+            const totalCount = data.total_count || 0;
+
+            // Extract unique folders from this batch
+            const batchFolders = [...new Set(images.map((img: { folder: string }) => img.folder))] as string[];
+
+            return NextResponse.json(
+                { total: totalCount, images, nextCursor: data.next_cursor || null, folders: batchFolders },
+                { headers: CACHE_HEADERS }
+            );
+        }
+
+        // ——— Full fetch mode (backward compatible) ———
         let allResources: CloudinaryResource[] = [];
         let nextCursor: string | undefined;
 
@@ -65,20 +117,14 @@ export async function GET(request: Request) {
 
             const response = await fetch(searchUrl, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: authHeader,
-                },
+                headers: { "Content-Type": "application/json", Authorization: authHeader },
                 body: JSON.stringify(body),
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error("Cloudinary API error:", response.status, errorText);
-                return NextResponse.json(
-                    { error: "Cloudinary API error", details: errorText },
-                    { status: response.status },
-                );
+                return NextResponse.json({ error: "Cloudinary API error", details: errorText }, { status: response.status });
             }
 
             const data = await response.json();
@@ -86,23 +132,19 @@ export async function GET(request: Request) {
             nextCursor = data.next_cursor;
         } while (nextCursor);
 
-        // Map to a simple structure for the frontend
-        const images = allResources.map((r) => ({
-            public_id: r.public_id,
-            secure_url: r.secure_url,
-            format: r.format,
-            resource_type: r.resource_type || "image",
-            width: r.width,
-            height: r.height,
-            bytes: r.bytes,
-            duration: r.duration,
-            created_at: r.created_at,
-            folder: r.asset_folder || r.folder || "",
-        }));
+        const images = allResources.map(mapResource);
+
+        // Extract unique folders
+        const folders = [...new Set(images.map((img) => img.folder))] as string[];
+
+        // Folders-only mode
+        if (foldersOnly) {
+            return NextResponse.json({ folders, totalCount: images.length }, { headers: CACHE_HEADERS });
+        }
 
         return NextResponse.json(
-            { total: images.length, images },
-            { headers: { "Cache-Control": "s-maxage=600, stale-while-revalidate=300" } },
+            { total: images.length, images, folders },
+            { headers: CACHE_HEADERS }
         );
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Unknown error";

@@ -9,6 +9,8 @@ import { translateName, reverseTranslate, translateFolder, detectBrowserLang } f
 import { saveBgImage, getBgImage, deleteBgImage, entryToUrl } from "./bgStore";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
+import ColorSwatchFilter from "./components/ColorSwatchFilter";
+import CollectionStats from "./components/CollectionStats";
 import CommentSection from "./components/CommentSection";
 import ProfileHeader from './components/ProfileHeader';
 import HubMediaActions from "./components/HubMediaActions";
@@ -17,6 +19,7 @@ import { ChatProvider, useChat } from "./components/chat/ChatProvider";
 import { ChatWidget } from "./components/chat/ChatWidget";
 import HubFeedView from "./components/HubFeedView";
 import { DEFAULT_EDITOR as IMPORTED_DEFAULT_EDITOR } from "./stores/useHubStore";
+import { useHubStore } from "./stores/useHubStore";
 import { registerServiceWorker } from "./lib/notifications";
 import { startOfflineSync } from "./lib/offlineMode";
 
@@ -49,6 +52,7 @@ function ChatBellButton({ onClick, t }: { onClick: () => void, t: any }) {
 interface ImageItem {
     src: string;
     thumb: string;
+    thumbSm: string;
     name: string;
     folder: string;
     bytes: number;
@@ -56,6 +60,8 @@ interface ImageItem {
     isVideo: boolean;
     duration?: number;
     color?: DominantColor;
+    width?: number;
+    height?: number;
 }
 
 const ITEMS_PER_PAGE_DESKTOP = 24;
@@ -109,14 +115,18 @@ function folderIcon(folder: string): string {
     return "📁";
 }
 
-function toThumb(secureUrl: string): string {
-    return secureUrl.replace("/upload/", "/upload/c_fill,w_400,h_400,f_auto,q_auto/");
+function toThumb(secureUrl: string, size = 400): string {
+    return secureUrl.replace("/upload/", `/upload/c_fill,w_${size},h_${size},f_auto,q_auto/`);
 }
 
-function toVideoThumb(secureUrl: string): string {
+function toThumbSm(secureUrl: string): string {
+    return secureUrl.replace("/upload/", "/upload/c_fill,w_200,h_200,f_auto,q_60/");
+}
+
+function toVideoThumb(secureUrl: string, size = 400): string {
     // Cloudinary: get poster frame from video by converting extension to .jpg
     return secureUrl
-        .replace("/video/upload/", "/video/upload/c_fill,w_400,h_400,f_jpg,q_auto/")
+        .replace("/video/upload/", `/video/upload/c_fill,w_${size},h_${size},f_jpg,q_auto/`)
         .replace(/\.[^.]+$/, ".jpg");
 }
 
@@ -399,99 +409,183 @@ const ImageCard = memo(function ImageCard({ img, t, lang, onOpen, isFav, onFav, 
 export default function CollectionPage() {
     const isMobile = useIsMobile();
     const itemsPerPage = isMobile ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE_DESKTOP;
-    const [lang, setLang] = useState<Lang>("en");
-    const [activeTab, setActiveTab] = useState("all");
-    const [currentPage, setCurrentPage] = useState(1);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [showLangMenu, setShowLangMenu] = useState(false);
-    const [showChatInbox, setShowChatInbox] = useState(false);
-    const [allImages, setAllImages] = useState<ImageItem[]>([]);
-    const [folders, setFolders] = useState<string[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [totalBytes, setTotalBytes] = useState(0);
-    const [toast, setToast] = useState<string | null>(null);
-    const [toastType, setToastType] = useState<"" | "col-toast-success" | "col-toast-error">("");
+
+    // ——— Zustand Store (replaces ~50 individual useState hooks) ———
+    const {
+        lang, setLang,
+        activeTab, setActiveTab,
+        currentPage, setCurrentPage,
+        searchQuery, setSearchQuery,
+        showLangMenu, setShowLangMenu,
+        showChatInbox, setShowChatInbox,
+        allImages, setAllImages,
+        folders, setFolders,
+        loading, setLoading,
+        totalBytes, setTotalBytes,
+        toast, setToast,
+        toastType, setToastType,
+        theme, setTheme,
+        favorites, setFavorites,
+        favoritesOrder, setFavoritesOrder,
+        headerHidden, setHeaderHidden,
+        showScrollTop, setShowScrollTop,
+        typeFilter, setTypeFilter,
+        colorFilter, setColorFilter,
+        sortBy, setSortBy,
+        downloadCounts, setDownloadCounts,
+        deferredPrompt, setDeferredPrompt,
+        showTabsMenu, setShowTabsMenu,
+        translatedNames, setTranslatedNames,
+        isMasonry, setIsMasonry,
+        gridCols, setGridCols,
+        showSortMenu, setShowSortMenu,
+        isInfinite, setIsInfinite,
+
+        // Lightbox
+        lightboxIndex, setLightboxIndex,
+        hubEditorOverride, setHubEditorOverride,
+        dragY, setDragY,
+        imgLoading, setImgLoading,
+        isSlideshow, setIsSlideshow,
+        editor, setEditor,
+        showEditor, setShowEditor,
+        showOriginal, setShowOriginal,
+        removingBg, setRemovingBg,
+        bgRemovedUrl, setBgRemovedUrl,
+        bgRemovedName, setBgRemovedName,
+        bgFailed, setBgFailed,
+        editorTab, setEditorTab,
+        showSharePanel, setShowSharePanel,
+        showQr, setShowQr,
+        teleLinkName, setTeleLinkName,
+        showTeleGuide, setShowTeleGuide,
+
+        // Hub Social
+        viewMode, setViewMode,
+        hubPosts, setHubPosts,
+        hubLoading, setHubLoading,
+        showCreatePost, setShowCreatePost,
+        hubDetailPost, setHubDetailPost,
+        showTipModal, setShowTipModal,
+        hubFeedTab, setHubFeedTab,
+        hubPage, setHubPage,
+        hubHasMore, setHubHasMore,
+        hubProfileFilter, setHubProfileFilter,
+        topCreators, setTopCreators,
+        hubLayout, setHubLayout,
+        hubSearch, setHubSearch,
+        hubLikeAnim, setHubLikeAnim,
+        hubBookmarks, setHubBookmarks,
+        showLikeList, setShowLikeList,
+        likeListData, setLikeListData,
+        hubMoreOpen, setHubMoreOpen,
+        shareMenuPostId, setShareMenuPostId,
+        showEditProfile, setShowEditProfile,
+        profileRefreshTrigger, setProfileRefreshTrigger,
+        hubProfileTab, setHubProfileTab,
+
+        // Inline comments
+        inlineCommentTexts, setInlineCommentTexts,
+        inlineCommentLoading, setInlineCommentLoading,
+        carouselIndices, setCarouselIndices,
+    } = useHubStore();
+
+    // ——— Local Refs (not suitable for global store) ———
     const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const [theme, setTheme] = useState<"dark" | "light">("dark");
-    const [favorites, setFavorites] = useState<Set<string>>(new Set());
-    const [favoritesOrder, setFavoritesOrder] = useState<string[]>([]);
-    const [headerHidden, setHeaderHidden] = useState(false);
-    const [showScrollTop, setShowScrollTop] = useState(false);
-    const [typeFilter, setTypeFilter] = useState<"all" | "images" | "videos">("all");
-    const [colorFilter, setColorFilter] = useState<DominantColor | "all">("all");
-    const [sortBy, setSortBy] = useState<"random" | "name" | "newest" | "size">("random");
-    const [downloadCounts, setDownloadCounts] = useState<Record<string, number>>({});
-    const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
-    const [showTabsMenu, setShowTabsMenu] = useState(false);
-    const [translatedNames, setTranslatedNames] = useState<Record<string, string>>({});
     const translationCache = useRef<Record<string, Record<string, string>>>({});
-    const [isMasonry, setIsMasonry] = useState(false);
-    const [gridCols, setGridCols] = useState(isMobile ? 3 : 5);
-    const [showSortMenu, setShowSortMenu] = useState(false);
     const sortTriggerRef = useRef<HTMLButtonElement>(null);
     const randomSeedRef = useRef(Math.random());
-    const [isInfinite, setIsInfinite] = useState(false);
-
-    // Lightbox state
-    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-    const [hubEditorOverride, setHubEditorOverride] = useState<{ src: string, name: string, isVideo: boolean, folder?: string, bytes?: number, duration?: number } | null>(null);
     const touchStartX = useRef(0);
     const touchStartY = useRef(0);
-    const [dragY, setDragY] = useState(0);
     const isDragging = useRef(false);
-    const [imgLoading, setImgLoading] = useState(false);
-    const [isSlideshow, setIsSlideshow] = useState(false);
-
-    const [editor, setEditor] = useState<EditorState>({ ...DEFAULT_EDITOR });
-    const [showEditor, setShowEditor] = useState(false);
-    const [showOriginal, setShowOriginal] = useState(false);
-    const [removingBg, setRemovingBg] = useState(false);
     const cancelBgRef = useRef(false);
-    const [bgRemovedUrl, setBgRemovedUrl] = useState<string | null>(null);
-    const [bgRemovedName, setBgRemovedName] = useState("");
-    const [bgFailed, setBgFailed] = useState(false);
-    const [editorTab, setEditorTab] = useState(0);
-    const [showSharePanel, setShowSharePanel] = useState(false);
-    const [showQr, setShowQr] = useState(false);
-    const [teleLinkName, setTeleLinkName] = useState("");
-    const [showTeleGuide, setShowTeleGuide] = useState(false);
     const qrCanvasRef = useRef<HTMLCanvasElement>(null);
-
-    // Sticky header
     const lastScrollY = useRef(0);
+    const hubLoadMoreRef = useRef<HTMLDivElement>(null);
+    const [showStats, setShowStats] = useState(false);
+
+    // ——— Lightbox Zoom State ———
+    const [zoomScale, setZoomScale] = useState(1);
+    const [zoomOffset, setZoomOffset] = useState({ x: 0, y: 0 });
+    const pinchStartDist = useRef(0);
+    const pinchStartScale = useRef(1);
+    const lastTapTime = useRef(0);
+    const panStartRef = useRef({ x: 0, y: 0 });
+    const panOffsetRef = useRef({ x: 0, y: 0 });
+
+    // Reset zoom on image change
+    useEffect(() => {
+        setZoomScale(1);
+        setZoomOffset({ x: 0, y: 0 });
+    }, [lightboxIndex]);
+
+    const handleLightboxTouchStart = useCallback((e: React.TouchEvent) => {
+        if (e.touches.length === 2) {
+            // Pinch start
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            pinchStartDist.current = Math.hypot(dx, dy);
+            pinchStartScale.current = zoomScale;
+            e.preventDefault();
+        } else if (e.touches.length === 1 && zoomScale > 1) {
+            // Pan start (only when zoomed)
+            panStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            panOffsetRef.current = { ...zoomOffset };
+        }
+    }, [zoomScale, zoomOffset]);
+
+    const handleLightboxTouchMove = useCallback((e: React.TouchEvent) => {
+        if (e.touches.length === 2 && pinchStartDist.current > 0) {
+            // Pinch move
+            const dx = e.touches[0].clientX - e.touches[1].clientX;
+            const dy = e.touches[0].clientY - e.touches[1].clientY;
+            const dist = Math.hypot(dx, dy);
+            const scale = Math.min(Math.max(pinchStartScale.current * (dist / pinchStartDist.current), 1), 5);
+            setZoomScale(scale);
+            e.preventDefault();
+        } else if (e.touches.length === 1 && zoomScale > 1) {
+            // Pan move
+            const dx = e.touches[0].clientX - panStartRef.current.x;
+            const dy = e.touches[0].clientY - panStartRef.current.y;
+            setZoomOffset({ x: panOffsetRef.current.x + dx, y: panOffsetRef.current.y + dy });
+            e.preventDefault();
+        }
+    }, [zoomScale]);
+
+    const handleLightboxTouchEnd = useCallback((e: React.TouchEvent) => {
+        pinchStartDist.current = 0;
+        // Double-tap detection
+        if (e.changedTouches.length === 1) {
+            const now = Date.now();
+            if (now - lastTapTime.current < 300) {
+                // Double-tap: toggle zoom
+                if (zoomScale > 1) {
+                    setZoomScale(1);
+                    setZoomOffset({ x: 0, y: 0 });
+                } else {
+                    setZoomScale(2.5);
+                }
+                lastTapTime.current = 0;
+            } else {
+                lastTapTime.current = now;
+            }
+        }
+        // Reset offset if zoom back to 1
+        if (zoomScale <= 1) {
+            setZoomOffset({ x: 0, y: 0 });
+        }
+    }, [zoomScale]);
+
+    // Fix gridCols for mobile (store defaults to 5, but mobile needs 3)
+    useEffect(() => {
+        if (isMobile && gridCols === 5) setGridCols(3);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const t = T[lang];
 
-    // ——— Hub Social Feed State ———
+    // ——— Hub Social Feed ———
     const { address, isConnected } = useAccount();
-    const [viewMode, setViewMode] = useState<"gallery" | "hub">("gallery");
-    const [hubPosts, setHubPosts] = useState<any[]>([]);
-    const [hubLoading, setHubLoading] = useState(false);
-    const [showCreatePost, setShowCreatePost] = useState(false);
-    const [hubDetailPost, setHubDetailPost] = useState<any | null>(null);
-    const [showTipModal, setShowTipModal] = useState<{ postId: number; creatorAddress: string; creatorName: string } | null>(null);
-    const [hubFeedTab, setHubFeedTab] = useState<"newest" | "trending" | "top_tipped" | "mine" | "following" | "mining">("newest");
-    const [hubPage, setHubPage] = useState(0);
-    const [hubHasMore, setHubHasMore] = useState(true);
-    const [hubProfileFilter, setHubProfileFilter] = useState<string | null>(null);
-    const [topCreators, setTopCreators] = useState<any[]>([]);
-    const hubLoadMoreRef = useRef<HTMLDivElement>(null);
-    const [hubLayout, setHubLayout] = useState<'grid' | 'feed'>('grid');
-    const [hubSearch, setHubSearch] = useState('');
-    const [hubLikeAnim, setHubLikeAnim] = useState<number | null>(null);
-    const [hubBookmarks, setHubBookmarks] = useState<Set<number>>(new Set());
-    const [showLikeList, setShowLikeList] = useState<number | null>(null);
-    const [likeListData, setLikeListData] = useState<any[]>([]);
-    const [hubMoreOpen, setHubMoreOpen] = useState<number | null>(null);
-    const [shareMenuPostId, setShareMenuPostId] = useState<number | null>(null);
 
-    // Phase 4 Upgrades
-    const [inlineCommentTexts, setInlineCommentTexts] = useState<Record<number, string>>({});
-    const [inlineCommentLoading, setInlineCommentLoading] = useState<Record<number, boolean>>({});
-    const [carouselIndices, setCarouselIndices] = useState<Record<number, number>>({});
-
-    const [showEditProfile, setShowEditProfile] = useState(false);
-    const [profileRefreshTrigger, setProfileRefreshTrigger] = useState(0);
     const openHubPost = (post: any) => {
         setHubDetailPost(post);
     };
@@ -513,7 +607,6 @@ export default function CollectionPage() {
             console.error("Failed to fetch post by ID:", err);
         }
     };
-    const [hubProfileTab, setHubProfileTab] = useState<"posts" | "liked" | "saved">("posts");
 
     // Fetch hub posts (with pagination)
     const fetchHubPosts = useCallback(async (reset = true) => {
@@ -700,17 +793,20 @@ export default function CollectionPage() {
                 if (data.images) {
                     const items: ImageItem[] = data.images
                         .filter((img: { folder: string }) => !img.folder.endsWith("/a_prompt"))
-                        .map((img: { public_id: string; secure_url: string; folder: string; bytes: number; resource_type?: string; duration?: number }) => {
+                        .map((img: { public_id: string; secure_url: string; folder: string; bytes: number; resource_type?: string; duration?: number; width?: number; height?: number }) => {
                             const isVideo = img.resource_type === "video";
                             return {
                                 src: img.secure_url,
                                 thumb: isVideo ? toVideoThumb(img.secure_url) : toThumb(img.secure_url),
+                                thumbSm: isVideo ? toVideoThumb(img.secure_url, 200) : toThumbSm(img.secure_url),
                                 name: publicIdToName(img.public_id),
                                 folder: img.folder,
                                 bytes: img.bytes || 0,
                                 type: "sticker" as const,
                                 isVideo,
                                 duration: img.duration,
+                                width: img.width,
+                                height: img.height,
                             };
                         });
                     setAllImages(items);
@@ -2019,7 +2115,16 @@ export default function CollectionPage() {
                                     <span className="col-sort-arrow">{showSortMenu ? "▲" : "▼"}</span>
                                 </button>
                             </div>
+                            <button className="col-sort-trigger" onClick={() => setShowStats(true)} title="Statistics">
+                                📊
+                            </button>
                         </div>
+                        {/* Color Swatch Filter */}
+                        <ColorSwatchFilter
+                            active={colorFilter}
+                            onChange={(color) => { setColorFilter(color as any); setCurrentPage(1); }}
+                            counts={allImages.reduce((acc, img) => { if (img.color) acc[img.color] = (acc[img.color] || 0) + 1; return acc; }, {} as Record<string, number>)}
+                        />
                     </section>
 
                     {/* Folder Tabs — collapsible on mobile */}
@@ -2239,7 +2344,13 @@ export default function CollectionPage() {
                             </button>
 
                             <div className="col-lightbox-inner" onClick={(e) => e.stopPropagation()} style={lightboxDragStyle}>
-                                <div className="col-lightbox-img-wrap">
+                                <div
+                                    className="col-lightbox-img-wrap"
+                                    onTouchStart={handleLightboxTouchStart}
+                                    onTouchMove={handleLightboxTouchMove}
+                                    onTouchEnd={handleLightboxTouchEnd}
+                                    style={{ touchAction: zoomScale > 1 ? "none" : "auto" }}
+                                >
                                     {imgLoading && <div className="col-lightbox-loader"><div className="col-infinite-spinner" /></div>}
                                     {currentLightboxImage.isVideo ? (
                                         <video
@@ -2258,7 +2369,8 @@ export default function CollectionPage() {
                                             onLoad={() => setImgLoading(false)}
                                             style={{
                                                 filter: showOriginal ? "none" : editorFilterCSS(editor),
-                                                transform: showOriginal ? "none" : editorTransformCSS(editor),
+                                                transform: `${showOriginal ? "" : editorTransformCSS(editor)} scale(${zoomScale}) translate(${zoomOffset.x / zoomScale}px, ${zoomOffset.y / zoomScale}px)`,
+                                                transition: zoomScale === 1 ? "transform 0.3s ease" : "none",
                                             }}
                                         />
                                     )}
@@ -2653,6 +2765,13 @@ export default function CollectionPage() {
                         onClose={() => setShowChatInbox(false)}
                         t={t}
                     />
+                    {showStats && (
+                        <CollectionStats
+                            images={allImages}
+                            downloadCounts={downloadCounts}
+                            onClose={() => setShowStats(false)}
+                        />
+                    )}
                 </div>
             </>
         </ChatProvider>
