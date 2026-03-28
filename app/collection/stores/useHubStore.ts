@@ -14,13 +14,11 @@ export interface ImageItem {
     type: "sticker" | "background";
     isVideo: boolean;
     duration?: number;
-    color?: DominantColor;
     width?: number;
     height?: number;
 }
 
-export const COLOR_NAMES = ["red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink", "white", "black"] as const;
-export type DominantColor = typeof COLOR_NAMES[number];
+
 
 export type ImageFormat = "png" | "jpeg" | "webp";
 
@@ -75,7 +73,7 @@ interface HubStoreState {
     currentPage: number;
     searchQuery: string;
     typeFilter: "all" | "images" | "videos";
-    colorFilter: DominantColor | "all";
+
     sortBy: "random" | "name" | "newest" | "size";
     favorites: Set<string>;
     favoritesOrder: string[];
@@ -156,7 +154,7 @@ interface HubStoreState {
     setCurrentPage: (fn: number | ((prev: number) => number)) => void;
     setSearchQuery: (query: string) => void;
     setTypeFilter: (filter: "all" | "images" | "videos") => void;
-    setColorFilter: (filter: DominantColor | "all") => void;
+
     setSortBy: (sort: "random" | "name" | "newest" | "size") => void;
     setFavorites: (fn: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
     setFavoritesOrder: (fn: string[] | ((prev: string[]) => string[])) => void;
@@ -236,7 +234,7 @@ export const useHubStore = create<HubStoreState>((set) => ({
     currentPage: 1,
     searchQuery: "",
     typeFilter: "all",
-    colorFilter: "all",
+
     sortBy: "random",
     favorites: new Set(),
     favoritesOrder: [],
@@ -317,7 +315,7 @@ export const useHubStore = create<HubStoreState>((set) => ({
     setCurrentPage: (fn) => set((state) => ({ currentPage: typeof fn === "function" ? fn(state.currentPage) : fn })),
     setSearchQuery: (searchQuery) => set({ searchQuery }),
     setTypeFilter: (typeFilter) => set({ typeFilter }),
-    setColorFilter: (colorFilter) => set({ colorFilter }),
+
     setSortBy: (sortBy) => set({ sortBy }),
     setFavorites: (fn) => set((state) => ({ favorites: typeof fn === "function" ? fn(state.favorites) : fn })),
     setFavoritesOrder: (fn) => set((state) => ({ favoritesOrder: typeof fn === "function" ? fn(state.favoritesOrder) : fn })),

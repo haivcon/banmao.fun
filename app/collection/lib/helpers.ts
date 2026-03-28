@@ -1,5 +1,5 @@
 // Shared helper functions for the Collection page
-import type { EditorState, ImageItem, DominantColor } from "../stores/useHubStore";
+import type { EditorState, ImageItem } from "../stores/useHubStore";
 
 /* ===================== NAME / LABEL HELPERS ===================== */
 
@@ -154,32 +154,3 @@ export async function downloadImageBlob(src: string, name: string) {
     }
 }
 
-/* ===================== COLOR FILTER ===================== */
-
-export function determineColorCategory(r: number, g: number, b: number): DominantColor {
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    const d = max - min;
-    const l = (max + min) / 2;
-
-    if (l < 40) return "black";
-    if (l > 220 && d < 20) return "white";
-    if (d < 30) return "white";
-
-    let h = 0;
-    if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
-    else if (max === g) h = (b - r) / d + 2;
-    else if (max === b) h = (r - g) / d + 4;
-    h /= 6;
-    h = h * 360;
-
-    if (h < 15 || h >= 345) return "red";
-    if (h >= 15 && h < 45) return "orange";
-    if (h >= 45 && h < 75) return "yellow";
-    if (h >= 75 && h < 165) return "green";
-    if (h >= 165 && h < 195) return "cyan";
-    if (h >= 195 && h < 265) return "blue";
-    if (h >= 265 && h < 315) return "purple";
-    if (h >= 315 && h < 345) return "pink";
-
-    return "white";
-}

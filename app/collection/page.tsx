@@ -9,7 +9,7 @@ import { translateName, reverseTranslate, translateFolder, detectBrowserLang } f
 import { saveBgImage, getBgImage, deleteBgImage, entryToUrl } from "./bgStore";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount } from "wagmi";
-import ColorSwatchFilter from "./components/ColorSwatchFilter";
+
 import CollectionStats from "./components/CollectionStats";
 import CommentSection from "./components/CommentSection";
 import ProfileHeader from './components/ProfileHeader';
@@ -59,7 +59,6 @@ interface ImageItem {
     type: "sticker" | "background";
     isVideo: boolean;
     duration?: number;
-    color?: DominantColor;
     width?: number;
     height?: number;
 }
@@ -266,40 +265,7 @@ async function downloadImageBlob(src: string, name: string): Promise<boolean> {
     }
 }
 
-/* ===================== COLOR FILTER LOGIC ===================== */
-const COLOR_NAMES = ["red", "orange", "yellow", "green", "cyan", "blue", "purple", "pink", "white", "black"] as const;
-type DominantColor = typeof COLOR_NAMES[number];
 
-function determineColorCategory(r: number, g: number, b: number): DominantColor {
-    // Simple HSV/HSL approximation or thresholding
-    const max = Math.max(r, g, b), min = Math.min(r, g, b);
-    const d = max - min;
-    const l = (max + min) / 2;
-
-    // Grayscale checks
-    if (l < 40) return "black";
-    if (l > 220 && d < 20) return "white";
-    if (d < 30) return "white"; // Low saturation is generally white/gray in our vibrant sticker context
-
-    let h = 0;
-    if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
-    else if (max === g) h = (b - r) / d + 2;
-    else if (max === b) h = (r - g) / d + 4;
-    h /= 6;
-
-    h = h * 360; // Hue 0-360
-
-    if (h < 15 || h >= 345) return "red";
-    if (h >= 15 && h < 45) return "orange";
-    if (h >= 45 && h < 75) return "yellow";
-    if (h >= 75 && h < 165) return "green";
-    if (h >= 165 && h < 195) return "cyan";
-    if (h >= 195 && h < 265) return "blue";
-    if (h >= 265 && h < 315) return "purple";
-    if (h >= 315 && h < 345) return "pink";
-
-    return "white"; // Fallback
-}
 
 /* ===================== SKELETON CARD ===================== */
 
@@ -430,7 +396,7 @@ export default function CollectionPage() {
         headerHidden, setHeaderHidden,
         showScrollTop, setShowScrollTop,
         typeFilter, setTypeFilter,
-        colorFilter, setColorFilter,
+
         sortBy, setSortBy,
         downloadCounts, setDownloadCounts,
         deferredPrompt, setDeferredPrompt,
@@ -813,68 +779,13 @@ export default function CollectionPage() {
                     setFolders([...new Set(items.map((i: ImageItem) => i.folder))].sort());
                     setTotalBytes(items.reduce((sum: number, i: ImageItem) => sum + i.bytes, 0));
 
-                    // Background color extraction for Color Filter UI
-                    setTimeout(() => extractColors(items), 1000);
                 }
             })
             .catch((err) => console.error("Failed to fetch images:", err))
             .finally(() => setLoading(false));
     }, []);
 
-    const extractColors = useCallback(async (items: ImageItem[]) => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        canvas.width = 10; canvas.height = 10; // small for average color
 
-        const newItems = [...items];
-        let changed = false;
-
-        for (let i = 0; i < newItems.length; i++) {
-            const item = newItems[i];
-            if (item.isVideo || item.color) continue;
-
-            try {
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.onload = () => {
-                    try {
-                        ctx.clearRect(0, 0, 10, 10);
-                        ctx.drawImage(img, 0, 0, 10, 10);
-                        const data = ctx.getImageData(0, 0, 10, 10).data;
-
-                        let r = 0, g = 0, b = 0, count = 0;
-                        for (let j = 0; j < data.length; j += 4) {
-                            if (data[j + 3] > 50) { // ignore transparent
-                                r += data[j]; g += data[j + 1]; b += data[j + 2]; count++;
-                            }
-                        }
-
-                        if (count > 0) {
-                            item.color = determineColorCategory(Math.round(r / count), Math.round(g / count), Math.round(b / count));
-                            changed = true;
-                        }
-                    } catch (e) { /* ignore single failure */ }
-                };
-                img.onerror = () => { /* ignore single failure */ };
-                img.src = item.thumb.replace(/w_\d+,h_\d+/, "w_10,h_10"); // fetch tiny 10x10 version for speed
-
-                await new Promise<void>((resolve) => {
-                    img.onload = () => resolve();
-                    img.onerror = () => resolve(); // Resolve even on error to continue loop
-                });
-            } catch (e) { /* ignore single failure */ }
-
-            // Batch update state every 10 images to prevent blocking UI too long
-            if (changed && i % 10 === 0) {
-                setAllImages([...newItems]);
-                changed = false;
-            }
-        }
-
-        // Final update
-        if (changed) setAllImages([...newItems]);
-    }, []);
 
     // ——— Deep Link: auto-open lightbox from URL param ———
     useEffect(() => {
@@ -899,7 +810,6 @@ export default function CollectionPage() {
         const ptabParam = params.get("ptab") as typeof hubProfileTab;
         const qParam = params.get("q");
         const sortParam = params.get("sort") as typeof sortBy;
-        const colorParam = params.get("color") as typeof colorFilter;
 
         // 1. Set View Mode
         let currentView = viewMode;
@@ -921,7 +831,6 @@ export default function CollectionPage() {
             setHubSearch(qParam);
         }
         if (sortParam) setSortBy(sortParam);
-        if (colorParam) setColorFilter(colorParam);
 
         // 4. Handle ?profile= deep link
         if (profileParam && !hubProfileFilter) {
@@ -989,12 +898,12 @@ export default function CollectionPage() {
             updateParam('tab', hubFeedTab !== 'newest' ? hubFeedTab : null);
             updateParam('q', hubSearch);
             updateParam('sort', null);
-            updateParam('color', null);
+
         } else {
             updateParam('tab', activeTab !== 'all' ? activeTab : null);
             updateParam('q', searchQuery);
             updateParam('sort', sortBy !== 'random' ? sortBy : null);
-            updateParam('color', colorFilter !== 'all' ? colorFilter : null);
+
         }
 
         // Sync Profile Data
@@ -1011,7 +920,7 @@ export default function CollectionPage() {
         if (changed) {
             window.history.pushState({}, '', url);
         }
-    }, [viewMode, hubFeedTab, activeTab, hubProfileFilter, hubProfileTab, searchQuery, hubSearch, hubDetailPost, sortBy, colorFilter]);
+    }, [viewMode, hubFeedTab, activeTab, hubProfileFilter, hubProfileTab, searchQuery, hubSearch, hubDetailPost, sortBy]);
 
     // ——— Handle browser back/forward button ———
     useEffect(() => {
@@ -1047,7 +956,7 @@ export default function CollectionPage() {
             // Sync gallery filters
             if (vParam !== 'hub') {
                 setSortBy((params.get('sort') as any) || 'random');
-                setColorFilter((params.get('color') as any) || 'all');
+
             }
 
             // Sync post detail
@@ -1187,8 +1096,7 @@ export default function CollectionPage() {
         if (typeFilter === "images") filtered = filtered.filter(i => !i.isVideo);
         if (typeFilter === "videos") filtered = filtered.filter(i => i.isVideo);
 
-        // Color filter
-        if (colorFilter !== "all") filtered = filtered.filter(i => i.color === colorFilter);
+
 
         // Search (cross-language)
         if (searchQuery.trim()) {
@@ -1232,7 +1140,7 @@ export default function CollectionPage() {
             }
         }
         return filtered;
-    }, [allImages, activeTab, searchQuery, favorites, favoritesOrder, typeFilter, colorFilter, sortBy]);
+    }, [allImages, activeTab, searchQuery, favorites, favoritesOrder, typeFilter, sortBy]);
 
     // ——— Pagination / Infinite Scroll ———
     const totalPages = Math.ceil(filteredImages.length / itemsPerPage);
@@ -2119,12 +2027,7 @@ export default function CollectionPage() {
                                 📊
                             </button>
                         </div>
-                        {/* Color Swatch Filter */}
-                        <ColorSwatchFilter
-                            active={colorFilter}
-                            onChange={(color) => { setColorFilter(color as any); setCurrentPage(1); }}
-                            counts={allImages.reduce((acc, img) => { if (img.color) acc[img.color] = (acc[img.color] || 0) + 1; return acc; }, {} as Record<string, number>)}
-                        />
+
                     </section>
 
                     {/* Folder Tabs — collapsible on mobile */}
@@ -2330,15 +2233,8 @@ export default function CollectionPage() {
 
                             {/* Slideshow Toggle */}
                             <button
-                                className="col-lightbox-slideshow"
+                                className={`col-lightbox-slideshow ${isSlideshow ? "col-lightbox-slideshow-active" : ""}`}
                                 onClick={(e) => { e.stopPropagation(); setIsSlideshow(!isSlideshow); }}
-                                style={{
-                                    position: "absolute", top: "20px", right: "70px", zIndex: 61,
-                                    background: isSlideshow ? "var(--col-pink)" : "rgba(255, 255, 255, 0.1)",
-                                    border: "none", color: "#fff", borderRadius: "8px", padding: "6px 12px",
-                                    cursor: "pointer", fontSize: "14px", display: "flex", alignItems: "center", gap: "6px",
-                                    backdropFilter: "blur(8px)"
-                                }}
                             >
                                 {isSlideshow ? "⏸ Pause" : "▶ Play"}
                             </button>
@@ -2403,7 +2299,7 @@ export default function CollectionPage() {
 
                                     {/* Action buttons */}
                                     <div className="col-sheet-actions">
-                                        <button className={`col-pill-btn col-pill-pink ${lbDownloading}`} onClick={async () => {
+                                        <button className={`col-pill-btn col-pill-download ${lbDownloading}`} onClick={async () => {
                                             if (lbDownloading === "downloading") return;
                                             setLbDownloading("downloading");
                                             incrementDownloadCount(currentLightboxImage.name);
@@ -2770,6 +2666,9 @@ export default function CollectionPage() {
                             images={allImages}
                             downloadCounts={downloadCounts}
                             onClose={() => setShowStats(false)}
+                            t={t}
+                            lang={lang}
+                            onDownload={incrementDownloadCount}
                         />
                     )}
                 </div>

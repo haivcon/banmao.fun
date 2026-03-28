@@ -106,6 +106,62 @@ body::-webkit-scrollbar {
     cursor: wait;
 }
 
+/* ========== DOWNLOAD BUTTON — PROMINENT ========== */
+.col-pill-download {
+    padding: 10px 26px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(135deg, #8b5cf6, #ec4899);
+    border: 1px solid rgba(139, 92, 246, 0.4);
+    box-shadow: 0 0 18px rgba(139, 92, 246, 0.3), 0 4px 12px rgba(236, 72, 153, 0.2);
+    letter-spacing: 0.3px;
+    position: relative;
+    overflow: hidden;
+}
+
+.col-pill-download::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.12) 50%, transparent 70%);
+    animation: colDlShine 2.5s ease-in-out infinite;
+}
+
+@keyframes colDlShine {
+    0% { transform: translateX(-100%) rotate(25deg); }
+    100% { transform: translateX(100%) rotate(25deg); }
+}
+
+.col-pill-download:hover {
+    background: linear-gradient(135deg, #7c3aed, #db2777);
+    box-shadow: 0 0 28px rgba(139, 92, 246, 0.45), 0 6px 20px rgba(236, 72, 153, 0.3);
+    transform: translateY(-2px) scale(1.03);
+}
+
+.col-pill-download:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.col-pill-download.downloading {
+    background: linear-gradient(135deg, #6d28d9, #be185d);
+    animation: colDlPulse 1s ease-in-out infinite;
+}
+
+@keyframes colDlPulse {
+    0%, 100% { box-shadow: 0 0 18px rgba(139, 92, 246, 0.3); }
+    50% { box-shadow: 0 0 30px rgba(139, 92, 246, 0.5); }
+}
+
+.col-pill-download.dl-success {
+    background: linear-gradient(135deg, #22c55e, #10b981);
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+}
+
+
 /* ========== STICKY HEADER ========== */
 .col-header-sticky {
     position: fixed;
@@ -1482,6 +1538,33 @@ body::-webkit-scrollbar {
 
 .col-lightbox-close:active {
     transform: scale(0.9);
+}
+
+.col-lightbox-slideshow {
+    position: absolute;
+    top: 20px;
+    right: 70px;
+    z-index: 61;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    backdrop-filter: blur(8px);
+    transition: all 0.25s ease;
+}
+
+.col-lightbox-slideshow:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.col-lightbox-slideshow-active {
+    background: var(--col-pink, #f472b6);
 }
 
 .col-lightbox-img {
@@ -3219,6 +3302,17 @@ body::-webkit-scrollbar {
     box-shadow: 0 0 16px rgba(16, 185, 129, 0.12);
 }
 
+.col-light .col-pill-download {
+    background: linear-gradient(135deg, #ec4899, #db2777);
+    border-color: rgba(236, 72, 153, 0.3);
+    box-shadow: 0 0 18px rgba(236, 72, 153, 0.2), 0 4px 12px rgba(219, 39, 119, 0.15);
+}
+
+.col-light .col-pill-download:hover {
+    background: linear-gradient(135deg, #db2777, #be185d);
+    box-shadow: 0 0 28px rgba(236, 72, 153, 0.35), 0 6px 20px rgba(219, 39, 119, 0.2);
+}
+
 .col-light .col-lang-dropdown {
     background: rgba(255, 255, 255, 0.96);
     border-color: rgba(244, 114, 182, 0.2);
@@ -3429,6 +3523,23 @@ body::-webkit-scrollbar {
     background: rgba(244, 114, 182, 0.1);
     border-color: rgba(244, 114, 182, 0.2);
     color: #333;
+}
+
+.col-light .col-lightbox-slideshow {
+    background: rgba(0, 0, 0, 0.06);
+    color: #333;
+    border: 1px solid rgba(244, 114, 182, 0.2);
+}
+
+.col-light .col-lightbox-slideshow:hover {
+    background: rgba(244, 114, 182, 0.12);
+    color: #db2777;
+}
+
+.col-light .col-lightbox-slideshow-active {
+    background: #f472b6;
+    color: #fff;
+    border-color: #f472b6;
 }
 
 .col-light .col-lightbox-zone-icon {
@@ -3755,70 +3866,8 @@ body::-webkit-scrollbar {
     opacity: 0.4;
 }
 
-/* ========== COLOR SWATCH FILTER ========== */
-.col-color-swatches {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    padding: 0 4px;
-    flex-wrap: wrap;
-}
 
-.col-color-swatch {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    flex-shrink: 0;
-}
 
-.col-color-swatch:hover {
-    transform: scale(1.2);
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.2);
-}
-
-.col-color-swatch.active {
-    border-color: #fff;
-    transform: scale(1.25);
-    box-shadow: 0 0 16px rgba(139, 92, 246, 0.5);
-}
-
-.col-color-swatch-all {
-    background: conic-gradient(red, orange, yellow, green, cyan, blue, purple, red);
-}
-
-.col-color-swatch-count {
-    position: absolute;
-    top: -6px;
-    right: -6px;
-    background: rgba(139, 92, 246, 0.9);
-    color: #fff;
-    font-size: 9px;
-    font-weight: 700;
-    padding: 1px 4px;
-    border-radius: 8px;
-    min-width: 16px;
-    text-align: center;
-    pointer-events: none;
-}
-
-.col-light .col-color-swatch.active {
-    border-color: #333;
-    box-shadow: 0 0 16px rgba(139, 92, 246, 0.3);
-}
-
-@media (max-width: 768px) {
-    .col-color-swatch {
-        width: 24px;
-        height: 24px;
-    }
-    .col-color-swatches {
-        gap: 6px;
-    }
-}
 
 /* ========== STATISTICS DASHBOARD ========== */
 .col-stats-overlay {
@@ -3930,6 +3979,13 @@ body::-webkit-scrollbar {
     flex: 1;
 }
 
+.col-stats-legend-scroll {
+    max-height: 360px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding-right: 4px;
+}
+
 .col-stats-legend-item {
     display: flex;
     align-items: center;
@@ -4004,7 +4060,285 @@ body::-webkit-scrollbar {
 
 @media (max-width: 768px) {
     .col-stats-cards { grid-template-columns: repeat(2, 1fr); }
+    .col-stats-cards-5 { grid-template-columns: repeat(2, 1fr); }
     .col-stats-pie-row { flex-direction: column; align-items: center; }
     .col-stats-pie { width: 120px; height: 120px; }
     .col-stats-modal { padding: 20px; }
+}
+
+/* ========== STATS — 5-column grid for video duration card ========== */
+.col-stats-cards-5 {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+/* ========== STATS — Animated Entry ========== */
+@keyframes colStatsSlideUp {
+    from { opacity: 0; transform: translateY(30px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.col-stats-animated {
+    animation: colStatsSlideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ========== STATS — Card Stagger Animation ========== */
+@keyframes colStatCardPop {
+    from { opacity: 0; transform: translateY(16px) scale(0.92); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.col-stat-card-anim {
+    animation: colStatCardPop 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ========== STATS — Percentage Badge ========== */
+.col-stats-legend-pct {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+    min-width: 38px;
+    text-align: right;
+}
+
+/* ========== STATS — Bar Transition ========== */
+.col-stats-bar-fill {
+    transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ========== STATS — LIGHT MODE ========== */
+.col-light .col-stats-overlay {
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.col-light .col-stats-modal {
+    background: rgba(255, 255, 255, 0.96);
+    border-color: rgba(244, 114, 182, 0.2);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1), 0 0 40px rgba(244, 114, 182, 0.08);
+}
+
+.col-light .col-stats-header h2 {
+    color: #1a1a2e;
+}
+
+.col-light .col-stats-close {
+    background: rgba(0, 0, 0, 0.05);
+    color: #333;
+}
+
+.col-light .col-stats-close:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+.col-light .col-stat-card {
+    background: rgba(244, 114, 182, 0.04);
+    border-color: rgba(244, 114, 182, 0.12);
+}
+
+.col-light .col-stat-value {
+    background: linear-gradient(135deg, #db2777, #be185d);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.col-light .col-stat-label {
+    color: rgba(0, 0, 0, 0.45);
+}
+
+.col-light .col-stats-section h3 {
+    color: #1a1a2e;
+}
+
+.col-light .col-stats-legend-name {
+    color: rgba(0, 0, 0, 0.7);
+}
+
+.col-light .col-stats-legend-count {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.col-light .col-stats-legend-pct {
+    color: rgba(0, 0, 0, 0.35);
+}
+
+.col-light .col-stats-bar-name {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.col-light .col-stats-bar-track {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.col-light .col-stats-bar-value {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+/* ========== STATS — Clickable Legend ========== */
+.col-stats-legend-clickable {
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 4px 6px;
+    margin: -4px -6px;
+    transition: background 0.2s ease;
+}
+
+.col-stats-legend-clickable:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.col-stats-legend-active {
+    background: rgba(139, 92, 246, 0.1) !important;
+}
+
+.col-stats-legend-arrow {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.35);
+    margin-left: 4px;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+/* ========== STATS — Folder Preview Grid ========== */
+@keyframes colFolderSlideDown {
+    from { opacity: 0; max-height: 0; }
+    to { opacity: 1; max-height: 400px; }
+}
+
+.col-stats-folder-preview {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+    padding: 10px 0 10px 18px;
+    margin-top: 4px;
+    margin-bottom: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    animation: colFolderSlideDown 0.3s ease both;
+    border-left: 2px solid rgba(139, 92, 246, 0.2);
+}
+
+.col-stats-preview-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+    border-radius: 10px;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.2s ease;
+}
+
+.col-stats-preview-item:hover {
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.25);
+    transform: translateY(-2px);
+}
+
+.col-stats-preview-img {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.col-stats-preview-name {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+    line-height: 1.2;
+}
+
+.col-stats-preview-dl {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(139, 92, 246, 0.7);
+    color: #fff;
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    transform: scale(0.8);
+}
+
+.col-stats-preview-item:hover .col-stats-preview-dl {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.col-stats-preview-dl:hover {
+    background: rgba(139, 92, 246, 1);
+    transform: scale(1.1) !important;
+}
+
+.col-stats-preview-more {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    padding: 6px;
+    font-style: italic;
+}
+
+/* ========== STATS FOLDER PREVIEW — Light Mode ========== */
+.col-light .col-stats-legend-clickable:hover {
+    background: rgba(244, 114, 182, 0.06);
+}
+
+.col-light .col-stats-legend-active {
+    background: rgba(244, 114, 182, 0.1) !important;
+}
+
+.col-light .col-stats-legend-arrow {
+    color: rgba(0, 0, 0, 0.3);
+}
+
+.col-light .col-stats-folder-preview {
+    border-left-color: rgba(244, 114, 182, 0.2);
+}
+
+.col-light .col-stats-preview-item {
+    background: rgba(244, 114, 182, 0.03);
+    border-color: rgba(244, 114, 182, 0.1);
+}
+
+.col-light .col-stats-preview-item:hover {
+    background: rgba(244, 114, 182, 0.1);
+    border-color: rgba(244, 114, 182, 0.25);
+}
+
+.col-light .col-stats-preview-img {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.col-light .col-stats-preview-name {
+    color: rgba(0, 0, 0, 0.55);
+}
+
+.col-light .col-stats-preview-dl {
+    background: rgba(219, 39, 119, 0.7);
+}
+
+.col-light .col-stats-preview-dl:hover {
+    background: rgba(219, 39, 119, 1);
+}
+
+.col-light .col-stats-preview-more {
+    color: rgba(0, 0, 0, 0.35);
 }
