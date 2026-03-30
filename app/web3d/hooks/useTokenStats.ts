@@ -1,4 +1,5 @@
 // Custom hook to fetch token stats from OKX API
+// Now also fetches advanced info (top10 holders, LP burned, risk, tags)
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -11,8 +12,10 @@ interface TokenStats {
     circSupply: string;
     volume24H: string;
     volume1H: string;
+    volume4H?: string;
     priceChange24H: string;
     priceChange1H: string;
+    priceChange4H?: string;
     priceChange5M: string;
     maxPrice: string;
     minPrice: string;
@@ -23,17 +26,40 @@ interface TokenStats {
     error?: string;
 }
 
+export interface AdvancedInfo {
+    top10HoldPercent: string;
+    lpBurnedPercent: string;
+    riskControlLevel: string;
+    tokenTags: string[];
+    devHoldingPercent: string;
+    bundleHoldingPercent: string;
+    suspiciousHoldingPercent: string;
+    sniperHoldingPercent: string;
+    creatorAddress: string;
+    createTime: string;
+    totalFee: string;
+}
+
 interface UseTokenStatsReturn {
     stats: TokenStats | null;
+    advancedInfo: AdvancedInfo | null;
     formattedStats: {
         marketCap: string;
         circSupply: string;
         holders: string;
         volume24H: string;
+        volume1H: string;
+        volume4H: string;
         priceChange24H: string;
+        priceChange4H: string;
         liquidity: string;
         txs24H: string;
         tradeNum: string;
+        maxPrice: string;
+        minPrice: string;
+        top10HoldPercent: string;
+        lpBurnedPercent: string;
+        riskLevel: string;
     };
     isLoading: boolean;
     error: string | null;
@@ -86,6 +112,16 @@ function formatNumber(value: string | number): string {
     });
 }
 
+// Format USD price
+function formatPrice(value: string): string {
+    const num = parseFloat(value);
+    if (isNaN(num) || num === 0) return "$0";
+    if (num < 0.00001) return `$${num.toExponential(2)}`;
+    if (num < 0.01) return `$${num.toFixed(6)}`;
+    if (num < 1) return `$${num.toFixed(4)}`;
+    return `$${formatNumber(num)}`;
+}
+
 // Format percentage
 function formatPercent(value: string): string {
     const num = parseFloat(value);
@@ -94,8 +130,21 @@ function formatPercent(value: string): string {
     return `${prefix}${num.toFixed(2)}%`;
 }
 
+// Map risk level number to label
+function getRiskLabel(level: string): string {
+    switch (level) {
+        case "1": return "🟢 Low";
+        case "2": return "🟡 Medium";
+        case "3": return "🟠 Med-High";
+        case "4": return "🔴 High";
+        case "5": return "🔴 High";
+        default: return "⚪ N/A";
+    }
+}
+
 export function useTokenStats(refreshInterval = 60000): UseTokenStatsReturn {
     const [stats, setStats] = useState<TokenStats | null>(null);
+    const [advancedInfo, setAdvancedInfo] = useState<AdvancedInfo | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -158,22 +207,43 @@ export function useTokenStats(refreshInterval = 60000): UseTokenStatsReturn {
         }
     }, []);
 
+    // Fetch advanced info (less frequently)
+    const fetchAdvancedInfo = useCallback(async () => {
+        try {
+            const response = await fetch("/api/okx/advanced-info");
+            if (!response.ok) return;
+
+            const result = await response.json();
+            if (result.success && result.data) {
+                setAdvancedInfo(result.data);
+            }
+        } catch (err) {
+            console.error("[useTokenStats] Advanced info error:", err);
+        }
+    }, []);
+
     useEffect(() => {
         let isMounted = true;
 
         // Initial fetch
         fetchStats();
+        fetchAdvancedInfo();
 
-        // Periodic refresh
-        const interval = setInterval(() => {
+        // Periodic refresh - stats every refreshInterval, advanced info every 5 minutes
+        const statsInterval = setInterval(() => {
             if (isMounted) fetchStats();
         }, refreshInterval);
 
+        const advancedInterval = setInterval(() => {
+            if (isMounted) fetchAdvancedInfo();
+        }, 300000); // 5 minutes
+
         return () => {
             isMounted = false;
-            clearInterval(interval);
+            clearInterval(statsInterval);
+            clearInterval(advancedInterval);
         };
-    }, [fetchStats, refreshInterval]);
+    }, [fetchStats, fetchAdvancedInfo, refreshInterval]);
 
     // Get holders value - prefer valid API, then cached, then default
     const getHoldersValue = (): string => {
@@ -189,14 +259,23 @@ export function useTokenStats(refreshInterval = 60000): UseTokenStatsReturn {
         circSupply: stats ? formatNumber(stats.circSupply) : "0",
         holders: formatNumber(getHoldersValue()),
         volume24H: stats ? `$${formatNumber(stats.volume24H)}` : "$0",
+        volume1H: stats ? `$${formatNumber(stats.volume1H)}` : "$0",
+        volume4H: stats?.volume4H ? `$${formatNumber(stats.volume4H)}` : "$0",
         priceChange24H: stats ? formatPercent(stats.priceChange24H) : "0%",
+        priceChange4H: stats?.priceChange4H ? formatPercent(stats.priceChange4H) : "0%",
         liquidity: stats ? `$${formatNumber(stats.liquidity)}` : "$0",
         txs24H: stats ? formatNumber(stats.txs24H) : "0",
         tradeNum: stats ? formatNumber(stats.tradeNum) : "0",
+        maxPrice: stats ? formatPrice(stats.maxPrice) : "$0",
+        minPrice: stats ? formatPrice(stats.minPrice) : "$0",
+        top10HoldPercent: advancedInfo?.top10HoldPercent ? `${parseFloat(advancedInfo.top10HoldPercent).toFixed(1)}%` : "—",
+        lpBurnedPercent: advancedInfo?.lpBurnedPercent ? `${parseFloat(advancedInfo.lpBurnedPercent).toFixed(1)}%` : "—",
+        riskLevel: advancedInfo ? getRiskLabel(advancedInfo.riskControlLevel) : "—",
     };
 
     return {
         stats,
+        advancedInfo,
         formattedStats,
         isLoading,
         error,

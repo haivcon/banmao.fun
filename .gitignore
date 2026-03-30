@@ -36,3 +36,4 @@ Thumbs.db
 
 # Lock file (chọn 1: nếu dùng npm thì bỏ yarn.lock, ngược lại)
 yarn.lock
+api_docs

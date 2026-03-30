@@ -1874,7 +1874,7 @@ function ResponsiveCamera() {
             (camera as THREE.PerspectiveCamera).fov = 55;
         } else {
             // Desktop
-            camera.position.set(0, 2, 12);
+            camera.position.set(0, 2, 13);
             (camera as THREE.PerspectiveCamera).fov = 55;
         }
 
@@ -1891,7 +1891,7 @@ function Scene() {
     const { startSuction } = useSuction();
 
     // Use centralized responsive layout system
-    const { layout, isMobile, isPortrait } = useResponsiveLayout();
+    const { layout, isMobile, isLaptop, isPortrait } = useResponsiveLayout();
 
     return (
         <>
@@ -2047,23 +2047,23 @@ function Scene() {
             </SuctionableGroup>
 
             {/* GameFi Button - left of center - SUCTIONABLE */}
-            <SuctionableGroup position={[-1.3, layout.buttonsY, layout.buttonsZ]} delay={0.5}>
+            <SuctionableGroup position={[layout.gamefiMenuX, layout.buttonsY, layout.buttonsZ]} delay={0.5}>
                 <GameFiMenu
-                    position={[-1.3, layout.buttonsY, layout.buttonsZ]}
+                    position={[layout.gamefiMenuX, layout.buttonsY, layout.buttonsZ]}
                 />
             </SuctionableGroup>
 
             {/* Staking Button - right of center - SUCTIONABLE */}
-            <SuctionableGroup position={[1.3, layout.buttonsY, layout.buttonsZ]} delay={0.55}>
+            <SuctionableGroup position={[layout.stakingMenuX, layout.buttonsY, layout.buttonsZ]} delay={0.55}>
                 <StakingMenu
-                    position={[1.3, layout.buttonsY, layout.buttonsZ]}
+                    position={[layout.stakingMenuX, layout.buttonsY, layout.buttonsZ]}
                 />
             </SuctionableGroup>
 
             {/* Collection Button - centered below GameFi/DeFi - SUCTIONABLE */}
-            <SuctionableGroup position={[0, layout.buttonsY - 0.75, layout.buttonsZ]} delay={0.57}>
+            <SuctionableGroup position={[0, layout.buttonsY + layout.collectionMenuY, layout.buttonsZ]} delay={0.57}>
                 <CollectionMenu
-                    position={[0, layout.buttonsY - 0.75, layout.buttonsZ]}
+                    position={[0, layout.buttonsY + layout.collectionMenuY, layout.buttonsZ]}
                     label={t("collection")}
                 />
             </SuctionableGroup>

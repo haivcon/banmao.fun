@@ -225,7 +225,8 @@ export function DexDock3D({ translations = DEFAULT_TRANSLATIONS }: DexDock3DProp
 
     const handleDockClick = useCallback(() => {
         const isMobile = size.width < 768;
-        const dockX = isMobile ? -3 : -5.5;
+        const isLaptop = size.width >= 768 && size.width < 1440;
+        const dockX = isMobile ? -3 : (isLaptop ? -4.8 : -5.5);
         const dockY = isMobile ? 0 : 0.3;
         const focusTarget = createFocusTarget([dockX, dockY, 0], 4, 0.5);
         focusOn(focusTarget, 0.8);
@@ -233,6 +234,7 @@ export function DexDock3D({ translations = DEFAULT_TRANSLATIONS }: DexDock3DProp
     }, [size.width, focusOn]);
 
     const isMobile = size.width < 768;
+    const isLaptop = size.width >= 768 && size.width < 1440;
 
     // Dock dimensions
     const itemWidth = isMobile ? 1.2 : 1.5;
@@ -253,7 +255,8 @@ export function DexDock3D({ translations = DEFAULT_TRANSLATIONS }: DexDock3DProp
 
         if (groupRef.current) {
             // Gentle floating
-            groupRef.current.position.x = (isMobile ? -3 : -5.5) + Math.sin(state.clock.elapsedTime * 0.3) * 0.04;
+            const baseX = isMobile ? -3 : (isLaptop ? -4.8 : -5.5);
+            groupRef.current.position.x = baseX + Math.sin(state.clock.elapsedTime * 0.3) * 0.04;
             groupRef.current.position.y = (isMobile ? 0 : 0.3) + Math.sin(state.clock.elapsedTime * 0.2) * 0.05;
         }
     });
@@ -279,7 +282,7 @@ export function DexDock3D({ translations = DEFAULT_TRANSLATIONS }: DexDock3DProp
         return null;
     }
 
-    const dockX = isMobile ? -3 : -5.5;
+    const dockX = isMobile ? -3 : (isLaptop ? -4.8 : -5.5);
     const dockY = isMobile ? 0 : 0.3;
 
     return (

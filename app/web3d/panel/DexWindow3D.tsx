@@ -6,7 +6,7 @@ import { Billboard, Text, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { useDexWindow } from "../../contexts/DexWindowContext";
 import { useWeb3DTheme, useCustomCamera, createFocusTarget } from "../contexts";
-import { useViewportScale } from "../hooks";
+import { useViewportScale, useHtmlScale } from "../hooks";
 import { RoundedPlane } from "../components/RoundedPlane";
 import { easeOutElastic } from "../effects/SharedEffects";
 
@@ -46,6 +46,7 @@ export function DexWindow3D({
     const { registerWindow, getWindowState, minimizeWindow, maximizeWindow, restoreWindow } = useDexWindow();
     const { primaryColor } = useWeb3DTheme();
     const viewportScale = useViewportScale();
+    const htmlScale = useHtmlScale();
     const { focusOn } = useCustomCamera();
 
     // Sound tracking
@@ -322,7 +323,8 @@ export function DexWindow3D({
                     >
                         <span style={{
                             fontSize: '18px',
-                            filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.9))',
+                            filter: 'drop-shadow(0 0 3px rgba(0,0,0,0.8))',
+                            transform: `scale(${htmlScale})`,
                             userSelect: 'none',
                             display: 'flex',
                             whiteSpace: 'nowrap',

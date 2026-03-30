@@ -4,6 +4,7 @@ import React, { useRef, useState, useMemo } from "react";
 import { Billboard, Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { useHtmlScale } from "../hooks";
 
 // ==================== PROPS ====================
 interface DancingLogo3DProps {
@@ -75,6 +76,7 @@ export function DancingLogo3D({ position, scale = 1 }: DancingLogo3DProps) {
     const groupRef = useRef<THREE.Group>(null);
     const [isHovered, setIsHovered] = useState(false);
     const wasHovered = useRef(false);
+    const htmlScale = useHtmlScale();
 
     useFrame((state) => {
         if (!groupRef.current) return;
@@ -88,15 +90,15 @@ export function DancingLogo3D({ position, scale = 1 }: DancingLogo3DProps) {
 
         // Hover sound - continuous wild drum dance
         if (isHovered && !wasHovered.current) {
-            import("./SharedEffects").then(m => m.SoundManager.startDrumLoop());
+            import("../effects/SharedEffects").then(m => m.SoundManager.startDrumLoop());
         } else if (!isHovered && wasHovered.current) {
-            import("./SharedEffects").then(m => m.SoundManager.stopDrumLoop());
+            import("../effects/SharedEffects").then(m => m.SoundManager.stopDrumLoop());
         }
         wasHovered.current = isHovered;
     });
 
     const handleClick = () => {
-        import("./SharedEffects").then(m => m.SoundManager.playBanmao());
+        import("../effects/SharedEffects").then(m => m.SoundManager.playBanmao());
     };
 
     return (
@@ -228,7 +230,8 @@ export function DancingLogo3D({ position, scale = 1 }: DancingLogo3DProps) {
                     <div
                         className="banmao-logo-container"
                         style={{
-                            transform: isHovered ? 'scale(1.2)' : 'scale(1)',
+                            transform: `scale(${isHovered ? htmlScale * 1.2 : htmlScale})`,
+                            transformOrigin: 'center'
                         }}
                     >
                         {/* Each character dancing individually */}

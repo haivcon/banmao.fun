@@ -22,6 +22,11 @@ export interface SceneLayout {
     gamefiBtnX: number;
     buttonSpacingY: number;
 
+    // Menu button positions (GameFi, Staking, Collection)
+    gamefiMenuX: number;
+    stakingMenuX: number;
+    collectionMenuY: number;
+
     // Effects & decorations
     tokenCoin: Position3D;
     okxLogo: Position3D;
@@ -52,7 +57,7 @@ export const PC_LAYOUT: SceneLayout = {
     leftPanel: { x: -6.5, y: 0.5, z: 2 },
     rightPanel: { x: 6.5, y: 0.5, z: 2 },
     settingsPanel: { x: 3, y: 1.2, z: 3 },  // Moved to center-right (was burnPanel position)
-    burnPanel: { x: 6.5, y: -2.3, z: 2 },  // Moved to right-bottom (was settingsPanel position)
+    burnPanel: { x: 6.5, y: -3.0, z: 2 },  // Moved down to avoid overlap with taller PriceFeed
 
     // Buttons - grouped center bottom
     buttonsY: -3,
@@ -61,6 +66,11 @@ export const PC_LAYOUT: SceneLayout = {
     joinBtnX: 0,
     gamefiBtnX: 2.5,
     buttonSpacingY: 0.65,
+
+    // Menu button positions
+    gamefiMenuX: -1.3,
+    stakingMenuX: 1.3,
+    collectionMenuY: -0.75,
 
     // Effects & decorations
     tokenCoin: { x: -4.5, y: 3, z: 0 },
@@ -86,6 +96,52 @@ export const PC_LAYOUT: SceneLayout = {
     orbCount: 12,
 };
 
+// ===================== LAPTOP LAYOUT (768-1440px) =====================
+// Slightly scaled down from PC, elements pulled closer to center
+export const LAPTOP_LAYOUT: SceneLayout = {
+    // Panels - pulled closer to center to prevent clipping on smaller viewports
+    leftPanel: { x: -5.5, y: 0.5, z: 2 },
+    rightPanel: { x: 5.5, y: 0.5, z: 2 },
+    settingsPanel: { x: 2.5, y: 1.2, z: 3 },
+    burnPanel: { x: 5.5, y: -2.7, z: 2 },
+
+    // Buttons - grouped center bottom, slightly higher
+    buttonsY: -2.3,
+    buttonsZ: 4.5,
+    buyBtnX: -2.2,
+    joinBtnX: 0,
+    gamefiBtnX: 2.2,
+    buttonSpacingY: 0.6,
+
+    // Menu button positions - slightly tighter
+    gamefiMenuX: -1.2,
+    stakingMenuX: 1.2,
+    collectionMenuY: -0.55,
+
+    // Effects & decorations - pulled inward
+    tokenCoin: { x: -3.8, y: 2.8, z: 0 },
+    okxLogo: { x: 5.8, y: 4.0, z: -2 },
+    communityHub: { x: -5.8, y: -2.5, z: 2 },
+    blackHole: { x: -6, y: 4.0, z: 0 },
+    mascot: { x: 0, y: -0.5, z: 0 },
+    tokenChart: { x: 0, y: -2, z: 0 },
+    tokenInfo: { x: 0, y: 2.5, z: 2 },
+    dancingLogo: { x: 0, y: -2.2, z: 2 },
+
+    // Visibility - show everything on laptop
+    showCommunityHub: true,
+    showOKXLogo: true,
+    showTokenCoin: true,
+    showFloatingCubes: true,
+
+    // Size multipliers - slightly scaled down
+    panelScale: 0.88,
+    buttonScale: 0.92,
+    mascotScale: 155,
+    particleCount: 120,
+    orbCount: 10,
+};
+
 // ===================== MOBILE PORTRAIT LAYOUT =====================
 // Full-featured vertical layout - ALL elements like PC, arranged top-to-bottom
 // ZOOMED IN view with larger elements spread vertically
@@ -103,6 +159,11 @@ export const MOBILE_PORTRAIT_LAYOUT: SceneLayout = {
     joinBtnX: 0,      // Center button  
     gamefiBtnX: 2.2,  // Right button a
     buttonSpacingY: 0,  // Not used in horizontal layout
+
+    // Menu button positions
+    gamefiMenuX: -1.3,
+    stakingMenuX: 1.3,
+    collectionMenuY: -0.75,
 
     // === SECTION 3: DECORATIONS ===
     tokenCoin: { x: 1.8, y: 5.9, z: 0 },       // Top-right corner
@@ -147,6 +208,11 @@ export const MOBILE_LANDSCAPE_LAYOUT: SceneLayout = {
     gamefiBtnX: 2,
     buttonSpacingY: 0.55,
 
+    // Menu button positions
+    gamefiMenuX: -1.2,
+    stakingMenuX: 1.2,
+    collectionMenuY: -0.7,
+
     // Effects
     tokenCoin: { x: -3, y: 2.5, z: 0 },
     okxLogo: { x: 3, y: 2.5, z: -2 },
@@ -178,6 +244,7 @@ import { useThree } from '@react-three/fiber';
 export function useResponsiveLayout(): {
     layout: SceneLayout;
     isMobile: boolean;
+    isLaptop: boolean;
     isPortrait: boolean;
     isLandscape: boolean;
 } {
@@ -185,22 +252,26 @@ export function useResponsiveLayout(): {
 
     return useMemo(() => {
         const isMobile = size.width < 768;
+        const isLaptop = size.width >= 768 && size.width < 1440;
         const isPortrait = size.height > size.width;
         const isLandscape = size.width > size.height && isMobile;
 
         let layout: SceneLayout;
 
-        if (!isMobile) {
-            layout = PC_LAYOUT;
-        } else if (isPortrait) {
+        if (isMobile && isPortrait) {
             layout = MOBILE_PORTRAIT_LAYOUT;
-        } else {
+        } else if (isMobile) {
             layout = MOBILE_LANDSCAPE_LAYOUT;
+        } else if (isLaptop) {
+            layout = LAPTOP_LAYOUT;
+        } else {
+            layout = PC_LAYOUT;
         }
 
         return {
             layout,
             isMobile,
+            isLaptop,
             isPortrait,
             isLandscape,
         };

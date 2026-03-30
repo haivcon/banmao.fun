@@ -73,12 +73,15 @@ export function CustomCameraController({ children }: { children: React.ReactNode
 
         // Calculate initial radius based on viewport (same as initialization)
         const isMobile = size.width < 768;
+        const isLaptop = size.width >= 768 && size.width < 1440;
         const isPortrait = size.height > size.width;
-        let initialRadius = 12;
+        let initialRadius = 13;
         if (isMobile && isPortrait) {
             initialRadius = 21.5;
         } else if (isMobile) {
             initialRadius = 19.5;
+        } else if (isLaptop) {
+            initialRadius = 14;
         }
 
         // Calculate the initial camera position from spherical coords
@@ -264,14 +267,17 @@ export function CustomCameraController({ children }: { children: React.ReactNode
     // Initialize camera position based on viewport
     useEffect(() => {
         const isMobile = size.width < 768;
+        const isLaptop = size.width >= 768 && size.width < 1440;
         const isPortrait = size.height > size.width;
 
         if (isMobile && isPortrait) {
             spherical.current.radius = 21.5; // Zoomed out for smaller scale on mobile portrait
         } else if (isMobile) {
             spherical.current.radius = 19.5; // Mobile landscape
+        } else if (isLaptop) {
+            spherical.current.radius = 14;
         } else {
-            spherical.current.radius = 12;
+            spherical.current.radius = 13;
         }
     }, []);
 

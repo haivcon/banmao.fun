@@ -1,4 +1,4 @@
-// Token Stats Panel component with real-time OKX DEX data
+// Token Stats Panel component with real-time OKX DEX data + Advanced Info
 "use client";
 
 import React, { useState } from "react";
@@ -29,12 +29,25 @@ interface TokenStatsPanelProps {
 }
 
 export function TokenStatsPanel({ position, translations }: TokenStatsPanelProps) {
-    const { formattedStats, isLoading, isMock } = useTokenStats(60000);
+    const { formattedStats, advancedInfo, isLoading, isMock } = useTokenStats(60000);
     const [hoveredItem, setHoveredItem] = useState<number | null>(null);
     const { primaryColor } = useWeb3DTheme();
 
     const panelWidth = 3.2;
-    const panelHeight = 3.0;
+    const panelHeight = 3.5; // 10 rows
+
+    // Build tag badges text
+    const tagBadges = advancedInfo?.tokenTags?.length
+        ? advancedInfo.tokenTags.slice(0, 3).map(t => {
+            if (t === "communityRecognized") return "✅";
+            if (t === "smartMoneyBuy") return "🧠";
+            if (t === "devHoldingStatusSellAll") return "👋";
+            if (t === "devBurnToken") return "🔥";
+            if (t === "dexBoost") return "🚀";
+            if (t === "devAddLiquidity") return "💧";
+            return "";
+        }).filter(Boolean).join(" ")
+        : "";
 
     // Data items to display
     const dataItems = [
@@ -74,9 +87,19 @@ export function TokenStatsPanel({ position, translations }: TokenStatsPanelProps
             color: "#38bdf8"
         },
         {
-            label: translations.totalTradeVolume,
-            value: isLoading ? "..." : formattedStats.tradeNum,
-            color: "#f472b6"
+            label: "24H High/Low",
+            value: isLoading ? "..." : `${formattedStats.maxPrice} / ${formattedStats.minPrice}`,
+            color: "#fbbf24"
+        },
+        {
+            label: "Top 10 Hold",
+            value: isLoading ? "..." : formattedStats.top10HoldPercent,
+            color: "#c084fc"
+        },
+        {
+            label: "Risk",
+            value: isLoading ? "..." : formattedStats.riskLevel,
+            color: advancedInfo?.riskControlLevel === "1" ? "#4ade80" : advancedInfo?.riskControlLevel === "2" ? "#fbbf24" : "#ef4444"
         },
     ];
 
@@ -90,6 +113,19 @@ export function TokenStatsPanel({ position, translations }: TokenStatsPanelProps
             height={panelHeight}
             soundType="tokenStats"
         >
+            {/* Tag badges at top */}
+            {tagBadges && (
+                <Text
+                    position={[panelWidth / 2 - 0.3, panelHeight / 2 - 0.08, 0.02]}
+                    fontSize={0.12}
+                    anchorX="right"
+                    anchorY="top"
+                    font={SPACE_MONO_FONT}
+                >
+                    {tagBadges}
+                </Text>
+            )}
+
             {dataItems.map((item, i) => {
                 const isHovered = hoveredItem === i;
 
@@ -100,7 +136,7 @@ export function TokenStatsPanel({ position, translations }: TokenStatsPanelProps
                 return (
                     <group
                         key={i}
-                        position={[0, panelHeight / 2 - 0.25 - i * 0.32, zOffset]}
+                        position={[0, panelHeight / 2 - 0.25 - i * 0.30, zOffset]}
                         scale={[scale, scale, 1]}
                     >
                         {/* Hover detection area */}
@@ -109,14 +145,14 @@ export function TokenStatsPanel({ position, translations }: TokenStatsPanelProps
                             onPointerEnter={() => setHoveredItem(i)}
                             onPointerLeave={() => setHoveredItem(null)}
                         >
-                            <planeGeometry args={[panelWidth - 0.3, 0.28]} />
+                            <planeGeometry args={[panelWidth - 0.3, 0.26]} />
                             <meshBasicMaterial transparent opacity={0} />
                         </mesh>
 
                         {/* Label - brighter when hovered */}
                         <Text
                             position={[-panelWidth / 2 + 0.25, 0, 0]}
-                            fontSize={isHovered ? 0.13 : 0.10}
+                            fontSize={isHovered ? 0.12 : 0.09}
                             color={isHovered ? "#ffffff" : "#8892a8"}
                             anchorX="left"
                             anchorY="middle"
@@ -129,7 +165,7 @@ export function TokenStatsPanel({ position, translations }: TokenStatsPanelProps
 
                         {/* Value with background */}
                         {(() => {
-                            const charWidth = isHovered ? 0.11 : 0.085;
+                            const charWidth = isHovered ? 0.10 : 0.075;
                             const textWidth = item.value.length * charWidth;
                             const bgWidth = Math.max(textWidth + 0.25, 0.9);
                             const centerX = panelWidth / 2 - 0.15 - bgWidth / 2;
@@ -139,7 +175,7 @@ export function TokenStatsPanel({ position, translations }: TokenStatsPanelProps
                                     {/* Background glow */}
                                     <RoundedPlane
                                         width={bgWidth}
-                                        height={isHovered ? 0.30 : 0.22}
+                                        height={isHovered ? 0.28 : 0.20}
                                         radius={0.05}
                                         position={[centerX, 0, -0.001]}
                                     >
@@ -153,11 +189,11 @@ export function TokenStatsPanel({ position, translations }: TokenStatsPanelProps
                                     {/* Main value text */}
                                     <Text
                                         position={[centerX, 0, 0]}
-                                        fontSize={isHovered ? 0.22 : 0.14}
+                                        fontSize={isHovered ? 0.18 : 0.12}
                                         color={item.color}
                                         anchorX="center"
                                         anchorY="middle"
-                                        outlineWidth={isHovered ? 0.012 : 0.004}
+                                        outlineWidth={isHovered ? 0.010 : 0.003}
                                         outlineColor="#000000"
                                         font={SPACE_MONO_FONT}
                                     >
@@ -179,9 +215,9 @@ export function TokenStatsPanel({ position, translations }: TokenStatsPanelProps
 
                         {/* Row separator */}
                         {i < dataItems.length - 1 && !isHovered && (
-                            <mesh position={[0, -0.17, 0]}>
-                                <planeGeometry args={[panelWidth - 0.5, 0.006]} />
-                                <meshBasicMaterial color="#2a2a4a" transparent opacity={0.5} />
+                            <mesh position={[0, -0.16, 0]}>
+                                <planeGeometry args={[panelWidth - 0.5, 0.005]} />
+                                <meshBasicMaterial color="#2a2a4a" transparent opacity={0.4} />
                             </mesh>
                         )}
                     </group>
@@ -206,4 +242,3 @@ export function TokenStatsPanel({ position, translations }: TokenStatsPanelProps
 }
 
 export default TokenStatsPanel;
-

@@ -6,6 +6,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { DexWindow3D } from "./DexWindow3D";
 import { useWeb3DTheme } from "../contexts";
+import { useHtmlScale } from "../hooks";
 import { RoundedPlane } from "../components/RoundedPlane";
 
 interface TokenInfoPanel3DProps {
@@ -19,6 +20,7 @@ interface TokenInfoPanel3DProps {
 export function TokenInfoPanel3D({ position, translations }: TokenInfoPanel3DProps) {
     const { primaryColor, accentColor } = useWeb3DTheme();
     const glowRef = useRef<THREE.Mesh>(null);
+    const htmlScale = useHtmlScale();
 
     // Panel size - optimized to fit content snugly
     const panelWidth = 3.6;
@@ -56,7 +58,7 @@ export function TokenInfoPanel3D({ position, translations }: TokenInfoPanel3DPro
             >
                 <style>{`
                     .info-panel {
-                        width: 380px; /* Reduced from 420px for better fit */
+                        width: 380px;
                         max-width: 90vw;
                         height: 250px;
                         font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -106,7 +108,7 @@ export function TokenInfoPanel3D({ position, translations }: TokenInfoPanel3DPro
                     
                     /* Logo text */
                     .logo-text {
-                        font-size: 26px; /* Slightly smaller */
+                        font-size: 26px;
                         font-weight: 700;
                         color: #facc15;
                         text-shadow: 0 0 15px rgba(250, 204, 21, 0.4);
@@ -153,6 +155,7 @@ export function TokenInfoPanel3D({ position, translations }: TokenInfoPanel3DPro
                     onPointerDown={(e) => e.stopPropagation()}
                     onPointerOver={(e) => { document.body.style.cursor = 'text'; }}
                     onPointerOut={(e) => { document.body.style.cursor = 'default'; }}
+                    style={{ transform: `scale(${htmlScale})`, transformOrigin: 'center' }}
                 >
                     <div className="logo-row">
                         <span className="logo-emoji cat">🐱</span>

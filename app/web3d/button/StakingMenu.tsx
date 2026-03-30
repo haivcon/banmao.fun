@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { RoundedPlane } from "../components/RoundedPlane";
 import { useCustomCamera, createFocusTarget } from "../contexts";
 import { SoundManager, easeOutElastic } from "../effects/SharedEffects";
+import { useHtmlScale } from "../hooks";
 
 interface StakingMenuProps {
     position: [number, number, number];
@@ -18,6 +19,7 @@ export function StakingMenu({ position }: StakingMenuProps) {
     const [isPressed, setIsPressed] = React.useState(false);
     const [showRipple, setShowRipple] = React.useState(false);
     const { focusOn } = useCustomCamera();
+    const htmlScale = useHtmlScale();
 
     // Animation states
     const spawnProgress = useRef(0);
@@ -29,8 +31,8 @@ export function StakingMenu({ position }: StakingMenuProps) {
     const rippleProgress = useRef(0);
 
     // Button dimensions - matching GameFi button
-    const btnWidth = 2.2;
-    const btnHeight = 0.55;
+    const btnWidth = 1.8;
+    const btnHeight = 0.45;
 
     // Staking color scheme - Cyan/Purple gradient theme
     const primaryColor = '#00d4ff';     // Bright cyan
@@ -239,7 +241,8 @@ export function StakingMenu({ position }: StakingMenuProps) {
                         alignItems: 'center',
                         gap: '6px',
                         whiteSpace: 'nowrap',
-                        transform: isPressed ? 'scale(0.95)' : 'scale(1)',
+                        transform: `scale(${isPressed ? 0.95 * htmlScale : htmlScale})`,
+                        transformOrigin: 'center',
                         transition: 'transform 0.1s ease'
                     }}>
                         <span style={{
@@ -267,10 +270,10 @@ export function StakingMenu({ position }: StakingMenuProps) {
                         onMouseLeave={handleHoverLeave}
                         onClick={handleButtonClick}
                         style={{
-                            width: '160px',
-                            height: '42px',
+                            width: '140px',
+                            height: '36px',
                             cursor: 'pointer',
-                            borderRadius: '21px',
+                            borderRadius: '18px',
                         }}
                     />
                 </Html>

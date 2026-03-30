@@ -9,7 +9,7 @@ import { Language, getAvailableLanguages } from "../locals";
 import { WEB3D_THEMES, getWeb3DTheme } from "../theme";
 import { useWeb3DTheme } from "../contexts";
 import { useSoundManager } from "../audio";
-import { useViewportScale } from "../hooks";
+import { useViewportScale, useHtmlScale } from "../hooks";
 
 interface DexSettingsPanel3DProps {
     id: string;
@@ -32,6 +32,7 @@ export function DexSettingsPanel3D({
     const { theme: currentTheme, setTheme, primaryColor } = useWeb3DTheme();
     const { playClick } = useSoundManager();
     const viewportScale = useViewportScale();
+    const htmlScale = useHtmlScale();
 
     // Get window scale for proper Html scaling
     const windowScale = useWindowScale();
@@ -75,7 +76,9 @@ export function DexSettingsPanel3D({
             {/* LANGUAGE SECTION */}
             <group position={[0, panelHeight / 2 - 0.38, 0.01]}>
                 <Html center position={[-panelWidth / 2 + 0.15, 0, 0.01]} style={{ pointerEvents: 'none' }} distanceFactor={8 / windowScale}>
-                    <span style={{ fontSize: `${12 * windowScale}px` }}>🌐</span>
+                    <div style={{ transform: `scale(${htmlScale})`, transformOrigin: 'center' }}>
+                        <span style={{ fontSize: `${12 * windowScale}px` }}>🌐</span>
+                    </div>
                 </Html>
                 <Text position={[-panelWidth / 2 + 0.28, 0, 0]} fontSize={0.07} color={primaryColor} anchorX="left" anchorY="middle" outlineWidth={0.003} outlineColor="#000000">
                     {t("language") || "Language"}
@@ -128,15 +131,17 @@ export function DexSettingsPanel3D({
                             text-shadow: 0 0 15px ${primaryColor}, 0 0 30px ${primaryColor}, 2px 2px 0 #000, -2px -2px 0 #000;
                         }
                     `}</style>
-                    <button
-                        className="settings-btn"
-                        onMouseEnter={() => setHoveredItem('lang-main')}
-                        onMouseLeave={() => setHoveredItem(null)}
-                        onClick={() => { setIsLanguageOpen(!isLanguageOpen); setIsThemeOpen(false); }}
-                    >
-                        <span className="flag">{currentLang.flag}</span>
-                        <span className="text">{currentLang.name} ▼</span>
-                    </button>
+                    <div style={{ transform: `scale(${htmlScale})`, transformOrigin: 'center' }}>
+                        <button
+                            className="settings-btn"
+                            onMouseEnter={() => setHoveredItem('lang-main')}
+                            onMouseLeave={() => setHoveredItem(null)}
+                            onClick={() => { setIsLanguageOpen(!isLanguageOpen); setIsThemeOpen(false); }}
+                        >
+                            <span className="flag">{currentLang.flag}</span>
+                            <span className="text">{currentLang.name} ▼</span>
+                        </button>
+                    </div>
                 </Html>
             </group>
 
@@ -151,6 +156,17 @@ export function DexSettingsPanel3D({
                             <meshBasicMaterial color={isSelected ? accentColor : (isHovered ? '#2d3a4f' : '#1e293b')} transparent opacity={isSelected ? 0.35 : 1} />
                         </RoundedPlane>
                         <Html center distanceFactor={8 / windowScale} style={{ pointerEvents: 'auto' }}>
+                            <div style={{ transform: `scale(${htmlScale})`, transformOrigin: 'center' }}>
+                                <button
+                                    className={`lang-item-btn ${isSelected ? 'selected' : ''}`}
+                                    onMouseEnter={() => setHoveredItem(`lang-${language.code}`)}
+                                    onMouseLeave={() => setHoveredItem(null)}
+                                    onClick={() => { setLang(language.code); setIsLanguageOpen(false); playClick(); }}
+                                >
+                                    <span className="flag">{language.flag}</span>
+                                    <span className="text">{language.name}</span>
+                                </button>
+                            </div>
                             <style>{`
                                 .lang-item-btn {
                                     display: flex;
@@ -178,15 +194,6 @@ export function DexSettingsPanel3D({
                                 }
                                 .lang-item-btn.selected .text { color: ${accentColor}; }
                             `}</style>
-                            <button
-                                className={`lang-item-btn ${isSelected ? 'selected' : ''}`}
-                                onMouseEnter={() => setHoveredItem(`lang-${language.code}`)}
-                                onMouseLeave={() => setHoveredItem(null)}
-                                onClick={() => { setLang(language.code); setIsLanguageOpen(false); }}
-                            >
-                                <span className="flag">{language.flag}</span>
-                                <span className="text">{language.name}</span>
-                            </button>
                         </Html>
                     </group>
                 );
@@ -195,7 +202,9 @@ export function DexSettingsPanel3D({
             {/* THEME SECTION */}
             <group position={[0, panelHeight / 2 - 1.0 - languageListHeight, 0.01]}>
                 <Html center position={[-panelWidth / 2 + 0.15, 0, 0.01]} style={{ pointerEvents: 'none' }} distanceFactor={8 / windowScale}>
-                    <span style={{ fontSize: '12px', filter: 'drop-shadow(0 0 3px rgba(0,0,0,0.8))' }}>🎨</span>
+                    <div style={{ transform: `scale(${htmlScale})`, transformOrigin: 'center' }}>
+                        <span style={{ fontSize: '12px', filter: 'drop-shadow(0 0 3px rgba(0,0,0,0.8))' }}>🎨</span>
+                    </div>
                 </Html>
                 <Text position={[-panelWidth / 2 + 0.28, 0, 0]} fontSize={0.07} color={primaryColor} anchorX="left" anchorY="middle" outlineWidth={0.003} outlineColor="#000000">
                     {t("theme") || "Theme"}
@@ -237,14 +246,16 @@ export function DexSettingsPanel3D({
                             text-shadow: 0 0 15px ${primaryColor}, 0 0 30px ${primaryColor}, 2px 2px 0 #000, -2px -2px 0 #000;
                         }
                     `}</style>
-                    <button
-                        className="theme-main-btn"
-                        onMouseEnter={() => setHoveredItem('theme-main')}
-                        onMouseLeave={() => setHoveredItem(null)}
-                        onClick={() => { setIsThemeOpen(!isThemeOpen); setIsLanguageOpen(false); }}
-                    >
-                        {themeConfig.icon} {themeConfig.name} ▼
-                    </button>
+                    <div style={{ transform: `scale(${htmlScale})`, transformOrigin: 'center' }}>
+                        <button
+                            className="theme-main-btn"
+                            onMouseEnter={() => setHoveredItem('theme-main')}
+                            onMouseLeave={() => setHoveredItem(null)}
+                            onClick={() => { setIsThemeOpen(!isThemeOpen); setIsLanguageOpen(false); playClick(); }}
+                        >
+                            {themeConfig.icon} {themeConfig.name} ▼
+                        </button>
+                    </div>
                 </Html>
             </group>
 
@@ -263,6 +274,16 @@ export function DexSettingsPanel3D({
                             <meshBasicMaterial color={theme.primary} side={THREE.DoubleSide} />
                         </mesh>
                         <Html center position={[0.1, 0, 0.02]} distanceFactor={8 / windowScale} style={{ pointerEvents: 'auto' }}>
+                            <div style={{ transform: `scale(${htmlScale})`, transformOrigin: 'center' }}>
+                                <button
+                                    className={`theme-item-btn ${isSelected ? 'selected' : ''}`}
+                                    onMouseEnter={() => setHoveredItem(`theme-${theme.key}`)}
+                                    onMouseLeave={() => setHoveredItem(null)}
+                                    onClick={() => handleThemeChange(theme.key)}
+                                >
+                                    {theme.icon} {theme.name}
+                                </button>
+                            </div>
                             <style>{`
                                 .theme-item-btn {
                                     display: flex;

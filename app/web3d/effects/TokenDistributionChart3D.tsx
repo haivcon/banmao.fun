@@ -184,7 +184,7 @@ export function TokenDistributionChart3D({
     const [isPanelVisible, setIsPanelVisible] = useState(false);
     const [isClosing, setIsClosing] = useState(false);
     const [hoveredHolder, setHoveredHolder] = useState<string | null>(null);
-    const { stats } = useTokenStatsContext();
+    const { stats, advancedInfo } = useTokenStatsContext();
     const { focusOn } = useCustomCamera();
 
     // Handle panel close with animation
@@ -669,6 +669,22 @@ export function TokenDistributionChart3D({
                         1B
                     </Text>
                 </Billboard>
+
+                {/* Top 10 Holders % label */}
+                {advancedInfo?.top10HoldPercent && (
+                    <Billboard position={[0, -0.32, 0]}>
+                        <Text
+                            fontSize={0.08}
+                            color="#c084fc"
+                            anchorX="center"
+                            anchorY="middle"
+                            outlineWidth={0.003}
+                            outlineColor="#000000"
+                        >
+                            {`Top10: ${parseFloat(advancedInfo.top10HoldPercent).toFixed(1)}%`}
+                        </Text>
+                    </Billboard>
+                )}
 
                 {/* Interactive hover detection */}
                 {

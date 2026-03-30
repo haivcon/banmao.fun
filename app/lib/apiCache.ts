@@ -79,6 +79,8 @@ export const CACHE_KEYS = {
     PRICE: 'okx_price',
     TOKEN_STATS: 'okx_token_stats',
     HOLDERS: 'okx_holders',
+    ADVANCED_INFO: 'okx_advanced_info',
+    TRADES: 'okx_trades',
 } as const;
 
 // Cache TTL values (in milliseconds)
@@ -86,4 +88,6 @@ export const CACHE_TTL = {
     PRICE: 10000,        // 10 seconds for price data
     TOKEN_STATS: 30000,  // 30 seconds for token stats
     HOLDERS: 300000,     // 5 minutes for holders (less frequent changes)
+    ADVANCED_INFO: 300000, // 5 minutes for advanced info (rarely changes)
+    TRADES: 10000,       // 10 seconds for recent trades
 } as const;

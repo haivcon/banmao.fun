@@ -1,5 +1,5 @@
-// BurnTracker 3D Panel - Shows total burned $BANMAO tokens with history link
-// Compact version with all content
+// BurnTracker 3D Panel - Shows total burned $BANMAO tokens with progress bar + LP info
+// Enhanced version with burn % visualization
 "use client";
 
 import React, { useState } from "react";
@@ -9,13 +9,12 @@ import { useBurnTracker } from "../hooks/useBurnTracker";
 import { DEFAULT_3D_FONT } from "../fonts";
 import { RoundedPlane } from "../components/RoundedPlane";
 import { useWeb3DTheme } from "../contexts";
+import { useHtmlScale } from "../hooks";
 
 const SPACE_MONO_FONT = DEFAULT_3D_FONT;
 
 // Links
-const BURN_HISTORY_DOC = "https://docs.google.com/document/d/1ObVjHuoVCjXbF5zuWqzbcUuoqT86CdCm4Z9mwMWCpp0/edit?usp=sharing";
 const COMMUNITY_WALLET = "0x92809f2837f708163d375960063c8a3156fceacb";
-const SHORT_WALLET = COMMUNITY_WALLET.slice(0, 10) + "..." + COMMUNITY_WALLET.slice(-8);
 
 interface BurnTrackerPanel3DProps {
     position: [number, number, number];
@@ -27,41 +26,33 @@ interface BurnTrackerPanel3DProps {
     };
 }
 
+// Total supply constant
+const TOTAL_SUPPLY = 1_000_000_000;
+
 export function BurnTrackerPanel3D({ position, translations }: BurnTrackerPanel3DProps) {
     const { burnedAmount, isLoading } = useBurnTracker(60000);
     const [historyHovered, setHistoryHovered] = useState(false);
-    const [walletHovered, setWalletHovered] = useState(false);
-    const [walletExpanded, setWalletExpanded] = useState(false);
-    const [copied, setCopied] = useState(false);
     const { primaryColor } = useWeb3DTheme();
+    const htmlScale = useHtmlScale();
 
     const panelWidth = 3.0;
-    const panelHeight = 2.0;
+    const panelHeight = 2.2;
 
     // Colors
     const fireColor = "#ff4500";
     const goldColor = "#ffd700";
-    const cyanColor = "#22d3ee";
 
     const displayValue = isLoading ? "Loading..." : burnedAmount;
 
-    // Handle wallet copy
-    const handleWalletClick = async () => {
-        if (!walletExpanded) {
-            setWalletExpanded(true);
-            return;
-        }
-        try {
-            await navigator.clipboard.writeText(COMMUNITY_WALLET);
-            setCopied(true);
-            setTimeout(() => {
-                setCopied(false);
-                setWalletExpanded(false);
-            }, 1500);
-        } catch (err) {
-            console.error("Failed to copy:", err);
-        }
-    };
+    // Calculate burn percentage
+    const burnedNum = parseFloat(burnedAmount.replace(/,/g, ''));
+    const burnPercent = isNaN(burnedNum) ? 0 : Math.min((burnedNum / TOTAL_SUPPLY) * 100, 100);
+    const burnPercentDisplay = burnPercent > 0 ? `${burnPercent.toFixed(2)}%` : "—";
+
+    // Progress bar dimensions
+    const barWidth = panelWidth - 0.6;
+    const barHeight = 0.12;
+    const filledWidth = barWidth * (burnPercent / 100);
 
     return (
         <DexWindow3D
@@ -108,7 +99,7 @@ export function BurnTrackerPanel3D({ position, translations }: BurnTrackerPanel3
             </group>
 
             {/* Token symbol row */}
-            <group position={[0, panelHeight / 2 - 0.58, 0.01]}>
+            <group position={[0, panelHeight / 2 - 0.54, 0.01]}>
                 <Text
                     position={[-panelWidth / 2 + 0.2, 0, 0]}
                     fontSize={0.10}
@@ -133,14 +124,78 @@ export function BurnTrackerPanel3D({ position, translations }: BurnTrackerPanel3
                 </Text>
             </group>
 
+            {/* === Burn Progress Bar === */}
+            <group position={[0, panelHeight / 2 - 0.78, 0.01]}>
+                {/* Label */}
+                <Text
+                    position={[-panelWidth / 2 + 0.2, 0.08, 0]}
+                    fontSize={0.07}
+                    color="#8892a8"
+                    anchorX="left"
+                    anchorY="middle"
+                    font={SPACE_MONO_FONT}
+                >
+                    BURN PROGRESS
+                </Text>
+
+                {/* Percentage */}
+                <Text
+                    position={[panelWidth / 2 - 0.2, 0.08, 0]}
+                    fontSize={0.09}
+                    color={fireColor}
+                    anchorX="right"
+                    anchorY="middle"
+                    outlineWidth={0.002}
+                    outlineColor="#000000"
+                    font={SPACE_MONO_FONT}
+                >
+                    {burnPercentDisplay}
+                </Text>
+
+                {/* Progress bar background */}
+                <RoundedPlane
+                    width={barWidth}
+                    height={barHeight}
+                    radius={barHeight / 2}
+                    position={[0, -0.06, -0.001]}
+                >
+                    <meshBasicMaterial color="#1a1a2e" transparent opacity={0.8} />
+                </RoundedPlane>
+
+                {/* Progress bar fill */}
+                {filledWidth > 0.02 && (
+                    <RoundedPlane
+                        width={filledWidth}
+                        height={barHeight}
+                        radius={barHeight / 2}
+                        position={[-barWidth / 2 + filledWidth / 2, -0.06, 0]}
+                    >
+                        <meshBasicMaterial color={fireColor} transparent opacity={0.85} />
+                    </RoundedPlane>
+                )}
+
+                {/* Glow behind bar */}
+                {filledWidth > 0.02 && (
+                    <RoundedPlane
+                        width={filledWidth + 0.04}
+                        height={barHeight + 0.04}
+                        radius={(barHeight + 0.04) / 2}
+                        position={[-barWidth / 2 + filledWidth / 2, -0.06, -0.002]}
+                    >
+                        <meshBasicMaterial color={goldColor} transparent opacity={0.15} />
+                    </RoundedPlane>
+                )}
+            </group>
+
+
             {/* Separator */}
-            <mesh position={[0, 0.1, 0.01]}>
+            <mesh position={[0, panelHeight / 2 - 1.0, 0.01]}>
                 <planeGeometry args={[panelWidth - 0.4, 0.005]} />
                 <meshBasicMaterial color="#2a2a4a" transparent opacity={0.6} />
             </mesh>
 
             {/* Burn Button - Glowing with Breathing Effect */}
-            <group position={[0, -0.25, 0.02]}>
+            <group position={[0, -panelHeight / 2 + 0.38, 0.02]}>
                 <RoundedPlane
                     width={2.2}
                     height={0.38}
@@ -181,16 +236,20 @@ export function BurnTrackerPanel3D({ position, translations }: BurnTrackerPanel3
                     {translations.burnButton || "🔥 Burn 🎁"}
                 </Text>
 
-                <Html center position={[0, 0, 0.02]} style={{ pointerEvents: 'auto' }}>
+                <Html center position={[0, 0, 0.02]} style={{ pointerEvents: 'auto' }} distanceFactor={8}>
                     <a
                         href="/defi/burn"
                         onMouseEnter={() => setHistoryHovered(true)}
                         onMouseLeave={() => setHistoryHovered(false)}
                         style={{
                             display: 'block',
-                            width: '200px',
-                            height: '40px',
+                            width: '220px',
+                            height: '50px',
+                            borderRadius: '25px',
+                            background: 'transparent',
                             cursor: 'pointer',
+                            transform: `scale(${htmlScale})`,
+                            transformOrigin: 'center'
                         }}
                     />
                 </Html>

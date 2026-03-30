@@ -1,13 +1,15 @@
-// Price Feed Panel component with real-time OKX DEX price data
+// Price Feed Panel component with real-time OKX DEX price data + Recent Trades
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { Text, Html, Billboard } from "@react-three/drei";
 import { DexWindow3D } from "./DexWindow3D";
 import { usePrice } from "../hooks/usePrice";
+import { useTrades, formatTimeAgo, formatVolume, shortenAddress } from "../hooks/useTrades";
 import { DEFAULT_3D_FONT } from "../fonts";
 import { RoundedPlane } from "../components/RoundedPlane";
 import { useWeb3DTheme } from "../contexts";
+import { useHtmlScale } from "../hooks";
 
 // Token contract address
 const TOKEN_ADDRESS = "0x16d91d1615fc55b76d5f92365bd60c069b46ef78";
@@ -26,11 +28,13 @@ interface PriceFeedPanelProps {
 
 export function PriceFeedPanel({ position, translations }: PriceFeedPanelProps) {
     const { priceUSD, network, isLoading, isMock } = usePrice(30000);
+    const { trades } = useTrades(15000);
     const [currentTime, setCurrentTime] = useState<string>("");
     const [copied, setCopied] = useState(false);
     const [addressHovered, setAddressHovered] = useState(false);
     const [hoveredItem, setHoveredItem] = useState<number | null>(null);
     const { primaryColor } = useWeb3DTheme();
+    const htmlScale = useHtmlScale();
 
     // Update time every second
     useEffect(() => {
@@ -88,7 +92,7 @@ export function PriceFeedPanel({ position, translations }: PriceFeedPanelProps) 
     };
 
     const panelWidth = 3.2;
-    const panelHeight = 2.2;
+    const panelHeight = 3.2; // Taller to fit trades
 
     const dataItems = [
         { label: translations.network, value: network, color: "#22d3ee", isAddress: false },
@@ -96,6 +100,9 @@ export function PriceFeedPanel({ position, translations }: PriceFeedPanelProps) 
         { label: translations.token, value: getAddressDisplay(), color: copied ? "#4ade80" : (addressExpanded ? "#22d3ee" : "#a855f7"), isAddress: true },
         { label: translations.time, value: currentTime || "...", color: isMock ? "#f97316" : "#4ade80", isAddress: false },
     ];
+
+    // Recent trades to display (max 3)
+    const recentTrades = trades.slice(0, 3);
 
     return (
         <DexWindow3D
@@ -117,7 +124,7 @@ export function PriceFeedPanel({ position, translations }: PriceFeedPanelProps) 
                 return (
                     <group
                         key={i}
-                        position={[0, panelHeight / 2 - 0.35 - i * 0.42, zOffset]}
+                        position={[0, panelHeight / 2 - 0.35 - i * 0.38, zOffset]}
                         scale={[scale, scale, 1]}
                     >
                         {/* Hover detection for non-address rows */}
@@ -127,7 +134,7 @@ export function PriceFeedPanel({ position, translations }: PriceFeedPanelProps) 
                                 onPointerEnter={() => setHoveredItem(i)}
                                 onPointerLeave={() => setHoveredItem(null)}
                             >
-                                <planeGeometry args={[panelWidth - 0.3, 0.35]} />
+                                <planeGeometry args={[panelWidth - 0.3, 0.32]} />
                                 <meshBasicMaterial transparent opacity={0} />
                             </mesh>
                         )}
@@ -146,7 +153,7 @@ export function PriceFeedPanel({ position, translations }: PriceFeedPanelProps) 
                             {item.label}
                         </Text>
 
-                        {/* Value - no background for non-address, just text with glow when hovered */}
+                        {/* Value */}
                         {(() => {
                             const charWidth = isHovered ? 0.12 : 0.09;
                             const textWidth = item.value.length * charWidth;
@@ -168,7 +175,7 @@ export function PriceFeedPanel({ position, translations }: PriceFeedPanelProps) 
                                             >
                                                 {item.value}
                                             </Text>
-                                            <Html center position={[0, 0, 0.02]} style={{ pointerEvents: 'auto' }}>
+                                            <Html center position={[0, 0, 0.02]} style={{ pointerEvents: 'auto' }} distanceFactor={8}>
                                                 <button
                                                     onClick={handleAddressClick}
                                                     onMouseEnter={() => setAddressHovered(true)}
@@ -178,8 +185,8 @@ export function PriceFeedPanel({ position, translations }: PriceFeedPanelProps) 
                                                         border: 'none',
                                                         cursor: 'pointer',
                                                         width: '200px',
-                                                        height: '30px',
-                                                        opacity: 0,
+                                                        height: '40px',
+                                                        transform: `scale(${htmlScale})`
                                                     }}
                                                     title={addressExpanded ? "Click to copy" : "Click to show full address"}
                                                 />
@@ -242,6 +249,81 @@ export function PriceFeedPanel({ position, translations }: PriceFeedPanelProps) 
                     </group>
                 );
             })}
+
+            {/* === Recent Trades Section === */}
+            {recentTrades.length > 0 && (
+                <group position={[0, -panelHeight / 2 + 0.75, 0.01]}>
+                    {/* Section separator */}
+                    <mesh position={[0, 0.32, 0]}>
+                        <planeGeometry args={[panelWidth - 0.4, 0.008]} />
+                        <meshBasicMaterial color="#3b82f6" transparent opacity={0.4} />
+                    </mesh>
+
+                    {/* Section title */}
+                    <Text
+                        position={[-panelWidth / 2 + 0.25, 0.20, 0]}
+                        fontSize={0.08}
+                        color="#64748b"
+                        anchorX="left"
+                        anchorY="middle"
+                        font={SPACE_MONO_FONT}
+                    >
+                        RECENT TRADES
+                    </Text>
+
+                    {/* Trade rows */}
+                    {recentTrades.map((trade, i) => {
+                        const isBuy = trade.type === "buy";
+                        const icon = isBuy ? "▲" : "▼";
+                        const color = isBuy ? "#4ade80" : "#ef4444";
+                        const vol = formatVolume(trade.volume);
+                        const time = formatTimeAgo(trade.time);
+                        const addr = shortenAddress(trade.userAddress);
+
+                        return (
+                            <group key={trade.id || i} position={[0, -i * 0.18, 0]}>
+                                {/* Buy/Sell icon */}
+                                <Text
+                                    position={[-panelWidth / 2 + 0.25, 0, 0]}
+                                    fontSize={0.09}
+                                    color={color}
+                                    anchorX="left"
+                                    anchorY="middle"
+                                    font={SPACE_MONO_FONT}
+                                >
+                                    {`${icon} ${isBuy ? "BUY" : "SELL"}`}
+                                </Text>
+
+                                {/* Volume */}
+                                <Text
+                                    position={[0, 0, 0]}
+                                    fontSize={0.09}
+                                    color={color}
+                                    anchorX="center"
+                                    anchorY="middle"
+                                    outlineWidth={0.003}
+                                    outlineColor="#000000"
+                                    font={SPACE_MONO_FONT}
+                                >
+                                    {vol}
+                                </Text>
+
+                                {/* Address + Time */}
+                                <Text
+                                    position={[panelWidth / 2 - 0.25, 0, 0]}
+                                    fontSize={0.07}
+                                    color="#64748b"
+                                    anchorX="right"
+                                    anchorY="middle"
+                                    font={SPACE_MONO_FONT}
+                                >
+                                    {`${addr} ${time}`}
+                                </Text>
+                            </group>
+                        );
+                    })}
+                </group>
+            )}
         </DexWindow3D>
     );
 }
