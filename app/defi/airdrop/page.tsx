@@ -409,6 +409,74 @@ export default function AirdropPage() {
                 />
             </main>
 
+            {/* Footer - Contract & Tech Info */}
+            <footer className="airdrop-footer">
+                <div className="airdrop-footer-inner">
+                    {/* Contract Info */}
+                    <div className="airdrop-footer-section">
+                        <h4 className="airdrop-footer-heading">📜 {lang === "vi" ? "Hợp Đồng Thông Minh" : lang === "zh" ? "智能合约" : lang === "ko" ? "스마트 컨트랙트" : lang === "ru" ? "Смарт-контракты" : lang === "id" ? "Smart Contract" : "Smart Contracts"}</h4>
+                        <div className="airdrop-footer-contract">
+                            <div className="airdrop-footer-contract-item">
+                                <span className="airdrop-footer-label">$BANMAO Token (ERC-20)</span>
+                                <a href="https://web3.okx.com/explorer/x-layer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78" target="_blank" rel="noopener noreferrer" className="airdrop-footer-address">
+                                    0x16d9...ef78
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                </a>
+                            </div>
+                            <div className="airdrop-footer-contract-item">
+                                <span className="airdrop-footer-label">Batch Airdrop Contract</span>
+                                <a href="https://web3.okx.com/explorer/x-layer/address/0xf2d471711D24646b2C50E1F74a063caA7a6863a0" target="_blank" rel="noopener noreferrer" className="airdrop-footer-address">
+                                    0xf2d4...63a0
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Contract Functions */}
+                    <div className="airdrop-footer-section">
+                        <h4 className="airdrop-footer-heading">⚡ {lang === "vi" ? "Chức Năng Hợp Đồng" : lang === "zh" ? "合约功能" : lang === "ko" ? "컨트랙트 기능" : lang === "ru" ? "Функции контракта" : lang === "id" ? "Fungsi Kontrak" : "Contract Functions"}</h4>
+                        <div className="airdrop-footer-funcs">
+                            <div className="airdrop-footer-func"><code>batchTransferEqual(token, recipients[], amount)</code><span className="airdrop-footer-func-desc">{lang === "vi" ? "Gửi số lượng bằng nhau cho nhiều ví" : "Send equal amount to multiple wallets"}</span></div>
+                            <div className="airdrop-footer-func"><code>batchTransfer(token, recipients[], amounts[])</code><span className="airdrop-footer-func-desc">{lang === "vi" ? "Gửi số lượng tùy chỉnh cho mỗi ví" : "Send custom amount per wallet"}</span></div>
+                            <div className="airdrop-footer-func"><code>approve(spender, amount)</code><span className="airdrop-footer-func-desc">{lang === "vi" ? "Phê duyệt token cho hợp đồng" : "Approve token spending"}</span></div>
+                            <div className="airdrop-footer-func"><code>transfer(to, amount)</code><span className="airdrop-footer-func-desc">{lang === "vi" ? "Chuyển token trực tiếp" : "Direct token transfer"}</span></div>
+                        </div>
+                    </div>
+
+                    {/* Tech Stack */}
+                    <div className="airdrop-footer-section">
+                        <h4 className="airdrop-footer-heading">🛠 {lang === "vi" ? "Công Nghệ Sử Dụng" : lang === "zh" ? "技术栈" : lang === "ko" ? "기술 스택" : lang === "ru" ? "Технологии" : lang === "id" ? "Teknologi" : "Tech Stack"}</h4>
+                        <div className="airdrop-footer-techs">
+                            <span className="airdrop-footer-tech">Next.js 14</span>
+                            <span className="airdrop-footer-tech">React 18</span>
+                            <span className="airdrop-footer-tech">TypeScript</span>
+                            <span className="airdrop-footer-tech">Wagmi v2</span>
+                            <span className="airdrop-footer-tech">Viem</span>
+                            <span className="airdrop-footer-tech">RainbowKit</span>
+                            <span className="airdrop-footer-tech">Solidity</span>
+                            <span className="airdrop-footer-tech">ERC-20</span>
+                            <span className="airdrop-footer-tech">XLayer (L2)</span>
+                            <span className="airdrop-footer-tech">OKX Web3 API</span>
+                            <span className="airdrop-footer-tech">Ethers.js</span>
+                            <span className="airdrop-footer-tech">Canvas Confetti</span>
+                        </div>
+                    </div>
+
+                    {/* Links */}
+                    <div className="airdrop-footer-bottom">
+                        <span className="airdrop-footer-copy">© 2024-2026 Banmao.Fun — {lang === "vi" ? "Nền tảng Airdrop phi tập trung" : "Decentralized Airdrop Platform"}</span>
+                        <div className="airdrop-footer-links">
+                            <a href="https://web3.okx.com/explorer/x-layer" target="_blank" rel="noopener noreferrer">XLayer Explorer</a>
+                            <span className="airdrop-footer-dot">·</span>
+                            <a href="https://github.com/haivcon/banmao.fun" target="_blank" rel="noopener noreferrer">GitHub</a>
+                            <span className="airdrop-footer-dot">·</span>
+                            <a href="/" rel="noopener noreferrer">Banmao.Fun</a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+
             {/* Spotlight Tour Modal */}
             {showTour && (
                 <AirdropTourModal

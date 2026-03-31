@@ -5009,3 +5009,242 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .defi-airdrop-page.light .lb-profile-view-address a { color: rgba(0, 0, 0, 0.35); }
 .defi-airdrop-page.light .lb-profile-view-stat { background: rgba(0, 0, 0, 0.02); border-color: rgba(0, 0, 0, 0.06); }
 .defi-airdrop-page.light .lb-profile-view-stat-label { color: rgba(0, 0, 0, 0.35); }
+
+/* ===================== Footer ===================== */
+.airdrop-footer {
+    width: 100%;
+    margin-top: 40px;
+    padding: 0 16px 32px;
+    box-sizing: border-box;
+}
+
+.airdrop-footer-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 28px 32px;
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.7) 0%, rgba(30, 27, 75, 0.5) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(168, 85, 247, 0.1);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.airdrop-footer-section {
+    margin-bottom: 20px;
+}
+
+.airdrop-footer-heading {
+    font-size: 13px;
+    font-weight: 700;
+    color: #f97316;
+    margin: 0 0 10px 0;
+    letter-spacing: 0.3px;
+}
+
+/* Contract items */
+.airdrop-footer-contract {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.airdrop-footer-contract-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+}
+
+.airdrop-footer-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.airdrop-footer-address {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-family: 'Space Mono', 'Fira Code', monospace;
+    color: #a855f7;
+    text-decoration: none;
+    padding: 3px 8px;
+    background: rgba(168, 85, 247, 0.08);
+    border-radius: 6px;
+    transition: all 0.15s;
+}
+
+.airdrop-footer-address:hover {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    transform: translateY(-1px);
+}
+
+.airdrop-footer-address svg {
+    opacity: 0.6;
+}
+
+/* Contract functions */
+.airdrop-footer-funcs {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.airdrop-footer-func {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+
+.airdrop-footer-func code {
+    font-size: 10px;
+    font-family: 'Space Mono', 'Fira Code', monospace;
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.airdrop-footer-func-desc {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    line-height: 1.6;
+}
+
+/* Tech stack badges */
+.airdrop-footer-techs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.airdrop-footer-tech {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 10px;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(168, 85, 247, 0.08));
+    border: 1px solid rgba(249, 115, 22, 0.12);
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.65);
+    letter-spacing: 0.2px;
+    transition: all 0.15s;
+}
+
+.airdrop-footer-tech:hover {
+    background: rgba(249, 115, 22, 0.12);
+    color: #f97316;
+    border-color: rgba(249, 115, 22, 0.25);
+    transform: translateY(-1px);
+}
+
+/* Bottom bar */
+.airdrop-footer-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    margin-top: 4px;
+}
+
+.airdrop-footer-copy {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.airdrop-footer-links {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.airdrop-footer-links a {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.airdrop-footer-links a:hover {
+    color: #f97316;
+}
+
+.airdrop-footer-dot {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.15);
+}
+
+/* Light mode footer */
+.defi-airdrop-page.light .airdrop-footer-inner {
+    background: linear-gradient(145deg, rgba(245, 240, 233, 0.9) 0%, rgba(238, 232, 225, 0.85) 100%);
+    border-color: rgba(0, 0, 0, 0.06);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.defi-airdrop-page.light .airdrop-footer-heading { color: #ea580c !important; }
+
+.defi-airdrop-page.light .airdrop-footer-contract-item {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+.defi-airdrop-page.light .airdrop-footer-label { color: #5a5565 !important; }
+
+.defi-airdrop-page.light .airdrop-footer-address {
+    color: #7c3aed !important;
+    background: rgba(124, 58, 237, 0.06);
+}
+.defi-airdrop-page.light .airdrop-footer-address:hover {
+    background: rgba(124, 58, 237, 0.12);
+    color: #6d28d9 !important;
+}
+
+.defi-airdrop-page.light .airdrop-footer-func {
+    background: rgba(0, 0, 0, 0.015);
+}
+.defi-airdrop-page.light .airdrop-footer-func code {
+    color: #16a34a !important;
+    background: rgba(22, 163, 74, 0.06);
+}
+.defi-airdrop-page.light .airdrop-footer-func-desc { color: #6a6575 !important; }
+
+.defi-airdrop-page.light .airdrop-footer-tech {
+    color: #5a5565 !important;
+    background: rgba(249, 115, 22, 0.04);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+.defi-airdrop-page.light .airdrop-footer-tech:hover {
+    color: #ea580c !important;
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.15);
+}
+
+.defi-airdrop-page.light .airdrop-footer-bottom {
+    border-color: rgba(0, 0, 0, 0.06);
+}
+.defi-airdrop-page.light .airdrop-footer-copy { color: #8a8595 !important; }
+.defi-airdrop-page.light .airdrop-footer-links a { color: #6a6575 !important; }
+.defi-airdrop-page.light .airdrop-footer-links a:hover { color: #ea580c !important; }
+.defi-airdrop-page.light .airdrop-footer-dot { color: rgba(0, 0, 0, 0.15) !important; }
+
+/* Responsive footer */
+@media (max-width: 768px) {
+    .airdrop-footer-inner { padding: 20px 16px; }
+    .airdrop-footer-contract-item { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .airdrop-footer-func { flex-direction: column; gap: 4px; }
+    .airdrop-footer-bottom { flex-direction: column; align-items: center; text-align: center; }
+}
