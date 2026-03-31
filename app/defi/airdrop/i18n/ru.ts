@@ -297,4 +297,6 @@ export const ruAirdrop = {
     addressesImported: "адресов импортировано",
     configInvalid: "Неверный файл конфигурации",
     scanHoldersFailed: "Не удалось сканировать",
+    legalRiskDetected: "Обнаружен правовой риск, автоматически удалён",
+    autoBlacklisted: "автоматически добавлен в чёрный список",
 };

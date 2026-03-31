@@ -297,4 +297,6 @@ export const idAirdrop = {
     addressesImported: "alamat diimpor",
     configInvalid: "File konfigurasi tidak valid",
     scanHoldersFailed: "Gagal memindai holder",
+    legalRiskDetected: "Risiko hukum terdeteksi, dihapus otomatis",
+    autoBlacklisted: "otomatis masuk daftar hitam",
 };

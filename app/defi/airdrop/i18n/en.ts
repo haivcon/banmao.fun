@@ -297,4 +297,6 @@ export const enAirdrop = {
     addressesImported: "addresses imported",
     configInvalid: "Invalid config file",
     scanHoldersFailed: "Failed to scan holders",
+    legalRiskDetected: "Legal risk detected, auto-removed",
+    autoBlacklisted: "auto-blacklisted",
 };

@@ -297,4 +297,6 @@ export const viAirdrop = {
     addressesImported: "địa chỉ đã nhập",
     configInvalid: "File cấu hình không hợp lệ",
     scanHoldersFailed: "Không thể quét holders",
+    legalRiskDetected: "Phát hiện rủi ro pháp lý, đã tự động loại bỏ",
+    autoBlacklisted: "đã tự động thêm vào danh sách chặn",
 };

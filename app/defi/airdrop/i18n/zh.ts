@@ -297,4 +297,6 @@ export const zhAirdrop = {
     addressesImported: "地址已导入",
     configInvalid: "无效配置文件",
     scanHoldersFailed: "扫描持有者失败",
+    legalRiskDetected: "检测到法律风险，已自动移除",
+    autoBlacklisted: "已自动加入黑名单",
 };

@@ -297,4 +297,6 @@ export const koAirdrop = {
     addressesImported: "주소 가져옴",
     configInvalid: "잘못된 설정 파일",
     scanHoldersFailed: "홀더 스캔 실패",
+    legalRiskDetected: "법적 위험 감지, 자동 제거됨",
+    autoBlacklisted: "자동 블랙리스트 추가",
 };

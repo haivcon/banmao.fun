@@ -711,6 +711,14 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 return { address: entry.address, amount: entry.amount, success: true, txHash: hash };
             } catch (err: any) {
                 const msg = err?.shortMessage || err?.message || "Failed";
+                // Auto-detect OKX "Legal risk" flagged address
+                const flagMatch = msg.match(/(?:legal\s*risk|risk\s*associated)[\s\S]*?(0x[a-fA-F0-9]{40})/i);
+                if (flagMatch) {
+                    const flaggedAddr = flagMatch[1].toLowerCase();
+                    setBlacklist(prev => { const next = new Set(prev); next.add(flaggedAddr); return next; });
+                    showToast(`🚫 ${entry.address.slice(0, 8)}...${entry.address.slice(-4)} — ${t("legalRiskDetected") || "Legal risk detected, auto-removed"}`);
+                    return { address: entry.address, amount: entry.amount, success: false, error: `⚠️ OKX Legal Risk — ${t("autoBlacklisted") || "auto-blacklisted"}` };
+                }
                 // Only retry nonce errors
                 if (msg.includes("nonce") && attempt < retries) {
                     await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt))); // 1s, 2s, 4s
@@ -784,32 +792,65 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
 
                 // Split into chunks of MAX_BATCH_SIZE
                 for (let chunk = 0; chunk < entries.length; chunk += MAX_BATCH_SIZE) {
-                    const batch = entries.slice(chunk, chunk + MAX_BATCH_SIZE);
-                    const addrs = batch.map(e => e.address as `0x${string}`);
+                    let batch = entries.slice(chunk, chunk + MAX_BATCH_SIZE);
                     const isEqual = amountMode === "equal";
+                    let hash: string | null = null;
+                    let retries = 0;
+                    const MAX_FLAG_RETRIES = 10; // max flagged addresses to skip per chunk
 
-                    let hash: string;
-                    if (isEqual) {
-                        const amtWei = parseUnits(amountPerWallet || "0", tokenDecimals);
-                        hash = await writeContractAsync({
-                            address: AIRDROP_CONTRACT,
-                            abi: BATCH_ABI,
-                            functionName: "batchTransferEqual",
-                            args: [tokenAddress as `0x${string}`, addrs, amtWei],
-                        } as any);
-                    } else {
-                        const amts = batch.map(e => parseUnits(e.amount || "0", tokenDecimals));
-                        hash = await writeContractAsync({
-                            address: AIRDROP_CONTRACT,
-                            abi: BATCH_ABI,
-                            functionName: "batchTransfer",
-                            args: [tokenAddress as `0x${string}`, addrs, amts],
-                        } as any);
+                    while (!hash && retries < MAX_FLAG_RETRIES) {
+                        try {
+                            const addrs = batch.map(e => e.address as `0x${string}`);
+                            if (isEqual) {
+                                const amtWei = parseUnits(amountPerWallet || "0", tokenDecimals);
+                                hash = await writeContractAsync({
+                                    address: AIRDROP_CONTRACT,
+                                    abi: BATCH_ABI,
+                                    functionName: "batchTransferEqual",
+                                    args: [tokenAddress as `0x${string}`, addrs, amtWei],
+                                } as any);
+                            } else {
+                                const amts = batch.map(e => parseUnits(e.amount || "0", tokenDecimals));
+                                hash = await writeContractAsync({
+                                    address: AIRDROP_CONTRACT,
+                                    abi: BATCH_ABI,
+                                    functionName: "batchTransfer",
+                                    args: [tokenAddress as `0x${string}`, addrs, amts],
+                                } as any);
+                            }
+                        } catch (batchErr: any) {
+                            const errMsg = batchErr?.shortMessage || batchErr?.message || "";
+                            // Auto-detect OKX "Legal risk" flagged addresses
+                            const flagMatch = errMsg.match(/(?:legal\s*risk|risk\s*associated)[\s\S]*?(0x[a-fA-F0-9]{40})/i);
+                            if (flagMatch) {
+                                const flaggedAddr = flagMatch[1].toLowerCase();
+                                // Auto-add to blacklist
+                                setBlacklist(prev => {
+                                    const next = new Set(prev);
+                                    next.add(flaggedAddr);
+                                    return next;
+                                });
+                                // Remove from current batch
+                                const before = batch.length;
+                                batch = batch.filter(e => e.address.toLowerCase() !== flaggedAddr);
+                                // Mark as failed in results
+                                results.push({ address: flagMatch[1], amount: amountPerWallet || "0", success: false, error: `⚠️ OKX Legal Risk — ${t("autoBlacklisted") || "auto-blacklisted"}` });
+                                setSendResults([...results]);
+                                showToast(`🚫 ${flagMatch[1].slice(0, 8)}...${flagMatch[1].slice(-4)} — ${t("legalRiskDetected") || "Legal risk detected, auto-removed"}`);
+                                retries++;
+                                if (batch.length === 0) break; // all addresses flagged
+                                continue; // retry without the flagged address
+                            }
+                            // Not a legal risk error — rethrow
+                            throw batchErr;
+                        }
                     }
 
-                    // All entries in this chunk succeed with same txHash
-                    for (const e of batch) {
-                        results.push({ address: e.address, amount: e.amount, success: true, txHash: hash });
+                    // Record results for successfully sent batch
+                    if (hash) {
+                        for (const e of batch) {
+                            results.push({ address: e.address, amount: e.amount, success: true, txHash: hash });
+                        }
                     }
                     setSendResults([...results]);
                     setSendProgress(Math.min(chunk + MAX_BATCH_SIZE, entries.length));
