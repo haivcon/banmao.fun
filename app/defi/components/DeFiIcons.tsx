@@ -59,3 +59,13 @@ export const BurnIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
         <circle cx="12" cy="18" r="2" />
     </svg>
 );
+
+export const AirdropIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        <path d="M12 2C7.03 2 3 6.03 3 11h18c0-4.97-4.03-9-9-9z" />
+        <path d="M3 11l9 11 9-11" />
+        <line x1="12" y1="22" x2="12" y2="15" />
+        <path d="M8 11c0-3 1-6 4-9" />
+        <path d="M16 11c0-3-1-6-4-9" />
+    </svg>
+);

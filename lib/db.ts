@@ -513,6 +513,48 @@ export async function initializeDatabase() {
             )
         `);
 
+        // =========== AIRDROP LEADERBOARD & HISTORY ===========
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS airdrop_profiles (
+                address TEXT PRIMARY KEY,
+                total_amount TEXT DEFAULT '0',
+                total_recipients INTEGER DEFAULT 0,
+                total_airdrops INTEGER DEFAULT 0,
+                total_tx INTEGER DEFAULT 0,
+                first_airdrop INTEGER,
+                last_airdrop INTEGER,
+                name TEXT DEFAULT '',
+                avatar INTEGER DEFAULT 0
+            )
+        `);
+
+        await db.execute(`
+            CREATE INDEX IF NOT EXISTS idx_airdrop_profiles_total
+            ON airdrop_profiles(total_amount DESC)
+        `);
+
+        await db.execute(`
+            CREATE TABLE IF NOT EXISTS airdrop_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tx_hash TEXT UNIQUE NOT NULL,
+                sender_address TEXT NOT NULL,
+                token_address TEXT NOT NULL,
+                token_symbol TEXT DEFAULT 'BANMAO',
+                recipient_count INTEGER NOT NULL,
+                total_amount TEXT NOT NULL,
+                mode TEXT NOT NULL,
+                chain TEXT DEFAULT '196',
+                timestamp INTEGER NOT NULL,
+                success_count INTEGER DEFAULT 0,
+                failed_count INTEGER DEFAULT 0
+            )
+        `);
+
+        await db.execute(`
+            CREATE INDEX IF NOT EXISTS idx_airdrop_history_sender
+            ON airdrop_history(sender_address, timestamp DESC)
+        `);
+
         initialized = true;
         console.log('Turso database initialized successfully');
     } catch (error) {
@@ -3046,6 +3088,98 @@ export async function checkAndAwardBadges(userAddress: string) {
     }
 }
 
+// ========== AIRDROP LEADERBOARD & HISTORY ==========
 
+export async function insertAirdropRecord(
+    txHash: string,
+    senderAddress: string,
+    tokenAddress: string,
+    tokenSymbol: string,
+    recipientCount: number,
+    totalAmount: string,
+    mode: string,
+    chain: string,
+    successCount: number,
+    failedCount: number
+) {
+    await initializeDatabase();
+    try {
+        await db.execute({
+            sql: `INSERT OR IGNORE INTO airdrop_history (tx_hash, sender_address, token_address, token_symbol, recipient_count, total_amount, mode, chain, timestamp, success_count, failed_count)
+                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            args: [txHash.toLowerCase(), senderAddress.toLowerCase(), tokenAddress.toLowerCase(), tokenSymbol, recipientCount, totalAmount, mode, chain, Math.floor(Date.now() / 1000), successCount, failedCount]
+        });
+        return { success: true };
+    } catch (error) {
+        console.error('[Airdrop] Failed to insert record:', error);
+        return { success: false };
+    }
+}
 
+export async function upsertAirdropProfile(
+    address: string,
+    amountWei: string,
+    recipientCount: number,
+    txCount: number
+) {
+    await initializeDatabase();
+    const existing = await db.execute({
+        sql: `SELECT * FROM airdrop_profiles WHERE LOWER(address) = LOWER(?)`,
+        args: [address]
+    });
 
+    const now = Math.floor(Date.now() / 1000);
+
+    if (existing.rows.length > 0) {
+        const row = existing.rows[0];
+        const oldTotal = BigInt(row.total_amount as string || '0');
+        const newTotal = oldTotal + BigInt(amountWei);
+        await db.execute({
+            sql: `UPDATE airdrop_profiles SET
+                  total_amount = ?,
+                  total_recipients = total_recipients + ?,
+                  total_airdrops = total_airdrops + 1,
+                  total_tx = total_tx + ?,
+                  last_airdrop = ?
+                  WHERE LOWER(address) = LOWER(?)`,
+            args: [newTotal.toString(), recipientCount, txCount, now, address]
+        });
+    } else {
+        await db.execute({
+            sql: `INSERT INTO airdrop_profiles (address, total_amount, total_recipients, total_airdrops, total_tx, first_airdrop, last_airdrop)
+                  VALUES (?, ?, ?, 1, ?, ?, ?)`,
+            args: [address.toLowerCase(), amountWei, recipientCount, txCount, now, now]
+        });
+    }
+}
+
+export async function getAirdropLeaderboard(limit = 20, offset = 0) {
+    await initializeDatabase();
+    const result = await db.execute({
+        sql: `SELECT * FROM airdrop_profiles ORDER BY LENGTH(total_amount) DESC, total_amount DESC LIMIT ? OFFSET ?`,
+        args: [limit, offset]
+    });
+    return result.rows;
+}
+
+export async function getAirdropHistory(senderAddress: string, limit = 20) {
+    await initializeDatabase();
+    const result = await db.execute({
+        sql: `SELECT * FROM airdrop_history WHERE LOWER(sender_address) = LOWER(?) ORDER BY timestamp DESC LIMIT ?`,
+        args: [senderAddress, limit]
+    });
+    return result.rows;
+}
+
+export async function getAirdropStats() {
+    await initializeDatabase();
+    const result = await db.execute(`
+        SELECT
+            COUNT(*) as total_airdrops,
+            COALESCE(SUM(recipient_count), 0) as total_recipients,
+            COALESCE(SUM(success_count), 0) as total_success,
+            COUNT(DISTINCT sender_address) as unique_senders
+        FROM airdrop_history
+    `);
+    return result.rows[0] || {};
+}

@@ -12,7 +12,9 @@ import { translations, Language, LANGUAGES } from "./i18n";
 import { AnimatedNumbers } from "./AnimatedNumbers";
 import { useSound } from "./hooks/useSound";
 import confetti from "canvas-confetti";
+
 import "./burn.css";
+
 
 // Contributor interface
 interface DonationEntry {
@@ -2091,6 +2093,7 @@ export default function BurnPage() {
                         )}
                     </div>
                 </div>
+
 
 
                 {/* How It Works */}

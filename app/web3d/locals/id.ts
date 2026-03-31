@@ -147,6 +147,9 @@ export const id: LandingTranslations = {
     defiFarmingDesc: "Farm $BANMAO token dengan menyediakan likuiditas",
     defiLendingName: "Pinjaman",
     defiLendingDesc: "Pinjamkan aset Anda untuk mendapatkan bunga",
+    defiAirdropName: "Airdrop",
+    defiAirdropDesc: "Distribusikan $BANMAO ke dompet aktif di XLayer",
+    defiAirdropDetails: "Pindai XLayer untuk dompet aktif dan airdrop $BANMAO secara massal. Dompet yang sudah memiliki $BANMAO otomatis dikecualikan.",
     // Staking Page UI
     stakingAmountToStake: "Jumlah Stake",
     stakingAvailableBalance: "Saldo Tersedia",

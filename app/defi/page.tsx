@@ -14,7 +14,7 @@ import {
 } from "../web3d/locals";
 import { numberToWords, SupportLanguage } from "../web3d/locals/numberToWords";
 import { LanguageSelector } from "./LanguageSelector";
-import { SpotlightCard, StakingIcon, PoolIcon, FarmIcon, LendingIcon, BurnIcon, ServiceDetailModal } from "./components";
+import { SpotlightCard, StakingIcon, PoolIcon, FarmIcon, LendingIcon, BurnIcon, AirdropIcon, ServiceDetailModal } from "./components";
 
 // Community Wallet Address
 const COMMUNITY_WALLET = "0x92809f2837f708163d375960063c8a3156fceacb";
@@ -56,6 +56,18 @@ const DEFI_SERVICES = [
         status: "live" as const,
         contractAddress: COMMUNITY_WALLET,
         detailsKey: "defiBurnDetails"
+    },
+    {
+        id: "airdrop",
+        nameKey: "defiAirdropName",
+        Icon: AirdropIcon,
+        descKey: "defiAirdropDesc",
+        href: "/defi/airdrop",
+        stats: { apy: "🪂", tvl: "—" },
+        color: "#f97316",
+        status: "live" as const,
+        contractAddress: "0xf2d471711D24646b2C50E1F74a063caA7a6863a0",
+        detailsKey: "defiAirdropDetails"
     },
     {
         id: "pools",

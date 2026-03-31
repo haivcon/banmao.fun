@@ -1,4 +1,4 @@
-// Vietnamese translations
+﻿// Vietnamese translations
 import type { LandingTranslations } from './index';
 
 export const vi: LandingTranslations = {
@@ -145,8 +145,11 @@ export const vi: LandingTranslations = {
     defiPoolsDesc: "Cung cấp thanh khoản để kiếm phí giao dịch và thưởng",
     defiFarmingName: "Yield Farming",
     defiFarmingDesc: "Farm $BANMAO bằng cách cung cấp thanh khoản",
-    defiLendingName: "Cho Vay",
-    defiLendingDesc: "Cho vay tài sản để kiếm lãi suất",
+    defiLendingName: "Cho vay",
+    defiLendingDesc: "Cho vay tài sản để nhận lãi",
+    defiAirdropName: "Airdrop",
+    defiAirdropDesc: "Công cụ cộng đồng để airdrop \$BANMAO đến các ví chưa nắm giữ token. Tiện hơn gửi từng cái!",
+    defiAirdropDetails: "Công cụ mạnh mẽ cho cộng đồng \$BANMAO phân phối token đến ví mới trên XLayer hàng loạt. Quét ví hoạt động, tự động loại ví đã có \$BANMAO, gửi đến hàng trăm địa chỉ trong một phiên. Hỗ trợ nhập thủ công, quét blockchain và nhập CSV với tốc độ lên đến x20.",
     // Staking Page UI
     stakingAmountToStake: "Số Lượng Stake",
     stakingAvailableBalance: "Số Dư Khả Dụng",

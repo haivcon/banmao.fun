@@ -151,6 +151,9 @@ export interface LandingTranslations {
     defiFarmingDesc: string;
     defiLendingName: string;
     defiLendingDesc: string;
+    defiAirdropName: string;
+    defiAirdropDesc: string;
+    defiAirdropDetails: string;
     // Staking Page UI & Status
     stakingAmountToStake: string;
     stakingAvailableBalance: string;

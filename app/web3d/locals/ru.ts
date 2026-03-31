@@ -147,6 +147,9 @@ export const ru: LandingTranslations = {
     defiFarmingDesc: "Фармите $BANMAO токены предоставляя ликвидность",
     defiLendingName: "Кредитование",
     defiLendingDesc: "Давайте активы в долг и получайте проценты",
+    defiAirdropName: "Аирдроп",
+    defiAirdropDesc: "Раздать $BANMAO активным кошелькам XLayer",
+    defiAirdropDetails: "Сканируйте XLayer для поиска активных кошельков и раздайте $BANMAO массово. Кошельки с $BANMAO автоматически исключаются.",
     // Staking Page UI
     stakingAmountToStake: "Сумма для стейкинга",
     stakingAvailableBalance: "Доступный баланс",

@@ -1,4 +1,4 @@
-// English translations
+﻿// English translations
 import type { LandingTranslations } from './index';
 
 export const en: LandingTranslations = {
@@ -148,6 +148,9 @@ export const en: LandingTranslations = {
     defiFarmingDesc: "Farm $BANMAO tokens by providing liquidity",
     defiLendingName: "Lending",
     defiLendingDesc: "Lend your assets to earn interest",
+    defiAirdropName: "Airdrop",
+    defiAirdropDesc: "Community tool to airdrop \$BANMAO to wallets that don't hold the token yet. Easier than sending one by one!",
+    defiAirdropDetails: "A powerful community tool for \$BANMAO holders to distribute tokens to new wallets on XLayer in bulk. Scan for active wallets, exclude existing holders automatically, and send to hundreds of addresses in one session. Supports manual input, blockchain scanning, and CSV import with batch speeds up to x20.",
     // Staking Page UI
     stakingAmountToStake: "Amount to Stake",
     stakingAvailableBalance: "Available Balance",

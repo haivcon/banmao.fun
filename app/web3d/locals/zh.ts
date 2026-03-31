@@ -147,6 +147,9 @@ export const zh: LandingTranslations = {
     defiFarmingDesc: "通过提供流动性挖矿 $BANMAO 代币",
     defiLendingName: "借贷",
     defiLendingDesc: "出借资产赚取利息",
+    defiAirdropName: "空投",
+    defiAirdropDesc: "向 XLayer 活跃钱包分发 $BANMAO",
+    defiAirdropDetails: "扫描 XLayer 活跃钱包并批量空投 $BANMAO。已持有 $BANMAO 的钱包自动排除。",
     // Staking Page UI
     stakingAmountToStake: "质押数量",
     stakingAvailableBalance: "可用余额",

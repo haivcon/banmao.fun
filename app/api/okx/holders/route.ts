@@ -2,17 +2,15 @@
 // GET /api/okx/holders
 // Uses server-side caching to respect OKX rate limits
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { apiCache, CACHE_KEYS, CACHE_TTL } from "../../../lib/apiCache";
 
 const OKX_API_URL = "https://web3.okx.com/api/v6/dex/market/token/holder";
 
-// Token config for BANMAO on X Layer
-const TOKEN_CONFIG = {
-    chainIndex: "196",
-    tokenContractAddress: "0x16d91d1615fc55b76d5f92365bd60c069b46ef78"
-};
+// Default token config (BANMAO on X Layer)
+const DEFAULT_CHAIN = "196";
+const DEFAULT_TOKEN = "0x16d91d1615fc55b76d5f92365bd60c069b46ef78";
 
 interface HolderData {
     holderWalletAddress: string;
@@ -40,9 +38,10 @@ function generateSignature(
 }
 
 // Fetch holders from OKX API
-async function fetchFromOKX(): Promise<HoldersResponse> {
+async function fetchFromOKX(chainIndex: string, tokenAddr: string, tagFilter?: string): Promise<HoldersResponse> {
     const timestamp = new Date().toISOString();
-    const queryString = `?chainIndex=${TOKEN_CONFIG.chainIndex}&tokenContractAddress=${TOKEN_CONFIG.tokenContractAddress}`;
+    let queryString = `?chainIndex=${chainIndex}&tokenContractAddress=${tokenAddr}`;
+    if (tagFilter) queryString += `&tagFilter=${tagFilter}`;
     const requestPath = "/api/v6/dex/market/token/holder" + queryString;
     const method = "GET";
 
@@ -95,7 +94,15 @@ const MOCK_HOLDERS: HolderData[] = Array.from({ length: 20 }, (_, i) => ({
     holdAmount: String(Math.floor((50000000 - i * 2000000) + Math.random() * 1000000)),
 }));
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+    const { searchParams } = new URL(req.url);
+    const chainIndex = searchParams.get("chainIndex") || DEFAULT_CHAIN;
+    const tokenAddr = searchParams.get("tokenContractAddress") || DEFAULT_TOKEN;
+    const tagFilter = searchParams.get("tagFilter") || undefined;
+
+    // Dynamic cache key based on params
+    const cacheKey = `${CACHE_KEYS.HOLDERS}_${chainIndex}_${tokenAddr}_${tagFilter || "all"}`;
+
     // Helper to add cache headers
     const addCacheHeaders = (response: NextResponse) => {
         response.headers.set('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
@@ -104,34 +111,31 @@ export async function GET() {
 
     try {
         // Check cache first
-        const cached = apiCache.get<HoldersResponse>(CACHE_KEYS.HOLDERS);
+        const cached = apiCache.get<HoldersResponse>(cacheKey);
         if (cached) {
-            console.log("[Holders API] ✅ Returning cached data (age:", apiCache.getAge(CACHE_KEYS.HOLDERS), "s)");
             return addCacheHeaders(NextResponse.json({
                 ...cached,
                 fromCache: true,
-                cacheAge: apiCache.getAge(CACHE_KEYS.HOLDERS),
+                cacheAge: apiCache.getAge(cacheKey),
             }));
         }
 
         // Check if there's already a pending request
-        const pendingRequest = apiCache.getPendingRequest<HoldersResponse>(CACHE_KEYS.HOLDERS);
+        const pendingRequest = apiCache.getPendingRequest<HoldersResponse>(cacheKey);
         if (pendingRequest) {
-            console.log("[Holders API] ⏳ Waiting for pending request...");
             const result = await pendingRequest;
             return addCacheHeaders(NextResponse.json({ ...result, fromCache: true }));
         }
 
         // Make new request
-        console.log("[Holders API] 🔄 Fetching fresh data from OKX...");
-        const fetchPromise = fetchFromOKX();
-        apiCache.setPendingRequest(CACHE_KEYS.HOLDERS, fetchPromise);
+        console.log(`[Holders API] 🔄 Fetching: chain=${chainIndex} token=${tokenAddr.slice(0,10)}... tag=${tagFilter || "all"}`);
+        const fetchPromise = fetchFromOKX(chainIndex, tokenAddr, tagFilter);
+        apiCache.setPendingRequest(cacheKey, fetchPromise);
 
         const data = await fetchPromise;
 
         // Cache the result
-        apiCache.set(CACHE_KEYS.HOLDERS, data, CACHE_TTL.HOLDERS);
-        console.log("[Holders API] ✅ Fresh data cached for", CACHE_TTL.HOLDERS / 1000, "seconds");
+        apiCache.set(cacheKey, data, CACHE_TTL.HOLDERS);
 
         return addCacheHeaders(NextResponse.json(data));
 
@@ -139,7 +143,7 @@ export async function GET() {
         console.error("[Holders API] ❌ Error:", error);
 
         // Try to return stale cache if available
-        const staleCache = apiCache.get<HoldersResponse>(CACHE_KEYS.HOLDERS);
+        const staleCache = apiCache.get<HoldersResponse>(cacheKey);
         if (staleCache) {
             return addCacheHeaders(NextResponse.json({
                 ...staleCache,

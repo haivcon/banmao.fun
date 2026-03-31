@@ -1,0 +1,4655 @@
+/* ===================== AIRDROP PANEL STYLES ===================== */
+
+/* Override landing.css global html,body { position:fixed; overflow:hidden } */
+html:has(.defi-airdrop-page),
+html:has(.defi-airdrop-page) body {
+    position: static !important;
+    overflow: visible !important;
+    overflow-y: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    inset: unset !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168, 85, 247, 0.25) transparent;
+}
+
+html:has(.defi-airdrop-page)::-webkit-scrollbar,
+html:has(.defi-airdrop-page) body::-webkit-scrollbar {
+    width: 6px;
+}
+
+html:has(.defi-airdrop-page)::-webkit-scrollbar-track,
+html:has(.defi-airdrop-page) body::-webkit-scrollbar-track {
+    background: rgba(10, 10, 26, 0.5);
+}
+
+html:has(.defi-airdrop-page)::-webkit-scrollbar-thumb,
+html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(168, 85, 247, 0.4), rgba(249, 115, 22, 0.3));
+    border-radius: 10px;
+}
+
+html:has(.defi-airdrop-page)::-webkit-scrollbar-thumb:hover,
+html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(168, 85, 247, 0.6), rgba(249, 115, 22, 0.5));
+}
+
+.airdrop-section-wrapper {
+    max-width: 100%;
+    margin: 32px auto 0;
+    padding: 0 32px;
+    animation: fadeInUp 0.6s ease-out 0.6s both;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.airdrop-panel {
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 27, 75, 0.85) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 32px;
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    padding: 28px;
+    position: relative;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3), 0 0 60px rgba(168, 85, 247, 0.08);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.airdrop-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #a855f7, #f97316, transparent);
+    animation: airdropShimmer 3s ease-in-out infinite;
+}
+
+@keyframes airdropShimmer {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+.airdrop-panel-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.airdrop-panel-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 0 0 6px;
+    background: linear-gradient(135deg, #a855f7 0%, #f97316 50%, #fbbf24 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+}
+
+.airdrop-panel-subtitle {
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 12px;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.airdrop-back-btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 50px;
+    padding: 8px 16px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: absolute;
+    left: 24px;
+    top: 24px;
+}
+
+.airdrop-back-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    transform: translateX(-2px);
+}
+
+/* Tabs */
+.airdrop-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 5px;
+    border-radius: 50px;
+}
+
+.airdrop-tab {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 50px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.airdrop-tab.active {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.35) 0%, rgba(249, 115, 22, 0.25) 100%);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(168, 85, 247, 0.2);
+}
+
+.airdrop-tab:not(.active):hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Tab Content */
+.airdrop-tab-content {
+    min-height: 200px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Manual Input */
+.airdrop-input-group {
+    margin-bottom: 16px;
+}
+
+.airdrop-label {
+    display: block;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.airdrop-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 18px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    color: #fff;
+    font-size: 12px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    line-height: 1.6;
+    resize: vertical;
+    min-height: 120px;
+    transition: all 0.2s ease;
+}
+
+.airdrop-textarea:focus {
+    outline: none;
+    border-color: #a855f7;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.airdrop-textarea::placeholder {
+    color: rgba(148, 163, 184, 0.4);
+}
+
+.airdrop-address-stats {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.airdrop-stat-valid,
+.airdrop-stat-invalid,
+.airdrop-stat-dupe {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.airdrop-stat-valid {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.airdrop-stat-invalid {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.airdrop-stat-dupe {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+/* Scan Tab */
+.airdrop-scan-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.airdrop-scan-desc {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    margin: 0 0 12px;
+    line-height: 1.6;
+}
+
+.airdrop-scan-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 28px;
+    background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+    border: none;
+    border-radius: 50px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.airdrop-scan-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(168, 85, 247, 0.4);
+}
+
+.airdrop-scan-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.airdrop-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.airdrop-scan-error {
+    padding: 12px 16px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 12px;
+    color: #f87171;
+    font-size: 12px;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.airdrop-scan-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.airdrop-scan-count {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.airdrop-scan-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.airdrop-select-btn {
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.airdrop-select-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+/* Wallet List */
+.airdrop-wallet-list {
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-right: 4px;
+    margin-bottom: 12px;
+}
+
+.airdrop-wallet-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.airdrop-wallet-item:hover {
+    background: rgba(168, 85, 247, 0.08);
+    border-color: rgba(168, 85, 247, 0.2);
+}
+
+.airdrop-wallet-item.selected {
+    background: rgba(168, 85, 247, 0.12);
+    border-color: rgba(168, 85, 247, 0.35);
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.1);
+}
+
+.airdrop-wallet-check {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.airdrop-wallet-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.airdrop-wallet-addr {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.airdrop-wallet-balances {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.airdrop-wallet-bal {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 8px;
+}
+
+.airdrop-wallet-copy {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+    padding: 4px;
+}
+
+.airdrop-wallet-copy:hover {
+    opacity: 1;
+}
+
+.airdrop-selected-count {
+    text-align: center;
+    color: #a855f7;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px;
+    background: rgba(168, 85, 247, 0.08);
+    border-radius: 12px;
+    border: 1px solid rgba(168, 85, 247, 0.15);
+}
+
+/* Amount Section */
+.airdrop-amount-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.airdrop-amount-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.airdrop-amount-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 14px 110px 14px 18px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+.airdrop-amount-input:focus {
+    outline: none;
+    border-color: #a855f7;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+}
+
+.airdrop-amount-input::placeholder {
+    color: rgba(148, 163, 184, 0.4);
+    font-weight: 400;
+}
+
+/* Hide number input spinners */
+.airdrop-amount-input::-webkit-inner-spin-button,
+.airdrop-amount-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+}
+.airdrop-amount-input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.airdrop-amount-suffix {
+    position: absolute;
+    right: 18px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    font-weight: 600;
+    pointer-events: none;
+}
+
+.airdrop-quick-amounts {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.airdrop-quick-btn {
+    padding: 6px 14px;
+    background: rgba(168, 85, 247, 0.1);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: 20px;
+    color: #c4b5fd;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.airdrop-quick-btn:hover {
+    background: rgba(168, 85, 247, 0.25);
+    border-color: rgba(168, 85, 247, 0.4);
+    color: #fff;
+    transform: scale(1.05);
+}
+
+.airdrop-balance-display {
+    margin-top: 10px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: right;
+}
+
+.airdrop-balance-value {
+    color: #a855f7;
+    font-weight: 700;
+}
+
+/* Summary */
+.airdrop-summary {
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: rgba(168, 85, 247, 0.06);
+    border: 1px solid rgba(168, 85, 247, 0.15);
+    border-radius: 16px;
+}
+
+.airdrop-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.airdrop-summary-row.total {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 6px;
+    padding-top: 10px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+/* Execute Button */
+.airdrop-execute-btn {
+    width: 100%;
+    padding: 16px 28px;
+    margin-top: 20px;
+    background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #f97316 100%);
+    background-size: 200% 200%;
+    border: none;
+    border-radius: 50px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    animation: airdropBtnGlow 3s ease-in-out infinite;
+}
+
+@keyframes airdropBtnGlow {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.airdrop-execute-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    transition: left 0.6s ease;
+}
+
+.airdrop-execute-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(168, 85, 247, 0.35);
+}
+
+.airdrop-execute-btn:hover::before {
+    left: 100%;
+}
+
+.airdrop-execute-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.airdrop-execute-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(168, 85, 247, 0.25);
+    animation: none;
+}
+
+.airdrop-connect-msg {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    margin-top: 16px;
+}
+
+/* Speed Mode Selector */
+.airdrop-speed-mode {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.airdrop-speed-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.airdrop-speed-options {
+    display: flex;
+    gap: 6px;
+    flex: 1;
+}
+
+.airdrop-speed-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50px;
+    background: rgba(0, 0, 0, 0.2);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-align: center;
+}
+
+.airdrop-speed-btn.active {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(249, 115, 22, 0.2) 100%);
+    border-color: rgba(168, 85, 247, 0.4);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(168, 85, 247, 0.15);
+}
+
+.airdrop-speed-btn:not(.active):hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Preview Step */
+.airdrop-preview-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.airdrop-preview-stat {
+    padding: 14px 16px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    text-align: center;
+}
+
+.airdrop-preview-stat.highlight {
+    border-color: rgba(168, 85, 247, 0.3);
+    background: rgba(168, 85, 247, 0.08);
+}
+
+.airdrop-preview-stat.success {
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.airdrop-preview-stat.error {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.airdrop-preview-label {
+    display: block;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 6px;
+}
+
+.airdrop-preview-value {
+    display: block;
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+}
+
+.airdrop-warning {
+    padding: 12px 16px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 12px;
+    color: #f87171;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.airdrop-info-note {
+    padding: 10px 16px;
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+}
+
+/* Recipient List */
+.airdrop-recipient-list {
+    margin-bottom: 16px;
+}
+
+.airdrop-recipient-list-header {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 8px;
+}
+
+.airdrop-recipient-list-body {
+    max-height: 250px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 4px;
+}
+
+.airdrop-recipient-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    font-size: 12px;
+}
+
+.airdrop-recipient-index {
+    color: rgba(255, 255, 255, 0.35);
+    font-weight: 600;
+    min-width: 30px;
+}
+
+.airdrop-recipient-addr {
+    color: rgba(255, 255, 255, 0.8);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    flex: 1;
+    min-width: 0;
+}
+
+.airdrop-recipient-addr.full {
+    font-size: 11px;
+    word-break: break-all;
+    line-height: 1.4;
+}
+
+.airdrop-recipient-amount {
+    color: #a855f7;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.airdrop-recipient-more {
+    text-align: center;
+    padding: 8px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 11px;
+}
+
+/* Sending Step */
+.airdrop-sending-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.airdrop-progress-ring {
+    width: 140px;
+    height: 140px;
+}
+
+.airdrop-progress-ring svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.3));
+}
+
+.airdrop-sending-info {
+    text-align: center;
+}
+
+.airdrop-sending-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+}
+
+.airdrop-sending-current {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.airdrop-sending-counts {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+.airdrop-count-success {
+    color: #22c55e;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.airdrop-count-fail {
+    color: #ef4444;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+/* Results List */
+.airdrop-results-list {
+    max-height: 250px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 4px;
+    margin-bottom: 16px;
+}
+
+.airdrop-results-list.full {
+    max-height: 400px;
+}
+
+.airdrop-result-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    animation: slideIn 0.3s ease;
+}
+
+.airdrop-result-item.success {
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.12);
+}
+
+.airdrop-result-item.error {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.12);
+}
+
+.airdrop-result-icon {
+    flex-shrink: 0;
+}
+
+.airdrop-result-addr {
+    color: rgba(255, 255, 255, 0.7);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    flex: 1;
+}
+
+.airdrop-result-link {
+    color: #60a5fa;
+    text-decoration: none;
+    font-size: 11px;
+    padding: 3px 8px;
+    background: rgba(96, 165, 250, 0.1);
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.airdrop-result-link:hover {
+    background: rgba(96, 165, 250, 0.2);
+}
+
+.airdrop-result-error {
+    color: rgba(239, 68, 68, 0.8);
+    font-size: 10px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Done Step */
+.airdrop-done-summary {
+    text-align: center;
+    padding: 24px 16px;
+    margin-bottom: 20px;
+}
+
+.airdrop-done-icon {
+    font-size: 56px;
+    margin-bottom: 12px;
+}
+
+.airdrop-done-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0 0 16px;
+}
+
+.airdrop-done-stats {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.airdrop-done-stat {
+    text-align: center;
+}
+
+.airdrop-done-stat-label {
+    display: block;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 4px;
+}
+
+.airdrop-done-stat-value {
+    display: block;
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+}
+
+.airdrop-done-stat-value.success {
+    color: #22c55e;
+}
+
+.airdrop-done-stat-value.error {
+    color: #ef4444;
+}
+
+.airdrop-done-actions {
+    text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .airdrop-section-wrapper {
+        padding: 0 16px;
+    }
+
+    .airdrop-panel {
+        padding: 20px 16px;
+        border-radius: 24px;
+    }
+
+    .airdrop-preview-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .airdrop-back-btn {
+        position: static;
+        margin-bottom: 12px;
+        display: inline-block;
+    }
+
+    .airdrop-panel-title {
+        font-size: 18px;
+    }
+}
+
+/* ===================== NEW FEATURE STYLES ===================== */
+
+/* Top Actions (History + Address Book buttons) */
+.airdrop-top-actions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.airdrop-top-btn {
+    flex: 1 1 auto;
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    min-width: 0;
+}
+
+.airdrop-top-btn:hover {
+    background: rgba(168, 85, 247, 0.1);
+    border-color: rgba(168, 85, 247, 0.3);
+    color: #fff;
+}
+
+/* History & Address Book Panel */
+.airdrop-history-panel {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 16px;
+    animation: fadeIn 0.2s ease;
+}
+
+.airdrop-history-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.airdrop-history-empty {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 12px;
+    text-align: center;
+    padding: 12px;
+}
+
+.airdrop-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.airdrop-history-item {
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.airdrop-history-date {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 4px;
+}
+
+.airdrop-history-stats {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 600;
+}
+
+/* Address Book */
+.airdrop-book-save {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.airdrop-book-input {
+    flex: 1;
+    padding: 8px 14px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 12px;
+}
+
+.airdrop-book-input:focus {
+    outline: none;
+    border-color: #a855f7;
+}
+
+.airdrop-book-save-btn {
+    padding: 8px 16px;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(249, 115, 22, 0.2));
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.airdrop-book-save-btn:hover {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.5), rgba(249, 115, 22, 0.3));
+}
+
+.airdrop-book-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.airdrop-book-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.airdrop-book-name {
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.airdrop-book-count {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 10px;
+}
+
+.airdrop-book-actions {
+    display: flex;
+    gap: 4px;
+}
+
+/* CSV Drop Zone */
+.airdrop-csv-zone {
+    border: 2px dashed rgba(168, 85, 247, 0.3);
+    border-radius: 20px;
+    padding: 40px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(168, 85, 247, 0.03);
+}
+
+.airdrop-csv-zone:hover,
+.airdrop-csv-zone.drag-over {
+    border-color: #a855f7;
+    background: rgba(168, 85, 247, 0.08);
+    transform: scale(1.01);
+}
+
+.airdrop-csv-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+}
+
+.airdrop-csv-text {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.airdrop-csv-format {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 11px;
+}
+
+/* Amount Mode Toggle */
+.airdrop-amount-mode-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.airdrop-mode-btns {
+    display: flex;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 3px;
+    border-radius: 20px;
+}
+
+.airdrop-mode-btn {
+    padding: 5px 14px;
+    border: none;
+    border-radius: 20px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.airdrop-mode-btn.active {
+    background: rgba(168, 85, 247, 0.25);
+    color: #fff;
+}
+
+.airdrop-custom-info {
+    padding: 12px;
+    background: rgba(168, 85, 247, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(168, 85, 247, 0.1);
+}
+
+/* Gas Estimate */
+.airdrop-gas-estimate {
+    padding: 10px 16px;
+    background: rgba(34, 197, 94, 0.06);
+    border: 1px solid rgba(34, 197, 94, 0.15);
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    margin-bottom: 16px;
+}
+
+.airdrop-gas-estimate strong {
+    color: #22c55e;
+}
+
+.airdrop-balance-gas-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.airdrop-gas-display {
+    font-size: 11px;
+    color: rgba(34, 197, 94, 0.7);
+}
+
+/* Action Buttons (Retry, Export, Share) */
+.airdrop-action-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.airdrop-action-btn {
+    flex: 1;
+    min-width: 100px;
+    padding: 10px 16px;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.airdrop-action-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.airdrop-action-btn.retry {
+    border-color: rgba(249, 115, 22, 0.3);
+    background: rgba(249, 115, 22, 0.08);
+    color: #fb923c;
+}
+
+.airdrop-action-btn.retry:hover {
+    background: rgba(249, 115, 22, 0.2);
+    color: #fff;
+}
+
+.airdrop-action-btn.export {
+    border-color: rgba(59, 130, 246, 0.3);
+    background: rgba(59, 130, 246, 0.08);
+    color: #60a5fa;
+}
+
+.airdrop-action-btn.export:hover {
+    background: rgba(59, 130, 246, 0.2);
+    color: #fff;
+}
+
+.airdrop-action-btn.share {
+    border-color: rgba(168, 85, 247, 0.3);
+    background: rgba(168, 85, 247, 0.08);
+    color: #c4b5fd;
+}
+
+.airdrop-action-btn.share:hover {
+    background: rgba(168, 85, 247, 0.2);
+    color: #fff;
+}
+
+/* Toast Notification */
+.airdrop-toast {
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 24px;
+    background: rgba(168, 85, 247, 0.9);
+    backdrop-filter: blur(12px);
+    border-radius: 50px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 9999;
+    animation: toastSlide 0.3s ease;
+    box-shadow: 0 8px 32px rgba(168, 85, 247, 0.3);
+    pointer-events: none;
+}
+
+@keyframes toastSlide {
+    from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* SVG Icon Utilities */
+.airdrop-icon {
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
+.title-icon {
+    margin-right: 4px;
+}
+
+.title-icon.spin {
+    animation: iconSpin 2s linear infinite;
+}
+
+@keyframes iconSpin {
+    to { transform: rotate(360deg); }
+}
+
+.text-green { color: #22c55e; }
+.text-red { color: #ef4444; }
+
+.check-empty {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    transition: border-color 0.2s;
+}
+
+.airdrop-wallet-item:hover .check-empty {
+    border-color: rgba(168, 85, 247, 0.4);
+}
+
+/* ===================== UPGRADED SCAN TAB ===================== */
+
+
+.airdrop-scan-clear-btn {
+    padding: 8px 12px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 12px;
+    background: rgba(239, 68, 68, 0.06);
+    color: rgba(239, 68, 68, 0.7);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.airdrop-scan-clear-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+}
+
+/* Wallet card (full address view) */
+.airdrop-wallet-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    padding: 12px;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.airdrop-wallet-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.airdrop-wallet-card.selected {
+    background: rgba(168, 85, 247, 0.06);
+    border-color: rgba(168, 85, 247, 0.2);
+}
+
+/* Row 1: checkbox + address */
+.airdrop-wallet-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+.airdrop-wallet-full-addr {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 11.5px;
+    color: rgba(255, 255, 255, 0.85);
+    word-break: break-all;
+    line-height: 1.5;
+    letter-spacing: 0.3px;
+    flex: 1;
+    user-select: text;
+}
+
+.airdrop-wallet-card.selected .airdrop-wallet-full-addr {
+    color: #fff;
+}
+
+/* Row 2: balances + actions */
+.airdrop-wallet-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 28px;
+}
+
+.airdrop-wallet-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.airdrop-wallet-action-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+}
+
+.airdrop-wallet-action-btn:hover {
+    background: rgba(168, 85, 247, 0.12);
+    border-color: rgba(168, 85, 247, 0.3);
+    color: #a855f7;
+}
+
+.airdrop-wallet-bal.dim {
+    opacity: 0.35;
+    font-style: italic;
+}
+
+/* Expandable asset detail */
+.airdrop-wallet-detail {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 4px;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.airdrop-wallet-detail-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 10px;
+}
+
+.airdrop-wallet-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.airdrop-wallet-asset {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.asset-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 600;
+}
+
+.asset-value {
+    font-size: 11px;
+    color: #fff;
+    font-weight: 700;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.airdrop-wallet-explorer-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: rgba(168, 85, 247, 0.7);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.airdrop-wallet-explorer-link:hover {
+    color: #a855f7;
+}
+
+/* Also apply hover effect to new card checkbox */
+.airdrop-wallet-card:hover .check-empty {
+    border-color: rgba(168, 85, 247, 0.4);
+}
+
+/* ===================== RESULT CARDS (Full address) ===================== */
+
+/* Sending step - result row */
+.airdrop-result-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    margin-bottom: 4px;
+}
+
+.airdrop-result-row.success {
+    border-color: rgba(34, 197, 94, 0.12);
+}
+
+.airdrop-result-row.error {
+    border-color: rgba(239, 68, 68, 0.12);
+}
+
+.airdrop-result-full-addr {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 10.5px;
+    color: rgba(255, 255, 255, 0.8);
+    word-break: break-all;
+    line-height: 1.4;
+    letter-spacing: 0.2px;
+    flex: 1;
+    user-select: text;
+}
+
+/* Done step - result card */
+.airdrop-result-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: background 0.15s;
+}
+
+.airdrop-result-card:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.airdrop-result-card.success {
+    /* no left border */
+    outline: none;
+}
+
+.airdrop-result-card.error {
+    /* no left border */
+    outline: none;
+}
+
+.airdrop-result-card-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.airdrop-result-card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 24px;
+}
+
+.airdrop-result-amount {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.airdrop-result-tx-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.airdrop-result-tx-link {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(168, 85, 247, 0.7);
+    text-decoration: none;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(168, 85, 247, 0.08);
+    border: 1px solid rgba(168, 85, 247, 0.15);
+    transition: all 0.15s;
+}
+
+.airdrop-result-tx-link:hover {
+    background: rgba(168, 85, 247, 0.15);
+    color: #a855f7;
+}
+
+/* Scan header layout - centered */
+.airdrop-scan-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+}
+
+.airdrop-scan-desc {
+    max-width: 520px;
+    margin: 0 auto;
+}
+
+/* Scan info note */
+.airdrop-scan-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px solid rgba(59, 130, 246, 0.12);
+    font-size: 11px;
+    line-height: 1.5;
+    color: rgba(147, 197, 253, 0.8);
+    max-width: 520px;
+    text-align: left;
+}
+
+.airdrop-scan-note svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+    color: rgba(59, 130, 246, 0.6);
+}
+.airdrop-scan-btn-group {
+    display: flex;
+    gap: 6px;
+    align-items: stretch;
+    justify-content: center;
+}
+
+/* ===================== /defi/airdrop page layout ===================== */
+
+.defi-airdrop-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0a0a1a 0%, #0f0826 40%, #150b30 100%);
+    color: #e2e8f0;
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    overflow-x: hidden;
+    overflow-y: auto;
+    /* Override landing.css global lock on html/body */
+    position: static !important;
+    height: auto !important;
+    max-height: none !important;
+}
+
+.defi-airdrop-main {
+    padding: 0 16px 60px;
+}
+
+.defi-airdrop-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(12px);
+    background: rgba(10, 10, 26, 0.6);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.defi-airdrop-nav {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.defi-airdrop-back {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s;
+}
+
+.defi-airdrop-back:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+}
+
+.defi-airdrop-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #f97316;
+}
+
+.defi-airdrop-brand svg {
+    color: #f97316;
+}
+
+.defi-airdrop-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.defi-airdrop-lang {
+    display: flex;
+    gap: 2px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 3px;
+}
+
+.defi-airdrop-lang-btn {
+    padding: 4px 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0.5;
+    transition: all 0.15s;
+}
+
+.defi-airdrop-lang-btn.active {
+    opacity: 1;
+    background: rgba(249, 115, 22, 0.15);
+    border-color: rgba(249, 115, 22, 0.3);
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.1);
+}
+
+.defi-airdrop-lang-btn:hover {
+    opacity: 0.85;
+}
+
+.defi-airdrop-main {
+    margin: 0 auto;
+    padding: 32px 16px 60px;
+}
+
+.airdrop-page-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 80px 0;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 14px;
+}
+
+.airdrop-page-spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(249, 115, 22, 0.2);
+    border-top-color: #f97316;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@media (max-width: 640px) {
+    .defi-airdrop-header {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 10px 12px;
+    }
+
+    .defi-airdrop-brand span {
+        display: none;
+    }
+
+    .defi-airdrop-main {
+        padding: 16px 10px 40px;
+    }
+
+    .defi-airdrop-lang {
+        gap: 1px;
+    }
+
+    .defi-airdrop-lang-btn {
+        padding: 3px 4px;
+        font-size: 12px;
+    }
+}
+
+/* BanmaoSnake game tip */
+.airdrop-game-tip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.06), rgba(16, 185, 129, 0.04));
+    border: 1px solid rgba(34, 197, 94, 0.15);
+    color: rgba(134, 239, 172, 0.85);
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+    margin-top: 4px;
+}
+
+.airdrop-game-tip:hover {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(16, 185, 129, 0.08));
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #86efac;
+    transform: translateY(-1px);
+}
+
+.airdrop-game-tip span {
+    flex: 1;
+}
+
+.airdrop-game-tip svg:last-child {
+    opacity: 0.5;
+}
+
+/* ===================== Help button ===================== */
+.defi-airdrop-help-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    background: rgba(249, 115, 22, 0.08);
+    color: #f97316;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.defi-airdrop-help-btn:hover {
+    background: rgba(249, 115, 22, 0.18);
+    border-color: rgba(249, 115, 22, 0.5);
+    transform: scale(1.1);
+    box-shadow: 0 0 14px rgba(249, 115, 22, 0.2);
+}
+
+/* ===================== Guide modal ===================== */
+.airdrop-guide-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.25s ease;
+}
+
+.airdrop-guide-modal {
+    background: linear-gradient(145deg, #1a1035 0%, #0f0826 60%, #150b30 100%);
+    border: 1px solid rgba(249, 115, 22, 0.15);
+    border-radius: 20px;
+    padding: 32px 28px 24px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5), 0 0 40px rgba(249, 115, 22, 0.05);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Progress dots */
+.airdrop-guide-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: 24px;
+}
+
+.airdrop-guide-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.12);
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.airdrop-guide-dot.active {
+    background: #f97316;
+    width: 24px;
+    border-radius: 4px;
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
+}
+
+.airdrop-guide-dot:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Content */
+.airdrop-guide-content {
+    text-align: center;
+    margin-bottom: 20px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.airdrop-guide-icon {
+    font-size: 56px;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+}
+
+.airdrop-guide-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 14px;
+}
+
+.airdrop-guide-desc {
+    font-size: 13px;
+    line-height: 1.7;
+    color: rgba(255, 255, 255, 0.65);
+    margin: 0;
+    white-space: pre-line;
+    text-align: left;
+    max-width: 400px;
+}
+
+/* Counter */
+.airdrop-guide-counter {
+    text-align: center;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.25);
+    margin-bottom: 14px;
+}
+
+/* Navigation */
+.airdrop-guide-nav {
+    display: flex;
+    gap: 10px;
+}
+
+.airdrop-guide-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.airdrop-guide-btn.primary {
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.25);
+}
+
+.airdrop-guide-btn.primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.35);
+}
+
+.airdrop-guide-btn.secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.airdrop-guide-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+@media (max-width: 640px) {
+    .airdrop-guide-modal {
+        padding: 24px 18px 18px;
+        border-radius: 16px;
+    }
+
+    .airdrop-guide-icon {
+        font-size: 44px;
+    }
+
+    .airdrop-guide-title {
+        font-size: 17px;
+    }
+
+    .airdrop-guide-content {
+        min-height: 170px;
+    }
+}
+
+/* ===================== Mobile responsive for top actions ===================== */
+@media (max-width: 640px) {
+    .airdrop-top-actions {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .airdrop-top-btn {
+        font-size: 10px;
+        padding: 5px 8px;
+        flex: 1 1 calc(50% - 4px);
+        min-width: 0;
+        justify-content: center;
+    }
+
+    .airdrop-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .airdrop-tab {
+        font-size: 11px;
+        padding: 8px 10px;
+        white-space: nowrap;
+    }
+
+    .airdrop-speed-options {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .airdrop-speed-btn {
+        font-size: 11px;
+        padding: 6px 10px;
+        flex: 1 1 auto;
+    }
+
+    .airdrop-recipient-addr.full {
+        font-size: 9px;
+    }
+
+    .airdrop-balance-gas-row {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+}
+
+/* ===================== Skeleton loading ===================== */
+.airdrop-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 24px;
+}
+
+.airdrop-skeleton-line {
+    height: 14px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+.airdrop-skeleton-line.w60 { width: 60%; }
+.airdrop-skeleton-line.w80 { width: 80%; }
+.airdrop-skeleton-line.w40 { width: 40%; }
+.airdrop-skeleton-line.h40 { height: 40px; border-radius: 10px; }
+
+@keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+}
+
+/* ===================== OKB warning text ===================== */
+.text-red {
+    color: #ef4444;
+    font-weight: 600;
+    font-size: 11px;
+}
+
+/* ===================== Batch mode button ===================== */
+.airdrop-speed-btn.batch-btn {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(16, 185, 129, 0.08));
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+    font-weight: 700;
+    position: relative;
+}
+
+.airdrop-speed-btn.batch-btn::before {
+    content: "★";
+    font-size: 8px;
+    margin-right: 3px;
+    opacity: 0.7;
+}
+
+.airdrop-speed-btn.batch-btn:hover {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.15));
+    border-color: rgba(34, 197, 94, 0.5);
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.2);
+}
+
+.airdrop-speed-btn.batch-btn.active {
+    background: linear-gradient(135deg, #22c55e, #10b981);
+    color: #fff;
+    border-color: #22c55e;
+    box-shadow: 0 0 16px rgba(34, 197, 94, 0.3);
+}
+
+/* Parallel mode buttons (x3, x5, x10, x20) */
+.airdrop-speed-btn.parallel-btn.active {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(139, 92, 246, 0.2));
+    border-color: rgba(168, 85, 247, 0.5);
+    color: #c4b5fd;
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.2);
+}
+
+.airdrop-speed-btn.parallel-btn:not(.active):hover {
+    border-color: rgba(168, 85, 247, 0.25);
+}
+
+/* Sequential mode button */
+.airdrop-speed-btn.sequential-btn.active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(37, 99, 235, 0.15));
+    border-color: rgba(59, 130, 246, 0.5);
+    color: #93c5fd;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
+}
+
+.airdrop-speed-btn.sequential-btn:not(.active):hover {
+    border-color: rgba(59, 130, 246, 0.25);
+}
+
+/* ===================== Mode Info Card ===================== */
+.airdrop-mode-info-card {
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.02);
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: modeCardFadeIn 0.3s ease-out;
+}
+
+@keyframes modeCardFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.airdrop-mode-info-card.mode-batch {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.06), rgba(16, 185, 129, 0.03));
+    border-color: rgba(34, 197, 94, 0.2);
+}
+
+.airdrop-mode-info-card.mode-parallel {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.06), rgba(139, 92, 246, 0.03));
+    border-color: rgba(168, 85, 247, 0.2);
+}
+
+.airdrop-mode-info-card.mode-sequential {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.06), rgba(37, 99, 235, 0.03));
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+.mode-info-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.mode-info-icon {
+    font-size: 16px;
+}
+
+.mode-info-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #e2e8f0;
+}
+
+.mode-info-badge {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-left: auto;
+}
+
+.mode-info-badge.badge-batch {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.mode-info-badge.badge-parallel {
+    background: rgba(168, 85, 247, 0.15);
+    color: #a855f7;
+}
+
+.mode-info-badge.badge-sequential {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.mode-info-desc {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.5;
+    margin: 0 0 8px 0;
+}
+
+.mode-info-stats {
+    display: flex;
+    gap: 12px;
+}
+
+.mode-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.65);
+    padding: 3px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 6px;
+}
+
+/* Light mode */
+.defi-airdrop-page.light .airdrop-mode-info-card {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+.defi-airdrop-page.light .airdrop-mode-info-card.mode-batch {
+    background: rgba(34, 197, 94, 0.04);
+    border-color: rgba(34, 197, 94, 0.15);
+}
+
+.defi-airdrop-page.light .airdrop-mode-info-card.mode-parallel {
+    background: rgba(168, 85, 247, 0.04);
+    border-color: rgba(168, 85, 247, 0.12);
+}
+
+.defi-airdrop-page.light .airdrop-mode-info-card.mode-sequential {
+    background: rgba(59, 130, 246, 0.04);
+    border-color: rgba(59, 130, 246, 0.12);
+}
+
+.defi-airdrop-page.light .mode-info-title { color: #1a1a2e; }
+.defi-airdrop-page.light .mode-info-desc { color: rgba(0, 0, 0, 0.5); }
+.defi-airdrop-page.light .mode-stat { color: rgba(0, 0, 0, 0.6); background: rgba(0, 0, 0, 0.03); }
+
+/* ===================== Batch Contract Info ===================== */
+.batch-contract-info {
+    margin: 8px 0;
+    padding: 8px 12px;
+    background: rgba(34, 197, 94, 0.04);
+    border: 1px solid rgba(34, 197, 94, 0.1);
+    border-radius: 8px;
+}
+
+.batch-contract-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+}
+
+.batch-contract-row + .batch-contract-row {
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.batch-contract-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.batch-contract-addr {
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    color: #22c55e;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color 0.2s;
+}
+
+.batch-contract-addr:hover {
+    color: #4ade80;
+    text-decoration: underline;
+}
+
+.batch-status {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.batch-status.approved {
+    color: #22c55e;
+}
+
+.batch-status.not-approved {
+    color: #facc15;
+}
+
+/* ===================== Batch 2-Step Buttons ===================== */
+.batch-steps-container {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 0;
+}
+
+.batch-step-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.35);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.batch-step-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.batch-step-btn.active {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(16, 185, 129, 0.1));
+    border-color: rgba(34, 197, 94, 0.4);
+    color: #22c55e;
+    box-shadow: 0 2px 12px rgba(34, 197, 94, 0.15);
+}
+
+.batch-step-btn.active:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(16, 185, 129, 0.18));
+    box-shadow: 0 4px 20px rgba(34, 197, 94, 0.25);
+    transform: translateY(-1px);
+}
+
+.batch-step-btn.completed {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.2);
+    color: rgba(34, 197, 94, 0.7);
+}
+
+.batch-step-btn.send-btn.active {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(168, 85, 247, 0.15));
+    border-color: rgba(249, 115, 22, 0.5);
+    color: #f97316;
+    box-shadow: 0 2px 12px rgba(249, 115, 22, 0.15);
+}
+
+.batch-step-btn.send-btn.active:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.3), rgba(168, 85, 247, 0.22));
+    box-shadow: 0 4px 20px rgba(249, 115, 22, 0.25);
+    transform: translateY(-1px);
+}
+
+.batch-step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    font-size: 11px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.batch-step-btn.active .batch-step-number {
+    background: rgba(34, 197, 94, 0.2);
+}
+
+.batch-step-btn.send-btn.active .batch-step-number {
+    background: rgba(249, 115, 22, 0.2);
+}
+
+.batch-step-btn.completed .batch-step-number {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+/* Light mode */
+.defi-airdrop-page.light .batch-contract-info {
+    background: rgba(34, 197, 94, 0.03);
+    border-color: rgba(34, 197, 94, 0.1);
+}
+
+.defi-airdrop-page.light .batch-contract-label { color: rgba(0, 0, 0, 0.4); }
+.defi-airdrop-page.light .batch-contract-addr { color: #16a34a; }
+.defi-airdrop-page.light .batch-status.not-approved { color: #b45309; }
+
+@media (max-width: 640px) {
+    .batch-steps-container {
+        flex-direction: column;
+    }
+    .batch-step-btn {
+        padding: 10px 14px;
+        font-size: 12px;
+    }
+}
+
+/* ===================== Progress bar (#3) ===================== */
+.airdrop-progress-bar-container {
+    position: relative;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.airdrop-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #f97316, #a855f7, #22c55e);
+    background-size: 200% 100%;
+    animation: progressShimmer 2s ease-in-out infinite;
+    border-radius: 14px;
+    transition: width 0.5s ease;
+    min-width: 2%;
+}
+
+@keyframes progressShimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.airdrop-progress-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.3px;
+}
+
+/* ===================== Cancel button (#5) ===================== */
+.airdrop-cancel-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.08));
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 12px;
+    color: #ef4444;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin: 12px 0;
+}
+
+.airdrop-cancel-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
+}
+
+/* ===================== Dashboard stats (#4) ===================== */
+.airdrop-dashboard {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.airdrop-dash-stat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.06), rgba(168, 85, 247, 0.06));
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    color: #e2e8f0;
+}
+
+.airdrop-dash-stat > svg {
+    color: #f97316;
+    flex-shrink: 0;
+}
+
+.airdrop-dash-stat > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.airdrop-dash-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+}
+
+.airdrop-dash-label {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+@media (max-width: 640px) {
+    .airdrop-dashboard {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===================== Token Selector (#9) ===================== */
+.airdrop-token-selector {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.airdrop-token-current {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(168, 85, 247, 0.06));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: #e2e8f0;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex: 1;
+}
+
+.airdrop-token-current:hover {
+    border-color: rgba(249, 115, 22, 0.3);
+    background: rgba(249, 115, 22, 0.1);
+}
+
+.airdrop-token-symbol {
+    font-weight: 700;
+    color: #f97316;
+}
+
+.airdrop-token-addr-full {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.35);
+    font-family: 'Space Mono', monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+}
+
+.airdrop-token-explorer-link {
+    display: inline-flex;
+    align-items: center;
+    color: rgba(34, 197, 94, 0.6);
+    flex-shrink: 0;
+    padding: 2px;
+    border-radius: 4px;
+    transition: all 0.15s;
+}
+
+.airdrop-token-explorer-link:hover {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.airdrop-token-addr-inline {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.35);
+    font-family: 'Space Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    word-break: break-all;
+}
+
+.airdrop-token-reset {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+    color: #ef4444;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.airdrop-token-reset:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+/* ===================== QR Scanner (#6) ===================== */
+.airdrop-qr-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    margin-top: 8px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.08));
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 8px;
+    color: #a78bfa;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.airdrop-qr-btn:hover {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 10px rgba(99, 102, 241, 0.15);
+}
+
+.airdrop-qr-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+}
+
+.airdrop-qr-content {
+    width: 90%;
+    max-width: 400px;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.airdrop-qr-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.airdrop-qr-header span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #e2e8f0;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.airdrop-qr-header button {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s;
+}
+
+.airdrop-qr-header button:hover {
+    color: #ef4444;
+}
+
+.airdrop-qr-video {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    background: #000;
+}
+
+.airdrop-qr-hint {
+    padding: 12px 16px;
+    margin: 0;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+}
+
+/* ===================== Scheduler (#7) ===================== */
+.airdrop-scheduler {
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.06), rgba(99, 102, 241, 0.06));
+    border: 1px solid rgba(59, 130, 246, 0.12);
+    border-radius: 12px;
+}
+
+.airdrop-scheduler-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #93c5fd;
+}
+
+.airdrop-scheduler-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.airdrop-schedule-input {
+    flex: 1;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #e2e8f0;
+    font-size: 13px;
+    font-family: inherit;
+    color-scheme: dark;
+}
+
+.airdrop-schedule-input:focus {
+    outline: none;
+    border-color: rgba(59, 130, 246, 0.4);
+}
+
+.airdrop-schedule-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 14px;
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.airdrop-schedule-btn:hover:not(:disabled) {
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+    transform: translateY(-1px);
+}
+
+.airdrop-schedule-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.airdrop-scheduler-active {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.airdrop-schedule-countdown {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #60a5fa;
+    font-variant-numeric: tabular-nums;
+    animation: countdownPulse 2s ease-in-out infinite;
+}
+
+@keyframes countdownPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* ===================== Theme toggle button ===================== */
+.defi-airdrop-theme-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.defi-airdrop-theme-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+/* ===================== Language dropdown (compact professional) ===================== */
+.defi-lang-dropdown {
+    position: relative;
+    z-index: 100;
+}
+
+.defi-lang-trigger {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    cursor: pointer;
+    color: #e2e8f0;
+    font-size: 12px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.defi-lang-trigger:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(249, 115, 22, 0.3);
+}
+
+.defi-lang-trigger .lang-flag {
+    font-size: 16px;
+}
+
+.defi-lang-trigger .lang-code {
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+}
+
+.defi-lang-trigger .lang-arrow {
+    font-size: 8px;
+    opacity: 0.5;
+    margin-left: 2px;
+}
+
+.defi-lang-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+}
+
+.defi-lang-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: linear-gradient(145deg, rgba(25, 18, 50, 0.98), rgba(15, 10, 35, 0.98));
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 6px;
+    min-width: 180px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    animation: langMenuIn 0.2s ease-out;
+    z-index: 100;
+}
+
+@keyframes langMenuIn {
+    from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.defi-lang-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 13px;
+    width: 100%;
+    text-align: left;
+    transition: all 0.15s;
+}
+
+.defi-lang-option:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #fff;
+}
+
+.defi-lang-option.active {
+    background: rgba(249, 115, 22, 0.12);
+    color: #f97316;
+}
+
+.defi-lang-option .lang-flag {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.defi-lang-option .lang-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.defi-lang-option .lang-code {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    opacity: 0.5;
+}
+
+.defi-lang-option .lang-check {
+    color: #22c55e;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* Light mode overrides */
+.defi-airdrop-page.light .defi-lang-trigger {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #1a1a2e;
+}
+
+.defi-airdrop-page.light .defi-lang-menu {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(245, 240, 235, 0.98));
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+}
+
+.defi-airdrop-page.light .defi-lang-option {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.defi-airdrop-page.light .defi-lang-option:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: #1a1a2e;
+}
+
+.defi-airdrop-page.light .defi-lang-option.active {
+    background: rgba(249, 115, 22, 0.08);
+    color: #ea580c;
+}
+
+/* ===================== Light mode theme ===================== */
+.defi-airdrop-page.light {
+    background: linear-gradient(145deg, #f8f4f0, #e8e0d8);
+    color: #1a1a2e;
+}
+
+.defi-airdrop-page.light .defi-airdrop-header {
+    background: rgba(255, 255, 255, 0.85);
+    border-color: rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(20px);
+}
+
+.defi-airdrop-page.light .defi-airdrop-back,
+.defi-airdrop-page.light .defi-airdrop-brand {
+    color: #1a1a2e;
+}
+
+.defi-airdrop-page.light .defi-airdrop-theme-btn {
+    border-color: rgba(0, 0, 0, 0.12);
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.defi-airdrop-page.light .defi-airdrop-lang-v2 {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.defi-airdrop-page.light .defi-airdrop-lang-v2-btn {
+    color: rgba(0, 0, 0, 0.4);
+}
+
+.defi-airdrop-page.light .defi-airdrop-lang-v2-btn.active {
+    color: #1a1a2e;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(249, 115, 22, 0.08));
+    border-color: rgba(249, 115, 22, 0.3);
+}
+
+.defi-airdrop-page.light .defi-airdrop-lang-v2-btn:hover:not(.active) {
+    color: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.defi-airdrop-page.light .airdrop-panel {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #1a1a2e;
+}
+
+.defi-airdrop-page.light .airdrop-panel-title,
+.defi-airdrop-page.light .airdrop-panel-subtitle {
+    color: #1a1a2e;
+}
+
+.defi-airdrop-page.light .airdrop-textarea {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #1a1a2e;
+}
+
+.defi-airdrop-page.light .airdrop-top-btn {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #1a1a2e;
+}
+
+.defi-airdrop-page.light .airdrop-tab {
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.defi-airdrop-page.light .airdrop-tab.active {
+    color: #f97316;
+}
+
+@media (max-width: 640px) {
+    .defi-airdrop-lang-v2 {
+        gap: 1px;
+        padding: 2px;
+    }
+
+    .defi-airdrop-lang-v2-btn {
+        padding: 4px 6px;
+    }
+
+    .defi-airdrop-lang-v2-btn .lang-code {
+        display: none;
+    }
+
+    .defi-airdrop-lang-v2-btn .lang-flag {
+        font-size: 16px;
+    }
+
+    .defi-airdrop-actions {
+        gap: 6px !important;
+    }
+}
+
+/* ===================== Scan Mode Toggle (sub-tabs) ===================== */
+
+.airdrop-scan-mode-toggle {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    margin-bottom: 16px;
+}
+
+.airdrop-scan-mode-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 10px 14px;
+    border-radius: 11px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+.airdrop-scan-mode-btn:hover {
+    color: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.airdrop-scan-mode-btn.active {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(249, 115, 22, 0.1));
+    border-color: rgba(168, 85, 247, 0.35);
+    color: #e2e8f0;
+    box-shadow: 0 2px 12px rgba(168, 85, 247, 0.15);
+}
+
+.scan-mode-badge {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(168, 85, 247, 0.12);
+    color: rgba(168, 85, 247, 0.7);
+}
+
+.airdrop-scan-mode-btn.active .scan-mode-badge {
+    background: rgba(249, 115, 22, 0.2);
+    color: #f97316;
+}
+
+/* Light mode */
+.defi-airdrop-page.light .airdrop-scan-mode-toggle {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+.defi-airdrop-page.light .airdrop-scan-mode-btn {
+    color: rgba(0, 0, 0, 0.4);
+}
+
+.defi-airdrop-page.light .airdrop-scan-mode-btn.active {
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.25);
+    color: #1a1a2e;
+}
+
+@media (max-width: 640px) {
+    .airdrop-scan-mode-btn {
+        padding: 8px 10px;
+        font-size: 11px;
+        gap: 4px;
+    }
+    .scan-mode-badge {
+        font-size: 8px;
+        padding: 1px 4px;
+    }
+}
+
+/* ===================== Scan Token Holders ===================== */
+
+/* Divider between existing scan and holder scan */
+.airdrop-scan-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0 12px;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+.airdrop-scan-divider::before,
+.airdrop-scan-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.3), transparent);
+}
+
+.airdrop-scan-divider span {
+    white-space: nowrap;
+    color: #f97316;
+    font-size: 13px;
+}
+
+/* Chain selector pills */
+.airdrop-chain-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.airdrop-chain-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.airdrop-chain-pill:hover {
+    border-color: rgba(249, 115, 22, 0.3);
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(249, 115, 22, 0.06);
+    transform: translateY(-1px);
+}
+
+.airdrop-chain-pill.active {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(168, 85, 247, 0.1));
+    border-color: rgba(249, 115, 22, 0.5);
+    color: #f97316;
+    box-shadow: 0 0 12px rgba(249, 115, 22, 0.15);
+}
+
+.chain-emoji {
+    font-size: 14px;
+}
+
+/* Hot tokens grid */
+.airdrop-hot-tokens {
+    margin-bottom: 14px;
+}
+
+.airdrop-hot-tokens-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-bottom: 10px;
+}
+
+.airdrop-hot-tokens-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 6px;
+}
+
+.airdrop-hot-token-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 10px 6px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.airdrop-hot-token-card:hover {
+    border-color: rgba(249, 115, 22, 0.3);
+    background: rgba(249, 115, 22, 0.06);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.airdrop-hot-token-card.active {
+    border-color: rgba(249, 115, 22, 0.6);
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.12), rgba(168, 85, 247, 0.08));
+    box-shadow: 0 0 16px rgba(249, 115, 22, 0.2);
+}
+
+.hot-token-symbol {
+    font-size: 12px;
+    font-weight: 700;
+    color: #e2e8f0;
+    letter-spacing: 0.3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    white-space: nowrap;
+}
+
+.hot-token-price {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.45);
+    font-family: monospace;
+}
+
+.hot-token-change {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+.hot-token-change.up {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.hot-token-change.down {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Holder input row */
+.airdrop-holder-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.airdrop-holder-input-row .airdrop-book-input {
+    flex: 1;
+}
+
+/* Tag filters */
+.airdrop-holder-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.airdrop-holder-tag {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.airdrop-holder-tag:hover {
+    border-color: rgba(168, 85, 247, 0.3);
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(168, 85, 247, 0.06);
+}
+
+.airdrop-holder-tag.active {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(99, 102, 241, 0.1));
+    border-color: rgba(168, 85, 247, 0.5);
+    color: #a855f7;
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.12);
+}
+
+/* Holder results */
+.airdrop-holder-results {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(34, 197, 94, 0.04);
+    border: 1px solid rgba(34, 197, 94, 0.12);
+    border-radius: 12px;
+}
+
+.airdrop-holder-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 10px;
+    max-height: 240px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168, 85, 247, 0.3) transparent;
+}
+
+.airdrop-holder-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.airdrop-holder-list::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+}
+
+.airdrop-holder-list::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(168, 85, 247, 0.4), rgba(249, 115, 22, 0.3));
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+
+.airdrop-holder-list::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(168, 85, 247, 0.6), rgba(249, 115, 22, 0.5));
+}
+
+/* Global scrollbar for all airdrop scrollable areas */
+.airdrop-recipient-list-body::-webkit-scrollbar,
+.airdrop-book-list::-webkit-scrollbar,
+.airdrop-blacklist-items::-webkit-scrollbar {
+    width: 5px;
+}
+
+.airdrop-recipient-list-body::-webkit-scrollbar-track,
+.airdrop-book-list::-webkit-scrollbar-track,
+.airdrop-blacklist-items::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.airdrop-recipient-list-body::-webkit-scrollbar-thumb,
+.airdrop-book-list::-webkit-scrollbar-thumb,
+.airdrop-blacklist-items::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(168, 85, 247, 0.35), rgba(249, 115, 22, 0.25));
+    border-radius: 10px;
+}
+
+.airdrop-recipient-list-body::-webkit-scrollbar-thumb:hover,
+.airdrop-book-list::-webkit-scrollbar-thumb:hover,
+.airdrop-blacklist-items::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(168, 85, 247, 0.55), rgba(249, 115, 22, 0.45));
+}
+
+.airdrop-holder-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 6px;
+    font-size: 11px;
+    transition: background 0.15s;
+}
+
+.airdrop-holder-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.airdrop-holder-item.selected {
+    background: rgba(168, 85, 247, 0.08);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+.airdrop-holder-item .airdrop-wallet-check {
+    flex-shrink: 0;
+    width: 18px;
+}
+
+.holder-balance-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(34, 211, 238, 0.1);
+    color: #22d3ee;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.holder-item-actions {
+    display: flex;
+    gap: 3px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+/* Token Info Card (#6) */
+.airdrop-token-info-card {
+    margin-top: 10px;
+    padding: 12px 14px;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.06), rgba(249, 115, 22, 0.04));
+    border: 1px solid rgba(168, 85, 247, 0.15);
+    border-radius: 12px;
+}
+
+.token-info-header {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.token-info-symbol {
+    font-size: 16px;
+    font-weight: 800;
+    color: #f97316;
+}
+
+.token-info-name {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.token-info-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.token-info-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    min-width: 60px;
+}
+
+.token-info-label {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.token-info-value {
+    font-size: 12px;
+    font-weight: 700;
+    color: #e2e8f0;
+}
+
+.token-info-value.up { color: #22c55e; }
+.token-info-value.down { color: #ef4444; }
+
+/* Overlap Warning (#5) */
+.airdrop-overlap-warning {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: rgba(250, 204, 21, 0.08);
+    border: 1px solid rgba(250, 204, 21, 0.2);
+    border-radius: 8px;
+    font-size: 12px;
+    color: #facc15;
+    margin-bottom: 8px;
+}
+
+/* Balance Filter (#2) */
+.airdrop-holder-balance-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.holder-filter-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+}
+
+.holder-filter-input {
+    flex: 1;
+    max-width: 120px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: #e2e8f0;
+    font-size: 12px;
+    font-family: 'Space Mono', monospace;
+    outline: none;
+}
+
+.holder-filter-input:focus {
+    border-color: rgba(168, 85, 247, 0.4);
+}
+
+.holder-filter-count {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(168, 85, 247, 0.7);
+    white-space: nowrap;
+}
+
+/* Import bar */
+.airdrop-holder-import-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    margin-top: 8px;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(249, 115, 22, 0.06));
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: 10px;
+}
+
+/* Light mode for new components */
+.defi-airdrop-page.light .airdrop-token-info-card {
+    background: rgba(249, 115, 22, 0.04);
+    border-color: rgba(249, 115, 22, 0.12);
+}
+
+.defi-airdrop-page.light .token-info-symbol { color: #ea580c; }
+.defi-airdrop-page.light .token-info-name { color: rgba(0, 0, 0, 0.4); }
+.defi-airdrop-page.light .token-info-stat { background: rgba(0, 0, 0, 0.02); }
+.defi-airdrop-page.light .token-info-label { color: rgba(0, 0, 0, 0.4); }
+.defi-airdrop-page.light .token-info-value { color: #1a1a2e; }
+
+.defi-airdrop-page.light .airdrop-overlap-warning {
+    background: rgba(250, 204, 21, 0.08);
+    border-color: rgba(250, 204, 21, 0.25);
+    color: #b45309;
+}
+
+.defi-airdrop-page.light .airdrop-holder-balance-filter {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+.defi-airdrop-page.light .holder-filter-input {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #1a1a2e;
+}
+
+.defi-airdrop-page.light .holder-balance-badge {
+    background: rgba(37, 99, 235, 0.08);
+    color: #2563eb;
+}
+
+.defi-airdrop-page.light .airdrop-holder-item.selected {
+    background: rgba(249, 115, 22, 0.06);
+    border-color: rgba(249, 115, 22, 0.15);
+}
+
+.defi-airdrop-page.light .airdrop-holder-import-bar {
+    background: rgba(249, 115, 22, 0.05);
+    border-color: rgba(249, 115, 22, 0.15);
+}
+
+/* Light mode overrides for holder scan */
+.defi-airdrop-page.light .airdrop-scan-divider {
+    color: rgba(0, 0, 0, 0.3);
+}
+
+.defi-airdrop-page.light .airdrop-scan-divider::before,
+.defi-airdrop-page.light .airdrop-scan-divider::after {
+    background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.2), transparent);
+}
+
+.defi-airdrop-page.light .airdrop-chain-pill {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.defi-airdrop-page.light .airdrop-chain-pill.active {
+    background: rgba(249, 115, 22, 0.1);
+    border-color: rgba(249, 115, 22, 0.4);
+    color: #ea580c;
+}
+
+.defi-airdrop-page.light .airdrop-hot-token-card {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+.defi-airdrop-page.light .airdrop-hot-token-card:hover,
+.defi-airdrop-page.light .airdrop-hot-token-card.active {
+    background: rgba(249, 115, 22, 0.06);
+    border-color: rgba(249, 115, 22, 0.3);
+}
+
+.defi-airdrop-page.light .hot-token-symbol {
+    color: #1a1a2e;
+}
+
+.defi-airdrop-page.light .airdrop-holder-tag {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.06);
+    color: rgba(0, 0, 0, 0.5);
+}
+
+.defi-airdrop-page.light .airdrop-holder-tag.active {
+    background: rgba(168, 85, 247, 0.08);
+    border-color: rgba(168, 85, 247, 0.3);
+    color: #7c3aed;
+}
+
+.defi-airdrop-page.light .airdrop-holder-results {
+    background: rgba(34, 197, 94, 0.04);
+    border-color: rgba(34, 197, 94, 0.15);
+}
+
+@media (max-width: 640px) {
+    .airdrop-chain-selector {
+        gap: 4px;
+    }
+
+    .airdrop-chain-pill {
+        padding: 5px 8px;
+        font-size: 11px;
+    }
+
+    .airdrop-hot-tokens-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .airdrop-holder-filters {
+        gap: 4px;
+    }
+
+    .airdrop-holder-tag {
+        padding: 4px 7px;
+        font-size: 10px;
+    }
+}
+/* ===================== Leaderboard Tab ===================== */
+.lb-stats-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.lb-stat-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 10px 8px;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.06), rgba(249, 115, 22, 0.04));
+    border: 1px solid rgba(168, 85, 247, 0.12);
+    border-radius: 10px;
+}
+
+.lb-stat-num {
+    font-size: 18px;
+    font-weight: 800;
+    color: #f97316;
+}
+
+.lb-stat-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.lb-table {
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.lb-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.lb-body {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.lb-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.03);
+    transition: background 0.15s;
+}
+
+.lb-row:hover { background: rgba(255, 255, 255, 0.03); }
+
+.lb-row-me {
+    background: rgba(168, 85, 247, 0.06) !important;
+}
+
+.lb-col-rank { width: 36px; text-align: center; font-weight: 700; font-size: 14px; }
+.lb-col-addr { flex: 1; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+.lb-col-addr a { color: #e2e8f0; text-decoration: none; font-family: 'Space Mono', monospace; }
+.lb-col-addr a:hover { color: #f97316; }
+.lb-col-amount { width: 80px; text-align: right; font-size: 12px; font-weight: 700; color: #f97316; }
+.lb-col-count { width: 50px; text-align: center; font-size: 12px; color: rgba(255, 255, 255, 0.5); }
+.lb-col-recipients { width: 60px; text-align: right; font-size: 12px; color: rgba(255, 255, 255, 0.5); }
+
+.lb-you-badge {
+    font-size: 8px;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(168, 85, 247, 0.2);
+    color: #a855f7;
+    letter-spacing: 0.5px;
+}
+
+/* ===================== History Tab ===================== */
+.hist-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hist-card {
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    transition: background 0.15s;
+}
+
+.hist-card:hover { background: rgba(255, 255, 255, 0.04); }
+
+.hist-card.success { outline: none; }
+.hist-card.failed { outline: none; }
+
+.hist-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.hist-status { font-size: 14px; }
+.hist-date { font-size: 11px; color: rgba(255, 255, 255, 0.5); }
+.hist-mode-badge {
+    margin-left: auto;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(168, 85, 247, 0.1);
+    color: #a855f7;
+}
+
+.hist-card-body {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.hist-amount {
+    font-size: 15px;
+    font-weight: 800;
+    color: #f97316;
+}
+
+.hist-arrow { color: rgba(255, 255, 255, 0.25); }
+
+.hist-recipients {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.hist-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.hist-stats {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.hist-tx-link {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    color: rgba(34, 197, 94, 0.7);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.hist-tx-link:hover { color: #22c55e; text-decoration: underline; }
+
+/* Light mode */
+.defi-airdrop-page.light .lb-stat-item { background: rgba(249, 115, 22, 0.04); border-color: rgba(249, 115, 22, 0.1); }
+.defi-airdrop-page.light .lb-stat-label { color: rgba(0, 0, 0, 0.4); }
+.defi-airdrop-page.light .lb-header { background: rgba(0, 0, 0, 0.02); color: rgba(0, 0, 0, 0.4); }
+.defi-airdrop-page.light .lb-row:hover { background: rgba(0, 0, 0, 0.02); }
+.defi-airdrop-page.light .lb-row-me { background: rgba(249, 115, 22, 0.04) !important; }
+.defi-airdrop-page.light .lb-col-addr a { color: #1a1a2e; }
+.defi-airdrop-page.light .hist-card { background: rgba(0, 0, 0, 0.01); border-color: rgba(0, 0, 0, 0.06); }
+.defi-airdrop-page.light .hist-date { color: rgba(0, 0, 0, 0.45); }
+.defi-airdrop-page.light .hist-recipients { color: rgba(0, 0, 0, 0.5); }
+
+/* ===================== 3-Column Layout ===================== */
+.airdrop-layout-3col {
+    display: grid;
+    grid-template-columns: 1fr 2.2fr 1fr;
+    gap: 16px;
+    width: 100%;
+    align-items: start;
+    padding: 0 8px;
+}
+
+.airdrop-layout-3col > .airdrop-panel {
+    max-width: none;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.airdrop-layout-3col > .airdrop-side-panel {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.airdrop-side-panel {
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 27, 75, 0.85) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 20px;
+    border: 1px solid rgba(168, 85, 247, 0.15);
+    padding: 16px;
+    position: sticky;
+    top: 80px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.airdrop-side-panel::-webkit-scrollbar {
+    width: 3px;
+}
+
+.airdrop-side-panel::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.2);
+    border-radius: 4px;
+}
+
+.side-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #e2e8f0;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.side-leaderboard .side-panel-header {
+    color: #f97316;
+}
+
+.side-history .side-panel-header {
+    color: #a855f7;
+}
+
+.side-empty {
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.35);
+    padding: 20px 8px;
+}
+
+/* Side panel overrides for compact display */
+.airdrop-side-panel .lb-stats-bar {
+    gap: 4px;
+    margin-bottom: 10px;
+}
+
+.airdrop-side-panel .lb-stat-item {
+    padding: 6px 4px;
+}
+
+.airdrop-side-panel .lb-stat-num {
+    font-size: 14px;
+}
+
+.airdrop-side-panel .lb-col-rank { width: 28px; font-size: 12px; }
+.airdrop-side-panel .lb-col-addr { font-size: 11px; }
+.airdrop-side-panel .lb-col-amount { width: 60px; font-size: 11px; }
+.airdrop-side-panel .lb-col-count { width: 30px; font-size: 11px; }
+.airdrop-side-panel .lb-col-recipients { display: none; }
+.airdrop-side-panel .lb-row { padding: 7px 8px; }
+
+.airdrop-side-panel .hist-card { padding: 10px 12px; }
+.airdrop-side-panel .hist-amount { font-size: 13px; }
+.airdrop-side-panel .hist-date { font-size: 10px; }
+
+/* Light mode */
+.defi-airdrop-page.light .airdrop-side-panel {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(243, 237, 255, 0.9) 100%);
+    border-color: rgba(168, 85, 247, 0.1);
+}
+
+.defi-airdrop-page.light .side-panel-header { color: #1a1a2e; }
+.defi-airdrop-page.light .side-leaderboard .side-panel-header { color: #ea580c; }
+.defi-airdrop-page.light .side-history .side-panel-header { color: #7c3aed; }
+.defi-airdrop-page.light .side-empty { color: rgba(0, 0, 0, 0.35); }
+
+/* Responsive: stack on smaller screens */
+@media (max-width: 1100px) {
+    .airdrop-layout-3col {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    .airdrop-layout-3col > .airdrop-panel {
+        grid-column: 1 / -1;
+        order: 1;
+    }
+    .side-leaderboard { order: 2; }
+    .side-history { order: 3; }
+    .airdrop-side-panel {
+        position: static;
+        max-height: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .airdrop-layout-3col {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* Saved token delete button */
+.airdrop-saved-token-delete {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    border-radius: 6px;
+    color: rgba(239, 68, 68, 0.5);
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    margin-left: 6px;
+}
+.airdrop-saved-token-delete:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ===================== #7: Max Balance Button ===================== */
+.airdrop-max-btn {
+    padding: 4px 10px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(168, 85, 247, 0.15));
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    border-radius: 6px;
+    color: #f97316;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+.airdrop-max-btn:hover {
+    background: rgba(249, 115, 22, 0.2);
+    border-color: #f97316;
+    transform: scale(1.05);
+}
+
+/* ===================== #2: Token Balance Badge ===================== */
+.token-balance-badge {
+    font-size: 10px;
+    font-weight: 700;
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-left: 4px;
+}
+
+/* ===================== #4: Airdrop Receipt ===================== */
+.airdrop-receipt {
+    margin-top: 12px;
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.6), rgba(30, 27, 75, 0.4));
+    border: 1px dashed rgba(168, 85, 247, 0.25);
+    border-radius: 14px;
+    padding: 14px;
+    position: relative;
+}
+.airdrop-receipt::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 20px; right: 20px; height: 2px;
+    background: repeating-linear-gradient(90deg, transparent, transparent 4px, rgba(168, 85, 247, 0.2) 4px, rgba(168, 85, 247, 0.2) 8px);
+}
+.airdrop-receipt-header {
+    font-size: 14px;
+    font-weight: 800;
+    color: #f97316;
+    margin-bottom: 10px;
+    text-align: center;
+}
+.airdrop-receipt-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.airdrop-receipt-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 3px 0;
+    border-bottom: 1px dotted rgba(255, 255, 255, 0.04);
+}
+.airdrop-receipt-row span:last-child, .receipt-highlight {
+    color: #e2e8f0;
+    font-weight: 600;
+}
+.receipt-highlight { color: #f97316 !important; }
+.receipt-tx-link {
+    color: rgba(34, 197, 94, 0.7);
+    text-decoration: none;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+}
+.receipt-tx-link:hover { color: #22c55e; text-decoration: underline; }
+.airdrop-receipt-copy {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin-top: 10px;
+    padding: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(168, 85, 247, 0.08);
+    border: 1px solid rgba(168, 85, 247, 0.15);
+    border-radius: 8px;
+    color: #a855f7;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.airdrop-receipt-copy:hover {
+    background: rgba(168, 85, 247, 0.15);
+    border-color: #a855f7;
+}
+
+/* ===================== #9: Leaderboard Chart ===================== */
+.lb-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 10px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+}
+.lb-chart-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.lb-chart-label {
+    width: 22px;
+    text-align: center;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+.lb-chart-track {
+    flex: 1;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 5px;
+    overflow: hidden;
+}
+.lb-chart-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #f97316, #a855f7);
+    border-radius: 5px;
+    transition: width 0.6s ease;
+}
+.lb-chart-val {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.4);
+    width: 32px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+/* ===================== #10: Achievement Badges ===================== */
+.lb-badges {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.lb-badges-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.35);
+    margin-bottom: 6px;
+}
+.lb-badges-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.lb-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(168, 85, 247, 0.08));
+    border: 1px solid rgba(249, 115, 22, 0.15);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+    animation: badgePop 0.3s ease;
+}
+@keyframes badgePop {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Light mode for new features */
+.defi-airdrop-page.light .airdrop-receipt {
+    background: rgba(249, 115, 22, 0.03);
+    border-color: rgba(249, 115, 22, 0.15);
+}
+.defi-airdrop-page.light .airdrop-receipt-row { color: rgba(0, 0, 0, 0.45); }
+.defi-airdrop-page.light .airdrop-receipt-row span:last-child { color: #1a1a2e; }
+.defi-airdrop-page.light .lb-chart-track { background: rgba(0, 0, 0, 0.04); }
+.defi-airdrop-page.light .lb-badges-title { color: rgba(0, 0, 0, 0.35); }
+.defi-airdrop-page.light .lb-badge { color: rgba(0, 0, 0, 0.6); border-color: rgba(249, 115, 22, 0.1); }
+
+/* Scan multi-hint */
+.airdrop-scan-multi-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-top: 6px;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.06), rgba(249, 115, 22, 0.06));
+    border: 1px solid rgba(34, 197, 94, 0.15);
+    border-radius: 10px;
+    font-size: 11px;
+    color: rgba(34, 197, 94, 0.85);
+    line-height: 1.5;
+}
+.defi-airdrop-page.light .airdrop-scan-multi-hint {
+    background: rgba(34, 197, 94, 0.05);
+    color: rgba(22, 101, 52, 0.8);
+}
+
+/* ===================== Chain Selector ===================== */
+.scan-chain-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 8px 0;
+}
+.scan-chain-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    font-size: 10px;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.scan-chain-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.8);
+    transform: translateY(-1px);
+}
+.scan-chain-btn.active {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.12), rgba(168, 85, 247, 0.12));
+    border-color: rgba(249, 115, 22, 0.3);
+    color: #f97316;
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.1);
+}
+.scan-chain-icon {
+    font-size: 12px;
+    line-height: 1;
+}
+.scan-chain-name {
+    font-size: 10px;
+    letter-spacing: 0.2px;
+}
+
+/* Light mode */
+.defi-airdrop-page.light .scan-chain-btn {
+    border-color: rgba(0, 0, 0, 0.08);
+    background: rgba(0, 0, 0, 0.02);
+    color: rgba(0, 0, 0, 0.45);
+}
+.defi-airdrop-page.light .scan-chain-btn:hover {
+    background: rgba(0, 0, 0, 0.04);
+    color: rgba(0, 0, 0, 0.7);
+}
+.defi-airdrop-page.light .scan-chain-btn.active {
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.2);
+    color: #ea580c;
+}
+
+/* ===================== Leaderboard Wallet Actions ===================== */
+.lb-wallet-actions {
+    display: flex;
+    gap: 2px;
+    margin-left: 4px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.lb-row:hover .lb-wallet-actions { opacity: 1; }
+.lb-wallet-action {
+    padding: 2px 4px;
+    border: none;
+    background: none;
+    color: rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+    font-size: 10px;
+    border-radius: 4px;
+    transition: all 0.12s;
+}
+.lb-wallet-action:hover {
+    color: #f97316;
+    background: rgba(249, 115, 22, 0.1);
+}
+
+/* Profile edit modal */
+.lb-profile-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.15s ease;
+}
+.lb-profile-modal {
+    background: linear-gradient(135deg, #1a1145 0%, #0f0b2e 100%);
+    border: 1px solid rgba(249, 115, 22, 0.15);
+    border-radius: 16px;
+    padding: 24px;
+    width: 380px;
+    max-width: 90vw;
+    box-sizing: border-box;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.lb-profile-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #f97316;
+    margin-bottom: 16px;
+    text-align: center;
+}
+.lb-profile-avatar-row {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+.lb-avatar-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    background: rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.12s;
+}
+.lb-avatar-btn:hover { border-color: rgba(249, 115, 22, 0.3); }
+.lb-avatar-btn.active { border-color: #f97316; background: rgba(249, 115, 22, 0.1); }
+.lb-profile-field {
+    margin-bottom: 10px;
+}
+.lb-profile-field label {
+    display: block;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 3px;
+}
+.lb-profile-field input {
+    width: 100%;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+}
+.lb-profile-field input:focus {
+    border-color: rgba(249, 115, 22, 0.3);
+}
+.lb-profile-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+}
+.lb-profile-save {
+    flex: 1;
+    padding: 8px 0;
+    border: none;
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.lb-profile-save:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.lb-profile-cancel {
+    flex: 1;
+    padding: 8px 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.lb-profile-cancel:hover { border-color: rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.8); }
+.lb-profile-edits-left {
+    text-align: center;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.3);
+    margin-top: 8px;
+}
+.lb-edit-profile-btn {
+    padding: 2px 6px;
+    border: 1px solid rgba(249, 115, 22, 0.2);
+    background: rgba(249, 115, 22, 0.06);
+    color: #f97316;
+    font-size: 9px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 4px;
+    transition: all 0.12s;
+}
+.lb-edit-profile-btn:hover { background: rgba(249, 115, 22, 0.12); }
+
+/* Light mode */
+.defi-airdrop-page.light .lb-wallet-action { color: rgba(0, 0, 0, 0.3); }
+.defi-airdrop-page.light .lb-wallet-action:hover { color: #ea580c; background: rgba(249, 115, 22, 0.06); }
+.defi-airdrop-page.light .lb-profile-modal { background: linear-gradient(135deg, #fff 0%, #f8f8fa 100%); border-color: rgba(249, 115, 22, 0.1); }
+.defi-airdrop-page.light .lb-profile-title { color: #ea580c; }
+.defi-airdrop-page.light .lb-profile-field label { color: rgba(0, 0, 0, 0.4); }
+.defi-airdrop-page.light .lb-profile-field input { background: rgba(0, 0, 0, 0.02); border-color: rgba(0, 0, 0, 0.08); color: #1a1a2e; }
+.defi-airdrop-page.light .lb-profile-cancel { border-color: rgba(0, 0, 0, 0.1); color: rgba(0, 0, 0, 0.5); }
+
+/* Profile View Card */
+.lb-profile-view-avatar {
+    font-size: 40px;
+    text-align: center;
+    margin-bottom: 8px;
+}
+.lb-profile-view-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: #e2e8f0;
+    text-align: center;
+    margin-bottom: 4px;
+}
+.lb-profile-view-address {
+    text-align: center;
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    color: rgba(255, 255, 255, 0.35);
+    margin-bottom: 12px;
+    word-break: break-all;
+}
+.lb-profile-view-address a {
+    color: rgba(255, 255, 255, 0.35);
+    text-decoration: none;
+}
+.lb-profile-view-address a:hover { color: #f97316; }
+.lb-profile-view-stats {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.lb-profile-view-stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 4px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+}
+.lb-profile-view-stat-num {
+    font-size: 15px;
+    font-weight: 800;
+    color: #f97316;
+}
+.lb-profile-view-stat-label {
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: rgba(255, 255, 255, 0.35);
+}
+.lb-profile-view-socials {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+.lb-profile-view-social {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+}
+.lb-profile-view-social a {
+    color: #f97316;
+    text-decoration: none;
+}
+.lb-profile-view-social a:hover { text-decoration: underline; }
+.lb-profile-view-actions {
+    display: flex;
+    gap: 6px;
+}
+.lb-profile-view-actions button {
+    flex: 1;
+    padding: 7px 0;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.12s;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.6);
+}
+.lb-profile-view-actions button:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.9);
+}
+.defi-airdrop-page.light .lb-profile-view-name { color: #1a1a2e; }
+.defi-airdrop-page.light .lb-profile-view-address a { color: rgba(0, 0, 0, 0.35); }
+.defi-airdrop-page.light .lb-profile-view-stat { background: rgba(0, 0, 0, 0.02); border-color: rgba(0, 0, 0, 0.06); }
+.defi-airdrop-page.light .lb-profile-view-stat-label { color: rgba(0, 0, 0, 0.35); }

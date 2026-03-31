@@ -147,6 +147,9 @@ export const ko: LandingTranslations = {
     defiFarmingDesc: "유동성을 제공하여 $BANMAO 토큰을 채굴하세요",
     defiLendingName: "대출",
     defiLendingDesc: "자산을 대출하여 이자를 받으세요",
+    defiAirdropName: "에어드랍",
+    defiAirdropDesc: "XLayer 활성 지갑에 $BANMAO 배포",
+    defiAirdropDetails: "XLayer 활성 지갑을 스캔하고 $BANMAO를 대량 에어드랍합니다. 이미 보유한 지갑은 자동 제외.",
     // Staking Page UI
     stakingAmountToStake: "스테이킹 금액",
     stakingAvailableBalance: "사용 가능 잔액",
