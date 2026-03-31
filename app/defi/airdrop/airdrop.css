@@ -3788,13 +3788,150 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 
 /* ===================== Comprehensive Light Mode Fixes ===================== */
 
+/* -- DEEP RESET: Force all text inside light page to be readable -- */
+.defi-airdrop-page.light * {
+    --light-text: #3a3545;
+    --light-text-dim: #6a6575;
+    --light-bg-card: rgba(60, 50, 40, 0.04);
+    --light-border: rgba(0, 0, 0, 0.07);
+}
+
 /* -- Page & General Text -- */
 .defi-airdrop-page.light,
 .defi-airdrop-page.light .airdrop-panel {
     color: #3a3545;
 }
-.defi-airdrop-page.light .airdrop-panel-title { color: #2d2a35; }
-.defi-airdrop-page.light .airdrop-panel-subtitle { color: #5a5565; }
+.defi-airdrop-page.light .airdrop-panel * {
+    color: inherit;
+}
+/* Keep specific accent colors */
+.defi-airdrop-page.light .airdrop-panel .airdrop-panel-title { color: #2d2a35; }
+.defi-airdrop-page.light .airdrop-panel .airdrop-panel-subtitle { color: #5a5565; }
+.defi-airdrop-page.light .airdrop-panel .airdrop-stat-valid { color: #16a34a; }
+.defi-airdrop-page.light .airdrop-panel .airdrop-stat-invalid { color: #dc2626; }
+.defi-airdrop-page.light .airdrop-panel .airdrop-stat-dupe { color: #d97706; }
+.defi-airdrop-page.light .airdrop-panel .text-green { color: #16a34a; }
+.defi-airdrop-page.light .airdrop-panel .text-red { color: #dc2626; }
+
+/* -- All sub-panels, cards, sections inside panel -- */
+.defi-airdrop-page.light .airdrop-panel div[class*="panel"],
+.defi-airdrop-page.light .airdrop-panel div[class*="card"],
+.defi-airdrop-page.light .airdrop-panel div[class*="info"],
+.defi-airdrop-page.light .airdrop-panel div[class*="history"],
+.defi-airdrop-page.light .airdrop-panel div[class*="summary"],
+.defi-airdrop-page.light .airdrop-panel div[class*="group"],
+.defi-airdrop-page.light .airdrop-panel div[class*="row"],
+.defi-airdrop-page.light .airdrop-panel div[class*="display"],
+.defi-airdrop-page.light .airdrop-panel div[class*="selector"],
+.defi-airdrop-page.light .airdrop-panel div[class*="stats"] {
+    color: #3a3545;
+}
+
+/* -- Force all inputs inside light panel -- */
+.defi-airdrop-page.light .airdrop-panel input,
+.defi-airdrop-page.light .airdrop-panel textarea,
+.defi-airdrop-page.light .airdrop-panel select {
+    color: #2d2a35;
+    background: rgba(60, 50, 40, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+.defi-airdrop-page.light .airdrop-panel input::placeholder,
+.defi-airdrop-page.light .airdrop-panel textarea::placeholder {
+    color: rgba(0, 0, 0, 0.35);
+}
+
+/* -- Force all labels -- */
+.defi-airdrop-page.light .airdrop-panel label,
+.defi-airdrop-page.light .airdrop-panel .airdrop-label,
+.defi-airdrop-page.light .airdrop-panel .airdrop-section-label {
+    color: #4a4555;
+}
+
+/* -- Force all buttons inside light panel to have visible text -- */
+.defi-airdrop-page.light .airdrop-panel button {
+    color: #4a4555;
+}
+.defi-airdrop-page.light .airdrop-panel button.active,
+.defi-airdrop-page.light .airdrop-panel button[class*="execute"],
+.defi-airdrop-page.light .airdrop-panel button[class*="scan-btn"],
+.defi-airdrop-page.light .airdrop-panel .airdrop-tab.active {
+    color: #fff;
+}
+.defi-airdrop-page.light .airdrop-panel .airdrop-tab { color: #6a6575; }
+.defi-airdrop-page.light .airdrop-panel .airdrop-tab.active { color: #ea580c; }
+
+/* -- Balance display & Gas row -- */
+.defi-airdrop-page.light .airdrop-balance-display,
+.defi-airdrop-page.light .airdrop-gas-display {
+    color: #4a4555 !important;
+    background: rgba(60, 50, 40, 0.05);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* -- Summary row -- */
+.defi-airdrop-page.light .airdrop-summary {
+    background: rgba(60, 50, 40, 0.04);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+.defi-airdrop-page.light .airdrop-summary-row { color: #5a5565; }
+.defi-airdrop-page.light .airdrop-summary-row.total { color: #ea580c; }
+
+/* -- Token selector -- */
+.defi-airdrop-page.light .airdrop-token-current {
+    background: rgba(60, 50, 40, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #3a3545;
+}
+.defi-airdrop-page.light .airdrop-token-symbol { color: #ea580c !important; }
+.defi-airdrop-page.light .airdrop-token-addr-full { color: #6a6575 !important; }
+
+/* -- Game tip / promo link -- */
+.defi-airdrop-page.light .airdrop-game-tip {
+    background: rgba(168, 85, 247, 0.06);
+    border-color: rgba(168, 85, 247, 0.12);
+    color: #7c3aed;
+}
+
+/* -- History panel in light mode -- */
+.defi-airdrop-page.light .airdrop-history-panel {
+    background: rgba(60, 50, 40, 0.03);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+.defi-airdrop-page.light .airdrop-history-title { color: #3a3545 !important; }
+.defi-airdrop-page.light .airdrop-history-empty { color: #6a6575; }
+
+/* -- Book (address book) items -- */
+.defi-airdrop-page.light .airdrop-book-item {
+    background: rgba(60, 50, 40, 0.03);
+    border-color: rgba(0, 0, 0, 0.06);
+    color: #3a3545;
+}
+.defi-airdrop-page.light .airdrop-book-count { color: #6a6575; }
+.defi-airdrop-page.light .airdrop-book-input {
+    background: rgba(60, 50, 40, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #2d2a35;
+}
+
+/* -- Quick amount buttons -- */
+.defi-airdrop-page.light .airdrop-quick-btn {
+    background: rgba(60, 50, 40, 0.05);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #4a4555;
+}
+.defi-airdrop-page.light .airdrop-quick-btn:hover {
+    background: rgba(249, 115, 22, 0.1);
+    border-color: rgba(249, 115, 22, 0.3);
+    color: #ea580c;
+}
+
+/* -- Address stats -- */
+.defi-airdrop-page.light .airdrop-address-stats { color: #5a5565; }
+
+/* -- Custom amount info -- */
+.defi-airdrop-page.light .airdrop-custom-info { color: #5a5565; }
+.defi-airdrop-page.light .airdrop-scan-desc { color: #6a6575; }
+
 
 /* -- Section Labels & Headings -- */
 .defi-airdrop-page.light .airdrop-section-label,
