@@ -1685,41 +1685,13 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             {/* Dashboard stats (#4) */}
             {(dashboardStats.totalSessions > 0 || tokenPrice > 0) && (
                 <div className="airdrop-dashboard">
-                    {tokenPrice > 0 && <div className="airdrop-dash-stat price"><AIcon name="chart" size={15} /><div><span className="airdrop-dash-value">${tokenPrice < 0.001 ? tokenPrice.toExponential(2) : tokenPrice.toFixed(6)}</span><span className="airdrop-dash-label">$BANMAO {t("tokenPrice") || "Price"}</span></div></div>}
+                    {tokenPrice > 0 && <div className="airdrop-dash-stat price"><AIcon name="chart" size={15} /><div><span className="airdrop-dash-value">${tokenPrice.toFixed(10).replace(/0+$/, '').replace(/\.$/, '')}</span><span className="airdrop-dash-label">$BANMAO {t("tokenPrice") || "Price"}</span></div></div>}
                     <div className="airdrop-dash-stat"><AIcon name="coins" size={15} /><div><span className="airdrop-dash-value">{formatNum(dashboardStats.totalDistributed)}</span><span className="airdrop-dash-label">{t("dashTotalDistributed") || "BANMAO Distributed"}</span></div></div>
                     <div className="airdrop-dash-stat"><AIcon name="users" size={15} /><div><span className="airdrop-dash-value">{formatNum(dashboardStats.totalWallets)}</span><span className="airdrop-dash-label">{t("dashTotalWallets") || "Wallets Reached"}</span></div></div>
                     <div className="airdrop-dash-stat"><AIcon name="rocket" size={15} /><div><span className="airdrop-dash-value">{dashboardStats.totalSessions}</span><span className="airdrop-dash-label">{t("dashTotalSessions") || "Airdrops"}</span></div></div>
                 </div>
             )}
 
-            {/* Live Trade Feed */}
-            {tradesFeed.length > 0 && (
-                <div className="trade-feed-widget">
-                    <div className="trade-feed-header" onClick={() => setShowTrades(!showTrades)}>
-                        <span>📊 {t("liveTrades") || "Live Trades"} <span className="trade-feed-badge">{tradesFeed.length}</span></span>
-                        <span className="trade-feed-toggle">{showTrades ? "▲" : "▼"}</span>
-                    </div>
-                    {showTrades && (
-                        <div className="trade-feed-body">
-                            {tradesFeed.slice(0, 5).map((trade: any, i: number) => {
-                                const isBuy = trade.type === "buy";
-                                const vol = parseFloat(trade.volume || "0");
-                                const price = parseFloat(trade.price || "0");
-                                const timeAgo = Math.floor((Date.now() - parseInt(trade.time || "0")) / 1000);
-                                const timeStr = timeAgo < 60 ? `${timeAgo}s` : timeAgo < 3600 ? `${Math.floor(timeAgo / 60)}m` : `${Math.floor(timeAgo / 3600)}h`;
-                                return (
-                                    <div key={trade.id || i} className={`trade-feed-row ${isBuy ? "buy" : "sell"}`}>
-                                        <span className="trade-feed-type">{isBuy ? "🟢 BUY" : "🔴 SELL"}</span>
-                                        <span className="trade-feed-vol">{vol > 1000 ? `${(vol / 1000).toFixed(1)}K` : vol.toFixed(2)}</span>
-                                        <span className="trade-feed-price">${price < 0.001 ? price.toExponential(1) : price.toFixed(6)}</span>
-                                        <span className="trade-feed-time">{timeStr} ago</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
-            )}
 
             {/* History */}
             {showHistory && (
