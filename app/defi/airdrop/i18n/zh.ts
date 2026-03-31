@@ -1,4 +1,4 @@
-﻿// Airdrop translations (zh)
+// Airdrop translations (zh)
 export const zhAirdrop = {
     airdropTitle: "代币空投 (Airdrop)",
     airdropSubtitle: "一次性向多个钱包分发 $BANMAO 代币。传播爱心并发展社区！",
@@ -80,6 +80,7 @@ export const zhAirdrop = {
     airdropScanCount: "个钱包",
     airdropScanTimes: "次扫描",
     airdropNoNewWallets: "未找到新钱包",
+    airdropScanComplete: "✅ 所有区块已扫描完毕！没有更多页面。",
     airdropNewWalletsFound: "个新钱包",
     airdropScanNote: "已持有 $BANMAO 的钱包将自动排除。您可以多次扫描以累积更多不重复的地址。",
     scanMultiHint: "💡 多次点击扫描以发现更多未持有 $BANMAO 的活跃钱包。每次扫描将探索新的区块链区块 — 传播 $BANMAO，助力社区成长！",
@@ -291,4 +292,9 @@ export const zhAirdrop = {
     lbPeople: "\u4eba\u6570",
     histConnectWallet: "\u8fde\u63a5\u94b1\u5305\u67e5\u770b\u5386\u53f2",
     histEmpty: "\u8fd8\u6ca1\u6709\u7a7a\u6295\u5386\u53f2\u3002",
+    profileSaveFailed: "保存失败",
+    profileSaveError: "保存出错",
+    addressesImported: "地址已导入",
+    configInvalid: "无效配置文件",
+    scanHoldersFailed: "扫描持有者失败",
 };

@@ -31,7 +31,7 @@ interface TourStep {
     position: TourPosition;
 }
 
-function AirdropTourModal({ t, onClose, onDismissForever }: { t: (key: string) => string; onClose: () => void; onDismissForever: () => void }) {
+function AirdropTourModal({ t, theme, onClose, onDismissForever }: { t: (key: string) => string; theme: "dark" | "light"; onClose: () => void; onDismissForever: () => void }) {
     const [step, setStep] = useState(0);
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
     const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -176,10 +176,10 @@ function AirdropTourModal({ t, onClose, onDismissForever }: { t: (key: string) =
                     key={step}
                     style={{
                         position: "fixed", ...getTooltipStyle(),
-                        background: "linear-gradient(145deg, rgba(35, 25, 60, 0.98), rgba(20, 12, 45, 0.98))",
+                        background: theme === "light" ? "linear-gradient(145deg, #f7f2ed, #efe8e0)" : "linear-gradient(145deg, rgba(35, 25, 60, 0.98), rgba(20, 12, 45, 0.98))",
                         backdropFilter: "blur(24px)", borderRadius: "20px",
-                        border: "2px solid rgba(249, 115, 22, 0.5)",
-                        boxShadow: "0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(249, 115, 22, 0.25)",
+                        border: theme === "light" ? "2px solid rgba(234, 88, 12, 0.3)" : "2px solid rgba(249, 115, 22, 0.5)",
+                        boxShadow: theme === "light" ? "0 20px 60px rgba(0, 0, 0, 0.15), 0 0 40px rgba(249, 115, 22, 0.1)" : "0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(249, 115, 22, 0.25)",
                         padding: "16px", zIndex: 99997, pointerEvents: "auto",
                         animation: "airdrop-tooltip-slide 0.4s ease-out forwards",
                         boxSizing: "border-box",
@@ -192,7 +192,7 @@ function AirdropTourModal({ t, onClose, onDismissForever }: { t: (key: string) =
                             {steps.map((_, idx) => (
                                 <div key={idx} style={{
                                     width: idx === step ? "20px" : "8px", height: "8px", borderRadius: "4px",
-                                    background: idx === step ? "linear-gradient(90deg, #f97316, #fbbf24)" : idx < step ? "#22c55e" : "rgba(255,255,255,0.2)",
+                                    background: idx === step ? "linear-gradient(90deg, #f97316, #fbbf24)" : idx < step ? "#22c55e" : theme === "light" ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.2)",
                                     transition: "all 0.3s", cursor: "pointer",
                                 }} onClick={() => setStep(idx)} />
                             ))}
@@ -201,24 +201,24 @@ function AirdropTourModal({ t, onClose, onDismissForever }: { t: (key: string) =
                     </div>
 
                     {/* Title */}
-                    <h3 style={{ margin: "0 0 8px 0", fontSize: "16px", fontWeight: 700, color: "#f97316", textShadow: "0 0 10px rgba(249, 115, 22, 0.5)" }}>
+                    <h3 style={{ margin: "0 0 8px 0", fontSize: "16px", fontWeight: 700, color: "#ea580c", textShadow: theme === "light" ? "none" : "0 0 10px rgba(249, 115, 22, 0.5)" }}>
                         {steps[step].title}
                     </h3>
 
                     {/* Description */}
-                    <p style={{ margin: "0 0 16px 0", fontSize: "13px", lineHeight: 1.6, color: "#e2e8f0" }}>
+                    <p style={{ margin: "0 0 16px 0", fontSize: "13px", lineHeight: 1.6, color: theme === "light" ? "#4a4555" : "#e2e8f0" }}>
                         {steps[step].desc}
                     </p>
 
                     {/* Navigation + Don't show again */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                            <button onClick={() => { if (dontShowAgain) onDismissForever(); onClose(); }} style={{ padding: "8px 16px", background: "transparent", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "20px", color: "rgba(255,255,255,0.6)", fontSize: "12px", cursor: "pointer" }}>
+                            <button onClick={() => { if (dontShowAgain) onDismissForever(); onClose(); }} style={{ padding: "8px 16px", background: "transparent", border: theme === "light" ? "1px solid rgba(0,0,0,0.15)" : "1px solid rgba(255,255,255,0.2)", borderRadius: "20px", color: theme === "light" ? "#8a8595" : "rgba(255,255,255,0.6)", fontSize: "12px", cursor: "pointer" }}>
                                 ✕ Skip
                             </button>
                             <div style={{ display: "flex", gap: "8px" }}>
                                 {step > 0 && (
-                                    <button onClick={() => setStep(s => s - 1)} style={{ padding: "8px 16px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "20px", color: "#e2e8f0", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
+                                    <button onClick={() => setStep(s => s - 1)} style={{ padding: "8px 16px", background: theme === "light" ? "rgba(0,0,0,0.04)" : "rgba(255,255,255,0.1)", border: theme === "light" ? "1px solid rgba(0,0,0,0.1)" : "1px solid rgba(255,255,255,0.2)", borderRadius: "20px", color: theme === "light" ? "#1a1a2e" : "#e2e8f0", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
                                         ← {t("guidePrev")}
                                     </button>
                                 )}
@@ -233,7 +233,7 @@ function AirdropTourModal({ t, onClose, onDismissForever }: { t: (key: string) =
                             </div>
                         </div>
                         {/* Don't show again checkbox */}
-                        <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "11px", color: "rgba(255,255,255,0.4)", justifyContent: "center" }}>
+                        <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "11px", color: theme === "light" ? "rgba(0,0,0,0.35)" : "rgba(255,255,255,0.4)", justifyContent: "center" }}>
                             <input
                                 type="checkbox"
                                 checked={dontShowAgain}
@@ -256,6 +256,19 @@ export default function AirdropPage() {
     const [showTour, setShowTour] = useState(false);
     const [theme, setTheme] = useState<"dark" | "light">("dark");
     const [showLangMenu, setShowLangMenu] = useState(false);
+    const [footerStats, setFooterStats] = useState<any>(null);
+    const [footerCopied, setFooterCopied] = useState<string | null>(null);
+
+    // #6 Fetch footer stats
+    useEffect(() => {
+        fetch("/api/airdrop-records?type=stats").then(r => r.json()).then(d => { if (d.success) setFooterStats(d.data); }).catch(() => {});
+    }, []);
+
+    const copyAddr = (addr: string) => {
+        navigator.clipboard.writeText(addr);
+        setFooterCopied(addr);
+        setTimeout(() => setFooterCopied(null), 2000);
+    };
 
     useEffect(() => {
         // Auto-detect browser language on first visit
@@ -412,23 +425,47 @@ export default function AirdropPage() {
             {/* Footer - Contract & Tech Info */}
             <footer className="airdrop-footer">
                 <div className="airdrop-footer-inner">
+                    {/* #6 Live Stats */}
+                    {footerStats && (
+                        <div className="airdrop-footer-section airdrop-footer-stats">
+                            <div className="footer-stat-card">
+                                <span className="footer-stat-value">{Number(footerStats.total_airdrops || 0).toLocaleString()}</span>
+                                <span className="footer-stat-label">{lang === "vi" ? "Lượt Airdrop" : "Total Airdrops"}</span>
+                            </div>
+                            <div className="footer-stat-card">
+                                <span className="footer-stat-value">{Number(footerStats.total_recipients || 0).toLocaleString()}</span>
+                                <span className="footer-stat-label">{lang === "vi" ? "Ví Đã Nhận" : "Wallets Reached"}</span>
+                            </div>
+                            <div className="footer-stat-card">
+                                <span className="footer-stat-value">{Number(footerStats.unique_senders || 0).toLocaleString()}</span>
+                                <span className="footer-stat-label">{lang === "vi" ? "Người Gửi" : "Unique Senders"}</span>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Contract Info */}
                     <div className="airdrop-footer-section">
                         <h4 className="airdrop-footer-heading">📜 {lang === "vi" ? "Hợp Đồng Thông Minh" : lang === "zh" ? "智能合约" : lang === "ko" ? "스마트 컨트랙트" : lang === "ru" ? "Смарт-контракты" : lang === "id" ? "Smart Contract" : "Smart Contracts"}</h4>
                         <div className="airdrop-footer-contract">
                             <div className="airdrop-footer-contract-item">
                                 <span className="airdrop-footer-label">$BANMAO Token (ERC-20)</span>
-                                <a href="https://web3.okx.com/explorer/x-layer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78" target="_blank" rel="noopener noreferrer" className="airdrop-footer-address">
-                                    0x16d9...ef78
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                                </a>
+                                <div className="airdrop-footer-addr-row">
+                                    <a href="https://web3.okx.com/explorer/x-layer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78" target="_blank" rel="noopener noreferrer" className="airdrop-footer-address">
+                                        0x16d91d1615fc55b76d5f92365bd60c069b46ef78
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    </a>
+                                    <button className="footer-copy-btn" onClick={() => copyAddr("0x16d91d1615fc55b76d5f92365bd60c069b46ef78")}>{footerCopied === "0x16d91d1615fc55b76d5f92365bd60c069b46ef78" ? "✓" : "📋"}</button>
+                                </div>
                             </div>
                             <div className="airdrop-footer-contract-item">
                                 <span className="airdrop-footer-label">Batch Airdrop Contract</span>
-                                <a href="https://web3.okx.com/explorer/x-layer/address/0xf2d471711D24646b2C50E1F74a063caA7a6863a0" target="_blank" rel="noopener noreferrer" className="airdrop-footer-address">
-                                    0xf2d4...63a0
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                                </a>
+                                <div className="airdrop-footer-addr-row">
+                                    <a href="https://web3.okx.com/explorer/x-layer/address/0xf2d471711D24646b2C50E1F74a063caA7a6863a0" target="_blank" rel="noopener noreferrer" className="airdrop-footer-address">
+                                        0xf2d471711D24646b2C50E1F74a063caA7a6863a0
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                    </a>
+                                    <button className="footer-copy-btn" onClick={() => copyAddr("0xf2d471711D24646b2C50E1F74a063caA7a6863a0")}>{footerCopied === "0xf2d471711D24646b2C50E1F74a063caA7a6863a0" ? "✓" : "📋"}</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -465,11 +502,9 @@ export default function AirdropPage() {
 
                     {/* Links */}
                     <div className="airdrop-footer-bottom">
-                        <span className="airdrop-footer-copy">© 2024-2026 Banmao.Fun — {lang === "vi" ? "Nền tảng Airdrop phi tập trung" : "Decentralized Airdrop Platform"}</span>
+                        <span className="airdrop-footer-copy">© 2025-2026 Banmao.Fun — {lang === "vi" ? "Nền tảng Airdrop phi tập trung" : "Decentralized Airdrop Platform"}</span>
                         <div className="airdrop-footer-links">
                             <a href="https://web3.okx.com/explorer/x-layer" target="_blank" rel="noopener noreferrer">XLayer Explorer</a>
-                            <span className="airdrop-footer-dot">·</span>
-                            <a href="https://github.com/haivcon/banmao.fun" target="_blank" rel="noopener noreferrer">GitHub</a>
                             <span className="airdrop-footer-dot">·</span>
                             <a href="/" rel="noopener noreferrer">Banmao.Fun</a>
                         </div>
@@ -481,6 +516,7 @@ export default function AirdropPage() {
             {showTour && (
                 <AirdropTourModal
                     t={t}
+                    theme={theme}
                     onClose={() => setShowTour(false)}
                     onDismissForever={() => {
                         localStorage.setItem("banmao_airdrop_tour_dismissed", "1");

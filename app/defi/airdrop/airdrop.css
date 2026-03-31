@@ -1331,28 +1331,65 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     color: #fff;
 }
 
-/* Toast Notification */
-.airdrop-toast {
+/* Toast Notification — Stacked with Progress Bar (#8) */
+.airdrop-toast-stack {
     position: fixed;
     top: 80px;
     left: 50%;
     transform: translateX(-50%);
-    padding: 10px 24px;
-    background: rgba(168, 85, 247, 0.9);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: auto;
+}
+.airdrop-toast {
+    position: relative;
+    padding: 10px 36px 10px 16px;
+    background: linear-gradient(135deg, rgba(30, 20, 50, 0.94), rgba(20, 12, 40, 0.94));
     backdrop-filter: blur(12px);
-    border-radius: 50px;
-    color: #fff;
+    border-radius: 12px;
+    border: 1px solid rgba(249, 115, 22, 0.25);
+    color: #f0ece7;
     font-size: 13px;
     font-weight: 600;
-    z-index: 9999;
     animation: toastSlide 0.3s ease;
-    box-shadow: 0 8px 32px rgba(168, 85, 247, 0.3);
-    pointer-events: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 12px rgba(249, 115, 22, 0.15);
+    overflow: hidden;
+    min-width: 240px;
+    max-width: 440px;
+}
+.airdrop-toast-msg { display: block; }
+.airdrop-toast-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.6);
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0;
+    line-height: 1;
+}
+.airdrop-toast-close:hover { color: #fff; }
+.airdrop-toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f97316, #fbbf24);
+    border-radius: 0 0 12px 12px;
+    animation: toastProgress 4s linear forwards;
 }
 
 @keyframes toastSlide {
-    from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
-    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes toastProgress {
+    from { width: 100%; }
+    to { width: 0%; }
 }
 
 /* SVG Icon Utilities */
@@ -4094,11 +4131,6 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     color: #ea580c;
 }
 
-/* -- Toast -- */
-.defi-airdrop-page.light .airdrop-toast {
-    background: rgba(45, 42, 53, 0.92);
-    color: #fff;
-}
 
 /* -- Modal overlays in light mode -- */
 .defi-airdrop-page.light .lb-profile-modal {
@@ -4326,6 +4358,34 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 
 .hist-tx-link:hover { color: #22c55e; text-decoration: underline; }
 
+/* History sender row */
+.hist-sender {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+.hist-sender-link {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    color: rgba(255, 255, 255, 0.5);
+    text-decoration: none;
+}
+.hist-sender-link:hover { color: #f97316; }
+.hist-you-badge {
+    font-size: 8px;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+    letter-spacing: 0.5px;
+}
+.hist-mine {
+    border-color: rgba(249, 115, 22, 0.2) !important;
+    background: rgba(249, 115, 22, 0.03) !important;
+}
+
 /* Light mode */
 .defi-airdrop-page.light .lb-stat-item { background: rgba(249, 115, 22, 0.04); border-color: rgba(249, 115, 22, 0.1); }
 .defi-airdrop-page.light .lb-stat-label { color: rgba(0, 0, 0, 0.4); }
@@ -4334,8 +4394,12 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .defi-airdrop-page.light .lb-row-me { background: rgba(249, 115, 22, 0.04) !important; }
 .defi-airdrop-page.light .lb-col-addr a { color: #1a1a2e; }
 .defi-airdrop-page.light .hist-card { background: rgba(0, 0, 0, 0.01); border-color: rgba(0, 0, 0, 0.06); }
-.defi-airdrop-page.light .hist-date { color: rgba(0, 0, 0, 0.45); }
-.defi-airdrop-page.light .hist-recipients { color: rgba(0, 0, 0, 0.5); }
+.defi-airdrop-page.light .hist-date { color: rgba(0, 0, 0, 0.45) !important; }
+.defi-airdrop-page.light .hist-recipients { color: rgba(0, 0, 0, 0.5) !important; }
+.defi-airdrop-page.light .hist-sender-link { color: rgba(0, 0, 0, 0.45) !important; }
+.defi-airdrop-page.light .hist-sender-link:hover { color: #ea580c !important; }
+.defi-airdrop-page.light .hist-you-badge { background: rgba(249, 115, 22, 0.1); color: #ea580c !important; }
+.defi-airdrop-page.light .hist-mine { background: rgba(249, 115, 22, 0.03) !important; border-color: rgba(249, 115, 22, 0.12) !important; }
 
 /* ===================== 3-Column Layout ===================== */
 .airdrop-layout-3col {
@@ -5070,7 +5134,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     display: flex;
     align-items: center;
     gap: 5px;
-    font-size: 11px;
+    font-size: 10px;
     font-family: 'Space Mono', 'Fira Code', monospace;
     color: #a855f7;
     text-decoration: none;
@@ -5078,6 +5142,8 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     background: rgba(168, 85, 247, 0.08);
     border-radius: 6px;
     transition: all 0.15s;
+    word-break: break-all;
+    line-height: 1.4;
 }
 
 .airdrop-footer-address:hover {
@@ -5247,4 +5313,784 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     .airdrop-footer-contract-item { flex-direction: column; align-items: flex-start; gap: 4px; }
     .airdrop-footer-func { flex-direction: column; gap: 4px; }
     .airdrop-footer-bottom { flex-direction: column; align-items: center; text-align: center; }
+}
+
+/* ===================== NEW FEATURES CSS ===================== */
+
+/* #3 Scan Progress Bar */
+.airdrop-scan-progress {
+    margin: 8px 0;
+    padding: 8px 12px;
+    background: rgba(168, 85, 247, 0.06);
+    border: 1px solid rgba(168, 85, 247, 0.1);
+    border-radius: 10px;
+}
+.airdrop-scan-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+.airdrop-scan-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #a855f7, #f97316, #22c55e);
+    background-size: 200% 100%;
+    animation: scanProgressShimmer 1.5s ease infinite;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+@keyframes scanProgressShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+.airdrop-scan-progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* #4 History Filter Bar */
+.hist-filter-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    gap: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.hist-filter-group {
+    display: flex;
+    gap: 3px;
+}
+.hist-filter-chip {
+    padding: 3px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.hist-filter-chip:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
+.hist-filter-chip.active {
+    background: rgba(249, 115, 22, 0.12);
+    border-color: rgba(249, 115, 22, 0.25);
+    color: #f97316;
+}
+.hist-filter-chip.mini { padding: 3px 7px; font-size: 9px; }
+.hist-filter-chip:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* #2 Copy Button in History */
+.hist-copy-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 10px;
+    padding: 0 2px;
+    opacity: 0.5;
+    transition: opacity 0.15s;
+}
+.hist-copy-btn:hover { opacity: 1; }
+
+/* #7 Skeleton Loading */
+.hist-skeleton-list {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.hist-skeleton-card {
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.hist-skeleton-line {
+    height: 10px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.5s infinite;
+}
+.hist-skeleton-line.w60 { width: 60%; }
+.hist-skeleton-line.w80 { width: 80%; }
+.hist-skeleton-line.w40 { width: 40%; }
+@keyframes skeletonShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* #9 Animated Gradient Border on Footer */
+.airdrop-footer-inner {
+    position: relative;
+}
+.airdrop-footer-inner::before {
+    content: "";
+    position: absolute;
+    top: -1px; left: -1px; right: -1px; bottom: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(from var(--footer-angle, 0deg), #a855f7, #f97316, #22c55e, #a855f7);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: footerBorderRotate 8s linear infinite;
+    pointer-events: none;
+    opacity: 0.5;
+}
+@property --footer-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+@keyframes footerBorderRotate {
+    to { --footer-angle: 360deg; }
+}
+
+/* #10 Responsive Footer — 2 columns on tablet */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .airdrop-footer-inner {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    .airdrop-footer-bottom {
+        grid-column: span 2;
+    }
+}
+
+/* ===================== THEME FIXES ===================== */
+
+/* Light mode: Toast */
+.defi-airdrop-page.light .airdrop-toast {
+    background: linear-gradient(135deg, #f7f2ed, #efe8e0) !important;
+    border-color: rgba(234, 88, 12, 0.2) !important;
+    color: #2d2a35 !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), 0 0 12px rgba(249, 115, 22, 0.08) !important;
+}
+.defi-airdrop-page.light .airdrop-toast-close {
+    color: rgba(0, 0, 0, 0.3) !important;
+}
+.defi-airdrop-page.light .airdrop-toast-close:hover {
+    color: #ea580c !important;
+}
+.defi-airdrop-page.light .airdrop-toast-progress {
+    background: linear-gradient(90deg, #ea580c, #f97316) !important;
+}
+
+/* Light mode: Scan Progress */
+.defi-airdrop-page.light .airdrop-scan-progress {
+    background: rgba(168, 85, 247, 0.04) !important;
+    border-color: rgba(168, 85, 247, 0.08) !important;
+}
+.defi-airdrop-page.light .airdrop-scan-progress-bar {
+    background: rgba(0, 0, 0, 0.06) !important;
+}
+.defi-airdrop-page.light .airdrop-scan-progress-info span {
+    color: rgba(0, 0, 0, 0.45) !important;
+}
+
+/* Light mode: History Filters */
+.defi-airdrop-page.light .hist-filter-bar {
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+.defi-airdrop-page.light .hist-filter-chip {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: rgba(0, 0, 0, 0.45) !important;
+}
+.defi-airdrop-page.light .hist-filter-chip:hover {
+    background: rgba(0, 0, 0, 0.06) !important;
+    color: #1a1a2e !important;
+}
+.defi-airdrop-page.light .hist-filter-chip.active {
+    background: rgba(249, 115, 22, 0.08) !important;
+    border-color: rgba(249, 115, 22, 0.2) !important;
+    color: #ea580c !important;
+}
+
+/* Light mode: Skeleton */
+.defi-airdrop-page.light .hist-skeleton-card {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.04) !important;
+}
+.defi-airdrop-page.light .hist-skeleton-line {
+    background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.07) 50%, rgba(0,0,0,0.04) 75%) !important;
+    background-size: 200% 100% !important;
+}
+
+/* Light mode: Tour Steps & Guide Modal */
+.defi-airdrop-page.light .airdrop-tour-overlay {
+    background: rgba(0, 0, 0, 0.3) !important;
+}
+.defi-airdrop-page.light .airdrop-tour-card,
+.defi-airdrop-page.light .airdrop-guide-card {
+    background: #f7f2ed !important;
+    color: #1a1a2e !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12) !important;
+}
+.defi-airdrop-page.light .airdrop-tour-card *,
+.defi-airdrop-page.light .airdrop-guide-card * {
+    color: #1a1a2e !important;
+}
+.defi-airdrop-page.light .airdrop-tour-card h3,
+.defi-airdrop-page.light .airdrop-guide-card h3 {
+    color: #ea580c !important;
+}
+.defi-airdrop-page.light .airdrop-tour-card p,
+.defi-airdrop-page.light .airdrop-guide-card p {
+    color: #4a4555 !important;
+}
+.defi-airdrop-page.light .airdrop-tour-btn,
+.defi-airdrop-page.light .airdrop-guide-btn {
+    background: linear-gradient(135deg, #ea580c, #f97316) !important;
+    color: #fff !important;
+}
+.defi-airdrop-page.light .airdrop-tour-skip,
+.defi-airdrop-page.light .airdrop-guide-skip {
+    color: #8a8595 !important;
+}
+.defi-airdrop-page.light .airdrop-tour-dots span {
+    background: rgba(0, 0, 0, 0.15) !important;
+}
+.defi-airdrop-page.light .airdrop-tour-dots span.active {
+    background: #ea580c !important;
+}
+
+/* Light mode: Footer gradient border */
+.defi-airdrop-page.light .airdrop-footer-inner::before {
+    opacity: 0.3;
+}
+
+/* Light mode: Copy button */
+.defi-airdrop-page.light .hist-copy-btn {
+    opacity: 0.35 !important;
+}
+.defi-airdrop-page.light .hist-copy-btn:hover {
+    opacity: 0.8 !important;
+}
+
+/* Light mode: Arrow in history */
+.defi-airdrop-page.light .hist-arrow {
+    color: rgba(0, 0, 0, 0.2) !important;
+}
+.defi-airdrop-page.light .hist-stats {
+    color: rgba(0, 0, 0, 0.4) !important;
+}
+
+/* #6 Footer Stats Cards */
+.airdrop-footer-stats {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+.footer-stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    min-width: 100px;
+    flex: 1;
+}
+.footer-stat-value {
+    font-size: 22px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #f97316, #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.footer-stat-label {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+/* #2 Footer Copy Button + Address Row */
+.airdrop-footer-addr-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.footer-copy-btn {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 3px 6px;
+    opacity: 0.5;
+    transition: all 0.15s;
+    color: inherit;
+}
+.footer-copy-btn:hover { opacity: 1; border-color: #a855f7; }
+
+/* #15 Gas Optimization Info Badge */
+.gas-savings-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.15);
+    border-radius: 6px;
+    font-size: 9px;
+    color: #22c55e;
+    font-weight: 600;
+}
+
+/* Light mode: Footer Stats */
+.defi-airdrop-page.light .footer-stat-card {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+.defi-airdrop-page.light .footer-stat-label {
+    color: rgba(0, 0, 0, 0.4) !important;
+    -webkit-text-fill-color: rgba(0, 0, 0, 0.4) !important;
+}
+.defi-airdrop-page.light .footer-copy-btn {
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    opacity: 0.4 !important;
+}
+.defi-airdrop-page.light .footer-copy-btn:hover {
+    opacity: 0.8 !important;
+    border-color: #ea580c !important;
+}
+
+/* ===================== Right Panel Tabs (#12) ===================== */
+.airdrop-right-panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+.right-panel-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 4px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px 12px 0 0;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: none;
+}
+.right-tab {
+    flex: 1;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.right-tab:hover { color: #fff; background: rgba(255, 255, 255, 0.04); }
+.right-tab.active {
+    background: rgba(249, 115, 22, 0.1);
+    color: #f97316;
+}
+.airdrop-right-panel > .airdrop-side-panel {
+    border-radius: 0 0 12px 12px !important;
+}
+
+/* ===================== Analytics Dashboard ===================== */
+.analytics-content {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.analytics-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.analytics-empty {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+}
+
+/* Bar chart */
+.analytics-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 100px;
+    padding: 4px 0;
+}
+.analytics-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+}
+.analytics-bar-value {
+    font-size: 8px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+}
+.analytics-bar-wrap {
+    width: 100%;
+    height: 70px;
+    display: flex;
+    align-items: flex-end;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.analytics-bar-fill {
+    width: 100%;
+    background: linear-gradient(to top, #f97316, #a855f7);
+    border-radius: 3px;
+    transition: height 0.4s ease;
+    min-height: 2px;
+}
+.analytics-bar-label {
+    font-size: 7px;
+    color: rgba(255, 255, 255, 0.3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* Top senders */
+.analytics-top-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.analytics-top-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    font-size: 10px;
+}
+.analytics-top-rank {
+    font-weight: 800;
+    color: #f97316;
+    min-width: 20px;
+}
+.analytics-top-addr {
+    font-family: 'Space Mono', monospace;
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    font-size: 10px;
+}
+.analytics-top-addr:hover { color: #a855f7; }
+.analytics-top-count {
+    margin-left: auto;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 9px;
+    white-space: nowrap;
+}
+
+/* Light mode: Right panel tabs */
+.defi-airdrop-page.light .right-panel-tabs {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+.defi-airdrop-page.light .right-tab {
+    color: rgba(0, 0, 0, 0.4) !important;
+}
+.defi-airdrop-page.light .right-tab:hover {
+    color: #1a1a2e !important;
+    background: rgba(0, 0, 0, 0.03) !important;
+}
+.defi-airdrop-page.light .right-tab.active {
+    background: rgba(249, 115, 22, 0.08) !important;
+    color: #ea580c !important;
+}
+
+/* Light mode: Analytics */
+.defi-airdrop-page.light .analytics-section-title {
+    color: rgba(0, 0, 0, 0.5) !important;
+}
+.defi-airdrop-page.light .analytics-bar-value {
+    color: rgba(0, 0, 0, 0.4) !important;
+}
+.defi-airdrop-page.light .analytics-bar-label {
+    color: rgba(0, 0, 0, 0.25) !important;
+}
+.defi-airdrop-page.light .analytics-top-item {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.04) !important;
+}
+.defi-airdrop-page.light .analytics-top-addr {
+    color: rgba(0, 0, 0, 0.5) !important;
+}
+.defi-airdrop-page.light .analytics-top-addr:hover {
+    color: #ea580c !important;
+}
+.defi-airdrop-page.light .analytics-top-count {
+    color: rgba(0, 0, 0, 0.3) !important;
+}
+.defi-airdrop-page.light .analytics-empty {
+    color: rgba(0, 0, 0, 0.25) !important;
+}
+
+/* ===================== FINAL COMPREHENSIVE LIGHT THEME SYNC ===================== */
+
+/* History cards */
+.defi-airdrop-page.light .hist-card {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+.defi-airdrop-page.light .hist-card:hover {
+    background: rgba(0, 0, 0, 0.04) !important;
+}
+.defi-airdrop-page.light .hist-card.hist-mine {
+    background: rgba(249, 115, 22, 0.04) !important;
+    border-color: rgba(249, 115, 22, 0.12) !important;
+}
+.defi-airdrop-page.light .hist-card-header {
+    color: #3a3545 !important;
+}
+.defi-airdrop-page.light .hist-date {
+    color: rgba(0, 0, 0, 0.4) !important;
+}
+.defi-airdrop-page.light .hist-sender-link {
+    color: #6a6575 !important;
+}
+.defi-airdrop-page.light .hist-sender-link:hover {
+    color: #ea580c !important;
+}
+.defi-airdrop-page.light .hist-you-badge {
+    background: rgba(234, 88, 12, 0.1) !important;
+    color: #ea580c !important;
+}
+.defi-airdrop-page.light .hist-mode-badge {
+    background: rgba(124, 58, 237, 0.08) !important;
+    color: #7c3aed !important;
+}
+.defi-airdrop-page.light .hist-recipients {
+    color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Leaderboard cards */
+.defi-airdrop-page.light .lb-row {
+    background: rgba(0, 0, 0, 0.015) !important;
+    border-color: rgba(0, 0, 0, 0.04) !important;
+}
+.defi-airdrop-page.light .lb-rank {
+    color: #ea580c !important;
+}
+.defi-airdrop-page.light .lb-name {
+    color: #2d2a35 !important;
+}
+.defi-airdrop-page.light .lb-addr {
+    color: rgba(0, 0, 0, 0.4) !important;
+}
+.defi-airdrop-page.light .lb-col-count {
+    color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Scan wallet cards */
+.defi-airdrop-page.light .scan-wallet-card {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+.defi-airdrop-page.light .scan-wallet-card:hover {
+    background: rgba(0, 0, 0, 0.04) !important;
+}
+.defi-airdrop-page.light .scan-wallet-addr {
+    color: #3a3545 !important;
+}
+.defi-airdrop-page.light .scan-wallet-balance {
+    color: #ea580c !important;
+}
+.defi-airdrop-page.light .scan-wallet-tag {
+    color: rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Scan mode toggle */
+.defi-airdrop-page.light .airdrop-scan-mode-toggle {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+.defi-airdrop-page.light .airdrop-scan-mode-btn {
+    color: rgba(0, 0, 0, 0.45) !important;
+}
+.defi-airdrop-page.light .airdrop-scan-mode-btn:hover {
+    background: rgba(0, 0, 0, 0.03) !important;
+}
+.defi-airdrop-page.light .airdrop-scan-mode-btn.active {
+    background: rgba(249, 115, 22, 0.08) !important;
+    color: #ea580c !important;
+    border-color: rgba(249, 115, 22, 0.2) !important;
+}
+
+/* Gas savings badge */
+.defi-airdrop-page.light .gas-savings-badge {
+    background: rgba(22, 163, 74, 0.06) !important;
+    border-color: rgba(22, 163, 74, 0.12) !important;
+    color: #166534 !important;
+}
+
+/* Textarea & inputs in light */
+.defi-airdrop-page.light .airdrop-textarea::placeholder {
+    color: rgba(0, 0, 0, 0.3) !important;
+}
+.defi-airdrop-page.light .airdrop-input {
+    background: rgba(235, 228, 218, 0.5) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: #2d2a35 !important;
+}
+.defi-airdrop-page.light .airdrop-input::placeholder {
+    color: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Speed mode buttons */
+.defi-airdrop-page.light .airdrop-speed-btn {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: #4a4555 !important;
+}
+.defi-airdrop-page.light .airdrop-speed-btn:hover {
+    background: rgba(0, 0, 0, 0.06) !important;
+}
+.defi-airdrop-page.light .airdrop-speed-btn.active {
+    background: linear-gradient(135deg, #ea580c, #f97316) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+}
+
+/* Amount mode buttons */
+.defi-airdrop-page.light .airdrop-amount-mode-btn {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: #4a4555 !important;
+}
+.defi-airdrop-page.light .airdrop-amount-mode-btn.active {
+    background: linear-gradient(135deg, #ea580c, #f97316) !important;
+    color: #fff !important;
+}
+
+/* Result cards */
+.defi-airdrop-page.light .airdrop-result-card {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Scheduler */
+.defi-airdrop-page.light .airdrop-scheduler {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+.defi-airdrop-page.light .airdrop-scheduler-header {
+    color: #3a3545 !important;
+}
+
+/* Summary section */
+.defi-airdrop-page.light .airdrop-summary {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+.defi-airdrop-page.light .airdrop-summary-row {
+    color: #4a4555 !important;
+}
+.defi-airdrop-page.light .airdrop-summary-row.total {
+    color: #ea580c !important;
+}
+
+/* Balance/gas display */
+.defi-airdrop-page.light .airdrop-balance-gas-row {
+    color: #4a4555 !important;
+}
+.defi-airdrop-page.light .airdrop-balance-display {
+    color: #3a3545 !important;
+}
+.defi-airdrop-page.light .airdrop-gas-display {
+    color: #166534 !important;
+}
+
+/* Game tip link */
+.defi-airdrop-page.light .airdrop-game-tip {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+    color: #4a4555 !important;
+}
+.defi-airdrop-page.light .airdrop-game-tip:hover {
+    background: rgba(249, 115, 22, 0.05) !important;
+    color: #ea580c !important;
+}
+
+/* Side panel border bottom */
+.defi-airdrop-page.light .side-panel-header {
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Right panel container border */
+.defi-airdrop-page.light .airdrop-right-panel > .airdrop-side-panel {
+    border-top: none !important;
+}
+
+/* Scan hint */
+.defi-airdrop-page.light .airdrop-scan-hint {
+    color: #5a5565 !important;
+}
+
+/* Scan progress light text */
+.defi-airdrop-page.light .airdrop-scan-progress-info {
+    color: rgba(0, 0, 0, 0.4) !important;
+}
+
+/* CSV tab area */
+.defi-airdrop-page.light .airdrop-csv-dropzone {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    color: #5a5565 !important;
+}
+
+/* Help button */
+.defi-airdrop-page.light .defi-airdrop-help-btn {
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    background: rgba(0, 0, 0, 0.04) !important;
+    color: #4a4555 !important;
+}
+
+/* Status badge colors should remain vivid */
+.defi-airdrop-page.light .hist-status.green { color: #16a34a !important; }
+.defi-airdrop-page.light .hist-status.red { color: #dc2626 !important; }
+
+/* Profile modal */
+.defi-airdrop-page.light .lb-profile-modal {
+    background: #f7f2ed !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: #2d2a35 !important;
+}
+.defi-airdrop-page.light .lb-profile-modal input {
+    background: rgba(235, 228, 218, 0.5) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    color: #2d2a35 !important;
+}
+.defi-airdrop-page.light .lb-profile-modal-overlay {
+    background: rgba(0, 0, 0, 0.3) !important;
 }

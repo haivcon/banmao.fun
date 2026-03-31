@@ -1,4 +1,4 @@
-﻿// Airdrop translations (ru)
+// Airdrop translations (ru)
 export const ruAirdrop = {
     airdropTitle: "Airdrop Токенов",
     airdropSubtitle: "Раздавайте токены $BANMAO множеству кошельков одновременно. Распространяйте любовь и развивайте сообщество!",
@@ -80,6 +80,7 @@ export const ruAirdrop = {
     airdropScanCount: "кошельков",
     airdropScanTimes: "сканирований",
     airdropNoNewWallets: "Новых кошельков не найдено",
+    airdropScanComplete: "✅ Все блоки просканированы! Больше нет страниц.",
     airdropNewWalletsFound: "новых кошельков",
     airdropScanNote: "Кошельки, на которых уже есть $BANMAO автоматически исключаются. Вы можете сканировать несколько раз, чтобы накопить уникальные адреса.",
     scanMultiHint: "💡 Нажимайте Сканировать несколько раз, чтобы найти больше активных кошельков без $BANMAO. Каждое сканирование исследует новые блоки блокчейна — распространяйте $BANMAO для роста сообщества!",
@@ -291,4 +292,9 @@ export const ruAirdrop = {
     lbPeople: "\u041b\u044e\u0434\u0438",
     histConnectWallet: "\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0438\u0442\u0435 \u043a\u043e\u0448\u0435\u043b\u0435\u043a",
     histEmpty: "\u041d\u0435\u0442 \u0438\u0441\u0442\u043e\u0440\u0438\u0438 \u0430\u0438\u0440\u0434\u0440\u043e\u043f\u043e\u0432.",
+    profileSaveFailed: "Не удалось сохранить",
+    profileSaveError: "Ошибка сохранения",
+    addressesImported: "адресов импортировано",
+    configInvalid: "Неверный файл конфигурации",
+    scanHoldersFailed: "Не удалось сканировать",
 };

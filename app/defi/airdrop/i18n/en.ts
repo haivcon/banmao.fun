@@ -1,4 +1,4 @@
-﻿// Airdrop translations (en)
+// Airdrop translations (en)
 export const enAirdrop = {
     airdropTitle: "Token Airdrop",
     airdropSubtitle: "Distribute $BANMAO tokens to multiple wallets at once. Spread the love and grow the community!",
@@ -80,6 +80,7 @@ export const enAirdrop = {
     airdropScanCount: "wallets",
     airdropScanTimes: "scans",
     airdropNoNewWallets: "No new wallets found",
+    airdropScanComplete: "✅ All blocks scanned! No more pages.",
     airdropNewWalletsFound: "new wallets",
     airdropScanNote: "Wallets already holding $BANMAO are automatically excluded. You can scan multiple times to accumulate unique addresses.",
     scanMultiHint: "💡 Press Scan multiple times to discover more active wallets without $BANMAO. Each scan explores new blockchain blocks — spread $BANMAO to help grow the community!",
@@ -291,4 +292,9 @@ export const enAirdrop = {
     lbPeople: "People",
     histConnectWallet: "Connect wallet to view history",
     histEmpty: "No airdrop history yet.",
+    profileSaveFailed: "Failed to save profile",
+    profileSaveError: "Error saving profile",
+    addressesImported: "addresses imported",
+    configInvalid: "Invalid config file",
+    scanHoldersFailed: "Failed to scan holders",
 };

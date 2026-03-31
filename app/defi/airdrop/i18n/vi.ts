@@ -1,4 +1,4 @@
-﻿// Airdrop translations (vi)
+// Airdrop translations (vi)
 export const viAirdrop = {
     airdropTitle: "Airdrop Token",
     airdropSubtitle: "Phân phối token $BANMAO đến nhiều ví cùng lúc. Lan tỏa tình yêu và phát triển cộng đồng!",
@@ -54,6 +54,13 @@ export const viAirdrop = {
     airdropCsvTab: "CSV",
     airdropCsvDragDrop: "Kéo & thả file CSV vào đây hoặc nhấn để duyệt",
     airdropCsvFormat: "Định dạng: mỗi dòng một địa chỉ, hoặc địa_chỉ,số_lượng",
+    histConnectWallet: "Kết nối ví để xem lịch sử",
+    histEmpty: "Chưa có lịch sử airdrop.",
+    profileSaveFailed: "Không thể lưu hồ sơ",
+    profileSaveError: "Lỗi khi lưu hồ sơ",
+    addressesImported: "địa chỉ đã nhập",
+    configInvalid: "File cấu hình không hợp lệ",
+    scanHoldersFailed: "Không thể quét holders",
     airdropHistory: "Lịch sử",
     airdropNoHistory: "Chưa có lịch sử airdrop",
     airdropAddressBook: "Sổ Địa Chỉ",
@@ -80,6 +87,7 @@ export const viAirdrop = {
     airdropScanCount: "ví",
     airdropScanTimes: "lần quét",
     airdropNoNewWallets: "Không tìm thấy ví mới",
+    airdropScanComplete: "✅ Đã quét hết tất cả block! Không còn trang nào.",
     airdropNewWalletsFound: "ví mới",
     airdropScanNote: "Ví đã có $BANMAO sẽ tự động bị loại. Bạn có thể quét nhiều lần để tích lũy địa chỉ, không trùng lặp.",
     scanMultiHint: "💡 Nhấn Quét nhiều lần để tìm thêm ví đang hoạt động chưa có $BANMAO. Mỗi lần quét sẽ khám phá thêm các block mới trên blockchain — hãy lan tỏa $BANMAO để phát triển cộng đồng!",

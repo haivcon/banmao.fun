@@ -1,4 +1,4 @@
-﻿// Airdrop translations (id)
+// Airdrop translations (id)
 export const idAirdrop = {
     airdropTitle: "Airdrop Token",
     airdropSubtitle: "Bagikan token $BANMAO ke banyak dompet sekaligus. Sebarkan cinta dan kembangkan komunitas!",
@@ -80,6 +80,7 @@ export const idAirdrop = {
     airdropScanCount: "dompet",
     airdropScanTimes: "kali pemindaian",
     airdropNoNewWallets: "Tidak ada dompet baru ditemukan",
+    airdropScanComplete: "✅ Semua blok telah dipindai! Tidak ada halaman lagi.",
     airdropNewWalletsFound: "dompet baru",
     airdropScanNote: "Dompet yang sudah memegang $BANMAO secara otomatis dikecualikan. Anda dapat memindai beberapa kali untuk mengumpulkan alamat unik.",
     scanMultiHint: "💡 Tekan Scan beberapa kali untuk menemukan lebih banyak dompet aktif tanpa $BANMAO. Setiap scan menjelajahi blok blockchain baru — sebarkan $BANMAO untuk membantu pertumbuhan komunitas!",
@@ -291,4 +292,9 @@ export const idAirdrop = {
     lbPeople: "Orang",
     histConnectWallet: "Hubungkan dompet untuk melihat riwayat",
     histEmpty: "Belum ada riwayat airdrop.",
+    profileSaveFailed: "Gagal menyimpan profil",
+    profileSaveError: "Kesalahan menyimpan",
+    addressesImported: "alamat diimpor",
+    configInvalid: "File konfigurasi tidak valid",
+    scanHoldersFailed: "Gagal memindai holder",
 };

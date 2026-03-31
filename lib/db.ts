@@ -3171,6 +3171,15 @@ export async function getAirdropHistory(senderAddress: string, limit = 20) {
     return result.rows;
 }
 
+export async function getAllAirdropHistory(limit = 50) {
+    await initializeDatabase();
+    const result = await db.execute({
+        sql: `SELECT * FROM airdrop_history ORDER BY timestamp DESC LIMIT ?`,
+        args: [limit]
+    });
+    return result.rows;
+}
+
 export async function getAirdropStats() {
     await initializeDatabase();
     const result = await db.execute(`
@@ -3182,4 +3191,32 @@ export async function getAirdropStats() {
         FROM airdrop_history
     `);
     return result.rows[0] || {};
+}
+
+export async function getAirdropAnalytics() {
+    await initializeDatabase();
+    // Daily stats for last 14 days
+    const daily = await db.execute(`
+        SELECT 
+            DATE(timestamp, 'unixepoch') as day,
+            COUNT(*) as count,
+            COALESCE(SUM(recipient_count), 0) as recipients,
+            COALESCE(SUM(success_count), 0) as successes
+        FROM airdrop_history
+        WHERE timestamp > (strftime('%s', 'now') - 14 * 86400)
+        GROUP BY day
+        ORDER BY day ASC
+    `);
+    // Top 5 senders
+    const topSenders = await db.execute(`
+        SELECT 
+            sender_address,
+            COUNT(*) as count,
+            COALESCE(SUM(recipient_count), 0) as total_recipients
+        FROM airdrop_history
+        GROUP BY sender_address
+        ORDER BY count DESC
+        LIMIT 5
+    `);
+    return { daily: daily.rows, topSenders: topSenders.rows };
 }

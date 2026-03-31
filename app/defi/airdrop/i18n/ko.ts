@@ -1,4 +1,4 @@
-﻿// Airdrop translations (ko)
+// Airdrop translations (ko)
 export const koAirdrop = {
     airdropTitle: "토큰 에어드랍",
     airdropSubtitle: "여러 지갑에 한 번에 $BANMAO 토큰을 배포하세요. 사랑을 나누고 커뮤니티를 성장시키세요!",
@@ -80,6 +80,7 @@ export const koAirdrop = {
     airdropScanCount: "지갑",
     airdropScanTimes: "스캔 횟수",
     airdropNoNewWallets: "새 지갑을 찾지 못함",
+    airdropScanComplete: "✅ 모든 블록 스캔 완료! 더 이상 페이지가 없습니다.",
     airdropNewWalletsFound: "새 지갑",
     airdropScanNote: "이미 $BANMAO를 보유한 지갑은 자동으로 제외됩니다. 중복되지 않은 주소를 모으려면 여러 번 스캔하세요.",
     scanMultiHint: "💡 스캔을 여러 번 눌러 $BANMAO를 보유하지 않은 활성 지갑을 더 많이 찾으세요. 매번 스캔할 때마다 새로운 블록체인 블록을 탐색합니다 — $BANMAO를 전파하여 커뮤니티를 성장시키세요!",
@@ -291,4 +292,9 @@ export const koAirdrop = {
     lbPeople: "\uc778\uc6d0",
     histConnectWallet: "\uc9c0\uac11\uc744 \uc5f0\uacb0\ud558\uc5ec \uae30\ub85d \ubcf4\uae30",
     histEmpty: "\uc544\uc9c1 \uc5d0\uc5b4\ub4dc\ub78d \uae30\ub85d\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.",
+    profileSaveFailed: "프로필 저장 실패",
+    profileSaveError: "프로필 저장 오류",
+    addressesImported: "주소 가져옴",
+    configInvalid: "잘못된 설정 파일",
+    scanHoldersFailed: "홀더 스캔 실패",
 };

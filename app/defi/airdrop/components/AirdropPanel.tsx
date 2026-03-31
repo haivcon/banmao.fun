@@ -246,6 +246,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [customAmounts, setCustomAmounts] = useState<Map<string, string>>(new Map());
     const [amountPerWallet, setAmountPerWallet] = useState("");
     const [scannedWallets, setScannedWallets] = useState<ScannedWallet[]>([]);
+    const scannedWalletsRef = useRef<ScannedWallet[]>([]);
     const [selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
     const [isScanning, setIsScanning] = useState(false);
     const [scanError, setScanError] = useState("");
@@ -272,8 +273,14 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [newGroupName, setNewGroupName] = useState("");
     const [estimatedGas, setEstimatedGas] = useState("");
     const [csvDragOver, setCsvDragOver] = useState(false);
-    const [toast, setToast] = useState("");
+    const [toasts, setToasts] = useState<{id: number; msg: string; ts: number}[]>([]);
+    const toastIdRef = useRef(0);
     const [scanCount, setScanCount] = useState(0);
+    // Scan progress tracking
+    const [scanProgress, setScanProgress] = useState<{scannedBlocks: number; totalBlocks: number; walletsFound: number} | null>(null);
+    // History filters
+    const [histFilter, setHistFilter] = useState<"all" | "mine">("all");
+    const [histStatusFilter, setHistStatusFilter] = useState<"all" | "success" | "failed">("all");
     const [autoScanActive, setAutoScanActive] = useState(false);
     const autoScanRef = useRef<boolean>(false);
     const [expandedWallet, setExpandedWallet] = useState<string | null>(null);
@@ -350,6 +357,9 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [historyData, setHistoryData] = useState<any[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [lbStats, setLbStats] = useState<any>(null);
+    // Analytics state (#12)
+    const [analyticsData, setAnalyticsData] = useState<any>(null);
+    const [rightTab, setRightTab] = useState<"history" | "analytics">("history");
     // Profile editing state
     const AVATARS = ["🐱", "🦁", "🐯", "🐻", "🦊", "🐼", "🐲", "🦅"];
     const [profileMap, setProfileMap] = useState<Record<string, { name: string; avatar: number; telegram?: string; twitter?: string }>>({});
@@ -382,7 +392,6 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         fetch("/api/airdrop-records?type=leaderboard&limit=20").then(r => r.json()).then(d => {
             if (d.success) {
                 setLeaderboardData(d.data);
-                // Fetch profiles for all leaderboard addresses
                 const addrs = (d.data as any[]).map((r: any) => r.address).filter(Boolean);
                 addrs.forEach((addr: string) => {
                     fetch(`/api/burn-profiles?address=${addr}`).then(r => r.json()).then(pd => {
@@ -394,13 +403,21 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             }
         }).catch(() => {});
         fetch("/api/airdrop-records?type=stats").then(r => r.json()).then(d => { if (d.success) setLbStats(d.data); }).catch(() => {});
+        // Fetch ALL users' history
+        setHistoryLoading(true);
+        fetch("/api/airdrop-records?type=all-history&limit=50").then(r => r.json()).then(d => { if (d.success) setHistoryData(d.data); }).catch(() => {}).finally(() => setHistoryLoading(false));
+        // #12 Fetch analytics
+        fetch("/api/airdrop-records?type=analytics").then(r => r.json()).then(d => { if (d.success) setAnalyticsData(d.data); }).catch(() => {});
+        // Auto-refresh history every 30s (#1 Realtime History)
+        const histInterval = setInterval(() => {
+            fetch("/api/airdrop-records?type=all-history&limit=50").then(r => r.json()).then(d => { if (d.success) setHistoryData(d.data); }).catch(() => {});
+            fetch("/api/airdrop-records?type=stats").then(r => r.json()).then(d => { if (d.success) setLbStats(d.data); }).catch(() => {});
+        }, 30000);
+        return () => clearInterval(histInterval);
     }, []);
-    // Fetch my profile when address changes
+    // Fetch my profile when address changes (no longer overrides history)
     useEffect(() => {
         if (address) {
-            setHistoryLoading(true);
-            fetch(`/api/airdrop-records?type=history&address=${address}&limit=30`).then(r => r.json()).then(d => { if (d.success) setHistoryData(d.data); }).catch(() => {}).finally(() => setHistoryLoading(false));
-            // Load my profile
             fetch(`/api/burn-profiles?address=${address}`).then(r => r.json()).then(d => {
                 if (d.success && d.profile) {
                     setProfileMap(prev => ({ ...prev, [address.toLowerCase()]: d.profile }));
@@ -425,13 +442,18 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 setShowProfileEdit(false);
                 showToast(t("profileSaved") || "Profile saved!");
             } else {
-                showToast(d.error || "Failed to save profile");
+                showToast(d.error || t("profileSaveFailed"));
             }
-        } catch { showToast("Error saving profile"); }
+        } catch { showToast(t("profileSaveError")); }
     };
 
-    // Toast helper
-    const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
+    // Toast helper — supports stacking, progress bar, close button
+    const showToast = (msg: string) => {
+        const id = ++toastIdRef.current;
+        setToasts(prev => [...prev.slice(-3), { id, msg, ts: Date.now() }]);
+        setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+    };
+    const dismissToast = (id: number) => setToasts(prev => prev.filter(t => t.id !== id));
 
     // Load storage
     useEffect(() => {
@@ -502,18 +524,38 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     }, [recipients.length, sendMode]);
 
     // -- Handlers --
+    // Cursor for paginated XLayer scanning
+    const scanCursorRef = useRef<string | null>(null);
+
     const handleScan = async () => {
         playClick(); setIsScanning(true); setScanError("");
         try {
-            const apiUrl = scanChain === "xlayer" 
-                ? "/api/scan-wallets?refresh=true" 
-                : `/api/scan-wallets-multichain?chain=${scanChain}&refresh=true`;
+            let apiUrl: string;
+            if (scanChain === "xlayer") {
+                // Build paginated URL with cursor + skip list from ref (always latest)
+                const skipAddrs = scannedWalletsRef.current.map(w => w.address.toLowerCase()).join(",");
+                const cursorParam = scanCursorRef.current ? `&cursor=${scanCursorRef.current}` : "";
+                const skipParam = skipAddrs ? `&skip=${skipAddrs}` : "";
+                apiUrl = `/api/scan-wallets?refresh=true${cursorParam}${skipParam}`;
+            } else {
+                apiUrl = `/api/scan-wallets-multichain?chain=${scanChain}&refresh=true`;
+            }
             const res = await fetch(apiUrl);
             const data = await res.json();
             if (data.success) {
+                // Save cursor for next page (XLayer only)
+                if (scanChain === "xlayer") {
+                    scanCursorRef.current = data.cursor || null;
+                    // #3 Scan Progress Bar
+                    if (data.scannedRange && data.latestBlock) {
+                        const scannedSoFar = data.latestBlock - data.scannedRange.from;
+                        setScanProgress({ scannedBlocks: scannedSoFar, totalBlocks: 50000, walletsFound: scannedWalletsRef.current.length + (data.wallets?.length || 0) });
+                    }
+                }
+
                 let newWallets = (data.wallets || []).filter((w: any) => w.address.toLowerCase() !== address?.toLowerCase());
                 
-                // Frontend re-verify: check BANMAO balance on-chain for each wallet
+                // Frontend re-verify: check BANMAO balance on-chain
                 if (newWallets.length > 0) {
                     const RPC = "https://rpc.xlayer.tech";
                     const banmaoAddr = (BANMAO_TOKEN as string).toLowerCase();
@@ -535,28 +577,36 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                     }
                 }
 
-                if (!newWallets.length && scannedWallets.length === 0) { setScanError(t("airdropNoWalletsFound")); }
-                else {
-                    // Accumulate & deduplicate
-                    const existingMap = new Map(scannedWallets.map(w => [w.address.toLowerCase(), w]));
-                    // Remove any old accumulated wallet that now has BANMAO  
-                    for (const [key, w] of existingMap) {
-                        if (w.balances.BANMAO && parseFloat(w.balances.BANMAO) > 0) {
-                            existingMap.delete(key);
-                        }
-                    }
-                    let added = 0;
-                    for (const w of newWallets) {
-                        const key = w.address.toLowerCase();
-                        if (!existingMap.has(key)) { existingMap.set(key, w); added++; }
-                    }
-                    setScannedWallets(Array.from(existingMap.values()));
-                    setScanCount(prev => prev + 1);
-                    if (added > 0) {
-                        showToast(`+${added} ${t("airdropNewWalletsFound")} (${existingMap.size} ${t("airdropScanCount")})`);
+                if (!newWallets.length && scannedWalletsRef.current.length === 0) { 
+                    // If no cursor left, we've scanned all blocks
+                    if (scanChain === "xlayer" && !scanCursorRef.current) {
+                        setScanError(t("airdropNoWalletsFound"));
                     } else {
-                        showToast(t("airdropNoNewWallets"));
+                        // More pages available, show "no new wallets this page"
+                        showToast(`${t("airdropNoNewWallets")} — ${data.scannedRange ? `blocks ${data.scannedRange.from}-${data.scannedRange.to}` : ""}`);
                     }
+                } else {
+                    // Accumulate & deduplicate using functional updater (GUARANTEED latest state)
+                    const walletsToAdd = newWallets; // capture for closure
+                    setScannedWallets(prev => {
+                        const existingMap = new Map(prev.map(w => [w.address.toLowerCase(), w]));
+                        let added = 0;
+                        for (const w of walletsToAdd) {
+                            const key = w.address.toLowerCase();
+                            if (!existingMap.has(key)) { existingMap.set(key, w); added++; }
+                        }
+                        const merged = Array.from(existingMap.values());
+                        // Sync ref immediately
+                        scannedWalletsRef.current = merged;
+                        if (added > 0) {
+                            const rangeInfo = data.scannedRange ? ` [${data.scannedRange.from}-${data.scannedRange.to}]` : "";
+                            showToast(`+${added} ${t("airdropNewWalletsFound")} (${merged.length} ${t("airdropScanCount")})${rangeInfo}`);
+                        } else {
+                            showToast(t("airdropNoNewWallets"));
+                        }
+                        return merged;
+                    });
+                    setScanCount(prev => prev + 1);
                 }
             } else setScanError(data.error || t("airdropScanFailed"));
         } catch { setScanError(t("airdropScanFailed")); }
@@ -564,7 +614,8 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     };
 
     const clearScanned = () => {
-        playClick(); setScannedWallets([]); setSelectedWallets(new Set()); setScanCount(0);
+        playClick(); scannedWalletsRef.current = []; setScannedWallets([]); setSelectedWallets(new Set()); setScanCount(0);
+        scanCursorRef.current = null; // Reset cursor
         stopAutoScan();
     };
 
@@ -580,8 +631,14 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const runAutoScanLoop = async () => {
         while (autoScanRef.current) {
             await handleScan();
-            // Wait 3 seconds between scans
-            await new Promise(r => setTimeout(r, 3000));
+            // For XLayer: if cursor is null, we've scanned everything — stop
+            if (scanChain === "xlayer" && !scanCursorRef.current) {
+                showToast(t("airdropScanComplete") || "✅ All blocks scanned!");
+                stopAutoScan();
+                break;
+            }
+            // Wait 2 seconds between pages
+            await new Promise(r => setTimeout(r, 2000));
         }
     };
 
@@ -596,7 +653,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             if (entries.length) {
                 setAddressInput(entries.map(e => e.amount ? `${e.address},${e.amount}` : e.address).join("\n"));
                 setActiveTab("manual");
-                showToast(`${entries.length} addresses imported`);
+                showToast(`${entries.length} ${t("addressesImported")}`);
             } else playError();
         };
         reader.readAsText(file);
@@ -811,22 +868,37 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ["#f97316", "#a855f7", "#22c55e", "#3b82f6"] });
             // Save to backend for leaderboard
             try {
-                const txHashes = [...new Set(results.filter(r => r.success && r.txHash).map(r => r.txHash))];
-                const totalWei = String(BigInt(Math.floor(ts * 1e18)));
+                // Group results by txHash for accurate per-TX counts
+                const txMap = new Map<string, { count: number; amount: number; failed: number }>();
+                for (const r of results) {
+                    if (r.txHash) {
+                        const existing = txMap.get(r.txHash) || { count: 0, amount: 0, failed: 0 };
+                        if (r.success) {
+                            existing.count++;
+                            existing.amount += parseFloat(r.amount) || 0;
+                        } else {
+                            existing.failed++;
+                        }
+                        txMap.set(r.txHash, existing);
+                    }
+                }
+                const txBreakdown = Array.from(txMap.entries()).map(([hash, data]) => ({
+                    txHash: hash,
+                    recipientCount: data.count + data.failed,
+                    successCount: data.count,
+                    failedCount: data.failed,
+                    totalAmount: String(BigInt(Math.floor(data.amount * 1e18))),
+                }));
                 fetch("/api/airdrop-records", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        txHashes,
+                        txBreakdown,
                         sender: address,
                         tokenAddress,
                         tokenSymbol,
-                        recipientCount: sc,
-                        totalAmount: totalWei,
                         mode: String(sendMode),
                         chain: "196",
-                        successCount: sc,
-                        failedCount: results.filter(r => !r.success).length,
                     }),
                 }).then(() => {
                     // #1: Refresh leaderboard & history after airdrop
@@ -951,7 +1023,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 if (config.templates) { const m = [...templates, ...config.templates.filter((t: any) => !templates.some(e => e.name === t.name))]; setTemplates(m); saveStorage(STORAGE_TEMPLATES, m); }
                 if (config.addressBook) { const m = [...addressBook, ...config.addressBook.filter((g: any) => !addressBook.some(e => e.name === g.name))]; setAddressBook(m); saveStorage(STORAGE_BOOK, m); }
                 showToast(t("configImported") || "Config imported!");
-            } catch { showToast("Invalid config file"); }
+            } catch { showToast(t("configInvalid")); }
         };
         reader.readAsText(file);
     };
@@ -1171,7 +1243,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 showToast(data.error || "Failed");
             }
         } catch {
-            showToast("Failed to scan holders");
+            showToast(t("scanHoldersFailed"));
             playError();
         }
         setHolderScanning(false);
@@ -1196,6 +1268,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             }
         }
         const newWallets = Array.from(existingMap.values());
+        scannedWalletsRef.current = newWallets;
         setScannedWallets(newWallets);
         // Auto-select imported holders
         const newSelected = new Set(selectedWallets);
@@ -1246,8 +1319,18 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
 
     // ===================== RENDER =====================
 
-    // Toast
-    const toastEl = toast ? <div className="airdrop-toast">{toast}</div> : null;
+    // Toast (stacked with progress bar + close)
+    const toastEl = toasts.length > 0 ? (
+        <div className="airdrop-toast-stack">
+            {toasts.map((t) => (
+                <div key={t.id} className="airdrop-toast">
+                    <span className="airdrop-toast-msg">{t.msg}</span>
+                    <button className="airdrop-toast-close" onClick={() => dismissToast(t.id)}>✕</button>
+                    <div className="airdrop-toast-progress" />
+                </div>
+            ))}
+        </div>
+    ) : null;
 
     // ---- PREVIEW ----
     if (step === "preview") {
@@ -1754,6 +1837,18 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                     )}
                                 </div>
                             </div>
+                            {/* #3 Scan Progress Bar */}
+                            {(isScanning || autoScanActive) && scanProgress && (
+                                <div className="airdrop-scan-progress">
+                                    <div className="airdrop-scan-progress-bar">
+                                        <div className="airdrop-scan-progress-fill" style={{ width: `${Math.min(100, (scanProgress.scannedBlocks / scanProgress.totalBlocks) * 100)}%` }} />
+                                    </div>
+                                    <div className="airdrop-scan-progress-info">
+                                        <span>📦 {scanProgress.scannedBlocks.toLocaleString()} / {scanProgress.totalBlocks.toLocaleString()} blocks</span>
+                                        <span>👛 {scanProgress.walletsFound} {t("airdropScanCount")}</span>
+                                    </div>
+                                </div>
+                            )}
                             {scanError && <div className="airdrop-scan-error"><AIcon name="warning" size={14} /> {scanError}</div>}
                             {scannedWallets.length > 0 && (
                                 <>
@@ -1762,6 +1857,12 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                         <div className="airdrop-scan-buttons">
                                             <button className="airdrop-select-btn" onClick={() => { playClick(); setSelectedWallets(new Set(scannedWallets.map(w => w.address))); }}><AIcon name="checkSmall" size={12} /> {t("airdropSelectAll")}</button>
                                             <button className="airdrop-select-btn" onClick={() => { playClick(); setSelectedWallets(new Set()); }}><AIcon name="xCircle" size={12} /> {t("airdropDeselectAll")}</button>
+                                            <button className="airdrop-select-btn export" onClick={() => {
+                                                playClick();
+                                                const csv = ["address,OKB,USDT", ...scannedWallets.map(w => `${w.address},${w.balances.OKB || "0"},${w.balances.USDT || "0"}`)];
+                                                downloadFile(csv.join("\n"), `scanned_wallets_${Date.now()}.csv`);
+                                                showToast(`${scannedWallets.length} ${t("addressesImported")} → CSV`);
+                                            }}>📥 {t("airdropExportCsv")}</button>
                                         </div>
                                     </div>
                                     <div className="airdrop-wallet-list">
@@ -2015,6 +2116,12 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                         <div className="airdrop-summary-row"><span><AIcon name="users" size={12} /> {t("airdropRecipients")}:</span><span>{recipients.length}</span></div>
                         {amountMode === "equal" && <div className="airdrop-summary-row"><span><AIcon name="coins" size={12} /> {t("airdropEach")}:</span><span>{formatNum(amountNum)}</span></div>}
                         <div className="airdrop-summary-row total"><span><AIcon name="chart" size={12} /> {t("airdropTotal")}:</span><span>{formatNum(totalAmount)} ${tokenSymbol}</span></div>
+                        {/* #15 Gas Optimization Info */}
+                        {sendMode === "batch" && recipients.length > 1 && (
+                            <div className="airdrop-summary-row">
+                                <span className="gas-savings-badge">⛽ {lang === "vi" ? "Tiết kiệm" : "Save"} ~{((recipients.length - 1) * 0.00015).toFixed(4)} OKB {lang === "vi" ? "so với gửi riêng" : "vs sequential"}</span>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -2174,38 +2281,78 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         </div>
     );
 
-    const historyPanel = (
+    const historyPanel = (() => {
+        // #4 History Filter — filter client-side
+        const filteredHistory = historyData.filter((row: any) => {
+            if (histFilter === "mine" && address) {
+                if ((row.sender_address || "").toLowerCase() !== address.toLowerCase()) return false;
+            }
+            if (histStatusFilter === "success" && !(Number(row.success_count) > 0)) return false;
+            if (histStatusFilter === "failed" && Number(row.success_count) > 0) return false;
+            return true;
+        });
+
+        return (
         <div className="airdrop-side-panel side-history">
             <div className="side-panel-header">
                 <AIcon name="clock" size={16} />
                 <span>{t("histTab") || "History"}</span>
             </div>
-            {!address ? (
-                <div className="side-empty">{t("histConnectWallet") || "Connect wallet to view history"}</div>
-            ) : historyLoading ? (
-                <div className="side-empty"><span className="airdrop-spinner" /></div>
-            ) : historyData.length === 0 ? (
-                <div className="side-empty">{t("histEmpty") || "No airdrop history yet."}</div>
+            {/* #4 Filter Bar */}
+            <div className="hist-filter-bar">
+                <div className="hist-filter-group">
+                    <button className={`hist-filter-chip ${histFilter === "all" ? "active" : ""}`} onClick={() => setHistFilter("all")}>🌍 {lang === "vi" ? "Tất cả" : "All"}</button>
+                    <button className={`hist-filter-chip ${histFilter === "mine" ? "active" : ""}`} onClick={() => setHistFilter("mine")} disabled={!address}>👤 {lang === "vi" ? "Của tôi" : "Mine"}</button>
+                </div>
+                <div className="hist-filter-group">
+                    <button className={`hist-filter-chip mini ${histStatusFilter === "all" ? "active" : ""}`} onClick={() => setHistStatusFilter("all")}>All</button>
+                    <button className={`hist-filter-chip mini ${histStatusFilter === "success" ? "active" : ""}`} onClick={() => setHistStatusFilter("success")}>✅</button>
+                    <button className={`hist-filter-chip mini ${histStatusFilter === "failed" ? "active" : ""}`} onClick={() => setHistStatusFilter("failed")}>❌</button>
+                </div>
+            </div>
+            {historyLoading ? (
+                /* #7 Skeleton Loading */
+                <div className="hist-skeleton-list">
+                    {[1,2,3,4].map(i => (
+                        <div key={i} className="hist-skeleton-card">
+                            <div className="hist-skeleton-line w60" />
+                            <div className="hist-skeleton-line w80" />
+                            <div className="hist-skeleton-line w40" />
+                        </div>
+                    ))}
+                </div>
+            ) : filteredHistory.length === 0 ? (
+                <div className="side-empty">{histFilter === "mine" ? (lang === "vi" ? "Bạn chưa có airdrop nào" : "No airdrops from you yet") : (t("histEmpty") || "No airdrop history yet.")}</div>
             ) : (
                 <div className="hist-list">
-                    {historyData.map((row: any) => {
+                    {filteredHistory.map((row: any) => {
                         const amt = Number(BigInt(row.total_amount || "0") / BigInt(1e18));
                         const date = new Date(Number(row.timestamp) * 1000);
                         const isSuccess = Number(row.success_count) > 0;
+                        const sender = row.sender_address || "";
+                        const isMe = address && sender.toLowerCase() === address.toLowerCase();
                         return (
-                            <div key={row.id} className={`hist-card ${isSuccess ? "success" : "failed"}`}>
+                            <div key={row.id} className={`hist-card ${isSuccess ? "success" : "failed"} ${isMe ? "hist-mine" : ""}`}>
                                 <div className="hist-card-header">
                                     <span className={`hist-status ${isSuccess ? "green" : "red"}`}>{isSuccess ? "✅" : "❌"}</span>
                                     <span className="hist-date">{date.toLocaleDateString()} {date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
                                     <span className="hist-mode-badge">{row.mode === "batch" ? "Batch" : `x${row.mode}`}</span>
                                 </div>
+                                <div className="hist-sender">
+                                    <a href={`${XLAYER_EXPLORER}/address/${sender}`} target="_blank" rel="noopener noreferrer" className="hist-sender-link">
+                                        {sender.slice(0, 6)}...{sender.slice(-4)}
+                                    </a>
+                                    {/* #2 Copy Address */}
+                                    <button className="hist-copy-btn" onClick={() => { copyText(sender); showToast(t("airdropAddressCopied")); }} title="Copy">📋</button>
+                                    {isMe && <span className="hist-you-badge">YOU</span>}
+                                </div>
                                 <div className="hist-card-body">
                                     <span className="hist-amount">{amt > 1e6 ? `${(amt / 1e6).toFixed(1)}M` : amt > 1e3 ? `${(amt / 1e3).toFixed(1)}K` : amt.toLocaleString()} {row.token_symbol}</span>
                                     <span className="hist-arrow">→</span>
-                                    <span className="hist-recipients">{row.recipient_count} {t("airdropWallets")}</span>
+                                    <span className="hist-recipients">{row.recipient_count} {lang === "vi" ? "ví airdrop" : "wallets airdropped"}</span>
                                 </div>
                                 <div className="hist-card-footer">
-                                    <span className="hist-stats">✅ {row.success_count}{Number(row.failed_count) > 0 ? ` ❌ ${row.failed_count}` : ""}</span>
+                                    <span className="hist-stats">✅ {row.success_count} {lang === "vi" ? "thành công" : "sent"}{Number(row.failed_count) > 0 ? ` · ❌ ${row.failed_count} ${lang === "vi" ? "lỗi" : "failed"}` : ""}</span>
                                     <a className="hist-tx-link" href={`${XLAYER_EXPLORER}/tx/${row.tx_hash}`} target="_blank" rel="noopener noreferrer">
                                         TX: {row.tx_hash.slice(0, 8)}...{row.tx_hash.slice(-4)} <AIcon name="link" size={10} />
                                     </a>
@@ -2217,13 +2364,91 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             )}
         </div>
     );
+    })();
+    // #12 Analytics Panel
+    const analyticsPanel = (
+        <div className="airdrop-side-panel side-analytics">
+            <div className="side-panel-header">
+                <AIcon name="chart" size={16} />
+                <span>📊 {lang === "vi" ? "Phân Tích" : "Analytics"}</span>
+            </div>
+            {!analyticsData ? (
+                <div className="hist-skeleton-list">
+                    {[1,2,3].map(i => (
+                        <div key={i} className="hist-skeleton-card">
+                            <div className="hist-skeleton-line w80" />
+                            <div className="hist-skeleton-line w60" />
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="analytics-content">
+                    {/* Daily Chart */}
+                    <div className="analytics-section">
+                        <div className="analytics-section-title">{lang === "vi" ? "Airdrop 14 ngày qua" : "Airdrops (14 days)"}</div>
+                        <div className="analytics-chart">
+                            {(() => {
+                                const daily = analyticsData.daily || [];
+                                const maxCount = Math.max(...daily.map((d: any) => Number(d.count)), 1);
+                                return daily.length === 0 ? (
+                                    <div className="analytics-empty">{lang === "vi" ? "Chưa có dữ liệu" : "No data yet"}</div>
+                                ) : (
+                                    <div className="analytics-bars">
+                                        {daily.map((d: any, i: number) => {
+                                            const pct = (Number(d.count) / maxCount) * 100;
+                                            const dayLabel = (d.day as string).slice(5); // MM-DD
+                                            return (
+                                                <div key={i} className="analytics-bar-col" title={`${d.day}: ${d.count} airdrops, ${d.recipients} recipients`}>
+                                                    <div className="analytics-bar-value">{d.count}</div>
+                                                    <div className="analytics-bar-wrap">
+                                                        <div className="analytics-bar-fill" style={{ height: `${pct}%` }} />
+                                                    </div>
+                                                    <div className="analytics-bar-label">{dayLabel}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    </div>
+                    {/* Top Senders */}
+                    <div className="analytics-section">
+                        <div className="analytics-section-title">🏆 {lang === "vi" ? "Top Người Gửi" : "Top Senders"}</div>
+                        <div className="analytics-top-list">
+                            {(analyticsData.topSenders || []).map((s: any, i: number) => (
+                                <div key={i} className="analytics-top-item">
+                                    <span className="analytics-top-rank">#{i + 1}</span>
+                                    <a href={`${XLAYER_EXPLORER}/address/${s.sender_address}`} target="_blank" rel="noopener noreferrer" className="analytics-top-addr">
+                                        {s.sender_address.slice(0, 6)}...{s.sender_address.slice(-4)}
+                                    </a>
+                                    <span className="analytics-top-count">{s.count}x → {s.total_recipients} {t("airdropWallets")}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+
+    // Right panel with tabs
+    const rightPanel = (
+        <div className="airdrop-right-panel">
+            <div className="right-panel-tabs">
+                <button className={`right-tab ${rightTab === "history" ? "active" : ""}`} onClick={() => setRightTab("history")}>🕐 {t("histTab") || "History"}</button>
+                <button className={`right-tab ${rightTab === "analytics" ? "active" : ""}`} onClick={() => setRightTab("analytics")}>📊 {lang === "vi" ? "Phân Tích" : "Analytics"}</button>
+            </div>
+            {rightTab === "history" ? historyPanel : analyticsPanel}
+        </div>
+    );
 
     return (
         <>
             <div className="airdrop-layout-3col">
                 {leaderboardPanel}
                 {mainPanel}
-                {historyPanel}
+                {rightPanel}
             </div>
             {/* Profile Edit Modal — rendered at top level to escape stacking context */}
             {showProfileEdit && (
