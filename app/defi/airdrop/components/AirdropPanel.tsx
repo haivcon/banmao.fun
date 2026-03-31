@@ -1052,11 +1052,20 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
 
     // Dashboard stats (#4)
     const dashboardStats = React.useMemo(() => {
+        // Use global DB stats (visible to all users) instead of local history
+        if (lbStats) {
+            return {
+                totalDistributed: Number(lbStats.total_distributed || 0),
+                totalWallets: Number(lbStats.total_recipients || 0),
+                totalSessions: Number(lbStats.total_airdrops || 0),
+            };
+        }
+        // Fallback to local history while DB loads
         const totalDistributed = history.reduce((s, h) => s + parseFloat(h.totalSent.replace(/,/g, "")) || 0, 0);
         const totalWallets = history.reduce((s, h) => s + h.successCount, 0);
         const totalSessions = history.length;
         return { totalDistributed, totalWallets, totalSessions };
-    }, [history]);
+    }, [lbStats, history]);
 
     // ========== QR Scanner (#6) ==========
     const startQrScanner = async () => {

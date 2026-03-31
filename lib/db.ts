@@ -3187,10 +3187,15 @@ export async function getAirdropStats() {
             COUNT(*) as total_airdrops,
             COALESCE(SUM(recipient_count), 0) as total_recipients,
             COALESCE(SUM(success_count), 0) as total_success,
-            COUNT(DISTINCT sender_address) as unique_senders
+            COUNT(DISTINCT sender_address) as unique_senders,
+            COALESCE(SUM(CAST(total_amount AS REAL)), 0) as total_amount_raw
         FROM airdrop_history
     `);
-    return result.rows[0] || {};
+    const row: any = result.rows[0] || {};
+    // Convert total_amount from wei (18 decimals) to human-readable
+    const rawAmt = BigInt(Math.floor(Number(row.total_amount_raw || 0)));
+    row.total_distributed = Number(rawAmt) / 1e18;
+    return row;
 }
 
 export async function getAirdropAnalytics() {
