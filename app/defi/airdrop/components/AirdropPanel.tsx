@@ -367,6 +367,11 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [profileForm, setProfileForm] = useState({ name: "", avatar: 0, telegram: "", twitter: "" });
     const [profileEditsLeft, setProfileEditsLeft] = useState(3);
     const [viewProfileAddr, setViewProfileAddr] = useState<string | null>(null);
+    // Market data states
+    const [tokenPrice, setTokenPrice] = useState<number>(0);
+    const [tradesFeed, setTradesFeed] = useState<any[]>([]);
+    const [marketInfo, setMarketInfo] = useState<any>(null);
+    const [showTrades, setShowTrades] = useState(true);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { data: banmaoBalance, refetch: refetchBalance } = useBalance({ address, token: tokenAddress as `0x${string}` });
@@ -413,7 +418,14 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             fetch("/api/airdrop-records?type=all-history&limit=50").then(r => r.json()).then(d => { if (d.success) setHistoryData(d.data); }).catch(() => {});
             fetch("/api/airdrop-records?type=stats").then(r => r.json()).then(d => { if (d.success) setLbStats(d.data); }).catch(() => {});
         }, 30000);
-        return () => clearInterval(histInterval);
+        // Fetch price, trades, market info
+        const fetchPrice = () => fetch("/api/okx/price").then(r => r.json()).then(d => { if (d.success) setTokenPrice(parseFloat(d.price) || 0); }).catch(() => {});
+        const fetchTrades = () => fetch("/api/okx/trades").then(r => r.json()).then(d => { if (d.success) setTradesFeed(d.trades || []); }).catch(() => {});
+        const fetchMarket = () => fetch("/api/okx/advanced-info").then(r => r.json()).then(d => { if (d.success) setMarketInfo(d.data); }).catch(() => {});
+        fetchPrice(); fetchTrades(); fetchMarket();
+        const priceInterval = setInterval(fetchPrice, 60000);
+        const tradesInterval = setInterval(fetchTrades, 30000);
+        return () => { clearInterval(histInterval); clearInterval(priceInterval); clearInterval(tradesInterval); };
     }, []);
     // Fetch my profile when address changes (no longer overrides history)
     useEffect(() => {
@@ -1395,9 +1407,9 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 </div>
                 <div className="airdrop-preview-summary">
                     <div className="airdrop-preview-stat"><span className="airdrop-preview-label"><AIcon name="users" size={14} /> {t("airdropRecipients")}</span><span className="airdrop-preview-value">{recipients.length}</span></div>
-                    <div className="airdrop-preview-stat"><span className="airdrop-preview-label"><AIcon name="coins" size={14} /> {t("airdropAmountEach")}</span><span className="airdrop-preview-value">{amountMode === "custom" ? "Custom" : `${formatNum(amountNum)}`}</span></div>
-                    <div className="airdrop-preview-stat highlight"><span className="airdrop-preview-label"><AIcon name="chart" size={14} /> {t("airdropTotalCost")}</span><span className="airdrop-preview-value">{formatNum(totalAmount)} ${tokenSymbol}</span></div>
-                    <div className={`airdrop-preview-stat ${hasEnough ? "success" : "error"}`}><span className="airdrop-preview-label"><AIcon name="wallet" size={14} /> {t("airdropYourBalance")}</span><span className="airdrop-preview-value">{formatNum(balanceNum)} ${tokenSymbol}</span></div>
+                    <div className="airdrop-preview-stat"><span className="airdrop-preview-label"><AIcon name="coins" size={14} /> {t("airdropAmountEach")}</span><span className="airdrop-preview-value">{amountMode === "custom" ? "Custom" : `${formatNum(amountNum)}`}{tokenPrice > 0 && amountMode !== "custom" && <span className="usd-hint"> ~${(amountNum * tokenPrice).toFixed(4)}</span>}</span></div>
+                    <div className="airdrop-preview-stat highlight"><span className="airdrop-preview-label"><AIcon name="chart" size={14} /> {t("airdropTotalCost")}</span><span className="airdrop-preview-value">{formatNum(totalAmount)} ${tokenSymbol}{tokenPrice > 0 && <span className="usd-hint"> ~${(totalAmount * tokenPrice).toFixed(2)}</span>}</span></div>
+                    <div className={`airdrop-preview-stat ${hasEnough ? "success" : "error"}`}><span className="airdrop-preview-label"><AIcon name="wallet" size={14} /> {t("airdropYourBalance")}</span><span className="airdrop-preview-value">{formatNum(balanceNum)} ${tokenSymbol}{tokenPrice > 0 && <span className="usd-hint"> ~${(balanceNum * tokenPrice).toFixed(2)}</span>}</span></div>
                 </div>
                 {!hasEnough && <div className="airdrop-warning"><AIcon name="warning" size={14} /> {t("airdropInsufficientBalance")}</div>}
                 {estimatedGas && <div className="airdrop-gas-estimate"><AIcon name="fuel" size={14} /> {t("airdropGasEstimate") || "Gas"}: <strong>{estimatedGas}</strong></div>}
@@ -1671,11 +1683,41 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             </div>
 
             {/* Dashboard stats (#4) */}
-            {history.length > 0 && (
+            {(dashboardStats.totalSessions > 0 || tokenPrice > 0) && (
                 <div className="airdrop-dashboard">
+                    {tokenPrice > 0 && <div className="airdrop-dash-stat price"><AIcon name="chart" size={15} /><div><span className="airdrop-dash-value">${tokenPrice < 0.001 ? tokenPrice.toExponential(2) : tokenPrice.toFixed(6)}</span><span className="airdrop-dash-label">$BANMAO {t("tokenPrice") || "Price"}</span></div></div>}
                     <div className="airdrop-dash-stat"><AIcon name="coins" size={15} /><div><span className="airdrop-dash-value">{formatNum(dashboardStats.totalDistributed)}</span><span className="airdrop-dash-label">{t("dashTotalDistributed") || "BANMAO Distributed"}</span></div></div>
                     <div className="airdrop-dash-stat"><AIcon name="users" size={15} /><div><span className="airdrop-dash-value">{formatNum(dashboardStats.totalWallets)}</span><span className="airdrop-dash-label">{t("dashTotalWallets") || "Wallets Reached"}</span></div></div>
                     <div className="airdrop-dash-stat"><AIcon name="rocket" size={15} /><div><span className="airdrop-dash-value">{dashboardStats.totalSessions}</span><span className="airdrop-dash-label">{t("dashTotalSessions") || "Airdrops"}</span></div></div>
+                </div>
+            )}
+
+            {/* Live Trade Feed */}
+            {tradesFeed.length > 0 && (
+                <div className="trade-feed-widget">
+                    <div className="trade-feed-header" onClick={() => setShowTrades(!showTrades)}>
+                        <span>📊 {t("liveTrades") || "Live Trades"} <span className="trade-feed-badge">{tradesFeed.length}</span></span>
+                        <span className="trade-feed-toggle">{showTrades ? "▲" : "▼"}</span>
+                    </div>
+                    {showTrades && (
+                        <div className="trade-feed-body">
+                            {tradesFeed.slice(0, 5).map((trade: any, i: number) => {
+                                const isBuy = trade.type === "buy";
+                                const vol = parseFloat(trade.volume || "0");
+                                const price = parseFloat(trade.price || "0");
+                                const timeAgo = Math.floor((Date.now() - parseInt(trade.time || "0")) / 1000);
+                                const timeStr = timeAgo < 60 ? `${timeAgo}s` : timeAgo < 3600 ? `${Math.floor(timeAgo / 60)}m` : `${Math.floor(timeAgo / 3600)}h`;
+                                return (
+                                    <div key={trade.id || i} className={`trade-feed-row ${isBuy ? "buy" : "sell"}`}>
+                                        <span className="trade-feed-type">{isBuy ? "🟢 BUY" : "🔴 SELL"}</span>
+                                        <span className="trade-feed-vol">{vol > 1000 ? `${(vol / 1000).toFixed(1)}K` : vol.toFixed(2)}</span>
+                                        <span className="trade-feed-price">${price < 0.001 ? price.toExponential(1) : price.toFixed(6)}</span>
+                                        <span className="trade-feed-time">{timeStr} ago</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
 

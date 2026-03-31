@@ -299,4 +299,11 @@ export const viAirdrop = {
     scanHoldersFailed: "Không thể quét holders",
     legalRiskDetected: "Phát hiện rủi ro pháp lý, đã tự động loại bỏ",
     autoBlacklisted: "đã tự động thêm vào danh sách chặn",
+    liveTrades: "Giao Dịch Trực Tiếp",
+    topTraders: "Top Traders",
+    importTraders: "Nhập làm người nhận",
+    marketCap: "Vốn hóa",
+    volume24h: "KL 24h",
+    liquidity: "Thanh khoản",
+    holdersCount: "Holders",
 };

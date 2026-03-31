@@ -299,4 +299,11 @@ export const ruAirdrop = {
     scanHoldersFailed: "Не удалось сканировать",
     legalRiskDetected: "Обнаружен правовой риск, автоматически удалён",
     autoBlacklisted: "автоматически добавлен в чёрный список",
+    liveTrades: "Живые сделки",
+    topTraders: "Топ трейдеры",
+    importTraders: "Импорт как получатели",
+    marketCap: "Капитализация",
+    volume24h: "Объём 24ч",
+    liquidity: "Ликвидность",
+    holdersCount: "Холдеры",
 };

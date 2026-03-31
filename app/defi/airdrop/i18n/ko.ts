@@ -299,4 +299,11 @@ export const koAirdrop = {
     scanHoldersFailed: "홀더 스캔 실패",
     legalRiskDetected: "법적 위험 감지, 자동 제거됨",
     autoBlacklisted: "자동 블랙리스트 추가",
+    liveTrades: "실시간 거래",
+    topTraders: "탑 트레이더",
+    importTraders: "수신자로 가져오기",
+    marketCap: "시가총액",
+    volume24h: "24시간 거래량",
+    liquidity: "유동성",
+    holdersCount: "보유자",
 };

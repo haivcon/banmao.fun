@@ -299,4 +299,11 @@ export const idAirdrop = {
     scanHoldersFailed: "Gagal memindai holder",
     legalRiskDetected: "Risiko hukum terdeteksi, dihapus otomatis",
     autoBlacklisted: "otomatis masuk daftar hitam",
+    liveTrades: "Perdagangan Langsung",
+    topTraders: "Top Trader",
+    importTraders: "Impor sebagai penerima",
+    marketCap: "Kapitalisasi Pasar",
+    volume24h: "Volume 24j",
+    liquidity: "Likuiditas",
+    holdersCount: "Pemegang",
 };

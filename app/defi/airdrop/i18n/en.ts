@@ -299,4 +299,11 @@ export const enAirdrop = {
     scanHoldersFailed: "Failed to scan holders",
     legalRiskDetected: "Legal risk detected, auto-removed",
     autoBlacklisted: "auto-blacklisted",
+    liveTrades: "Live Trades",
+    topTraders: "Top Traders",
+    importTraders: "Import as Recipients",
+    marketCap: "Market Cap",
+    volume24h: "24h Volume",
+    liquidity: "Liquidity",
+    holdersCount: "Holders",
 };

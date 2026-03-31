@@ -299,4 +299,11 @@ export const zhAirdrop = {
     scanHoldersFailed: "扫描持有者失败",
     legalRiskDetected: "检测到法律风险，已自动移除",
     autoBlacklisted: "已自动加入黑名单",
+    liveTrades: "实时交易",
+    topTraders: "顶级交易员",
+    importTraders: "导入为接收者",
+    marketCap: "市值",
+    volume24h: "24小时交易量",
+    liquidity: "流动性",
+    holdersCount: "持有者",
 };

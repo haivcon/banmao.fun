@@ -2658,6 +2658,106 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     letter-spacing: 0.5px;
 }
 
+/* Price stat highlight */
+.airdrop-dash-stat.price {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.06));
+    border-color: rgba(34, 197, 94, 0.15);
+}
+.airdrop-dash-stat.price > svg { color: #22c55e; }
+.airdrop-dash-stat.price .airdrop-dash-value { color: #22c55e; }
+
+/* USD hint on preview */
+.usd-hint {
+    font-size: 11px;
+    color: #22c55e;
+    font-weight: 500;
+    opacity: 0.85;
+}
+
+/* ===== Live Trade Feed Widget ===== */
+.trade-feed-widget {
+    margin-bottom: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.04), rgba(168, 85, 247, 0.04));
+    overflow: hidden;
+}
+
+.trade-feed-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #e2e8f0;
+    user-select: none;
+    transition: background 0.2s;
+}
+.trade-feed-header:hover { background: rgba(255, 255, 255, 0.03); }
+
+.trade-feed-badge {
+    display: inline-block;
+    background: rgba(249, 115, 22, 0.2);
+    color: #f97316;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 8px;
+    margin-left: 6px;
+}
+
+.trade-feed-toggle {
+    font-size: 10px;
+    opacity: 0.5;
+}
+
+.trade-feed-body {
+    padding: 0 10px 10px;
+}
+
+.trade-feed-row {
+    display: grid;
+    grid-template-columns: 70px 1fr 1fr 50px;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 8px;
+    font-size: 12px;
+    gap: 4px;
+    transition: background 0.15s;
+}
+.trade-feed-row:hover { background: rgba(255, 255, 255, 0.03); }
+
+.trade-feed-row.buy { border-left: 2px solid #22c55e; }
+.trade-feed-row.sell { border-left: 2px solid #ef4444; }
+
+.trade-feed-type {
+    font-weight: 700;
+    font-size: 11px;
+}
+.trade-feed-row.buy .trade-feed-type { color: #22c55e; }
+.trade-feed-row.sell .trade-feed-type { color: #ef4444; }
+
+.trade-feed-vol {
+    color: #e2e8f0;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+}
+
+.trade-feed-price {
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+}
+
+.trade-feed-time {
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 10px;
+    text-align: right;
+}
+
 @media (max-width: 640px) {
     .airdrop-dashboard {
         grid-template-columns: 1fr;
@@ -6093,4 +6193,22 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 }
 .defi-airdrop-page.light .lb-profile-modal-overlay {
     background: rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Trade feed light mode */
+.defi-airdrop-page.light .trade-feed-widget {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.04), rgba(168, 85, 247, 0.03)) !important;
+    border-color: rgba(0, 0, 0, 0.06) !important;
+}
+.defi-airdrop-page.light .trade-feed-header { color: #2d2a35 !important; }
+.defi-airdrop-page.light .trade-feed-header:hover { background: rgba(0, 0, 0, 0.03) !important; }
+.defi-airdrop-page.light .trade-feed-vol { color: #2d2a35 !important; }
+.defi-airdrop-page.light .trade-feed-price { color: rgba(0, 0, 0, 0.45) !important; }
+.defi-airdrop-page.light .trade-feed-time { color: rgba(0, 0, 0, 0.35) !important; }
+.defi-airdrop-page.light .trade-feed-row:hover { background: rgba(0, 0, 0, 0.02) !important; }
+
+/* Price stat light mode */
+.defi-airdrop-page.light .airdrop-dash-stat.price {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(16, 185, 129, 0.04)) !important;
+    border-color: rgba(34, 197, 94, 0.12) !important;
 }
