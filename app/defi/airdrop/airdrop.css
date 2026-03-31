@@ -3779,11 +3779,11 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 }
 
 @media (max-width: 640px) {
-    .airdrop-chain-selector {
-        gap: 4px;
-.defi-airdrop-page.light .airdrop-holder-results {
-    background: rgba(34, 197, 94, 0.04);
-    border-color: rgba(34, 197, 94, 0.15);
+    .airdrop-chain-selector { gap: 4px; }
+    .airdrop-chain-pill { padding: 5px 8px; font-size: 11px; }
+    .airdrop-hot-tokens-grid { grid-template-columns: repeat(3, 1fr); }
+    .airdrop-holder-filters { gap: 4px; }
+    .airdrop-holder-tag { padding: 4px 7px; font-size: 10px; }
 }
 
 /* ===================== Comprehensive Light Mode Fixes ===================== */
