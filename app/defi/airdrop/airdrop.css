@@ -3781,6 +3781,199 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 @media (max-width: 640px) {
     .airdrop-chain-selector {
         gap: 4px;
+.defi-airdrop-page.light .airdrop-holder-results {
+    background: rgba(34, 197, 94, 0.04);
+    border-color: rgba(34, 197, 94, 0.15);
+}
+
+/* ===================== Comprehensive Light Mode Fixes ===================== */
+
+/* -- Page & General Text -- */
+.defi-airdrop-page.light,
+.defi-airdrop-page.light .airdrop-panel {
+    color: #3a3545;
+}
+.defi-airdrop-page.light .airdrop-panel-title { color: #2d2a35; }
+.defi-airdrop-page.light .airdrop-panel-subtitle { color: #5a5565; }
+
+/* -- Section Labels & Headings -- */
+.defi-airdrop-page.light .airdrop-section-label,
+.defi-airdrop-page.light .airdrop-label {
+    color: #4a4555;
+}
+
+/* -- Amount Input -- */
+.defi-airdrop-page.light .airdrop-amount-input-wrap {
+    background: rgba(60, 50, 40, 0.06);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+.defi-airdrop-page.light .airdrop-amount-input {
+    color: #2d2a35;
+    background: transparent;
+}
+.defi-airdrop-page.light .airdrop-amount-input::placeholder { color: rgba(0, 0, 0, 0.3); }
+.defi-airdrop-page.light .airdrop-amount-suffix { color: #5a5565; }
+
+/* -- Quick Amount Buttons -- */
+.defi-airdrop-page.light .airdrop-quick-amount {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #4a4555;
+}
+.defi-airdrop-page.light .airdrop-quick-amount:hover {
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.25);
+    color: #ea580c;
+}
+.defi-airdrop-page.light .airdrop-quick-amount.active {
+    background: rgba(249, 115, 22, 0.12);
+    border-color: rgba(249, 115, 22, 0.35);
+    color: #ea580c;
+}
+
+/* -- Amount Mode Toggle (Equal/Custom) -- */
+.defi-airdrop-page.light .airdrop-amount-mode {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+.defi-airdrop-page.light .airdrop-amount-mode-btn {
+    color: #5a5565;
+}
+.defi-airdrop-page.light .airdrop-amount-mode-btn.active {
+    color: #fff;
+    background: #ea580c;
+}
+
+/* -- Balance & Gas Row -- */
+.defi-airdrop-page.light .airdrop-balance-gas-row,
+.defi-airdrop-page.light .airdrop-balance-row {
+    color: #5a5565;
+}
+.defi-airdrop-page.light .airdrop-balance-amount { color: #3a3545; font-weight: 700; }
+.defi-airdrop-page.light .airdrop-gas-estimate { color: #5a5565; }
+
+/* -- Speed Mode & Send Mode -- */
+.defi-airdrop-page.light .airdrop-speed-mode { color: #4a4555; }
+.defi-airdrop-page.light .airdrop-speed-btn {
+    color: #5a5565;
+    border-color: rgba(0, 0, 0, 0.08);
+    background: rgba(0, 0, 0, 0.02);
+}
+.defi-airdrop-page.light .airdrop-speed-btn.active {
+    color: #fff;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    border-color: #ea580c;
+}
+
+/* -- Execute / Add Recipients Button -- */
+.defi-airdrop-page.light .airdrop-execute-btn {
+    color: #fff;
+}
+.defi-airdrop-page.light .airdrop-add-recipient-btn {
+    background: rgba(249, 115, 22, 0.1);
+    border-color: rgba(249, 115, 22, 0.25);
+    color: #ea580c;
+}
+
+/* -- Stats Cards (Distributed/Wallets/Sessions) -- */
+.defi-airdrop-page.light .airdrop-dash-stat {
+    background: rgba(60, 50, 40, 0.04);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+.defi-airdrop-page.light .airdrop-dash-stat-value { color: #ea580c; }
+.defi-airdrop-page.light .airdrop-dash-stat-label { color: #6a6575; }
+
+/* -- Scan Results -- */
+.defi-airdrop-page.light .airdrop-scan-note { color: #6a6575; }
+.defi-airdrop-page.light .airdrop-scan-error { color: #dc2626; }
+.defi-airdrop-page.light .airdrop-scan-btn {
+    color: #fff;
+}
+
+/* -- Scanned Wallet Cards -- */
+.defi-airdrop-page.light .airdrop-scanned-wallet {
+    background: rgba(60, 50, 40, 0.04);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #3a3545;
+}
+.defi-airdrop-page.light .airdrop-scanned-wallet:hover {
+    background: rgba(249, 115, 22, 0.06);
+    border-color: rgba(249, 115, 22, 0.2);
+}
+
+/* -- Address Input Label -- */
+.defi-airdrop-page.light .airdrop-address-label { color: #4a4555; }
+.defi-airdrop-page.light .airdrop-count-label { color: #5a5565; }
+
+/* -- Promo Card -- */
+.defi-airdrop-page.light .airdrop-promo-card {
+    background: rgba(168, 85, 247, 0.05);
+    border-color: rgba(168, 85, 247, 0.12);
+    color: #5a4580;
+}
+.defi-airdrop-page.light .airdrop-promo-card a { color: #7c3aed; }
+
+/* -- Blacklist / Schedule sections -- */
+.defi-airdrop-page.light .airdrop-blacklist-card,
+.defi-airdrop-page.light .airdrop-schedule-card {
+    background: rgba(60, 50, 40, 0.03);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+/* -- QR Scanner Button -- */
+.defi-airdrop-page.light .airdrop-qr-btn {
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #5a5565;
+    background: rgba(0, 0, 0, 0.02);
+}
+.defi-airdrop-page.light .airdrop-qr-btn:hover {
+    border-color: rgba(249, 115, 22, 0.3);
+    color: #ea580c;
+}
+
+/* -- Toast -- */
+.defi-airdrop-page.light .airdrop-toast {
+    background: rgba(45, 42, 53, 0.92);
+    color: #fff;
+}
+
+/* -- Modal overlays in light mode -- */
+.defi-airdrop-page.light .lb-profile-modal {
+    background: linear-gradient(135deg, #f5f0eb 0%, #ece6df 100%);
+    border-color: rgba(249, 115, 22, 0.12);
+}
+.defi-airdrop-page.light .lb-profile-field input {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #2d2a35;
+}
+
+/* -- CSV Drop Zone -- */
+.defi-airdrop-page.light .airdrop-csv-dropzone {
+    background: rgba(60, 50, 40, 0.03);
+    border-color: rgba(0, 0, 0, 0.12);
+    color: #5a5565;
+}
+
+/* -- Scroll bars in light mode -- */
+.defi-airdrop-page.light .airdrop-panel::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.1); }
+.defi-airdrop-page.light .airdrop-side-panel::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.1); }
+
+/* -- Result card in light mode -- */
+.defi-airdrop-page.light .airdrop-result-card {
+    background: rgba(60, 50, 40, 0.03);
+    border-color: rgba(0, 0, 0, 0.06);
+    color: #3a3545;
+}
+
+/* -- Misc text fixes -- */
+.defi-airdrop-page.light .airdrop-help-text { color: #6a6575; }
+.defi-airdrop-page.light .airdrop-info-label { color: #5a5565; }
+.defi-airdrop-page.light .airdrop-info-value { color: #2d2a35; }
+
+@media (max-width: 640px) {
+    .airdrop-chain-selector {
+        gap: 4px;
     }
 
     .airdrop-chain-pill {
