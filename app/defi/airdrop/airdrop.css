@@ -2919,7 +2919,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 /* ===================== Language dropdown (compact professional) ===================== */
 .defi-lang-dropdown {
     position: relative;
-    z-index: 100;
+    z-index: 1000;
 }
 
 .defi-lang-trigger {
@@ -2961,7 +2961,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .defi-lang-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 99;
+    z-index: 999;
 }
 
 .defi-lang-menu {
@@ -2976,7 +2976,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     min-width: 180px;
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
     animation: langMenuIn 0.2s ease-out;
-    z-index: 100;
+    z-index: 1001;
 }
 
 @keyframes langMenuIn {
@@ -3041,9 +3041,9 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 }
 
 .defi-airdrop-page.light .defi-lang-menu {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(245, 240, 235, 0.98));
-    border-color: rgba(0, 0, 0, 0.08);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+    background: linear-gradient(145deg, rgba(245, 240, 233, 0.98), rgba(238, 232, 225, 0.98));
+    border-color: rgba(0, 0, 0, 0.06);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12);
 }
 
 .defi-airdrop-page.light .defi-lang-option {
@@ -3062,13 +3062,13 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 
 /* ===================== Light mode theme ===================== */
 .defi-airdrop-page.light {
-    background: linear-gradient(145deg, #f8f4f0, #e8e0d8);
-    color: #1a1a2e;
+    background: linear-gradient(145deg, #f0ece7, #e5ddd4);
+    color: #2d2a35;
 }
 
 .defi-airdrop-page.light .defi-airdrop-header {
-    background: rgba(255, 255, 255, 0.85);
-    border-color: rgba(0, 0, 0, 0.08);
+    background: rgba(240, 235, 228, 0.92);
+    border-color: rgba(0, 0, 0, 0.06);
     backdrop-filter: blur(20px);
 }
 
@@ -3103,9 +3103,9 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 }
 
 .defi-airdrop-page.light .airdrop-panel {
-    background: rgba(255, 255, 255, 0.7);
-    border-color: rgba(0, 0, 0, 0.08);
-    color: #1a1a2e;
+    background: rgba(245, 240, 233, 0.85);
+    border-color: rgba(0, 0, 0, 0.06);
+    color: #2d2a35;
 }
 
 .defi-airdrop-page.light .airdrop-panel-title,
@@ -3114,9 +3114,9 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 }
 
 .defi-airdrop-page.light .airdrop-textarea {
-    background: rgba(0, 0, 0, 0.03);
-    border-color: rgba(0, 0, 0, 0.1);
-    color: #1a1a2e;
+    background: rgba(235, 228, 218, 0.5);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #2d2a35;
 }
 
 .defi-airdrop-page.light .airdrop-top-btn {
@@ -4080,8 +4080,8 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 
 /* Light mode */
 .defi-airdrop-page.light .airdrop-side-panel {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(243, 237, 255, 0.9) 100%);
-    border-color: rgba(168, 85, 247, 0.1);
+    background: linear-gradient(145deg, rgba(240, 235, 228, 0.92) 0%, rgba(232, 225, 240, 0.88) 100%);
+    border-color: rgba(168, 85, 247, 0.08);
 }
 
 .defi-airdrop-page.light .side-panel-header { color: #1a1a2e; }

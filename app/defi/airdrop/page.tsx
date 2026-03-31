@@ -258,8 +258,23 @@ export default function AirdropPage() {
     const [showLangMenu, setShowLangMenu] = useState(false);
 
     useEffect(() => {
+        // Auto-detect browser language on first visit
         const saved = localStorage.getItem("banmao_language") as Language;
-        if (saved && LANGUAGES.some(l => l.code === saved)) setLang(saved);
+        if (saved && LANGUAGES.some(l => l.code === saved)) {
+            setLang(saved);
+        } else {
+            // Map browser language to closest supported
+            const browserLang = (navigator.language || "en").toLowerCase();
+            const langMap: Record<string, Language> = {
+                "vi": "vi", "zh": "zh", "ko": "ko", "ru": "ru", "id": "id",
+                "ms": "id", // Malay → Indonesian
+            };
+            const prefix = browserLang.split("-")[0];
+            const detected = langMap[prefix] || "en";
+            setLang(detected);
+            localStorage.setItem("banmao_language", detected);
+        }
+        // Theme: default dark, only override if user explicitly saved
         const savedTheme = localStorage.getItem("banmao_theme") as "dark" | "light";
         if (savedTheme) setTheme(savedTheme);
     }, []);
