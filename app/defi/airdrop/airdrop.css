@@ -3802,16 +3802,42 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     color: #3a3545;
 }
 .defi-airdrop-page.light .airdrop-panel * {
-    color: inherit;
+    color: #3a3545 !important;
+}
+.defi-airdrop-page.light .airdrop-side-panel * {
+    color: #3a3545 !important;
 }
 /* Keep specific accent colors */
-.defi-airdrop-page.light .airdrop-panel .airdrop-panel-title { color: #2d2a35; }
-.defi-airdrop-page.light .airdrop-panel .airdrop-panel-subtitle { color: #5a5565; }
-.defi-airdrop-page.light .airdrop-panel .airdrop-stat-valid { color: #16a34a; }
-.defi-airdrop-page.light .airdrop-panel .airdrop-stat-invalid { color: #dc2626; }
-.defi-airdrop-page.light .airdrop-panel .airdrop-stat-dupe { color: #d97706; }
-.defi-airdrop-page.light .airdrop-panel .text-green { color: #16a34a; }
-.defi-airdrop-page.light .airdrop-panel .text-red { color: #dc2626; }
+.defi-airdrop-page.light .airdrop-panel .airdrop-panel-title { color: #2d2a35 !important; }
+.defi-airdrop-page.light .airdrop-panel .airdrop-panel-subtitle { color: #5a5565 !important; }
+.defi-airdrop-page.light .airdrop-panel .airdrop-stat-valid { color: #16a34a !important; }
+.defi-airdrop-page.light .airdrop-panel .airdrop-stat-invalid { color: #dc2626 !important; }
+.defi-airdrop-page.light .airdrop-panel .airdrop-stat-dupe { color: #d97706 !important; }
+.defi-airdrop-page.light .airdrop-panel .text-green { color: #16a34a !important; }
+.defi-airdrop-page.light .airdrop-panel .text-red { color: #dc2626 !important; }
+/* Orange accent colors */
+.defi-airdrop-page.light .airdrop-token-symbol { color: #ea580c !important; }
+.defi-airdrop-page.light .lb-stat-num { color: #ea580c !important; }
+.defi-airdrop-page.light .hist-amount { color: #ea580c !important; }
+.defi-airdrop-page.light .airdrop-tab.active { color: #ea580c !important; }
+/* White text on gradient/colored buttons */
+.defi-airdrop-page.light .airdrop-panel button[class*="execute"] { color: #fff !important; }
+.defi-airdrop-page.light .airdrop-panel .airdrop-scan-btn { color: #fff !important; }
+.defi-airdrop-page.light .airdrop-panel .airdrop-auto-scan-btn { color: #fff !important; }
+.defi-airdrop-page.light .airdrop-panel .airdrop-speed-btn.active { color: #fff !important; }
+.defi-airdrop-page.light .airdrop-panel .airdrop-amount-mode-btn.active { color: #fff !important; }
+.defi-airdrop-page.light .airdrop-panel .airdrop-book-save-btn { color: #fff !important; }
+/* Side panel accent colors */
+.defi-airdrop-page.light .side-leaderboard .side-panel-header { color: #ea580c !important; }
+.defi-airdrop-page.light .side-history .side-panel-header { color: #7c3aed !important; }
+.defi-airdrop-page.light .lb-you-badge { color: #7c3aed !important; }
+.defi-airdrop-page.light .hist-mode-badge { color: #7c3aed !important; }
+.defi-airdrop-page.light .hist-tx-link { color: #16a34a !important; }
+.defi-airdrop-page.light .lb-col-amount { color: #ea580c !important; }
+.defi-airdrop-page.light .scan-mode-badge { color: #7c3aed !important; }
+.defi-airdrop-page.light .airdrop-scan-mode-btn.active .scan-mode-badge { color: #ea580c !important; }
+/* Green scan hint text */
+.defi-airdrop-page.light .airdrop-scan-multi-hint { color: #166534 !important; }
 
 /* -- All sub-panels, cards, sections inside panel -- */
 .defi-airdrop-page.light .airdrop-panel div[class*="panel"],
