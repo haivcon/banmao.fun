@@ -19,7 +19,8 @@ const STORAGE_BOOK = "banmao_address_book";
 const STORAGE_BLACKLIST = "banmao_airdrop_blacklist";
 const STORAGE_TEMPLATES = "banmao_airdrop_templates";
 const MAX_RETRIES = 3;
-const MAX_BATCH_SIZE = 200; // contract limit
+const MAX_BATCH_SIZE = 500; // OKX XLayer supports ~666 per TX, safe limit = 500
+const BATCH_SIZE_OPTIONS = [50, 100, 200, 300, 500] as const;
 const STORAGE_CONFIG = "banmao_airdrop_config";
 
 const ERC20_ABI = [
@@ -253,6 +254,11 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [parsedAddresses, setParsedAddresses] = useState<string[]>(() => saved.current?.parsedAddresses || []);
     const [invalidAddresses, setInvalidAddresses] = useState<string[]>([]);
     const [duplicateCount, setDuplicateCount] = useState(0);
+    const [duplicateAddresses, setDuplicateAddresses] = useState<string[]>([]);
+    const [batchSizeConfig, setBatchSizeConfig] = useState(() => {
+        try { const v = JSON.parse(localStorage.getItem(STORAGE_CONFIG) || "{}").batchSize; return typeof v === 'number' ? v : MAX_BATCH_SIZE; } catch { return MAX_BATCH_SIZE; }
+    });
+    const [resultFilter, setResultFilter] = useState<"all" | "success" | "failed">("all");
     const [customAmounts, setCustomAmounts] = useState<Map<string, string>>(() => { try { return new Map(Object.entries(saved.current?.customAmounts || {})); } catch { return new Map(); } });
     const [amountPerWallet, setAmountPerWallet] = useState(() => saved.current?.amountPerWallet || "");
     const [scannedWallets, setScannedWallets] = useState<ScannedWallet[]>([]);
@@ -472,6 +478,25 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [batchStep, setBatchStep] = useState<"idle" | "approving" | "approved" | "sending">("idle");
     const cancelRef = useRef(false);
     const sendStartTimeRef = useRef(0);
+    // Alert sound using Web Audio API
+    const playAlert = useCallback(() => {
+        try {
+            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const osc = ctx.createOscillator(); const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.type = 'square'; osc.frequency.value = 800;
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+            osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.5);
+            // Second beep
+            const osc2 = ctx.createOscillator(); const gain2 = ctx.createGain();
+            osc2.connect(gain2); gain2.connect(ctx.destination);
+            osc2.type = 'square'; osc2.frequency.value = 1000;
+            gain2.gain.setValueAtTime(0.15, ctx.currentTime + 0.3);
+            gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+            osc2.start(ctx.currentTime + 0.3); osc2.stop(ctx.currentTime + 0.8);
+        } catch {}
+    }, []);
     const configFileRef = useRef<HTMLInputElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const scrollToPanel = () => { setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80); };
@@ -563,6 +588,9 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const dismissToast = (id: number) => setToasts(prev => prev.filter(t => t.id !== id));
 
     // Load storage
+    const STORAGE_PROGRESS = "banmao_airdrop_progress";
+    const [showResumePrompt, setShowResumePrompt] = useState(false);
+    const [resumeData, setResumeData] = useState<{ results: SendResult[]; entries: RecipientEntry[]; timestamp: number } | null>(null);
     useEffect(() => {
         setHistory(loadStorage<HistoryEntry[]>(STORAGE_HISTORY, []));
         setAddressBook(loadStorage<AddressGroup[]>(STORAGE_BOOK, []));
@@ -570,13 +598,25 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         const bl = loadStorage<string[]>(STORAGE_BLACKLIST, []);
         setBlacklist(new Set(bl.map(a => a.toLowerCase())));
         setBlacklistInput(bl.join("\n"));
+        // #2: Check for unfinished session
+        try {
+            const prog = JSON.parse(localStorage.getItem(STORAGE_PROGRESS) || "null");
+            if (prog && prog.results && prog.entries && prog.entries.length > 0) {
+                const successAddrs = new Set(prog.results.filter((r: SendResult) => r.success).map((r: SendResult) => r.address.toLowerCase()));
+                const remaining = prog.entries.filter((e: RecipientEntry) => !successAddrs.has(e.address.toLowerCase()));
+                if (remaining.length > 0) {
+                    setResumeData(prog);
+                    setShowResumePrompt(true);
+                }
+            }
+        } catch {}
     }, []);
 
     // Parse addresses (with blacklist filtering)
     const parseAddresses = useCallback((input: string) => {
-        if (!input.trim()) { setParsedAddresses([]); setInvalidAddresses([]); setDuplicateCount(0); setCustomAmounts(new Map()); return; }
+        if (!input.trim()) { setParsedAddresses([]); setInvalidAddresses([]); setDuplicateCount(0); setDuplicateAddresses([]); setCustomAmounts(new Map()); return; }
         const lines = input.split(/[\n;]+/).map(s => s.trim()).filter(Boolean);
-        const valid: string[] = [], invalid: string[] = [], seen = new Set<string>(), amounts = new Map<string, string>();
+        const valid: string[] = [], invalid: string[] = [], seen = new Set<string>(), amounts = new Map<string, string>(), dupeList: string[] = [];
         let dupes = 0;
         for (const line of lines) {
             const parts = line.split(/[,\t\s]+/);
@@ -587,7 +627,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                     const norm = match[0].toLowerCase();
                     if (norm === address?.toLowerCase()) continue;
                     if (blacklist.has(norm)) continue; // Skip blacklisted
-                    if (seen.has(norm)) { dupes++; continue; }
+                    if (seen.has(norm)) { dupeList.push(match[0]); continue; }
                     seen.add(norm);
                     if (isAddress(match[0])) {
                         valid.push(match[0]);
@@ -597,7 +637,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 }
             } else if (line.startsWith("0x")) invalid.push(line);
         }
-        setParsedAddresses(valid); setInvalidAddresses(invalid); setDuplicateCount(dupes); setCustomAmounts(amounts);
+        setParsedAddresses(valid); setInvalidAddresses(invalid); setDuplicateCount(dupeList.length); setDuplicateAddresses(dupeList); setCustomAmounts(amounts);
     }, [address, blacklist]);
 
     useEffect(() => { parseAddresses(addressInput); }, [addressInput, parseAddresses]);
@@ -896,6 +936,8 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         playClick(); setStep("sending"); setIsSending(true); setSendProgress(0); setSendTotal(entries.length); scrollToPanel();
         cancelRef.current = false;
         sendStartTimeRef.current = Date.now();
+        // #2: Save progress for resume
+        try { localStorage.setItem(STORAGE_PROGRESS, JSON.stringify({ entries, results: [], timestamp: Date.now() })); } catch {}
         if (!retryEntries) setSendResults([]);
         const results: SendResult[] = retryEntries ? [...sendResults.filter(r => r.success)] : [];
         let stopped = false;
@@ -937,8 +979,19 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 setSendProgress(Math.floor(entries.length / 2));
 
                 // Split into chunks of MAX_BATCH_SIZE
-                for (let chunk = 0; chunk < entries.length; chunk += MAX_BATCH_SIZE) {
-                    let batch = entries.slice(chunk, chunk + MAX_BATCH_SIZE);
+                for (let chunk = 0; chunk < entries.length; chunk += batchSizeConfig) {
+                    let batch = entries.slice(chunk, chunk + batchSizeConfig);
+                    // #5: Real-time balance check per batch
+                    const chunkNeeded = batch.reduce((s, e) => s + (parseFloat(e.amount) || (parseFloat(amountPerWallet) || 0)), 0);
+                    try {
+                        const freshBal2 = await refetchBalance();
+                        const curBal = freshBal2.data ? parseFloat(formatUnits(freshBal2.data.value, freshBal2.data.decimals)) : 0;
+                        if (curBal < chunkNeeded) {
+                            playAlert();
+                            showToast(`⚠️ ${t("airdropInsufficientBalance")}: ${formatNum(curBal)} < ${formatNum(chunkNeeded)}`);
+                            break;
+                        }
+                    } catch {}
                     const isEqual = amountMode === "equal";
                     let hash: string | null = null;
                     let retries = 0;
@@ -1002,6 +1055,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                             // Strategy 2: User rejected — show modal with paste OR auto-detect options
                             if (isUserReject || isLegalRisk) {
                                 console.log("[Airdrop] STRATEGY 2: Showing modal (batch=" + batch.length + ")");
+                                playAlert(); // Sound notification for user attention
                                 const flagLabels = {
                                     title: t("flagModalTitle"), desc: t("flagModalDesc"),
                                     batch: t("flagModalBatch"), addresses: t("flagModalAddresses"),
@@ -1156,6 +1210,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                     }
                 }
                 setSendResults([...results]); saveStorage("banmao_airdrop_temp", results);
+                try { localStorage.setItem(STORAGE_PROGRESS, JSON.stringify({ entries, results, timestamp: Date.now() })); } catch {}
                 setSendProgress(Math.min(b + BS, entries.length));
             }
         }
@@ -1168,10 +1223,13 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 results.push(result);
                 if (!result.success && result.error && /rejected|denied/i.test(result.error)) break;
                 setSendResults([...results]); saveStorage("banmao_airdrop_temp", results);
+                try { localStorage.setItem(STORAGE_PROGRESS, JSON.stringify({ entries, results, timestamp: Date.now() })); } catch {}
             }
         }
 
         setSendProgress(entries.length); setIsSending(false); setStep("done"); scrollToPanel();
+        // #2: Clear progress on completion
+        try { localStorage.removeItem(STORAGE_PROGRESS); } catch {}
         const sc = results.filter(r => r.success).length;
         const ts = results.filter(r => r.success).reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
         const he: HistoryEntry = { id: Date.now().toString(), timestamp: Date.now(), totalRecipients: entries.length, successCount: sc, failCount: results.filter(r => !r.success).length, totalSent: formatNum(ts), amountPerWallet: amountMode === "equal" ? amountPerWallet : "custom", results };
@@ -1655,6 +1713,38 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         </div>
     ) : null;
 
+    // #2: Resume prompt UI
+    const resumeEl = showResumePrompt && resumeData ? (
+        <div style={{
+            background: "linear-gradient(135deg, rgba(249,115,22,0.15), rgba(168,85,247,0.15))",
+            border: "1px solid rgba(249,115,22,0.3)", borderRadius: 12, padding: "14px 18px",
+            marginBottom: 12, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+        }}>
+            <span style={{ fontSize: 20 }}>🔄</span>
+            <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{ fontWeight: 700, color: "#f97316", fontSize: 13 }}>{t("resumeTitle") || "Unfinished Airdrop Detected"}</div>
+                <div style={{ fontSize: 11, color: "#aaa" }}>
+                    {resumeData.results.filter(r => r.success).length}/{resumeData.entries.length} {t("airdropSuccessful")} · {new Date(resumeData.timestamp).toLocaleString()}
+                </div>
+            </div>
+            <button onClick={() => {
+                playClick();
+                const successAddrs = new Set(resumeData.results.filter(r => r.success).map(r => r.address.toLowerCase()));
+                const remaining = resumeData.entries.filter(e => !successAddrs.has(e.address.toLowerCase()));
+                setSendResults(resumeData.results.filter(r => r.success));
+                setShowResumePrompt(false);
+                executeAirdrop(remaining);
+            }} style={{
+                padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer",
+                background: "linear-gradient(135deg, #f97316, #a855f7)", color: "#fff", fontWeight: 700, fontSize: 13,
+            }}>{t("resumeAirdrop") || "Resume"} ({resumeData.entries.length - resumeData.results.filter(r => r.success).length})</button>
+            <button onClick={() => { setShowResumePrompt(false); try { localStorage.removeItem(STORAGE_PROGRESS); } catch {} }} style={{
+                padding: "8px 12px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.15)",
+                background: "transparent", color: "#888", cursor: "pointer", fontSize: 12,
+            }}>✕</button>
+        </div>
+    ) : null;
+
     // Progress Stepper
     const stepperSteps: { key: AirdropStep; icon: string; label: string }[] = [
         { key: "input", icon: "parachute", label: t("stepSetup") || "Setup" },
@@ -1771,6 +1861,27 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                         </button>
                     </div>
                 </div>
+                {/* Batch Size Selector (only for batch mode) */}
+                {sendMode === "batch" && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", marginTop: -4 }}>
+                        <span style={{ fontSize: 12, color: "#888" }}>📦 {t("batchSize") || "Batch size"}:</span>
+                        <div style={{ display: "flex", gap: 4 }}>
+                            {BATCH_SIZE_OPTIONS.map(n => (
+                                <button
+                                    key={n}
+                                    onClick={() => { playClick(); setBatchSizeConfig(n); try { const cfg = JSON.parse(localStorage.getItem(STORAGE_CONFIG) || "{}"); cfg.batchSize = n; localStorage.setItem(STORAGE_CONFIG, JSON.stringify(cfg)); } catch {} }}
+                                    style={{
+                                        padding: "4px 10px", borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                                        background: batchSizeConfig === n ? "linear-gradient(135deg, #f97316, #a855f7)" : "rgba(255,255,255,0.06)",
+                                        border: batchSizeConfig === n ? "none" : "1px solid rgba(255,255,255,0.1)",
+                                        color: batchSizeConfig === n ? "#fff" : "#888",
+                                    }}
+                                >{n}</button>
+                            ))}
+                        </div>
+                        <span style={{ fontSize: 11, color: "#555" }}>({Math.ceil(recipients.length / batchSizeConfig)} TX{recipients.length > batchSizeConfig ? 's' : ''})</span>
+                    </div>
+                )}
                 {/* Mode description card */}
                 <div className={`airdrop-mode-info-card ${sendMode === "batch" ? "mode-batch" : sendMode === 1 ? "mode-sequential" : "mode-parallel"}`}>
                     <div className="mode-info-header">
@@ -1884,6 +1995,10 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         const sc = sendResults.filter(r => r.success).length, fc = sendResults.filter(r => !r.success).length;
         const elapsed = (Date.now() - sendStartTimeRef.current) / 1000;
         const speed = elapsed > 0 && sendProgress > 0 ? (sendProgress / elapsed).toFixed(1) : "—";
+        const etaSeconds = sendProgress > 0 ? Math.round(((sendTotal - sendProgress) / (sendProgress / elapsed))) : 0;
+        const etaMin = Math.floor(etaSeconds / 60);
+        const etaSec = etaSeconds % 60;
+        const etaStr = sendProgress > 0 ? (etaMin > 0 ? `${etaMin}m ${etaSec}s` : `${etaSec}s`) : "—";
         return (
             <div className="airdrop-panel" ref={panelRef}>
                 {toastEl}
@@ -1892,7 +2007,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 {/* Progress bar (#3) */}
                 <div className="airdrop-progress-bar-container">
                     <div className="airdrop-progress-bar" style={{ width: `${pct}%` }} />
-                    <span className="airdrop-progress-text">{pct}% · {sendProgress}/{sendTotal} · {speed} TX/s</span>
+                    <span className="airdrop-progress-text">{pct}% · {sendProgress}/{sendTotal} · {speed} TX/s · ⏱ {etaStr}</span>
                 </div>
                 <div className="airdrop-sending-status">
                     <div className="airdrop-progress-ring">
@@ -1908,6 +2023,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                         <div className="airdrop-sending-label">{isSending ? t("airdropProcessing") : t("airdropComplete")}</div>
                         {currentSendingAddress && isSending && <div className="airdrop-sending-current">{currentSendingAddress}</div>}
                         <div className="airdrop-sending-counts"><span className="airdrop-count-success"><AIcon name="check" size={12} /> {sc}</span>{fc > 0 && <span className="airdrop-count-fail"><AIcon name="xCircle" size={12} /> {fc}</span>}</div>
+                        {isSending && sendProgress > 0 && <div style={{ fontSize: 11, color: "#aaa", marginTop: 4 }}>⏱ ETA: {etaStr}</div>}
                     </div>
                 </div>
                 {/* Cancel button (#5) */}
@@ -1960,10 +2076,28 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                         }}
                     />
                 </div>
+                {/* Filter tabs */}
+                <div style={{ display: "flex", gap: 6, padding: "4px 12px" }}>
+                    {(["all", "success", "failed"] as const).map(f => (
+                        <button
+                            key={f}
+                            onClick={() => { playClick(); setResultFilter(f); }}
+                            style={{
+                                padding: "5px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                                background: resultFilter === f ? (f === "success" ? "#166534" : f === "failed" ? "#7f1d1d" : "rgba(255,255,255,0.1)") : "rgba(255,255,255,0.04)",
+                                border: resultFilter === f ? "none" : "1px solid rgba(255,255,255,0.08)",
+                                color: resultFilter === f ? "#fff" : "#888",
+                            }}
+                        >
+                            {f === "all" ? `${t("all") || "All"} (${sendResults.length})` : f === "success" ? `✅ ${t("airdropSuccessful")} (${sc})` : `❌ ${t("airdropFailedCount")} (${fc})`}
+                        </button>
+                    ))}
+                </div>
                 <div className="airdrop-results-list full">
                     {(() => {
                         const q = recipientSearch.toLowerCase().trim();
-                        const filtered = q ? sendResults.filter(r => r.address.toLowerCase().includes(q)) : sendResults;
+                        const byTab = resultFilter === "all" ? sendResults : resultFilter === "success" ? sendResults.filter(r => r.success) : sendResults.filter(r => !r.success);
+                        const filtered = q ? byTab.filter(r => r.address.toLowerCase().includes(q)) : byTab;
                         return (
                             <>
                                 {filtered.map((r, i) => (
@@ -2029,6 +2163,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         <div className="airdrop-panel">
             {toastEl}
             {stepperEl}
+            {resumeEl}
             {/* Compact Header */}
             <div className="airdrop-panel-header-v2">
                 <div className="airdrop-header-left">
@@ -2222,6 +2357,17 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                             {invalidAddresses.length > 0 && <span className="airdrop-stat-invalid"><AIcon name="xCircle" size={12} /> {invalidAddresses.length} {t("airdropInvalidAddresses")}</span>}
                             {duplicateCount > 0 && <span className="airdrop-stat-dupe" style={{ cursor: "pointer" }} onClick={() => { playClick(); const lines = addressInput.split(/\n/).map(s => s.trim()).filter(Boolean); const seen = new Set<string>(); const unique = lines.filter(l => { const m = l.match(/0x[a-fA-F0-9]{40}/i); if (!m) return true; const norm = m[0].toLowerCase(); if (seen.has(norm)) return false; seen.add(norm); return true; }); setAddressInput(unique.join('\n')); showToast(`${duplicateCount} duplicates removed`); }} title="Click to remove duplicates"><AIcon name="refresh" size={12} /> {duplicateCount} {t("airdropDuplicates")}</span>}
                         </div>
+                        {/* Duplicate address details */}
+                        {duplicateAddresses.length > 0 && (
+                            <details style={{ marginTop: 4, fontSize: 11, color: "#f97316" }}>
+                                <summary style={{ cursor: "pointer" }}>⚠️ {duplicateAddresses.length} {t("airdropDuplicates")}: {t("clickToRemoveDupes") || "click to see"}</summary>
+                                <div style={{ maxHeight: 100, overflowY: "auto", marginTop: 4, padding: 4, background: "rgba(249,115,22,0.08)", borderRadius: 6 }}>
+                                    {duplicateAddresses.map((a, i) => (
+                                        <div key={i} style={{ fontFamily: "monospace", fontSize: 10, color: "#ccc", padding: "1px 0" }}>{a}</div>
+                                    ))}
+                                </div>
+                            </details>
+                        )}
                         {/* QR Scan button (#6) */}
                         <button className="airdrop-qr-btn" onClick={startQrScanner} onMouseEnter={() => playHover()}>
                             <AIcon name="target" size={14} /> {t("qrScanAddress") || "📷 QR Scan"}
