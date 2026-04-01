@@ -834,10 +834,12 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         reader.onload = (e) => {
             const entries = parseCSVContent(e.target?.result as string);
             if (entries.length) {
+                // Smart CSV: show summary before importing
+                const hasAmounts = entries.some(e => e.amount);
                 setAddressInput(entries.map(e => e.amount ? `${e.address},${e.amount}` : e.address).join("\n"));
                 setActiveTab("manual");
-                showToast(`${entries.length} ${t("addressesImported")}`);
-            } else playError();
+                showToast(`📊 ${entries.length} ${t("addressesImported")}${hasAmounts ? ` (${t("withAmounts") || "with amounts"})` : ""}`);
+            } else { playError(); showToast(t("csvNoAddresses") || "No valid addresses found in file"); }
         };
         reader.readAsText(file);
     };
@@ -853,6 +855,13 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     };
 
     const loadFromBook = (g: AddressGroup) => { playClick(); setAddressInput(g.addresses.join("\n")); setActiveTab("manual"); setShowBook(false); };
+    const mergeFromBook = (g: AddressGroup) => {
+        playClick();
+        const existing = addressInput.trim();
+        const merged = existing ? existing + "\n" + g.addresses.join("\n") : g.addresses.join("\n");
+        setAddressInput(merged); setActiveTab("manual");
+        showToast(`+${g.addresses.length} ${t("addressesMerged") || "addresses merged"}`);
+    };
     const deleteFromBook = (i: number) => { playClick(); const u = addressBook.filter((_, idx) => idx !== i); setAddressBook(u); saveStorage(STORAGE_BOOK, u); };
 
     // Blacklist
@@ -2239,7 +2248,8 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                             <div key={i} className="airdrop-book-item">
                                 <div className="airdrop-book-info"><span className="airdrop-book-name">{g.name}</span><span className="airdrop-book-count">{g.addresses.length} {t("airdropWallets") || "wallets"}</span></div>
                                 <div className="airdrop-book-actions">
-                                    <button className="airdrop-select-btn" onClick={() => loadFromBook(g)}><AIcon name="upload" size={12} /></button>
+                                    <button className="airdrop-select-btn" title={t("loadGroup") || "Load"} onClick={() => loadFromBook(g)}><AIcon name="upload" size={12} /></button>
+                                    <button className="airdrop-select-btn" title={t("mergeGroup") || "Merge"} onClick={() => mergeFromBook(g)} style={{ color: "#a855f7" }}>➕</button>
                                     <button className="airdrop-select-btn" onClick={() => deleteFromBook(i)}><AIcon name="trash" size={12} /></button>
                                 </div>
                             </div>
