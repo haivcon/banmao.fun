@@ -2965,68 +2965,6 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 );
             })()}
 
-            {/* Flagged Address Prompt Modal */}
-            {flagPromptVisible && (
-                <div style={{
-                    position: "fixed", inset: 0, zIndex: 99999,
-                    background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                }}>
-                    <div style={{
-                        background: "linear-gradient(135deg, #1a1a2e, #16213e)",
-                        border: "2px solid #ff4444", borderRadius: 16,
-                        padding: 24, width: "min(90vw, 480px)",
-                        boxShadow: "0 0 40px rgba(255,68,68,0.3)",
-                    }}>
-                        <div style={{ fontSize: 20, fontWeight: 700, color: "#ff6b6b", marginBottom: 8, textAlign: "center" }}>
-                            ⚠️ {t("legalRiskDetected") || "Legal Risk Detected"}
-                        </div>
-                        <div style={{ fontSize: 13, color: "#ccc", marginBottom: 16, textAlign: "center", lineHeight: 1.5 }}>
-                            {t("pasteOKXFlaggedAddress") || "Copy the flagged address (0x...) from the OKX Wallet popup and paste it here. The address will be auto-removed and airdrop will continue."}
-                        </div>
-                        <input
-                            type="text"
-                            value={flagPromptInput}
-                            onChange={e => setFlagPromptInput(e.target.value)}
-                            placeholder="0x..."
-                            autoFocus
-                            style={{
-                                width: "100%", padding: "12px 14px",
-                                background: "#0d1117", border: "2px solid #ff4444",
-                                borderRadius: 10, color: "#fff", fontSize: 15,
-                                fontFamily: "monospace", outline: "none",
-                                marginBottom: 16,
-                            }}
-                            onKeyDown={e => { if (e.key === "Enter") handleFlagPromptSubmit(); }}
-                        />
-                        <div style={{ display: "flex", gap: 12 }}>
-                            <button
-                                onClick={handleFlagPromptCancel}
-                                style={{
-                                    flex: 1, padding: "10px 0",
-                                    background: "#333", border: "1px solid #555",
-                                    borderRadius: 10, color: "#aaa", fontSize: 14,
-                                    cursor: "pointer", fontWeight: 600,
-                                }}
-                            >
-                                {t("cancel") || "Cancel / Stop"}
-                            </button>
-                            <button
-                                onClick={handleFlagPromptSubmit}
-                                style={{
-                                    flex: 1, padding: "10px 0",
-                                    background: "linear-gradient(135deg, #ff4444, #cc0000)",
-                                    border: "none", borderRadius: 10,
-                                    color: "#fff", fontSize: 14,
-                                    cursor: "pointer", fontWeight: 700,
-                                }}
-                            >
-                                🚫 {t("autoBlacklisted") || "Remove & Continue"}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </>
     );
 }
