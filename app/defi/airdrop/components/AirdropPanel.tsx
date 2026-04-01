@@ -301,6 +301,27 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [templates, setTemplates] = useState<AirdropTemplate[]>([]);
     const [showTemplates, setShowTemplates] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState("");
+    // Flagged address prompt state
+    const [flagPromptVisible, setFlagPromptVisible] = useState(false);
+    const [flagPromptInput, setFlagPromptInput] = useState("");
+    const flagPromptResolveRef = useRef<((value: string | null) => void) | null>(null);
+    const askFlaggedAddress = (): Promise<string | null> => {
+        return new Promise((resolve) => {
+            flagPromptResolveRef.current = resolve;
+            setFlagPromptInput("");
+            setFlagPromptVisible(true);
+        });
+    };
+    const handleFlagPromptSubmit = () => {
+        setFlagPromptVisible(false);
+        flagPromptResolveRef.current?.(flagPromptInput || null);
+        flagPromptResolveRef.current = null;
+    };
+    const handleFlagPromptCancel = () => {
+        setFlagPromptVisible(false);
+        flagPromptResolveRef.current?.(null);
+        flagPromptResolveRef.current = null;
+    };
 
     // Multi-token state (#9)
     const [tokenAddress, setTokenAddress] = useState(() => saved.current?.tokenAddress || BANMAO_TOKEN as string);
@@ -903,18 +924,14 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                 continue;
                             }
 
-                            // Strategy 2: User rejected — ask to paste flagged address from OKX popup
+                            // Strategy 2: User rejected — show modal to paste flagged address
                             if (isUserReject || isLegalRisk) {
-                                const userInput = window.prompt(
-                                    t("pasteOKXFlaggedAddress") ||
-                                    "⚠️ OKX Legal Risk detected!\n\nCopy the flagged address (0x...) from the OKX Wallet popup and paste it here.\nThe address will be auto-removed and airdrop will continue.\n\nPaste address (or click Cancel to stop):"
-                                );
+                                showToast(`⚠️ ${t("legalRiskSplitting") || "OKX Legal Risk — paste the flagged address to continue"}`);
+                                const userInput = await askFlaggedAddress();
                                 if (userInput) {
-                                    // Extract 0x address from user input
                                     const addrMatch = userInput.match(/(0x[a-fA-F0-9]{40})/);
                                     if (addrMatch) {
                                         const pastedAddr = addrMatch[1].toLowerCase();
-                                        // Check if this address is actually in the batch
                                         const inBatch = batch.some(e => e.address.toLowerCase() === pastedAddr);
                                         if (inBatch) {
                                             setBlacklist(prev => { const next = new Set(prev); next.add(pastedAddr); return next; });
@@ -934,8 +951,8 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                         showToast(`❌ ${t("invalidAddressFormat") || "Invalid address format"}`);
                                     }
                                 }
-                                // User clicked Cancel on prompt OR invalid input → stop airdrop
-                                showToast(`⚠️ ${t("airdropStoppedByUser") || "Airdrop paused — remove flagged address from list and retry"}`);
+                                // User clicked Cancel → stop this batch
+                                showToast(`⚠️ ${t("airdropStoppedByUser") || "Airdrop paused"}`);
                                 throw batchErr;
                             }
 
@@ -2754,6 +2771,69 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                     </div>
                 );
             })()}
+
+            {/* Flagged Address Prompt Modal */}
+            {flagPromptVisible && (
+                <div style={{
+                    position: "fixed", inset: 0, zIndex: 99999,
+                    background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                    <div style={{
+                        background: "linear-gradient(135deg, #1a1a2e, #16213e)",
+                        border: "2px solid #ff4444", borderRadius: 16,
+                        padding: 24, width: "min(90vw, 480px)",
+                        boxShadow: "0 0 40px rgba(255,68,68,0.3)",
+                    }}>
+                        <div style={{ fontSize: 20, fontWeight: 700, color: "#ff6b6b", marginBottom: 8, textAlign: "center" }}>
+                            ⚠️ {t("legalRiskDetected") || "Legal Risk Detected"}
+                        </div>
+                        <div style={{ fontSize: 13, color: "#ccc", marginBottom: 16, textAlign: "center", lineHeight: 1.5 }}>
+                            {t("pasteOKXFlaggedAddress") || "Copy the flagged address (0x...) from the OKX Wallet popup and paste it here. The address will be auto-removed and airdrop will continue."}
+                        </div>
+                        <input
+                            type="text"
+                            value={flagPromptInput}
+                            onChange={e => setFlagPromptInput(e.target.value)}
+                            placeholder="0x..."
+                            autoFocus
+                            style={{
+                                width: "100%", padding: "12px 14px",
+                                background: "#0d1117", border: "2px solid #ff4444",
+                                borderRadius: 10, color: "#fff", fontSize: 15,
+                                fontFamily: "monospace", outline: "none",
+                                marginBottom: 16,
+                            }}
+                            onKeyDown={e => { if (e.key === "Enter") handleFlagPromptSubmit(); }}
+                        />
+                        <div style={{ display: "flex", gap: 12 }}>
+                            <button
+                                onClick={handleFlagPromptCancel}
+                                style={{
+                                    flex: 1, padding: "10px 0",
+                                    background: "#333", border: "1px solid #555",
+                                    borderRadius: 10, color: "#aaa", fontSize: 14,
+                                    cursor: "pointer", fontWeight: 600,
+                                }}
+                            >
+                                {t("cancel") || "Cancel / Stop"}
+                            </button>
+                            <button
+                                onClick={handleFlagPromptSubmit}
+                                style={{
+                                    flex: 1, padding: "10px 0",
+                                    background: "linear-gradient(135deg, #ff4444, #cc0000)",
+                                    border: "none", borderRadius: 10,
+                                    color: "#fff", fontSize: 14,
+                                    cursor: "pointer", fontWeight: 700,
+                                }}
+                            >
+                                🚫 {t("autoBlacklisted") || "Remove & Continue"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }
