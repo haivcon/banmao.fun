@@ -314,14 +314,14 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontFamily: "system-ui, sans-serif",
             });
-            const addrListHtml = (batchAddrs || []).slice(0, 50).map((a, i) =>
+            const addrListHtml = (batchAddrs || []).map((a, i) =>
                 `<div class="okx-addr-row" data-addr="${a}" style="display:flex;align-items:center;padding:4px 8px;font-size:12px;font-family:monospace;border-bottom:1px solid rgba(255,255,255,0.05);">
                     <span style="color:#666;min-width:28px;">#${i + 1}</span>
                     <span style="flex:1;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a}</span>
                     <button class="okx-addr-del" data-addr="${a}" style="background:transparent;border:none;cursor:pointer;color:#ff4444;font-size:14px;padding:2px 6px;opacity:0.6;" title="${labels.remove}">🗑️</button>
                 </div>`
             ).join("");
-            const moreCount = (batchAddrs || []).length > 50 ? (batchAddrs!.length - 50) : 0;
+            const totalAddrs = (batchAddrs || []).length;
             overlay.innerHTML = `
                 <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #ff4444;border-radius:16px;padding:24px;width:min(92vw,500px);box-shadow:0 0 60px rgba(255,68,68,0.4);max-height:85vh;display:flex;flex-direction:column;">
                     <div style="font-size:22px;font-weight:700;color:#ff6b6b;margin-bottom:8px;text-align:center;">⚠️ ${labels.title}</div>
@@ -331,7 +331,6 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                         style="width:100%;padding:12px;background:#0d1117;border:2px solid #ff4444;border-radius:10px;color:#fff;font-size:14px;font-family:monospace;outline:none;margin-bottom:8px;box-sizing:border-box;" />
                     <div id="okx-addr-list" style="max-height:200px;overflow-y:auto;background:rgba(0,0,0,0.3);border-radius:8px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.08);">
                         ${addrListHtml}
-                        ${moreCount > 0 ? `<div style="text-align:center;color:#666;font-size:11px;padding:6px;">+${moreCount} ${labels.addresses}</div>` : ""}
                     </div>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
                         <button id="okx-flag-cancel" style="flex:1;min-width:90px;padding:11px 0;background:#333;border:1px solid #555;border-radius:10px;color:#aaa;font-size:14px;cursor:pointer;font-weight:600;">❌ ${labels.stop}</button>
@@ -1728,11 +1727,10 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                             const q = recipientSearch.toLowerCase().trim();
                             const filtered = q
                                 ? recipientEntries.filter(e => e.address.toLowerCase().includes(q))
-                                : recipientEntries.slice(0, 50);
-                            const showCount = q ? filtered.length : Math.min(50, recipientEntries.length);
+                                : recipientEntries;
                             return (
                                 <>
-                                    {filtered.slice(0, 50).map((e, i) => (
+                                    {filtered.map((e, i) => (
                                         <div key={e.address} className="preview-recipient-row" style={{ display: "flex", alignItems: "center" }}>
                                             <span className="pr-idx">#{q ? recipientEntries.indexOf(e) + 1 : i + 1}</span>
                                             <span className="pr-addr" style={{ flex: 1 }}>{e.address}</span>
@@ -1750,8 +1748,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                             >🗑️</button>
                                         </div>
                                     ))}
-                                    {!q && recipients.length > 50 && <div className="preview-recipient-more">+{recipients.length - 50} {t("airdropMoreAddresses")}</div>}
-                                    {q && filtered.length === 0 && <div style={{ padding: "10px", textAlign: "center", color: "#666", fontSize: 12 }}>{t("noResults") || "No results"}</div>}
+                                    {q && filtered.length === 0 && <div style={{ padding: "10px", textAlign: "center", color: "#666", fontSize: 12 }}>{t("noResults")}</div>}
                                     {q && <div style={{ padding: "4px 10px", textAlign: "center", color: "#888", fontSize: 11 }}>{filtered.length} / {recipientEntries.length} {t("flagModalAddresses")}</div>}
                                 </>
                             );
@@ -1949,26 +1946,50 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                         <div className="airdrop-done-stat"><span className="airdrop-done-stat-label"><AIcon name="coins" size={13} /> {t("airdropTotalSent")}</span><span className="airdrop-done-stat-value">{formatNum(ts)}</span></div>
                     </div>
                 </div>
+                <div style={{ padding: "6px 12px 2px" }}>
+                    <input
+                        type="text"
+                        value={recipientSearch}
+                        onChange={e => setRecipientSearch(e.target.value)}
+                        placeholder={`🔍 ${t("searchWallet")}`}
+                        style={{
+                            width: "100%", padding: "8px 12px", background: "rgba(255,255,255,0.06)",
+                            border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8,
+                            color: "#fff", fontSize: 13, outline: "none", fontFamily: "monospace",
+                            boxSizing: "border-box" as const,
+                        }}
+                    />
+                </div>
                 <div className="airdrop-results-list full">
-                    {sendResults.map((r, i) => (
-                        <div key={i} className={`airdrop-result-card ${r.success ? "success" : "error"}`}>
-                            <div className="airdrop-result-card-top">
-                                <span className="airdrop-result-icon">{r.success ? <AIcon name="check" size={14} /> : <AIcon name="xCircle" size={14} />}</span>
-                                <span className="airdrop-result-full-addr">{r.address}</span>
-                                <button className="airdrop-wallet-action-btn" title={t("airdropCopyAddress")} onClick={() => { copyText(r.address); showToast(t("airdropAddressCopied")); }}><AIcon name="copy" size={11} /></button>
-                            </div>
-                            <div className="airdrop-result-card-bottom">
-                                <span className="airdrop-result-amount">{r.amount} ${tokenSymbol}</span>
-                                {r.success && r.txHash && (
-                                    <div className="airdrop-result-tx-group">
-                                        <a href={`${XLAYER_EXPLORER}/tx/${r.txHash}`} target="_blank" rel="noopener noreferrer" className="airdrop-result-tx-link"><AIcon name="link" size={11} /> TX</a>
-                                        <button className="airdrop-wallet-action-btn" title={t("airdropCopyTxHash")} onClick={() => { copyText(r.txHash!); showToast(t("airdropTxCopied")); }}><AIcon name="copy" size={11} /></button>
+                    {(() => {
+                        const q = recipientSearch.toLowerCase().trim();
+                        const filtered = q ? sendResults.filter(r => r.address.toLowerCase().includes(q)) : sendResults;
+                        return (
+                            <>
+                                {filtered.map((r, i) => (
+                                    <div key={i} className={`airdrop-result-card ${r.success ? "success" : "error"}`}>
+                                        <div className="airdrop-result-card-top">
+                                            <span className="airdrop-result-icon">{r.success ? <AIcon name="check" size={14} /> : <AIcon name="xCircle" size={14} />}</span>
+                                            <span className="airdrop-result-full-addr">{r.address}</span>
+                                            <button className="airdrop-wallet-action-btn" title={t("airdropCopyAddress")} onClick={() => { copyText(r.address); showToast(t("airdropAddressCopied")); }}><AIcon name="copy" size={11} /></button>
+                                        </div>
+                                        <div className="airdrop-result-card-bottom">
+                                            <span className="airdrop-result-amount">{r.amount} ${tokenSymbol}</span>
+                                            {r.success && r.txHash && (
+                                                <div className="airdrop-result-tx-group">
+                                                    <a href={`${XLAYER_EXPLORER}/tx/${r.txHash}`} target="_blank" rel="noopener noreferrer" className="airdrop-result-tx-link"><AIcon name="link" size={11} /> TX</a>
+                                                    <button className="airdrop-wallet-action-btn" title={t("airdropCopyTxHash")} onClick={() => { copyText(r.txHash!); showToast(t("airdropTxCopied")); }}><AIcon name="copy" size={11} /></button>
+                                                </div>
+                                            )}
+                                            {!r.success && <span className="airdrop-result-error">{r.error?.slice(0, 50)}</span>}
+                                        </div>
                                     </div>
-                                )}
-                                {!r.success && <span className="airdrop-result-error">{r.error?.slice(0, 50)}</span>}
-                            </div>
-                        </div>
-                    ))}
+                                ))}
+                                {q && filtered.length === 0 && <div style={{ padding: "14px", textAlign: "center", color: "#666", fontSize: 12 }}>{t("noResults")}</div>}
+                                {q && <div style={{ padding: "4px 10px", textAlign: "center", color: "#888", fontSize: 11 }}>{filtered.length} / {sendResults.length}</div>}
+                            </>
+                        );
+                    })()}
                 </div>
                 <div className="airdrop-action-buttons">
                     {fc > 0 && <button className="airdrop-action-btn retry" onClick={retryFailed} onMouseEnter={() => playHover()}><AIcon name="refresh" size={13} /> {t("airdropRetryFailed") || "Retry"} ({fc})</button>}
