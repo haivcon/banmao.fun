@@ -299,6 +299,8 @@ export const idAirdrop = {
     configInvalid: "File konfigurasi tidak valid",
     scanHoldersFailed: "Gagal memindai holder",
     legalRiskDetected: "Risiko hukum terdeteksi, dihapus otomatis",
+    batchChunkFailed: "Batch chunk gagal",
+    legalRiskSplitting: "Risiko hukum terdeteksi — memisahkan batch untuk isolasi...",
     autoBlacklisted: "otomatis masuk daftar hitam",
     liveTrades: "Perdagangan Langsung",
     topTraders: "Top Trader",

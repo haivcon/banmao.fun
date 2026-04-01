@@ -299,6 +299,8 @@ export const ruAirdrop = {
     configInvalid: "Неверный файл конфигурации",
     scanHoldersFailed: "Не удалось сканировать",
     legalRiskDetected: "Обнаружен правовой риск, автоматически удалён",
+    batchChunkFailed: "Ошибка пакета",
+    legalRiskSplitting: "Обнаружен правовой риск — разделение пакета для изоляции...",
     autoBlacklisted: "автоматически добавлен в чёрный список",
     liveTrades: "Живые сделки",
     topTraders: "Топ трейдеры",

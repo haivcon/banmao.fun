@@ -299,6 +299,8 @@ export const enAirdrop = {
     configInvalid: "Invalid config file",
     scanHoldersFailed: "Failed to scan holders",
     legalRiskDetected: "Legal risk detected, auto-removed",
+    batchChunkFailed: "Batch chunk failed",
+    legalRiskSplitting: "Legal risk detected — splitting batch to isolate...",
     autoBlacklisted: "auto-blacklisted",
     liveTrades: "Live Trades",
     topTraders: "Top Traders",

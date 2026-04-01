@@ -299,6 +299,8 @@ export const viAirdrop = {
     configInvalid: "File cấu hình không hợp lệ",
     scanHoldersFailed: "Không thể quét holders",
     legalRiskDetected: "Phát hiện rủi ro pháp lý, đã tự động loại bỏ",
+    batchChunkFailed: "Batch chunk thất bại",
+    legalRiskSplitting: "Phát hiện rủi ro — đang chia nhỏ batch để cô lập...",
     autoBlacklisted: "đã tự động thêm vào danh sách chặn",
     liveTrades: "Giao Dịch Trực Tiếp",
     topTraders: "Top Traders",

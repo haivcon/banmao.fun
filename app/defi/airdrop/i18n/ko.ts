@@ -299,6 +299,8 @@ export const koAirdrop = {
     configInvalid: "잘못된 설정 파일",
     scanHoldersFailed: "홀더 스캔 실패",
     legalRiskDetected: "법적 위험 감지, 자동 제거됨",
+    batchChunkFailed: "배치 청크 실패",
+    legalRiskSplitting: "법적 위험 감지 — 배치를 분할하여 격리 중...",
     autoBlacklisted: "자동 블랙리스트 추가",
     liveTrades: "실시간 거래",
     topTraders: "탑 트레이더",
