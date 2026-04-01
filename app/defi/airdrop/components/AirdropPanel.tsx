@@ -924,22 +924,30 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                 continue;
                             }
 
-                            // Strategy 2: User rejected — show modal to paste flagged address
+                            // Strategy 2: User rejected — show React modal to paste flagged address
+                            // (window.prompt is suppressed when OKX popup steals focus)
                             if (isUserReject || isLegalRisk) {
-                                showToast(`⚠️ ${t("legalRiskSplitting") || "OKX Legal Risk — paste the flagged address to continue"}`);
+                                console.log("[Airdrop] STRATEGY 2: Showing React modal for flagged address...");
                                 const userInput = await askFlaggedAddress();
+                                console.log("[Airdrop] Modal result:", userInput);
                                 if (userInput) {
                                     const addrMatch = userInput.match(/(0x[a-fA-F0-9]{40})/);
                                     if (addrMatch) {
                                         const pastedAddr = addrMatch[1].toLowerCase();
                                         const inBatch = batch.some(e => e.address.toLowerCase() === pastedAddr);
                                         if (inBatch) {
+                                            // Add to blacklist state
                                             setBlacklist(prev => { const next = new Set(prev); next.add(pastedAddr); return next; });
+                                            // Persist blacklist to localStorage directly (avoid stale closure)
+                                            try {
+                                                const stored = JSON.parse(localStorage.getItem(STORAGE_BLACKLIST) || "[]");
+                                                if (!stored.includes(pastedAddr)) stored.push(pastedAddr);
+                                                localStorage.setItem(STORAGE_BLACKLIST, JSON.stringify(stored));
+                                            } catch(e) {}
                                             batch = batch.filter(e => e.address.toLowerCase() !== pastedAddr);
                                             results.push({ address: pastedAddr, amount: amountPerWallet || "0", success: false, error: `⚠️ OKX Legal Risk — ${t("autoBlacklisted") || "auto-blacklisted"}` });
                                             setSendResults([...results]);
                                             showToast(`🚫 ${pastedAddr.slice(0, 8)}...${pastedAddr.slice(-4)} — ${t("legalRiskDetected") || "Legal risk detected, auto-removed"}`);
-                                            saveStorage(STORAGE_BLACKLIST, [...blacklist, pastedAddr]);
                                             consecutiveRejects = 0;
                                             retries++;
                                             if (batch.length === 0) break;
@@ -947,11 +955,9 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                         } else {
                                             showToast(`❌ ${t("addressNotInBatch") || "Address not found in current batch"}`);
                                         }
-                                    } else {
-                                        showToast(`❌ ${t("invalidAddressFormat") || "Invalid address format"}`);
                                     }
                                 }
-                                // User clicked Cancel → stop this batch
+                                // User cancelled → stop
                                 showToast(`⚠️ ${t("airdropStoppedByUser") || "Airdrop paused"}`);
                                 throw batchErr;
                             }
