@@ -871,7 +871,10 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                             }
                         } catch (batchErr: any) {
                             const errMsg = batchErr?.shortMessage || batchErr?.message || "";
-                            const errFull = JSON.stringify(batchErr, Object.getOwnPropertyNames(batchErr || {})).toLowerCase();
+                            // Deep search: also look in cause, details, info for the full error
+                            const errDetails = batchErr?.details || batchErr?.cause?.message || batchErr?.cause?.shortMessage || batchErr?.info?.error?.message || "";
+                            const allErrText = errMsg + " " + errDetails;
+                            console.log("[Airdrop] Batch error caught:", { errMsg, errDetails, batch: batch.length, retries, consecutiveRejects });
                             // Auto-detect OKX "Legal risk" flagged addresses — multiple patterns
                             const flagPatterns = [
                                 /(?:legal\s*risk|risk\s*associated)[\s\S]*?(0x[a-fA-F0-9]{40})/i,
@@ -880,11 +883,11 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                             ];
                             let flaggedAddr: string | null = null;
                             for (const pattern of flagPatterns) {
-                                const m = errMsg.match(pattern) || errFull.match(pattern);
+                                const m = allErrText.match(pattern);
                                 if (m) { flaggedAddr = m[1].toLowerCase(); break; }
                             }
-                            const isLegalRisk = /legal\s*risk|risk\s*associated|unable\s*to\s*initiate/i.test(errMsg + errFull);
-                            const isUserReject = /rejected|denied|cancel/i.test(errMsg);
+                            const isLegalRisk = /legal\s*risk|risk\s*associated|unable\s*to\s*initiate/i.test(allErrText);
+                            const isUserReject = /rejected|denied/i.test(errMsg);
 
                             if (flaggedAddr) {
                                 // Known flagged address — remove and retry
@@ -897,20 +900,19 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                 retries++;
                                 if (batch.length === 0) break;
                                 continue;
-                            } else if ((isLegalRisk || isUserReject) && batch.length > 1) {
-                                // Legal risk OR user rejected (forced by OKX popup) → split batch in half to isolate
-                                showToast(`⚠️ ${t("legalRiskSplitting") || "Flagged address detected — splitting batch to isolate..."}`);
+                            } else if ((isLegalRisk || isUserReject) && batch.length > 1 && consecutiveRejects < 8) {
+                                // Legal risk OR user rejected → split batch in half to isolate flagged address
+                                showToast(`⚠️ ${t("legalRiskSplitting") || "Flagged address detected — splitting batch to isolate..."} (${batch.length} → ${Math.ceil(batch.length / 2)})`);
                                 const mid = Math.ceil(batch.length / 2);
                                 const secondHalf = batch.slice(mid);
                                 batch = batch.slice(0, mid);
-                                // Push second half back into entries for next chunk iteration
                                 const insertPos = chunk + MAX_BATCH_SIZE;
                                 entries.splice(insertPos, 0, ...secondHalf);
                                 retries++;
                                 consecutiveRejects++;
                                 continue;
                             } else if ((isLegalRisk || isUserReject) && batch.length === 1) {
-                                // Single address caused the rejection — it's the flagged one
+                                // Single address caused the rejection — blacklist it
                                 const addr = batch[0].address.toLowerCase();
                                 setBlacklist(prev => { const next = new Set(prev); next.add(addr); return next; });
                                 results.push({ address: batch[0].address, amount: batch[0].amount, success: false, error: `⚠️ OKX Legal Risk — ${t("autoBlacklisted") || "auto-blacklisted"}` });
@@ -919,6 +921,12 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                 batch = [];
                                 consecutiveRejects = 0;
                                 break;
+                            }
+                            // Safety valve: too many consecutive rejects without finding flagged address
+                            // OR truly unknown error — stop this chunk
+                            if (isUserReject && consecutiveRejects >= 8) {
+                                showToast(`⚠️ ${t("airdropStoppedByUser") || "Airdrop stopped — too many rejections"}`);
+                                throw batchErr;
                             }
                             // Unknown error — retry once, then fail this chunk
                             if (retries < 2) {
