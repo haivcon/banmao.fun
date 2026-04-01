@@ -5,7 +5,7 @@ export const maxDuration = 25;
 export const dynamic = "force-dynamic";
 
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || "https://rpc.xlayer.tech";
-const BANMAO_TOKEN = "0x16d91d1615fc55b76d5f92365bd60c069b46ef78";
+const DEFAULT_TOKEN = "0x16d91d1615fc55b76d5f92365bd60c069b46ef78";
 
 const KNOWN_TOKENS: Record<string, { address: string; decimals: number; symbol: string }> = {
     OKB: { address: "native", decimals: 18, symbol: "OKB" },
@@ -67,6 +67,8 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const cursor = searchParams.get("cursor"); // "endBlock" from previous call, or null for first call
         const skipAddrs = searchParams.get("skip")?.split(",").filter(Boolean) || []; // already found addresses
+        const filterToken = (searchParams.get("tokenAddress") || DEFAULT_TOKEN).toLowerCase(); // token to filter holders
+        const filterDecimals = parseInt(searchParams.get("tokenDecimals") || "18");
 
         // Config: scan 2000 blocks per call, 100-block batches, 3 parallel
         const CHUNK_SIZE = 2000;
@@ -175,25 +177,25 @@ export async function GET(req: NextRequest) {
         for (let i = 0; i < walletsToEnrich.length; i += 10) {
             const batch = walletsToEnrich.slice(i, i + 10);
             const res = await Promise.all(batch.map(async addr => {
-                const [okbHex, usdtHex, banmaoHex] = await Promise.all([
+                const [okbHex, usdtHex, tokenHex] = await Promise.all([
                     getOKBBalance(addr),
                     getTokenBalance(KNOWN_TOKENS.USDT.address, addr),
-                    getTokenBalance(BANMAO_TOKEN, addr),
+                    getTokenBalance(filterToken, addr),
                 ]);
                 const okbBal = formatBalance(okbHex, 18);
                 const usdtBal = formatBalance(usdtHex, 6);
                 return {
                     address: addr,
                     shortAddress: `${addr.slice(0, 6)}...${addr.slice(-4)}`,
-                    balances: { OKB: okbBal, USDT: usdtBal, BANMAO: formatBalance(banmaoHex, 18) },
+                    balances: { OKB: okbBal, USDT: usdtBal, TOKEN: formatBalance(tokenHex, filterDecimals) },
                     hasBalance: parseFloat(okbBal) > 0.001 || parseFloat(usdtBal) > 0.01,
-                    hasBanmao: BigInt(banmaoHex || "0x0") > BigInt(0),
+                    hasToken: BigInt(tokenHex || "0x0") > BigInt(0),
                 };
             }));
             enriched.push(...res);
         }
 
-        const activeWallets = enriched.filter(w => w.hasBalance && !w.hasBanmao);
+        const activeWallets = enriched.filter(w => w.hasBalance && !w.hasToken);
 
         // Next cursor: start of this chunk (for next page to continue backwards)
         const nextCursor = scanStart > 0 ? String(scanStart) : null;

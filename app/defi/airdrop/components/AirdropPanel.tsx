@@ -580,7 +580,8 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 const skipAddrs = scannedWalletsRef.current.map(w => w.address.toLowerCase()).join(",");
                 const cursorParam = scanCursorRef.current ? `&cursor=${scanCursorRef.current}` : "";
                 const skipParam = skipAddrs ? `&skip=${skipAddrs}` : "";
-                apiUrl = `/api/scan-wallets?refresh=true${cursorParam}${skipParam}`;
+                const tokenParam = `&tokenAddress=${tokenAddress}&tokenDecimals=${tokenDecimals}`;
+                apiUrl = `/api/scan-wallets?refresh=true${cursorParam}${skipParam}${tokenParam}`;
             } else {
                 apiUrl = `/api/scan-wallets-multichain?chain=${scanChain}&refresh=true`;
             }
@@ -599,23 +600,23 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
 
                 let newWallets = (data.wallets || []).filter((w: any) => w.address.toLowerCase() !== address?.toLowerCase());
                 
-                // Frontend re-verify: check BANMAO balance on-chain
+                // Frontend re-verify: check selected token balance on-chain
                 if (newWallets.length > 0) {
                     const RPC = "https://rpc.xlayer.tech";
-                    const banmaoAddr = (BANMAO_TOKEN as string).toLowerCase();
+                    const filterTokenAddr = (tokenAddress as string).toLowerCase();
                     const verifyResults = await Promise.all(
                         newWallets.map(async (w: ScannedWallet) => {
                             try {
                                 const callData = "0x70a08231" + w.address.slice(2).toLowerCase().padStart(64, "0");
-                                const r = await fetch(RPC, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", method: "eth_call", params: [{ to: banmaoAddr, data: callData }, "latest"], id: 1 }) });
+                                const r = await fetch(RPC, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", method: "eth_call", params: [{ to: filterTokenAddr, data: callData }, "latest"], id: 1 }) });
                                 const j = await r.json();
                                 const bal = BigInt(j.result || "0x0");
-                                return { wallet: w, hasBanmao: bal > BigInt(0), banmaoBalance: Number(bal) / 1e18 };
-                            } catch { return { wallet: w, hasBanmao: false, banmaoBalance: 0 }; }
+                                return { wallet: w, hasToken: bal > BigInt(0), tokenBalance: Number(bal) / (10 ** tokenDecimals) };
+                            } catch { return { wallet: w, hasToken: false, tokenBalance: 0 }; }
                         })
                     );
-                    const holdersRemoved = verifyResults.filter(v => v.hasBanmao).length;
-                    newWallets = verifyResults.filter(v => !v.hasBanmao).map(v => v.wallet);
+                    const holdersRemoved = verifyResults.filter(v => v.hasToken).length;
+                    newWallets = verifyResults.filter(v => !v.hasToken).map(v => v.wallet);
                     if (holdersRemoved > 0) {
                         showToast(`🔍 ${holdersRemoved} ${(t("scanFilteredBanmao") || "wallets filtered (already hold {token})").replace(/\$BANMAO|\{token\}/g, `$${tokenSymbol}`)}`);
                     }
