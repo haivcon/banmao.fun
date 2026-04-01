@@ -258,6 +258,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [scannedWallets, setScannedWallets] = useState<ScannedWallet[]>([]);
     const scannedWalletsRef = useRef<ScannedWallet[]>([]);
     const [selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
+    const [recipientSearch, setRecipientSearch] = useState("");
     const [isScanning, setIsScanning] = useState(false);
     const [scanError, setScanError] = useState("");
     const WALLET_CHAINS = [
@@ -302,7 +303,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [showTemplates, setShowTemplates] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState("");
     // Flagged address prompt — uses direct DOM to bypass React render issues in async loops
-    const askFlaggedAddress = (batchSize: number, labels: Record<string, string>): Promise<string | null> => {
+    const askFlaggedAddress = (batchSize: number, labels: Record<string, string>, batchAddrs?: string[]): Promise<string | null> => {
         return new Promise((resolve) => {
             document.getElementById("okx-flag-overlay")?.remove();
             const overlay = document.createElement("div");
@@ -313,28 +314,61 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontFamily: "system-ui, sans-serif",
             });
+            const addrListHtml = (batchAddrs || []).slice(0, 50).map((a, i) =>
+                `<div class="okx-addr-row" data-addr="${a}" style="display:flex;align-items:center;padding:4px 8px;font-size:12px;font-family:monospace;border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <span style="color:#666;min-width:28px;">#${i + 1}</span>
+                    <span style="flex:1;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${a}</span>
+                    <button class="okx-addr-del" data-addr="${a}" style="background:transparent;border:none;cursor:pointer;color:#ff4444;font-size:14px;padding:2px 6px;opacity:0.6;" title="${labels.remove}">🗑️</button>
+                </div>`
+            ).join("");
+            const moreCount = (batchAddrs || []).length > 50 ? (batchAddrs!.length - 50) : 0;
             overlay.innerHTML = `
-                <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #ff4444;border-radius:16px;padding:28px;width:min(92vw,460px);box-shadow:0 0 60px rgba(255,68,68,0.4);">
-                    <div style="font-size:22px;font-weight:700;color:#ff6b6b;margin-bottom:10px;text-align:center;">⚠️ ${labels.title}</div>
-                    <div style="font-size:13px;color:#ccc;margin-bottom:12px;text-align:center;line-height:1.6;">${labels.desc}</div>
-                    <div style="font-size:12px;color:#888;margin-bottom:14px;text-align:center;">📦 ${labels.batch}: ${batchSize} ${labels.addresses}</div>
-                    <input id="okx-flag-input" type="text" placeholder="0x..." autofocus
-                        style="width:100%;padding:14px;background:#0d1117;border:2px solid #ff4444;border-radius:10px;color:#fff;font-size:16px;font-family:monospace;outline:none;margin-bottom:14px;box-sizing:border-box;" />
+                <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #ff4444;border-radius:16px;padding:24px;width:min(92vw,500px);box-shadow:0 0 60px rgba(255,68,68,0.4);max-height:85vh;display:flex;flex-direction:column;">
+                    <div style="font-size:22px;font-weight:700;color:#ff6b6b;margin-bottom:8px;text-align:center;">⚠️ ${labels.title}</div>
+                    <div style="font-size:12px;color:#ccc;margin-bottom:10px;text-align:center;line-height:1.5;">${labels.desc}</div>
+                    <div style="font-size:11px;color:#888;margin-bottom:10px;text-align:center;">📦 ${labels.batch}: ${batchSize} ${labels.addresses}</div>
+                    <input id="okx-flag-input" type="text" placeholder="🔍 ${labels.search || 'Search / Paste 0x...'}" autofocus
+                        style="width:100%;padding:12px;background:#0d1117;border:2px solid #ff4444;border-radius:10px;color:#fff;font-size:14px;font-family:monospace;outline:none;margin-bottom:8px;box-sizing:border-box;" />
+                    <div id="okx-addr-list" style="max-height:200px;overflow-y:auto;background:rgba(0,0,0,0.3);border-radius:8px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.08);">
+                        ${addrListHtml}
+                        ${moreCount > 0 ? `<div style="text-align:center;color:#666;font-size:11px;padding:6px;">+${moreCount} ${labels.addresses}</div>` : ""}
+                    </div>
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        <button id="okx-flag-cancel" style="flex:1;min-width:100px;padding:11px 0;background:#333;border:1px solid #555;border-radius:10px;color:#aaa;font-size:14px;cursor:pointer;font-weight:600;">❌ ${labels.stop}</button>
-                        <button id="okx-flag-auto" style="flex:1;min-width:100px;padding:11px 0;background:linear-gradient(135deg,#0f7b6c,#4ecdc4);border:none;border-radius:10px;color:#fff;font-size:14px;cursor:pointer;font-weight:700;">🔍 ${labels.autoDetect}</button>
-                        <button id="okx-flag-submit" style="flex:1;min-width:100px;padding:11px 0;background:linear-gradient(135deg,#ff4444,#cc0000);border:none;border-radius:10px;color:#fff;font-size:14px;cursor:pointer;font-weight:700;">🚫 ${labels.remove}</button>
+                        <button id="okx-flag-cancel" style="flex:1;min-width:90px;padding:11px 0;background:#333;border:1px solid #555;border-radius:10px;color:#aaa;font-size:14px;cursor:pointer;font-weight:600;">❌ ${labels.stop}</button>
+                        <button id="okx-flag-auto" style="flex:1;min-width:90px;padding:11px 0;background:linear-gradient(135deg,#0f7b6c,#4ecdc4);border:none;border-radius:10px;color:#fff;font-size:14px;cursor:pointer;font-weight:700;">🔍 ${labels.autoDetect}</button>
+                        <button id="okx-flag-submit" style="flex:1;min-width:90px;padding:11px 0;background:linear-gradient(135deg,#ff4444,#cc0000);border:none;border-radius:10px;color:#fff;font-size:14px;cursor:pointer;font-weight:700;">🚫 ${labels.remove}</button>
                     </div>
                 </div>
             `;
             document.body.appendChild(overlay);
+            // Search/filter logic
+            const listEl = document.getElementById("okx-addr-list")!;
+            const allRows = listEl.querySelectorAll(".okx-addr-row");
             setTimeout(() => {
                 const inp = document.getElementById("okx-flag-input") as HTMLInputElement;
                 inp?.focus();
+                inp?.addEventListener("input", () => {
+                    const q = inp.value.toLowerCase().trim();
+                    allRows.forEach((row) => {
+                        const addr = (row as HTMLElement).dataset.addr || "";
+                        (row as HTMLElement).style.display = (!q || addr.includes(q)) ? "flex" : "none";
+                    });
+                });
                 inp?.addEventListener("keydown", (e) => {
                     if (e.key === "Enter") { overlay.remove(); resolve(inp.value || null); }
                 });
             }, 100);
+            // Trash button handlers — click to select address for removal
+            listEl.querySelectorAll(".okx-addr-del").forEach(btn => {
+                (btn as HTMLElement).onclick = () => {
+                    const addr = (btn as HTMLElement).dataset.addr || "";
+                    const inp = document.getElementById("okx-flag-input") as HTMLInputElement;
+                    if (inp) inp.value = addr;
+                    // Highlight selected row
+                    allRows.forEach(r => (r as HTMLElement).style.background = "transparent");
+                    (btn.closest(".okx-addr-row") as HTMLElement).style.background = "rgba(255,68,68,0.15)";
+                };
+            });
             document.getElementById("okx-flag-cancel")!.onclick = () => { overlay.remove(); resolve(null); };
             document.getElementById("okx-flag-auto")!.onclick = () => { overlay.remove(); resolve("AUTO"); };
             document.getElementById("okx-flag-submit")!.onclick = () => {
@@ -587,6 +621,27 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         : amountNum * recipients.length;
     const balanceNum = banmaoBalance ? parseFloat(banmaoBalance.formatted) : 0;
     const hasEnough = balanceNum >= totalAmount && totalAmount > 0;
+
+    // Remove a single recipient by address
+    const removeRecipient = (addr: string) => {
+        const norm = addr.toLowerCase();
+        if (activeTab === "scan") {
+            setSelectedWallets(prev => { const next = new Set(prev); next.delete(addr); next.delete(norm); for (const w of prev) { if (w.toLowerCase() === norm) next.delete(w); } return next; });
+        } else {
+            // Remove from addressInput text
+            const lines = addressInput.split(/\n/);
+            const filtered = lines.filter(l => !l.toLowerCase().includes(norm));
+            setAddressInput(filtered.join("\n"));
+        }
+        // Also add to blacklist
+        setBlacklist(prev => { const next = new Set(prev); next.add(norm); return next; });
+        try {
+            const stored = JSON.parse(localStorage.getItem(STORAGE_BLACKLIST) || "[]");
+            if (!stored.includes(norm)) stored.push(norm);
+            localStorage.setItem(STORAGE_BLACKLIST, JSON.stringify(stored));
+        } catch(e) {}
+        showToast(`🗑️ ${addr.slice(0, 8)}...${addr.slice(-4)} — ${t("autoRemoved")}`);
+    };
 
     // Gas estimation
     useEffect(() => {
@@ -952,8 +1007,9 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                     title: t("flagModalTitle"), desc: t("flagModalDesc"),
                                     batch: t("flagModalBatch"), addresses: t("flagModalAddresses"),
                                     stop: t("flagModalStop"), autoDetect: t("flagModalAutoDetect"), remove: t("flagModalRemove"),
+                                    search: t("searchWallet"),
                                 };
-                                const userInput = await askFlaggedAddress(batch.length, flagLabels);
+                                const userInput = await askFlaggedAddress(batch.length, flagLabels, batch.map(e => e.address));
                                 console.log("[Airdrop] Modal result:", userInput);
 
                                 // Option A: User pasted a specific address
@@ -1648,14 +1704,58 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                     {estimatedGas && <span className="preview-gas"><AIcon name="fuel" size={12} /> {t("airdropGasEstimate") || "Gas"}: <strong>{estimatedGas}</strong></span>}
                     {okbNum > 0 && <span className="preview-gas"><AIcon name="wallet" size={12} /> OKB: <strong>{okbNum.toFixed(6).replace(/0+$/, '').replace(/\.$/, '')}</strong>{(() => { const gasNeeded = sendMode === "batch" ? (GAS_BATCH_BASE + recipients.length * GAS_PER_BATCH_RECIPIENT) * GAS_PRICE_GWEI / 1e9 : recipients.length * GAS_PER_TRANSFER * GAS_PRICE_GWEI / 1e9; return okbNum < gasNeeded ? <span className="text-red"> ⚠ {t("errInsufficientGas")}</span> : null; })()}</span>}
                 </div>
-                {/* Compact recipient list with limited height */}
+                {/* Compact recipient list with search + delete */}
                 <div className="airdrop-preview-recipients">
-                    <div className="preview-recipients-header"><AIcon name="users" size={13} /> {t("airdropRecipientList")} ({recipients.length})</div>
+                    <div className="preview-recipients-header">
+                        <span><AIcon name="users" size={13} /> {t("airdropRecipientList")} ({recipients.length})</span>
+                    </div>
+                    <div style={{ padding: "6px 10px 2px" }}>
+                        <input
+                            type="text"
+                            value={recipientSearch}
+                            onChange={e => setRecipientSearch(e.target.value)}
+                            placeholder={`🔍 ${t("searchWallet") || "Search wallet..."}`}
+                            style={{
+                                width: "100%", padding: "8px 12px", background: "rgba(255,255,255,0.06)",
+                                border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8,
+                                color: "#fff", fontSize: 13, outline: "none", fontFamily: "monospace",
+                                boxSizing: "border-box",
+                            }}
+                        />
+                    </div>
                     <div className="preview-recipients-body">
-                        {recipientEntries.slice(0, 30).map((e, i) => (
-                            <div key={e.address} className="preview-recipient-row"><span className="pr-idx">#{i + 1}</span><span className="pr-addr">{e.address}</span><span className="pr-amt">{formatNum(parseFloat(e.amount) || 0)}</span></div>
-                        ))}
-                        {recipients.length > 30 && <div className="preview-recipient-more">+{recipients.length - 30} {t("airdropMoreAddresses")}</div>}
+                        {(() => {
+                            const q = recipientSearch.toLowerCase().trim();
+                            const filtered = q
+                                ? recipientEntries.filter(e => e.address.toLowerCase().includes(q))
+                                : recipientEntries.slice(0, 50);
+                            const showCount = q ? filtered.length : Math.min(50, recipientEntries.length);
+                            return (
+                                <>
+                                    {filtered.slice(0, 50).map((e, i) => (
+                                        <div key={e.address} className="preview-recipient-row" style={{ display: "flex", alignItems: "center" }}>
+                                            <span className="pr-idx">#{q ? recipientEntries.indexOf(e) + 1 : i + 1}</span>
+                                            <span className="pr-addr" style={{ flex: 1 }}>{e.address}</span>
+                                            <span className="pr-amt">{formatNum(parseFloat(e.amount) || 0)}</span>
+                                            <button
+                                                onClick={() => { playClick(); removeRecipient(e.address); }}
+                                                title={t("delete") || "Delete"}
+                                                style={{
+                                                    background: "transparent", border: "none", cursor: "pointer",
+                                                    color: "#ff4444", fontSize: 16, padding: "2px 6px", marginLeft: 4,
+                                                    opacity: 0.6, transition: "opacity 0.2s",
+                                                }}
+                                                onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+                                                onMouseLeave={e => (e.currentTarget.style.opacity = "0.6")}
+                                            >🗑️</button>
+                                        </div>
+                                    ))}
+                                    {!q && recipients.length > 50 && <div className="preview-recipient-more">+{recipients.length - 50} {t("airdropMoreAddresses")}</div>}
+                                    {q && filtered.length === 0 && <div style={{ padding: "10px", textAlign: "center", color: "#666", fontSize: 12 }}>{t("noResults") || "No results"}</div>}
+                                    {q && <div style={{ padding: "4px 10px", textAlign: "center", color: "#888", fontSize: 11 }}>{filtered.length} / {recipientEntries.length} {t("flagModalAddresses")}</div>}
+                                </>
+                            );
+                        })()}
                     </div>
                 </div>
                 <div className="airdrop-speed-mode">
