@@ -119,6 +119,7 @@ export const idAirdrop = {
     rankJoined: "Anda masuk leaderboard di peringkat",
     autoScanStart: "Otomatis",
     autoScanStop: "Stop Auto-Scan",
+    airdropScanCycleComplete: "🔄 Siklus scan selesai — memulai ulang dari blok terbaru...",
     guideHelpBtn: "Bantuan & Panduan",
     guideWelcomeTitle: "Selamat Datang di Alat Airdrop!",
     guideWelcomeDesc: "Ini adalah alat komunitas bagi pemegang {token} untuk mendistribusikan token dengan mudah ke dompet baru di XLayer. Daripada mengirim secara manual melalui OKX Wallet satu per satu, Anda dapat menggunakan airdrop ke ratusan dompet hanya dengan beberapa klik. Dompet yang sudah memegang {token} secara otomatis dikecualikan.",

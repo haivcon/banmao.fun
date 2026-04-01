@@ -119,6 +119,7 @@ export const koAirdrop = {
     rankJoined: "리더보드 진입 순위",
     autoScanStart: "자동",
     autoScanStop: "자동 스캔 중지",
+    airdropScanCycleComplete: "🔄 스캔 주기 완료 — 최신 블록부터 다시 시작...",
     guideHelpBtn: "도움말 및 가이드",
     guideWelcomeTitle: "에어드랍 도구에 오신 것을 환영합니다!",
     guideWelcomeDesc: "이 도구는 {token} 보유자가 XLayer의 새 지갑으로 쉽게 토큰을 배포할 수 있는 커뮤니티 도구입니다. OKX Wallet을 통해 일일이 전송하는 대신 단 몇 번의 클릭만으로 수백 개의 지갑에 에어드랍할 수 있습니다. 이미 {token}를 보유한 지갑은 자동으로 제외됩니다.",

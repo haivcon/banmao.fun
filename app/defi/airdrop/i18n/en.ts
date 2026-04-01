@@ -119,6 +119,7 @@ export const enAirdrop = {
     rankJoined: "You joined the leaderboard at",
     autoScanStart: "Auto",
     autoScanStop: "Stop Auto-Scan",
+    airdropScanCycleComplete: "🔄 Scan cycle complete — restarting from latest block...",
     guideHelpBtn: "Help & Guide",
     guideWelcomeTitle: "Welcome to Airdrop Tool!",
     guideWelcomeDesc: "This is a community tool for token holders to easily distribute tokens to new wallets on XLayer. Instead of manually sending via OKX Wallet one by one, you can airdrop to hundreds of wallets in just a few clicks. Wallets that already hold {token} are automatically excluded.",

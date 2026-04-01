@@ -119,6 +119,7 @@ export const zhAirdrop = {
     rankJoined: "你加入了排行榜 排名",
     autoScanStart: "自动",
     autoScanStop: "停止自动扫描",
+    airdropScanCycleComplete: "🔄 扫描周期完成 — 从最新区块重新开始...",
     guideHelpBtn: "帮助与指南",
     guideWelcomeTitle: "欢迎来到空投工具！",
     guideWelcomeDesc: "这是专为 {token} 持有者打造的社区工具，您可以轻松将代币分发到 XLayer 上的新钱包。无需在 OKX Wallet 中手动逐个发送，只需点击几次即可空投到数百个钱包。已持有 {token} 的钱包会被自动排除。",

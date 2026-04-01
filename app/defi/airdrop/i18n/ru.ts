@@ -119,6 +119,7 @@ export const ruAirdrop = {
     rankJoined: "Вы вошли в рейтинг на",
     autoScanStart: "Авто",
     autoScanStop: "Остановить авто-скан",
+    airdropScanCycleComplete: "🔄 Цикл сканирования завершён — перезапуск с последнего блока...",
     guideHelpBtn: "Помощь и Руководство",
     guideWelcomeTitle: "Добро пожаловать в Airdrop!",
     guideWelcomeDesc: "Это инструмент сообщества для держателей {token} для легкого распределения токенов на новые кошельки в XLayer. Вместо ручной отправки, вы можете сделать airdrop на сотни кошельков. Кошельки с {token} автоматически пропускаются.",

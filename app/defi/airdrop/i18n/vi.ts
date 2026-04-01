@@ -119,6 +119,7 @@ export const viAirdrop = {
     rankJoined: "Bạn vào bảng vinh danh hạng",
     autoScanStart: "Tự động",
     autoScanStop: "Dừng Quét Tự Động",
+    airdropScanCycleComplete: "🔄 Đã quét xong 1 chu kỳ — bắt đầu lại từ block mới nhất...",
     guideHelpBtn: "Trợ giúp & Hướng dẫn",
     guideWelcomeTitle: "Chào mừng đến Airdrop Tool!",
     guideWelcomeDesc: "Đây là công cụ cộng đồng dành cho người nắm giữ {token} để dễ dàng phân phối token đến các ví mới trên XLayer. Thay vì gửi thủ công qua OKX Wallet từng cái một, bạn có thể airdrop đến hàng trăm ví chỉ với vài click. Ví đã có {token} sẽ tự động bị loại.",

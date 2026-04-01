@@ -676,11 +676,13 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const runAutoScanLoop = async () => {
         while (autoScanRef.current) {
             await handleScan();
-            // For XLayer: if cursor is null, we've scanned everything — stop
+            // For XLayer: if cursor is null, we've scanned all 50K blocks — reset to scan from latest block again
             if (scanChain === "xlayer" && !scanCursorRef.current) {
-                showToast(t("airdropScanComplete") || "✅ All blocks scanned!");
-                stopAutoScan();
-                break;
+                showToast(t("airdropScanCycleComplete") || "🔄 Scan cycle complete — restarting from latest block...");
+                scanCursorRef.current = null; // reset so next handleScan starts from latestBlock
+                // Wait 5 seconds before restarting to avoid hammering RPC
+                await new Promise(r => setTimeout(r, 5000));
+                continue;
             }
             // Wait 2 seconds between pages
             await new Promise(r => setTimeout(r, 2000));
