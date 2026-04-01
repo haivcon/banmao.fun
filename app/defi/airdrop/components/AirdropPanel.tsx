@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { useAccount, useWriteContract, useBalance, useReadContract } from "wagmi";
+import { useAccount, useWriteContract, useBalance, useReadContract, usePublicClient } from "wagmi";
 import { parseUnits, isAddress, formatUnits } from "viem";
 import AIcon from "./AirdropIcons";
 import confetti from "canvas-confetti";
@@ -10,7 +10,9 @@ import confetti from "canvas-confetti";
 const BANMAO_TOKEN = "0x16d91d1615fc55b76d5f92365bd60c069b46ef78" as `0x${string}`;
 const AIRDROP_CONTRACT = "0xf2d471711D24646b2C50E1F74a063caA7a6863a0" as `0x${string}`;
 const XLAYER_EXPLORER = "https://web3.okx.com/explorer/x-layer";
-const GAS_PER_TRANSFER = 65000;
+const GAS_PER_TRANSFER = 65000; // gas for single ERC20 transfer
+const GAS_PER_BATCH_RECIPIENT = 45000; // gas per recipient in batch contract
+const GAS_BATCH_BASE = 50000; // base overhead for batch contract call
 const GAS_PRICE_GWEI = 0.1; // XLayer default gas price
 const STORAGE_HISTORY = "banmao_airdrop_history";
 const STORAGE_BOOK = "banmao_address_book";
@@ -233,18 +235,26 @@ function downloadFile(content: string, filename: string) {
 // ===================== COMPONENT =====================
 export default function AirdropPanel({ t, lang, playClick, playHover, playSuccess, playError }: AirdropPanelProps) {
     const { address, isConnected } = useAccount();
+    const publicClient = usePublicClient();
 
-    // State
-    const [activeTab, setActiveTab] = useState<AirdropTab>("manual");
-    const [step, setStep] = useState<AirdropStep>("input");
-    const [sendMode, setSendMode] = useState<SendMode>("batch");
-    const [amountMode, setAmountMode] = useState<AmountMode>("equal");
-    const [addressInput, setAddressInput] = useState("");
-    const [parsedAddresses, setParsedAddresses] = useState<string[]>([]);
+    // === Session persistence helper ===
+    const SESSION_KEY = "banmao_airdrop_session";
+    const loadSession = () => { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null"); } catch { return null; } };
+    const saveSession = (data: Record<string, any>) => { try { const prev = loadSession() || {}; sessionStorage.setItem(SESSION_KEY, JSON.stringify({ ...prev, ...data })); } catch {} };
+    const clearSession = () => { try { sessionStorage.removeItem(SESSION_KEY); } catch {} };
+    const saved = useRef(loadSession());
+
+    // State (with session restore)
+    const [activeTab, setActiveTab] = useState<AirdropTab>(() => saved.current?.activeTab || "scan");
+    const [step, setStep] = useState<AirdropStep>(() => { const s = saved.current?.step; return s === "sending" ? "preview" : s || "input"; });
+    const [sendMode, setSendMode] = useState<SendMode>(() => saved.current?.sendMode || "batch");
+    const [amountMode, setAmountMode] = useState<AmountMode>(() => saved.current?.amountMode || "equal");
+    const [addressInput, setAddressInput] = useState(() => saved.current?.addressInput || "");
+    const [parsedAddresses, setParsedAddresses] = useState<string[]>(() => saved.current?.parsedAddresses || []);
     const [invalidAddresses, setInvalidAddresses] = useState<string[]>([]);
     const [duplicateCount, setDuplicateCount] = useState(0);
-    const [customAmounts, setCustomAmounts] = useState<Map<string, string>>(new Map());
-    const [amountPerWallet, setAmountPerWallet] = useState("");
+    const [customAmounts, setCustomAmounts] = useState<Map<string, string>>(() => { try { return new Map(Object.entries(saved.current?.customAmounts || {})); } catch { return new Map(); } });
+    const [amountPerWallet, setAmountPerWallet] = useState(() => saved.current?.amountPerWallet || "");
     const [scannedWallets, setScannedWallets] = useState<ScannedWallet[]>([]);
     const scannedWalletsRef = useRef<ScannedWallet[]>([]);
     const [selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
@@ -293,9 +303,9 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [newTemplateName, setNewTemplateName] = useState("");
 
     // Multi-token state (#9)
-    const [tokenAddress, setTokenAddress] = useState(BANMAO_TOKEN as string);
-    const [tokenSymbol, setTokenSymbol] = useState("BANMAO");
-    const [tokenDecimals, setTokenDecimals] = useState(18);
+    const [tokenAddress, setTokenAddress] = useState(() => saved.current?.tokenAddress || BANMAO_TOKEN as string);
+    const [tokenSymbol, setTokenSymbol] = useState(() => saved.current?.tokenSymbol || "BANMAO");
+    const [tokenDecimals, setTokenDecimals] = useState(() => saved.current?.tokenDecimals || 18);
     const [showTokenSelector, setShowTokenSelector] = useState(false);
     const [customTokenInput, setCustomTokenInput] = useState("");
     const [tokenLoading, setTokenLoading] = useState(false);
@@ -369,9 +379,6 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [viewProfileAddr, setViewProfileAddr] = useState<string | null>(null);
     // Market data states
     const [tokenPrice, setTokenPrice] = useState<number>(0);
-    const [tradesFeed, setTradesFeed] = useState<any[]>([]);
-    const [marketInfo, setMarketInfo] = useState<any>(null);
-    const [showTrades, setShowTrades] = useState(true);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { data: banmaoBalance, refetch: refetchBalance } = useBalance({ address, token: tokenAddress as `0x${string}` });
@@ -385,12 +392,25 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         abi: ERC20_ABI,
         functionName: "allowance",
         args: address ? [address, AIRDROP_CONTRACT] : undefined,
-        query: { enabled: !!address && sendMode === "batch" },
+        query: { enabled: !!address && !!tokenAddress },
     } as any);
     const [batchStep, setBatchStep] = useState<"idle" | "approving" | "approved" | "sending">("idle");
     const cancelRef = useRef(false);
     const sendStartTimeRef = useRef(0);
     const configFileRef = useRef<HTMLInputElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+    const scrollToPanel = () => { setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80); };
+
+    // Auto-save session state
+    useEffect(() => {
+        if (step === "done") { clearSession(); return; }
+        saveSession({
+            activeTab, step, sendMode, amountMode, addressInput,
+            parsedAddresses, amountPerWallet,
+            customAmounts: Object.fromEntries(customAmounts),
+            tokenAddress, tokenSymbol, tokenDecimals,
+        });
+    }, [step, activeTab, sendMode, amountMode, addressInput, parsedAddresses, amountPerWallet, customAmounts, tokenAddress, tokenSymbol, tokenDecimals]);
 
     // Auto-fetch leaderboard & history on mount
     useEffect(() => {
@@ -418,14 +438,11 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             fetch("/api/airdrop-records?type=all-history&limit=50").then(r => r.json()).then(d => { if (d.success) setHistoryData(d.data); }).catch(() => {});
             fetch("/api/airdrop-records?type=stats").then(r => r.json()).then(d => { if (d.success) setLbStats(d.data); }).catch(() => {});
         }, 30000);
-        // Fetch price, trades, market info
+        // Fetch price
         const fetchPrice = () => fetch("/api/okx/price").then(r => r.json()).then(d => { if (d.success) setTokenPrice(parseFloat(d.price) || 0); }).catch(() => {});
-        const fetchTrades = () => fetch("/api/okx/trades").then(r => r.json()).then(d => { if (d.success) setTradesFeed(d.trades || []); }).catch(() => {});
-        const fetchMarket = () => fetch("/api/okx/advanced-info").then(r => r.json()).then(d => { if (d.success) setMarketInfo(d.data); }).catch(() => {});
-        fetchPrice(); fetchTrades(); fetchMarket();
+        fetchPrice();
         const priceInterval = setInterval(fetchPrice, 60000);
-        const tradesInterval = setInterval(fetchTrades, 30000);
-        return () => { clearInterval(histInterval); clearInterval(priceInterval); clearInterval(tradesInterval); };
+        return () => { clearInterval(histInterval); clearInterval(priceInterval); };
     }, []);
     // Fetch my profile when address changes (no longer overrides history)
     useEffect(() => {
@@ -529,9 +546,21 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     // Gas estimation
     useEffect(() => {
         if (recipients.length > 0) {
-            const txCount = sendMode === "batch" ? Math.ceil(recipients.length / MAX_BATCH_SIZE) : recipients.length;
-            const cost = (GAS_PER_TRANSFER * txCount * GAS_PRICE_GWEI) / 1e9;
-            setEstimatedGas(`~${cost.toFixed(6)} OKB`);
+            let gasUnits: number;
+            if (sendMode === "batch") {
+                // Batch mode: base overhead + per-recipient cost, split into chunks
+                const chunks = Math.ceil(recipients.length / MAX_BATCH_SIZE);
+                const avgPerChunk = Math.ceil(recipients.length / chunks);
+                gasUnits = chunks * (GAS_BATCH_BASE + avgPerChunk * GAS_PER_BATCH_RECIPIENT);
+            } else if (typeof sendMode === "number" && sendMode > 1) {
+                // Parallel mode: same gas as sequential
+                gasUnits = recipients.length * GAS_PER_TRANSFER;
+            } else {
+                // Sequential x1
+                gasUnits = recipients.length * GAS_PER_TRANSFER;
+            }
+            const cost = (gasUnits * GAS_PRICE_GWEI) / 1e9;
+            setEstimatedGas(`~${cost.toFixed(8).replace(/0+$/, '').replace(/\.$/, '')} OKB`);
         } else setEstimatedGas("");
     }, [recipients.length, sendMode]);
 
@@ -585,7 +614,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                     const holdersRemoved = verifyResults.filter(v => v.hasBanmao).length;
                     newWallets = verifyResults.filter(v => !v.hasBanmao).map(v => v.wallet);
                     if (holdersRemoved > 0) {
-                        showToast(`🔍 ${holdersRemoved} ${t("scanFilteredBanmao") || "wallets filtered (already hold $BANMAO)"}`);
+                        showToast(`🔍 ${holdersRemoved} ${(t("scanFilteredBanmao") || "wallets filtered (already hold {token})").replace(/\$BANMAO|\{token\}/g, `$${tokenSymbol}`)}`);
                     }
                 }
 
@@ -752,14 +781,17 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         if (freshBal < needed) { playError(); showToast(`${t("airdropInsufficientBalance")} (${formatNum(freshBal)} < ${formatNum(needed)})`); return; }
 
         // OKB gas check
-        const gasNeeded = (GAS_PER_TRANSFER * (sendMode === "batch" ? 1 : entries.length) * GAS_PRICE_GWEI) / 1e9;
+        const gasUnits = sendMode === "batch"
+            ? (GAS_BATCH_BASE + entries.length * GAS_PER_BATCH_RECIPIENT) * Math.ceil(entries.length / MAX_BATCH_SIZE)
+            : entries.length * GAS_PER_TRANSFER;
+        const gasNeeded = (gasUnits * GAS_PRICE_GWEI) / 1e9;
         if (okbNum < gasNeeded) {
             playError();
-            showToast(`${t("errInsufficientGas")} (${okbNum.toFixed(6)} < ${gasNeeded.toFixed(6)} OKB)`);
+            showToast(`${t("errInsufficientGas")} (${okbNum.toFixed(8)} < ${gasNeeded.toFixed(8)} OKB)`);
             return;
         }
 
-        playClick(); setStep("sending"); setIsSending(true); setSendProgress(0); setSendTotal(entries.length);
+        playClick(); setStep("sending"); setIsSending(true); setSendProgress(0); setSendTotal(entries.length); scrollToPanel();
         cancelRef.current = false;
         sendStartTimeRef.current = Date.now();
         if (!retryEntries) setSendResults([]);
@@ -910,7 +942,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             }
         }
 
-        setSendProgress(entries.length); setIsSending(false); setStep("done");
+        setSendProgress(entries.length); setIsSending(false); setStep("done"); scrollToPanel();
         const sc = results.filter(r => r.success).length;
         const ts = results.filter(r => r.success).reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
         const he: HistoryEntry = { id: Date.now().toString(), timestamp: Date.now(), totalRecipients: entries.length, successCount: sc, failCount: results.filter(r => !r.success).length, totalSent: formatNum(ts), amountPerWallet: amountMode === "equal" ? amountPerWallet : "custom", results };
@@ -1057,7 +1089,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             showToast(t("receiptDownloaded") || "Receipt image downloaded!");
         }, "image/png");
     };
-    const resetAirdrop = () => { setStep("input"); setSendResults([]); setSendProgress(0); setCurrentSendingAddress(""); };
+    const resetAirdrop = () => { setStep("input"); setSendResults([]); setSendProgress(0); setCurrentSendingAddress(""); clearSession(); };
     const cancelSending = () => { cancelRef.current = true; showToast(t("airdropCancelled") || "Stopping after current batch..."); };
 
     // Export/Import config (#12)
@@ -1394,33 +1426,62 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         </div>
     ) : null;
 
+    // Progress Stepper
+    const stepperSteps: { key: AirdropStep; icon: string; label: string }[] = [
+        { key: "input", icon: "parachute", label: t("stepSetup") || "Setup" },
+        { key: "preview", icon: "chart", label: t("stepPreview") || "Preview" },
+        { key: "sending", icon: "rocket", label: t("stepSending") || "Sending" },
+        { key: "done", icon: "check", label: t("stepDone") || "Done" },
+    ];
+    const stepOrder = ["input", "preview", "sending", "done"];
+    const currentIdx = stepOrder.indexOf(step);
+    const stepperEl = (
+        <div className="airdrop-stepper">
+            {stepperSteps.map((s, i) => (
+                <div key={s.key} className={`airdrop-step ${i === currentIdx ? "active" : ""} ${i < currentIdx ? "completed" : ""}`}>
+                    <div className="airdrop-step-circle">
+                        {i < currentIdx ? <AIcon name="check" size={12} /> : <AIcon name={s.icon as any} size={12} />}
+                    </div>
+                    <span className="airdrop-step-label">{s.label}</span>
+                    {i < stepperSteps.length - 1 && <div className="airdrop-step-line" />}
+                </div>
+            ))}
+        </div>
+    );
+
     // ---- PREVIEW ----
     if (step === "preview") {
         return (
-            <div className="airdrop-panel">
+            <div className="airdrop-panel" ref={panelRef}>
                 {toastEl}
-                <div className="airdrop-panel-header">
+                {stepperEl}
+                <div className="airdrop-preview-header">
                     <button className="airdrop-back-btn" onClick={() => { playClick(); setStep("input"); }}>
                         <AIcon name="arrowLeft" size={14} /> {t("airdropBack")}
                     </button>
-                    <h3 className="airdrop-panel-title"><AIcon name="chart" size={20} className="title-icon" /> {t("airdropPreview")}</h3>
+                    <h3 className="airdrop-panel-title"><AIcon name="chart" size={18} /> {t("airdropPreview")}</h3>
                 </div>
-                <div className="airdrop-preview-summary">
-                    <div className="airdrop-preview-stat"><span className="airdrop-preview-label"><AIcon name="users" size={14} /> {t("airdropRecipients")}</span><span className="airdrop-preview-value">{recipients.length}</span></div>
-                    <div className="airdrop-preview-stat"><span className="airdrop-preview-label"><AIcon name="coins" size={14} /> {t("airdropAmountEach")}</span><span className="airdrop-preview-value">{amountMode === "custom" ? "Custom" : `${formatNum(amountNum)}`}{tokenPrice > 0 && amountMode !== "custom" && <span className="usd-hint"> ~${(amountNum * tokenPrice).toFixed(4)}</span>}</span></div>
-                    <div className="airdrop-preview-stat highlight"><span className="airdrop-preview-label"><AIcon name="chart" size={14} /> {t("airdropTotalCost")}</span><span className="airdrop-preview-value">{formatNum(totalAmount)} ${tokenSymbol}{tokenPrice > 0 && <span className="usd-hint"> ~${(totalAmount * tokenPrice).toFixed(2)}</span>}</span></div>
-                    <div className={`airdrop-preview-stat ${hasEnough ? "success" : "error"}`}><span className="airdrop-preview-label"><AIcon name="wallet" size={14} /> {t("airdropYourBalance")}</span><span className="airdrop-preview-value">{formatNum(balanceNum)} ${tokenSymbol}{tokenPrice > 0 && <span className="usd-hint"> ~${(balanceNum * tokenPrice).toFixed(2)}</span>}</span></div>
+                {/* Compact 2x2 summary grid */}
+                <div className="airdrop-preview-grid">
+                    <div className="airdrop-preview-stat"><span className="airdrop-preview-label"><AIcon name="users" size={13} /> {t("airdropRecipients")}</span><span className="airdrop-preview-value">{recipients.length}</span></div>
+                    <div className="airdrop-preview-stat"><span className="airdrop-preview-label"><AIcon name="coins" size={13} /> {t("airdropAmountEach")}</span><span className="airdrop-preview-value">{amountMode === "custom" ? "Custom" : formatNum(amountNum)}{tokenPrice > 0 && amountMode !== "custom" && <span className="usd-hint"> ~${(amountNum * tokenPrice).toFixed(4)}</span>}</span></div>
+                    <div className="airdrop-preview-stat highlight"><span className="airdrop-preview-label"><AIcon name="chart" size={13} /> {t("airdropTotalCost")}</span><span className="airdrop-preview-value">{formatNum(totalAmount)} ${tokenSymbol}{tokenPrice > 0 && <span className="usd-hint"> ~${(totalAmount * tokenPrice).toFixed(2)}</span>}</span></div>
+                    <div className={`airdrop-preview-stat ${hasEnough ? "success" : "error"}`}><span className="airdrop-preview-label"><AIcon name="wallet" size={13} /> {t("airdropYourBalance")}</span><span className="airdrop-preview-value">{formatNum(balanceNum)} ${tokenSymbol}{tokenPrice > 0 && <span className="usd-hint"> ~${(balanceNum * tokenPrice).toFixed(2)}</span>}</span></div>
                 </div>
-                {!hasEnough && <div className="airdrop-warning"><AIcon name="warning" size={14} /> {t("airdropInsufficientBalance")}</div>}
-                {estimatedGas && <div className="airdrop-gas-estimate"><AIcon name="fuel" size={14} /> {t("airdropGasEstimate") || "Gas"}: <strong>{estimatedGas}</strong></div>}
-                {okbNum > 0 && <div className="airdrop-gas-estimate" style={{ marginTop: 4 }}><AIcon name="wallet" size={14} /> OKB: <strong>{okbNum.toFixed(6)}</strong>{okbNum < (GAS_PER_TRANSFER * recipients.length * GAS_PRICE_GWEI / 1e9) && <span className="text-red" style={{ marginLeft: 8 }}>⚠ {t("errInsufficientGas")}</span>}</div>}
-                <div className="airdrop-recipient-list">
-                    <div className="airdrop-recipient-list-header"><AIcon name="users" size={14} /> {t("airdropRecipientList")} ({recipients.length})</div>
-                    <div className="airdrop-recipient-list-body">
-                        {recipientEntries.slice(0, 50).map((e, i) => (
-                            <div key={e.address} className="airdrop-recipient-item"><span className="airdrop-recipient-index">#{i + 1}</span><span className="airdrop-recipient-addr full">{e.address}</span><span className="airdrop-recipient-amount">{formatNum(parseFloat(e.amount) || 0)}</span></div>
+                {/* Inline gas + warnings */}
+                <div className="airdrop-preview-meta">
+                    {!hasEnough && <span className="preview-warn"><AIcon name="warning" size={12} /> {t("airdropInsufficientBalance")}</span>}
+                    {estimatedGas && <span className="preview-gas"><AIcon name="fuel" size={12} /> {t("airdropGasEstimate") || "Gas"}: <strong>{estimatedGas}</strong></span>}
+                    {okbNum > 0 && <span className="preview-gas"><AIcon name="wallet" size={12} /> OKB: <strong>{okbNum.toFixed(6).replace(/0+$/, '').replace(/\.$/, '')}</strong>{(() => { const gasNeeded = sendMode === "batch" ? (GAS_BATCH_BASE + recipients.length * GAS_PER_BATCH_RECIPIENT) * GAS_PRICE_GWEI / 1e9 : recipients.length * GAS_PER_TRANSFER * GAS_PRICE_GWEI / 1e9; return okbNum < gasNeeded ? <span className="text-red"> ⚠ {t("errInsufficientGas")}</span> : null; })()}</span>}
+                </div>
+                {/* Compact recipient list with limited height */}
+                <div className="airdrop-preview-recipients">
+                    <div className="preview-recipients-header"><AIcon name="users" size={13} /> {t("airdropRecipientList")} ({recipients.length})</div>
+                    <div className="preview-recipients-body">
+                        {recipientEntries.slice(0, 30).map((e, i) => (
+                            <div key={e.address} className="preview-recipient-row"><span className="pr-idx">#{i + 1}</span><span className="pr-addr">{e.address}</span><span className="pr-amt">{formatNum(parseFloat(e.amount) || 0)}</span></div>
                         ))}
-                        {recipients.length > 50 && <div className="airdrop-recipient-more">+{recipients.length - 50} {t("airdropMoreAddresses")}</div>}
+                        {recipients.length > 30 && <div className="preview-recipient-more">+{recipients.length - 30} {t("airdropMoreAddresses")}</div>}
                     </div>
                 </div>
                 <div className="airdrop-speed-mode">
@@ -1497,16 +1558,20 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                             playClick();
                                             setBatchStep("approving");
                                             try {
-                                                await writeContractAsync({
+                                                const txHash = await writeContractAsync({
                                                     address: tokenAddress as `0x${string}`,
                                                     abi: ERC20_ABI,
                                                     functionName: "approve",
-                                                    args: [AIRDROP_CONTRACT, neededWei],
+                                                    args: [AIRDROP_CONTRACT, BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")],
                                                 } as any);
+                                                // Wait for TX to be mined before refreshing allowance
+                                                if (publicClient && txHash) {
+                                                    await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}` });
+                                                }
+                                                await refetchAllowance();
                                                 playSuccess();
                                                 setBatchStep("approved");
                                                 showToast(t("batchApproveSuccess") || "Approved! Now click Send.");
-                                                await refetchAllowance();
                                             } catch (err: any) {
                                                 setBatchStep("idle");
                                                 playError();
@@ -1518,6 +1583,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                         <span className="batch-step-number">{isApproved ? "✓" : "1"}</span>
                                         {batchStep === "approving" ? <><span className="airdrop-spinner" /> {t("batchApproving") || "Approving..."}</> : isApproved ? <>{t("batchApproved") || "Approved"}</> : <><AIcon name="check" size={14} /> {t("batchApproveBtn") || "Approve Contract"}</>}
                                     </button>
+                                    {!isApproved && <p className="approve-unlimited-hint">💡 {t("approveUnlimitedHint") || "Tip: Select 'Unlimited' in your wallet popup to approve once for all future airdrops."}</p>}
                                     {/* Step 2: Send */}
                                     <button
                                         className={`batch-step-btn send-btn ${isApproved ? "active" : ""}`}
@@ -1548,8 +1614,9 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         const elapsed = (Date.now() - sendStartTimeRef.current) / 1000;
         const speed = elapsed > 0 && sendProgress > 0 ? (sendProgress / elapsed).toFixed(1) : "—";
         return (
-            <div className="airdrop-panel">
+            <div className="airdrop-panel" ref={panelRef}>
                 {toastEl}
+                {stepperEl}
                 <div className="airdrop-panel-header"><h3 className="airdrop-panel-title"><AIcon name="rocket" size={20} className="title-icon spin" /> {t("airdropSending")}</h3></div>
                 {/* Progress bar (#3) */}
                 <div className="airdrop-progress-bar-container">
@@ -1595,8 +1662,9 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         const sc = sendResults.filter(r => r.success).length, fc = sendResults.filter(r => !r.success).length;
         const ts = sendResults.filter(r => r.success).reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
         return (
-            <div className="airdrop-panel">
+            <div className={`airdrop-panel ${sc > 0 ? "airdrop-confetti" : ""}`}>
                 {toastEl}
+                {stepperEl}
                 <div className="airdrop-panel-header"><h3 className="airdrop-panel-title">{sc > 0 ? <AIcon name="check" size={20} className="title-icon text-green" /> : <AIcon name="xCircle" size={20} className="title-icon text-red" />} {t("airdropResults")}</h3></div>
                 <div className="airdrop-done-summary">
                     <div className="airdrop-done-icon">{sc > 0 ? <AIcon name="check" size={48} className="text-green" /> : <AIcon name="xCircle" size={48} className="text-red" />}</div>
@@ -1665,29 +1733,47 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const mainPanel = (
         <div className="airdrop-panel">
             {toastEl}
-            <div className="airdrop-panel-header">
-                <h3 className="airdrop-panel-title"><AIcon name="parachute" size={22} className="title-icon" /> {t("airdropTitle")}</h3>
-                <p className="airdrop-panel-subtitle">{t("airdropSubtitle")}</p>
+            {stepperEl}
+            {/* Compact Header */}
+            <div className="airdrop-panel-header-v2">
+                <div className="airdrop-header-left">
+                    <AIcon name="parachute" size={20} className="title-icon" />
+                    <div>
+                        <h3 className="airdrop-panel-title-v2">{t("airdropTitle")}</h3>
+                        <p className="airdrop-panel-subtitle-v2">{(t("airdropSubtitle") || "").replace(/\$BANMAO/g, `$${tokenSymbol}`)}</p>
+                    </div>
+                </div>
+                {/* Utility actions - icon only */}
+                <div className="airdrop-header-utils">
+                    <button className="airdrop-util-btn" onClick={generateShareLink} title={t("shareLink") || "Share"}><AIcon name="share" size={14} /></button>
+                    <button className="airdrop-util-btn" onClick={exportConfig} title={t("exportConfig") || "Export"}><AIcon name="download" size={14} /></button>
+                    <button className="airdrop-util-btn" onClick={() => configFileRef.current?.click()} title={t("importConfig") || "Import"}><AIcon name="upload" size={14} /></button>
+                    <input ref={configFileRef} type="file" accept=".json" style={{ display: "none" }} onChange={e => { if (e.target.files?.[0]) importConfig(e.target.files[0]); e.target.value = ""; }} />
+                </div>
             </div>
 
-            {/* Top actions */}
-            <div className="airdrop-top-actions">
-                <button className="airdrop-top-btn" onClick={() => { playClick(); setShowHistory(!showHistory); }} title={t("airdropHistory")}><AIcon name="clock" size={13} /> {t("airdropHistory") || "History"} ({history.length})</button>
-                <button className="airdrop-top-btn" onClick={() => { playClick(); setShowBook(!showBook); }} title={t("airdropAddressBook")}><AIcon name="book" size={13} /> {t("airdropAddressBook") || "Book"} ({addressBook.length})</button>
-                <button className="airdrop-top-btn" onClick={() => { playClick(); setShowBlacklist(!showBlacklist); }} title={t("blacklistTitle")}><AIcon name="xCircle" size={13} /> {t("blacklistTitle") || "Blacklist"} ({blacklist.size})</button>
-                <button className="airdrop-top-btn" onClick={() => { playClick(); setShowTemplates(!showTemplates); }} title={t("templatesTitle")}><AIcon name="bookmark" size={13} /> {t("templatesTitle") || "Templates"} ({templates.length})</button>
-                <button className="airdrop-top-btn" onClick={generateShareLink} title={t("shareLink") || "Share Link"}><AIcon name="share" size={13} /> {t("shareLink") || "Share"}</button>
-                <button className="airdrop-top-btn" onClick={exportConfig} title={t("exportConfig") || "Export Config"}><AIcon name="download" size={13} /> {t("exportConfig") || "Export"}</button>
-                <button className="airdrop-top-btn" onClick={() => configFileRef.current?.click()} title={t("importConfig") || "Import Config"}><AIcon name="upload" size={13} /> {t("importConfig") || "Import"}</button>
-                <input ref={configFileRef} type="file" accept=".json" style={{ display: "none" }} onChange={e => { if (e.target.files?.[0]) importConfig(e.target.files[0]); e.target.value = ""; }} />
+            {/* Data quick-access tabs */}
+            <div className="airdrop-data-tabs">
+                <button className={`airdrop-data-tab ${showHistory ? "active" : ""}`} onClick={() => { playClick(); setShowHistory(!showHistory); }}>
+                    <AIcon name="clock" size={13} /><span>{t("airdropHistory") || "History"}</span>{history.length > 0 && <span className="airdrop-tab-badge">{history.length}</span>}
+                </button>
+                <button className={`airdrop-data-tab ${showBook ? "active" : ""}`} onClick={() => { playClick(); setShowBook(!showBook); }}>
+                    <AIcon name="book" size={13} /><span>{t("airdropAddressBook") || "Book"}</span>{addressBook.length > 0 && <span className="airdrop-tab-badge">{addressBook.length}</span>}
+                </button>
+                <button className={`airdrop-data-tab ${showBlacklist ? "active" : ""}`} onClick={() => { playClick(); setShowBlacklist(!showBlacklist); }}>
+                    <AIcon name="xCircle" size={13} /><span>{t("blacklistTitle") || "Blacklist"}</span>{blacklist.size > 0 && <span className="airdrop-tab-badge">{blacklist.size}</span>}
+                </button>
+                <button className={`airdrop-data-tab ${showTemplates ? "active" : ""}`} onClick={() => { playClick(); setShowTemplates(!showTemplates); }}>
+                    <AIcon name="bookmark" size={13} /><span>{t("templatesTitle") || "Templates"}</span>{templates.length > 0 && <span className="airdrop-tab-badge">{templates.length}</span>}
+                </button>
             </div>
 
-            {/* Dashboard stats (#4) */}
+            {/* Dashboard stats */}
             {(dashboardStats.totalSessions > 0 || tokenPrice > 0) && (
                 <div className="airdrop-dashboard">
-                    {tokenPrice > 0 && <div className="airdrop-dash-stat price"><AIcon name="chart" size={15} /><div><span className="airdrop-dash-value">${tokenPrice.toFixed(10).replace(/0+$/, '').replace(/\.$/, '')}</span><span className="airdrop-dash-label">$BANMAO {t("tokenPrice") || "Price"}</span></div></div>}
-                    <div className="airdrop-dash-stat"><AIcon name="coins" size={15} /><div><span className="airdrop-dash-value">{formatNum(dashboardStats.totalDistributed)}</span><span className="airdrop-dash-label">{t("dashTotalDistributed") || "BANMAO Distributed"}</span></div></div>
-                    <div className="airdrop-dash-stat"><AIcon name="users" size={15} /><div><span className="airdrop-dash-value">{formatNum(dashboardStats.totalWallets)}</span><span className="airdrop-dash-label">{t("dashTotalWallets") || "Wallets Reached"}</span></div></div>
+                    {tokenPrice > 0 && <div className="airdrop-dash-stat price"><AIcon name="chart" size={15} /><div><span className="airdrop-dash-value">${tokenPrice.toFixed(10).replace(/0+$/, '').replace(/\.$/, '')}</span><span className="airdrop-dash-label">${tokenSymbol} {t("tokenPrice") || "Price"}</span></div></div>}
+                    <div className="airdrop-dash-stat"><AIcon name="coins" size={15} /><div><span className="airdrop-dash-value">{formatNum(dashboardStats.totalDistributed)}</span><span className="airdrop-dash-label">{t("dashTotalDistributed") || "Distributed"}</span></div></div>
+                    <div className="airdrop-dash-stat"><AIcon name="users" size={15} /><div><span className="airdrop-dash-value">{formatNum(dashboardStats.totalWallets)}</span><span className="airdrop-dash-label">{t("dashTotalWallets") || "Wallets"}</span></div></div>
                     <div className="airdrop-dash-stat"><AIcon name="rocket" size={15} /><div><span className="airdrop-dash-value">{dashboardStats.totalSessions}</span><span className="airdrop-dash-label">{t("dashTotalSessions") || "Airdrops"}</span></div></div>
                 </div>
             )}
@@ -1784,6 +1870,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                     <button className="airdrop-token-reset" onClick={resetToDefaultToken} title="Reset to BANMAO"><AIcon name="refresh" size={12} /></button>
                 )}
             </div>
+            <p className="token-selector-hint"><AIcon name="info" size={11} /> {(t("tokenSelectorHint") || "Tap above to change the airdrop token. You can airdrop any ERC-20 token on XLayer.").replace("{token}", `$${tokenSymbol}`)}</p>
             {showTokenSelector && (
                 <div className="airdrop-history-panel">
                     <div className="airdrop-history-title"><AIcon name="coins" size={15} /> {t("selectToken") || "Select Token"}</div>
@@ -1867,7 +1954,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                     {scanMode === "wallets" && (
                         <>
                             <div className="airdrop-scan-header">
-                                <p className="airdrop-scan-desc">{scanChain === "xlayer" ? t("airdropScanDesc") : `${t("scanChainDesc") || "Scan"} ${WALLET_CHAINS.find(c => c.key === scanChain)?.name || scanChain} ${t("scanChainDescEnd") || "for active wallets. Addresses without $BANMAO on XLayer will be shown."}`}</p>
+                                <p className="airdrop-scan-desc">{(scanChain === "xlayer" ? t("airdropScanDesc") : `${t("scanChainDesc") || "Scan"} ${WALLET_CHAINS.find(c => c.key === scanChain)?.name || scanChain} ${t("scanChainDescEnd") || "for active wallets. Addresses without {token} on XLayer will be shown."}`).replace(/\$BANMAO/g, `$${tokenSymbol}`).replace(/\{token\}/g, `$${tokenSymbol}`)}</p>
                                 {/* Chain selector */}
                                 <div className="scan-chain-selector">
                                     {WALLET_CHAINS.map(c => (
@@ -1877,8 +1964,13 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                         </button>
                                     ))}
                                 </div>
-                                <div className="airdrop-scan-note"><AIcon name="info" size={13} /> {t("airdropScanNote")}</div>
-                                <div className="airdrop-scan-multi-hint"><AIcon name="bolt" size={13} /> {t("scanMultiHint")}</div>
+                                <div className="airdrop-scan-combined-hint">
+                                    <div className="scan-hint-icon">💡</div>
+                                    <div className="scan-hint-content">
+                                        <p className="scan-hint-main"><AIcon name="info" size={12} /> {(t("scanCombinedHint1") || "Wallets that already hold {token} will be automatically excluded. You can scan multiple times to accumulate unique addresses.").replace("{token}", `$${tokenSymbol}`)}</p>
+                                        <p className="scan-hint-sub"><AIcon name="bolt" size={12} /> {(t("scanCombinedHint2") || "Each scan explores new blockchain blocks to find active wallets without {token}. Spread {token} and grow the community!").replace(/\{token\}/g, `$${tokenSymbol}`)}</p>
+                                    </div>
+                                </div>
                                 <div className="airdrop-scan-btn-group">
                                     {autoScanActive ? (
                                         <button className="airdrop-scan-btn" style={{ background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)" }} onClick={stopAutoScan} onMouseEnter={() => playHover()}>
@@ -2158,6 +2250,13 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                             )}
                             <span className="airdrop-amount-suffix">${tokenSymbol}</span>
                         </div>
+                        {/* USD Value Hint */}
+                        {tokenPrice > 0 && amountPerWallet && parseFloat(amountPerWallet) > 0 && (
+                            <div className="airdrop-usd-hint">
+                                <span>{parseFloat(amountPerWallet).toLocaleString()} × ${tokenPrice.toFixed(10).replace(/0+$/, '').replace(/\.$/, '')} = <strong>${(parseFloat(amountPerWallet) * tokenPrice).toFixed(6).replace(/0+$/, '').replace(/\.$/, '')} USD</strong>/ví</span>
+                                {recipients.length > 0 && <span className="airdrop-usd-total">Σ {recipients.length} ví = <strong>${(parseFloat(amountPerWallet) * tokenPrice * recipients.length).toFixed(4).replace(/0+$/, '').replace(/\.$/, '')} USD</strong></span>}
+                            </div>
+                        )}
                         <div className="airdrop-quick-amounts">{[100, 500, 1000, 5000, 10000].map(a => (
                             <button key={a} className="airdrop-quick-btn" onClick={() => { playClick(); setAmountPerWallet(a.toString()); }} onMouseEnter={() => playHover()}>{a >= 1000 ? `${a / 1000}K` : a}</button>
                         ))}</div>
@@ -2172,7 +2271,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 </div>
                 <a href="/gamefi/banmaosnake" target="_blank" rel="noopener noreferrer" className="airdrop-game-tip">
                     <AIcon name="bolt" size={13} />
-                    <span>{t("airdropGameTip")}</span>
+                    <span>{(t("airdropGameTip") || "").replace(/\$BANMAO/g, `$${tokenSymbol}`)}</span>
                     <AIcon name="link" size={11} />
                 </a>
                 {recipients.length > 0 && totalAmount > 0 && (
@@ -2229,7 +2328,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             {!isConnected ? (
                 <div className="airdrop-connect-msg"><AIcon name="wallet" size={16} /> {t("airdropConnectWallet")}</div>
             ) : (
-                <button className="airdrop-execute-btn" disabled={!recipients.length || totalAmount <= 0 || !hasEnough || scheduleActive} onClick={() => { playClick(); setStep("preview"); }} onMouseEnter={() => playHover()}>
+                <button className="airdrop-execute-btn" disabled={!recipients.length || totalAmount <= 0 || !hasEnough || scheduleActive} onClick={() => { playClick(); setStep("preview"); scrollToPanel(); }} onMouseEnter={() => playHover()}>
                     {scheduleActive ? <><AIcon name="clock" size={16} /> {scheduleCountdown}</>
                         : !hasEnough && totalAmount > 0 ? <><AIcon name="warning" size={16} /> {t("airdropInsufficientBalance")}</>
                             : !recipients.length ? <><AIcon name="plus" size={16} /> {t("airdropAddAddresses")}</>
@@ -2389,7 +2488,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 <div className="side-empty">{histFilter === "mine" ? (lang === "vi" ? "Bạn chưa có airdrop nào" : "No airdrops from you yet") : (t("histEmpty") || "No airdrop history yet.")}</div>
             ) : (
                 <div className="hist-list">
-                    {filteredHistory.map((row: any) => {
+                    {filteredHistory.slice(0, 20).map((row: any) => {
                         const amt = Number(BigInt(row.total_amount || "0") / BigInt(1e18));
                         const date = new Date(Number(row.timestamp) * 1000);
                         const isSuccess = Number(row.success_count) > 0;

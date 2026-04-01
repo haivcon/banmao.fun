@@ -26,7 +26,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-track {
 html:has(.defi-airdrop-page)::-webkit-scrollbar-thumb,
 html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb {
     background: linear-gradient(180deg, rgba(168, 85, 247, 0.4), rgba(249, 115, 22, 0.3));
-    border-radius: 10px;
+    border-radius: 999px;
 }
 
 html:has(.defi-airdrop-page)::-webkit-scrollbar-thumb:hover,
@@ -49,6 +49,198 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+/* Global box-sizing for all airdrop elements */
+.defi-airdrop-page,
+.defi-airdrop-page *,
+.defi-airdrop-page *::before,
+.defi-airdrop-page *::after {
+    box-sizing: border-box;
+}
+
+/* ===================== Progress Stepper ===================== */
+.airdrop-stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 12px 8px 16px;
+    margin-bottom: 4px;
+}
+
+.airdrop-step {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: relative;
+}
+
+.airdrop-step-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.06);
+    border: 2px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 12px;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.airdrop-step-label {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.3);
+    position: absolute;
+    top: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateX(-12px);
+    white-space: nowrap;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+.airdrop-step-line {
+    width: 32px;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 0 4px;
+    transition: background 0.3s;
+    flex-shrink: 0;
+}
+
+.airdrop-step.active .airdrop-step-circle {
+    background: linear-gradient(135deg, #f97316 0%, #f59e0b 100%);
+    border-color: #f97316;
+    color: #fff;
+    box-shadow: 0 0 16px rgba(249, 115, 22, 0.4);
+    animation: stepPulse 2s ease-in-out infinite;
+}
+
+.airdrop-step.active .airdrop-step-label {
+    color: #f97316;
+    font-weight: 700;
+}
+
+.airdrop-step.completed .airdrop-step-circle {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    border-color: #22c55e;
+    color: #fff;
+}
+
+.airdrop-step.completed .airdrop-step-label {
+    color: rgba(34, 197, 94, 0.7);
+}
+
+.airdrop-step.completed .airdrop-step-line {
+    background: linear-gradient(90deg, #22c55e, rgba(34, 197, 94, 0.3));
+}
+
+@keyframes stepPulse {
+    0%, 100% { box-shadow: 0 0 12px rgba(249, 115, 22, 0.3); }
+    50% { box-shadow: 0 0 24px rgba(249, 115, 22, 0.6); }
+}
+
+/* ===================== USD Value Hint ===================== */
+.airdrop-usd-hint {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding: 6px 10px;
+    margin-top: 6px;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.06), rgba(16, 185, 129, 0.03));
+    border: 1px solid rgba(34, 197, 94, 0.1);
+    border-radius: 999px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'JetBrains Mono', 'Space Mono', monospace;
+    animation: fadeIn 0.2s ease;
+}
+
+.airdrop-usd-hint strong {
+    color: #22c55e;
+    font-weight: 700;
+}
+
+.airdrop-usd-total {
+    color: rgba(249, 115, 22, 0.7);
+    padding-left: 8px;
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.airdrop-usd-total strong {
+    color: #f97316;
+}
+
+/* ===================== Confetti Animation ===================== */
+.airdrop-confetti {
+    position: relative;
+}
+
+.airdrop-confetti::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    background-image:
+        radial-gradient(circle, #f97316 1.5px, transparent 1.5px),
+        radial-gradient(circle, #a855f7 1.5px, transparent 1.5px),
+        radial-gradient(circle, #22c55e 1.5px, transparent 1.5px),
+        radial-gradient(circle, #f59e0b 1.5px, transparent 1.5px),
+        radial-gradient(circle, #3b82f6 1.5px, transparent 1.5px),
+        radial-gradient(circle, #ec4899 1.5px, transparent 1.5px);
+    background-size: 10% 10%, 12% 12%, 8% 8%, 14% 14%, 9% 9%, 11% 11%;
+    background-position:
+        10% 10%, 30% 5%, 50% 15%, 70% 8%, 85% 12%, 95% 20%;
+    animation: confettiFall 3s ease-out forwards;
+    opacity: 0;
+    border-radius: inherit;
+    z-index: 1;
+}
+
+@keyframes confettiFall {
+    0% { opacity: 0.8; transform: translateY(-20px) scale(1); }
+    40% { opacity: 0.6; }
+    100% { opacity: 0; transform: translateY(100px) scale(0.5); }
+}
+
+.airdrop-confetti .airdrop-done-icon {
+    animation: successBounce 0.6s ease-out;
+}
+
+@keyframes successBounce {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.15); }
+    70% { transform: scale(0.95); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Mobile stepper compact */
+@media (max-width: 640px) {
+    .airdrop-stepper {
+        padding: 8px 2px 14px;
+    }
+    .airdrop-step-circle {
+        width: 22px;
+        height: 22px;
+    }
+    .airdrop-step-label {
+        font-size: 8px;
+        top: 26px;
+    }
+    .airdrop-step-line {
+        width: 20px;
+    }
+    .airdrop-usd-hint {
+        font-size: 9px;
+        padding: 4px 8px;
     }
 }
 
@@ -107,7 +299,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .airdrop-back-btn {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 50px;
+    border-radius: 999px;
     padding: 8px 16px;
     color: rgba(255, 255, 255, 0.7);
     font-size: 12px;
@@ -132,14 +324,14 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     margin-bottom: 20px;
     background: rgba(0, 0, 0, 0.25);
     padding: 5px;
-    border-radius: 50px;
+    border-radius: 12px;
 }
 
 .airdrop-tab {
     flex: 1;
     padding: 12px 20px;
     border: none;
-    border-radius: 50px;
+    border-radius: 999px;
     background: transparent;
     color: rgba(255, 255, 255, 0.5);
     font-size: 13px;
@@ -189,7 +381,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 14px 18px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 16px;
+    border-radius: 24px;
     color: #fff;
     font-size: 12px;
     font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
@@ -264,7 +456,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 12px 28px;
     background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
     border: none;
-    border-radius: 50px;
+    border-radius: 999px;
     color: #fff;
     font-size: 14px;
     font-weight: 700;
@@ -363,7 +555,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 10px 14px;
     background: rgba(0, 0, 0, 0.2);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 14px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -407,7 +599,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     color: rgba(255, 255, 255, 0.55);
     background: rgba(255, 255, 255, 0.05);
     padding: 2px 8px;
-    border-radius: 8px;
+    border-radius: 999px;
 }
 
 .airdrop-wallet-copy {
@@ -431,7 +623,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     font-weight: 600;
     padding: 8px;
     background: rgba(168, 85, 247, 0.08);
-    border-radius: 12px;
+    border-radius: 999px;
     border: 1px solid rgba(168, 85, 247, 0.15);
 }
 
@@ -454,7 +646,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 14px 110px 14px 18px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 50px;
+    border-radius: 999px;
     color: #fff;
     font-size: 16px;
     font-weight: 700;
@@ -537,7 +729,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 14px 18px;
     background: rgba(168, 85, 247, 0.06);
     border: 1px solid rgba(168, 85, 247, 0.15);
-    border-radius: 16px;
+    border-radius: 24px;
 }
 
 .airdrop-summary-row {
@@ -566,7 +758,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #f97316 100%);
     background-size: 200% 200%;
     border: none;
-    border-radius: 50px;
+    border-radius: 999px;
     color: #fff;
     font-size: 15px;
     font-weight: 700;
@@ -619,7 +811,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     color: rgba(255, 255, 255, 0.5);
     font-size: 13px;
     background: rgba(255, 255, 255, 0.03);
-    border-radius: 16px;
+    border-radius: 24px;
     border: 1px dashed rgba(255, 255, 255, 0.1);
     margin-top: 16px;
 }
@@ -649,7 +841,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     flex: 1;
     padding: 10px 16px;
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 50px;
+    border-radius: 999px;
     background: rgba(0, 0, 0, 0.2);
     color: rgba(255, 255, 255, 0.5);
     font-size: 12px;
@@ -673,17 +865,29 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 }
 
 /* Preview Step */
-.airdrop-preview-summary {
+/* Compact Preview Header */
+.airdrop-preview-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.airdrop-preview-header .airdrop-panel-title {
+    font-size: 15px;
+}
+
+/* Compact 2x2 Stats Grid */
+.airdrop-preview-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 20px;
+    gap: 6px;
+    margin-bottom: 8px;
 }
 
 .airdrop-preview-stat {
-    padding: 14px 16px;
+    padding: 10px 12px;
     background: rgba(0, 0, 0, 0.25);
-    border-radius: 16px;
+    border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.06);
     text-align: center;
 }
@@ -692,73 +896,98 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     border-color: rgba(168, 85, 247, 0.3);
     background: rgba(168, 85, 247, 0.08);
 }
-
-.airdrop-preview-stat.success {
-    border-color: rgba(34, 197, 94, 0.3);
-}
-
-.airdrop-preview-stat.error {
-    border-color: rgba(239, 68, 68, 0.3);
-    background: rgba(239, 68, 68, 0.05);
-}
+.airdrop-preview-stat.success { border-color: rgba(34, 197, 94, 0.3); }
+.airdrop-preview-stat.error { border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
 
 .airdrop-preview-label {
     display: block;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
-    margin-bottom: 6px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 3px;
 }
-
 .airdrop-preview-value {
     display: block;
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 800;
     color: #fff;
     letter-spacing: -0.02em;
 }
 
-.airdrop-warning {
-    padding: 12px 16px;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.25);
-    border-radius: 12px;
-    color: #f87171;
-    font-size: 13px;
-    font-weight: 600;
-    text-align: center;
-    margin-bottom: 16px;
-}
-
-.airdrop-info-note {
-    padding: 10px 16px;
-    background: rgba(59, 130, 246, 0.08);
-    border: 1px solid rgba(59, 130, 246, 0.15);
-    border-radius: 12px;
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 11px;
-    margin-bottom: 16px;
-    line-height: 1.5;
-}
-
-/* Recipient List */
-.airdrop-recipient-list {
-    margin-bottom: 16px;
-}
-
-.airdrop-recipient-list-header {
-    font-size: 12px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.6);
+/* Inline Meta Bar (gas, warnings) */
+.airdrop-preview-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
     margin-bottom: 8px;
 }
-
-.airdrop-recipient-list-body {
-    max-height: 250px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
+.preview-gas, .preview-warn {
+    display: inline-flex;
+    align-items: center;
     gap: 4px;
-    padding-right: 4px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+}
+.preview-gas {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.5);
+}
+.preview-warn {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+/* Compact Recipients List */
+.airdrop-preview-recipients {
+    margin-bottom: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.preview-recipients-header {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 6px 10px;
+    background: rgba(0, 0, 0, 0.15);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.preview-recipients-body {
+    max-height: 200px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168, 85, 247, 0.15) transparent;
+}
+.preview-recipients-body::-webkit-scrollbar { width: 4px; }
+.preview-recipients-body::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.2); border-radius: 999px; }
+.preview-recipient-row {
+    display: flex;
+    align-items: center;
+    padding: 4px 10px;
+    font-size: 11px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+.preview-recipient-row:last-child { border-bottom: none; }
+.pr-idx { width: 28px; color: rgba(255, 255, 255, 0.3); font-size: 10px; flex-shrink: 0; }
+.pr-addr { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono, monospace); color: rgba(255, 255, 255, 0.6); font-size: 11px; }
+.pr-amt { flex-shrink: 0; font-weight: 700; color: #f97316; margin-left: 8px; font-size: 11px; }
+.preview-recipient-more {
+    text-align: center;
+    padding: 6px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Keep old styles for backward compat */
+.airdrop-preview-summary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
 }
 
 .airdrop-recipient-item {
@@ -767,7 +996,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     gap: 10px;
     padding: 8px 12px;
     background: rgba(0, 0, 0, 0.2);
-    border-radius: 10px;
+    border-radius: 12px;
     font-size: 12px;
 }
 
@@ -880,7 +1109,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
-    border-radius: 10px;
+    border-radius: 12px;
     font-size: 12px;
     animation: slideIn 0.3s ease;
 }
@@ -911,7 +1140,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     font-size: 11px;
     padding: 3px 8px;
     background: rgba(96, 165, 250, 0.1);
-    border-radius: 8px;
+    border-radius: 999px;
     transition: all 0.2s;
 }
 
@@ -991,7 +1220,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     }
 
     .airdrop-panel {
-        padding: 20px 16px;
+        padding: 16px 12px;
         border-radius: 24px;
     }
 
@@ -1013,39 +1242,144 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 /* ===================== NEW FEATURE STYLES ===================== */
 
 /* Top Actions (History + Address Book buttons) */
-.airdrop-top-actions {
+/* ===================== Panel Header V2 (compact) ===================== */
+.airdrop-panel-header-v2 {
     display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
 }
 
-.airdrop-top-btn {
-    flex: 1 1 auto;
-    padding: 8px 14px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+.airdrop-header-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+}
+
+.airdrop-header-left > svg {
+    color: #f97316;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.airdrop-panel-title-v2 {
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.airdrop-panel-subtitle-v2 {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    margin: 2px 0 0;
+    line-height: 1.4;
+}
+
+/* Utility icon buttons (Share, Export, Import) */
+.airdrop-header-utils {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.airdrop-util-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.45);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.airdrop-util-btn:hover {
+    background: rgba(249, 115, 22, 0.1);
+    border-color: rgba(249, 115, 22, 0.25);
+    color: #f97316;
+    transform: translateY(-1px);
+}
+
+/* ===================== Data Quick-Access Tabs ===================== */
+.airdrop-data-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.2);
     border-radius: 12px;
-    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.airdrop-data-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 7px 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.4);
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    text-align: center;
+    white-space: nowrap;
     min-width: 0;
 }
 
-.airdrop-top-btn:hover {
-    background: rgba(168, 85, 247, 0.1);
-    border-color: rgba(168, 85, 247, 0.3);
-    color: #fff;
+.airdrop-data-tab span {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
+
+.airdrop-data-tab:hover {
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.airdrop-data-tab.active {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.12), rgba(168, 85, 247, 0.08));
+    border-color: rgba(249, 115, 22, 0.2);
+    color: #f97316;
+}
+
+.airdrop-tab-badge {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: rgba(249, 115, 22, 0.2);
+    color: #f97316;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.airdrop-data-tab.active .airdrop-tab-badge {
+    background: rgba(249, 115, 22, 0.3);
+}
+
 
 /* History & Address Book Panel */
 .airdrop-history-panel {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
+    border-radius: 24px;
     padding: 14px;
     margin-bottom: 16px;
     animation: fadeIn 0.2s ease;
@@ -1076,7 +1410,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .airdrop-history-item {
     padding: 8px 12px;
     background: rgba(255, 255, 255, 0.04);
-    border-radius: 10px;
+    border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -1104,7 +1438,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 8px 14px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
+    border-radius: 999px;
     color: #fff;
     font-size: 12px;
 }
@@ -1118,7 +1452,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 8px 16px;
     background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(249, 115, 22, 0.2));
     border: 1px solid rgba(168, 85, 247, 0.3);
-    border-radius: 10px;
+    border-radius: 999px;
     color: #fff;
     font-size: 12px;
     font-weight: 600;
@@ -1137,7 +1471,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     justify-content: space-between;
     padding: 8px 12px;
     background: rgba(255, 255, 255, 0.04);
-    border-radius: 10px;
+    border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -1281,7 +1615,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     flex: 1;
     min-width: 100px;
     padding: 10px 16px;
-    border-radius: 50px;
+    border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(255, 255, 255, 0.05);
     color: rgba(255, 255, 255, 0.7);
@@ -1348,7 +1682,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 10px 36px 10px 16px;
     background: linear-gradient(135deg, rgba(30, 20, 50, 0.94), rgba(20, 12, 40, 0.94));
     backdrop-filter: blur(12px);
-    border-radius: 12px;
+    border-radius: 999px;
     border: 1px solid rgba(249, 115, 22, 0.25);
     color: #f0ece7;
     font-size: 13px;
@@ -1379,7 +1713,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     left: 0;
     height: 3px;
     background: linear-gradient(90deg, #f97316, #fbbf24);
-    border-radius: 0 0 12px 12px;
+    border-radius: 0 0 20px 20px;
     animation: toastProgress 4s linear forwards;
 }
 
@@ -1418,7 +1752,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     width: 16px;
     height: 16px;
     border: 2px solid rgba(255, 255, 255, 0.15);
-    border-radius: 4px;
+    border-radius: 999px;
     transition: border-color 0.2s;
 }
 
@@ -1432,7 +1766,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .airdrop-scan-clear-btn {
     padding: 8px 12px;
     border: 1px solid rgba(239, 68, 68, 0.2);
-    border-radius: 12px;
+    border-radius: 999px;
     background: rgba(239, 68, 68, 0.06);
     color: rgba(239, 68, 68, 0.7);
     cursor: pointer;
@@ -1448,7 +1782,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .airdrop-wallet-card {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 14px;
+    border-radius: 12px;
     padding: 12px;
     transition: all 0.2s;
     display: flex;
@@ -1511,7 +1845,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     align-items: center;
     justify-content: center;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
+    border-radius: 999px;
     background: rgba(255, 255, 255, 0.04);
     color: rgba(255, 255, 255, 0.4);
     cursor: pointer;
@@ -1533,7 +1867,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 /* Expandable asset detail */
 .airdrop-wallet-detail {
     background: rgba(0, 0, 0, 0.25);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 12px;
     margin-top: 4px;
     animation: fadeIn 0.2s ease;
@@ -1566,7 +1900,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     justify-content: space-between;
     padding: 6px 10px;
     background: rgba(255, 255, 255, 0.04);
-    border-radius: 8px;
+    border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
@@ -1610,7 +1944,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
-    border-radius: 10px;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.04);
     margin-bottom: 4px;
@@ -1696,7 +2030,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     color: rgba(168, 85, 247, 0.7);
     text-decoration: none;
     padding: 3px 8px;
-    border-radius: 6px;
+    border-radius: 999px;
     background: rgba(168, 85, 247, 0.08);
     border: 1px solid rgba(168, 85, 247, 0.15);
     transition: all 0.15s;
@@ -1722,26 +2056,69 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 }
 
 /* Scan info note */
-.airdrop-scan-note {
+/* Combined Scan Hint Card */
+.airdrop-scan-combined-hint {
     display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 10px 14px;
-    border-radius: 10px;
-    background: rgba(59, 130, 246, 0.06);
-    border: 1px solid rgba(59, 130, 246, 0.12);
-    font-size: 11px;
-    line-height: 1.5;
-    color: rgba(147, 197, 253, 0.8);
-    max-width: 520px;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.06), rgba(168, 85, 247, 0.08));
+    border: 1px solid rgba(249, 115, 22, 0.18);
+    max-width: 620px;
     text-align: left;
 }
-
-.airdrop-scan-note svg {
+.scan-hint-icon {
+    font-size: 20px;
     flex-shrink: 0;
-    margin-top: 1px;
-    color: rgba(59, 130, 246, 0.6);
+    line-height: 1;
+    margin-top: 2px;
 }
+.scan-hint-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.scan-hint-main, .scan-hint-sub {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+}
+.scan-hint-main {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 500;
+}
+.scan-hint-main svg { flex-shrink: 0; margin-top: 2px; color: rgba(59, 130, 246, 0.7); }
+.scan-hint-sub {
+    color: rgba(249, 115, 22, 0.85);
+    font-weight: 600;
+}
+.scan-hint-sub svg { flex-shrink: 0; margin-top: 2px; color: #f97316; }
+
+/* Light theme */
+.defi-airdrop-page.light .airdrop-scan-combined-hint {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.05), rgba(168, 85, 247, 0.04));
+    border-color: rgba(249, 115, 22, 0.2);
+}
+.defi-airdrop-page.light .scan-hint-main { color: #555; }
+.defi-airdrop-page.light .scan-hint-sub { color: #c2410c; }
+
+/* Token Selector Hint */
+.token-selector-hint {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 4px 0 8px;
+    padding: 0 4px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.35);
+    line-height: 1.4;
+}
+.token-selector-hint svg { flex-shrink: 0; color: rgba(168, 85, 247, 0.4); }
+.defi-airdrop-page.light .token-selector-hint { color: rgba(0, 0, 0, 0.4); }
+
 .airdrop-scan-btn-group {
     display: flex;
     gap: 6px;
@@ -1753,6 +2130,8 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 
 .defi-airdrop-page {
     min-height: 100vh;
+    width: 100%;
+    max-width: 100vw;
     background: linear-gradient(135deg, #0a0a1a 0%, #0f0826 40%, #150b30 100%);
     color: #e2e8f0;
     font-family: 'Inter', 'Segoe UI', sans-serif;
@@ -1766,6 +2145,8 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 
 .defi-airdrop-main {
     padding: 0 16px 60px;
+    max-width: 100%;
+    overflow-x: hidden;
 }
 
 .defi-airdrop-header {
@@ -1792,7 +2173,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     align-items: center;
     gap: 6px;
     padding: 6px 14px;
-    border-radius: 8px;
+    border-radius: 999px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.06);
     color: rgba(255, 255, 255, 0.6);
@@ -1831,7 +2212,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     gap: 2px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 3px;
 }
 
@@ -1839,7 +2220,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 4px 8px;
     border: 1px solid transparent;
     background: transparent;
-    border-radius: 7px;
+    border-radius: 999px;
     cursor: pointer;
     font-size: 16px;
     line-height: 1;
@@ -1886,8 +2267,20 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 @media (max-width: 640px) {
     .defi-airdrop-header {
         flex-wrap: wrap;
-        gap: 10px;
-        padding: 10px 12px;
+        gap: 8px;
+        padding: 8px 10px;
+    }
+
+    .defi-airdrop-actions {
+        overflow-x: auto;
+        overflow-y: visible;
+        max-width: 100%;
+        gap: 6px;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    .defi-airdrop-actions::-webkit-scrollbar {
+        display: none;
     }
 
     .defi-airdrop-brand span {
@@ -1895,7 +2288,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     }
 
     .defi-airdrop-main {
-        padding: 16px 10px 40px;
+        padding: 10px 0 40px;
     }
 
     .defi-airdrop-lang {
@@ -1914,7 +2307,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     align-items: center;
     gap: 6px;
     padding: 8px 14px;
-    border-radius: 10px;
+    border-radius: 999px;
     background: linear-gradient(135deg, rgba(34, 197, 94, 0.06), rgba(16, 185, 129, 0.04));
     border: 1px solid rgba(34, 197, 94, 0.15);
     color: rgba(134, 239, 172, 0.85);
@@ -2017,7 +2410,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .airdrop-guide-dot.active {
     background: #f97316;
     width: 24px;
-    border-radius: 4px;
+    border-radius: 999px;
     box-shadow: 0 0 8px rgba(249, 115, 22, 0.4);
 }
 
@@ -2076,7 +2469,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .airdrop-guide-btn {
     flex: 1;
     padding: 10px 16px;
-    border-radius: 10px;
+    border-radius: 999px;
     border: none;
     font-size: 13px;
     font-weight: 600;
@@ -2109,7 +2502,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 @media (max-width: 640px) {
     .airdrop-guide-modal {
         padding: 24px 18px 18px;
-        border-radius: 16px;
+        border-radius: 24px;
     }
 
     .airdrop-guide-icon {
@@ -2125,20 +2518,9 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     }
 }
 
-/* ===================== Mobile responsive for top actions ===================== */
-@media (max-width: 640px) {
-    .airdrop-top-actions {
-        flex-wrap: wrap;
-        gap: 4px;
-    }
 
-    .airdrop-top-btn {
-        font-size: 10px;
-        padding: 5px 8px;
-        flex: 1 1 calc(50% - 4px);
-        min-width: 0;
-        justify-content: center;
-    }
+/* ===================== Mobile responsive for tabs ===================== */
+@media (max-width: 640px) {
 
     .airdrop-tabs {
         flex-wrap: nowrap;
@@ -2183,7 +2565,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 
 .airdrop-skeleton-line {
     height: 14px;
-    border-radius: 6px;
+    border-radius: 999px;
     background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
@@ -2192,7 +2574,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .airdrop-skeleton-line.w60 { width: 60%; }
 .airdrop-skeleton-line.w80 { width: 80%; }
 .airdrop-skeleton-line.w40 { width: 40%; }
-.airdrop-skeleton-line.h40 { height: 40px; border-radius: 10px; }
+.airdrop-skeleton-line.h40 { height: 40px; border-radius: 999px; }
 
 @keyframes shimmer {
     from { background-position: 200% 0; }
@@ -2313,7 +2695,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     text-transform: uppercase;
     letter-spacing: 0.6px;
     padding: 2px 8px;
-    border-radius: 6px;
+    border-radius: 999px;
     margin-left: auto;
 }
 
@@ -2353,7 +2735,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     color: rgba(255, 255, 255, 0.65);
     padding: 3px 8px;
     background: rgba(255, 255, 255, 0.04);
-    border-radius: 6px;
+    border-radius: 999px;
 }
 
 /* Light mode */
@@ -2387,7 +2769,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 8px 12px;
     background: rgba(34, 197, 94, 0.04);
     border: 1px solid rgba(34, 197, 94, 0.1);
-    border-radius: 8px;
+    border-radius: 12px;
 }
 
 .batch-contract-row {
@@ -2444,8 +2826,22 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 /* ===================== Batch 2-Step Buttons ===================== */
 .batch-steps-container {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 0;
+}
+
+.approve-unlimited-hint {
+    width: 100%;
+    margin: 4px 0 0;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.06), rgba(168, 85, 247, 0.04));
+    border: 1px solid rgba(249, 115, 22, 0.12);
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 11px;
+    line-height: 1.4;
+    text-align: center;
 }
 
 .batch-step-btn {
@@ -2455,7 +2851,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     justify-content: center;
     gap: 6px;
     padding: 12px 16px;
-    border-radius: 14px;
+    border-radius: 999px;
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
@@ -2553,7 +2949,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     position: relative;
     height: 28px;
     background: rgba(255, 255, 255, 0.04);
-    border-radius: 14px;
+    border-radius: 999px;
     overflow: hidden;
     margin-bottom: 16px;
     border: 1px solid rgba(255, 255, 255, 0.06);
@@ -2564,7 +2960,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(90deg, #f97316, #a855f7, #22c55e);
     background-size: 200% 100%;
     animation: progressShimmer 2s ease-in-out infinite;
-    border-radius: 14px;
+    border-radius: 999px;
     transition: width 0.5s ease;
     min-width: 2%;
 }
@@ -2598,7 +2994,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 10px;
     background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.08));
     border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: 12px;
+    border-radius: 999px;
     color: #ef4444;
     font-size: 13px;
     font-weight: 600;
@@ -2616,19 +3012,19 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 /* ===================== Dashboard stats (#4) ===================== */
 .airdrop-dashboard {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 16px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
 }
 
 .airdrop-dash-stat {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px 14px;
+    gap: 8px;
+    padding: 10px 12px;
     background: linear-gradient(135deg, rgba(249, 115, 22, 0.06), rgba(168, 85, 247, 0.06));
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 12px;
+    border-radius: 999px;
     color: #e2e8f0;
 }
 
@@ -2674,93 +3070,33 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     opacity: 0.85;
 }
 
-/* ===== Live Trade Feed Widget ===== */
-.trade-feed-widget {
-    margin-bottom: 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    background: linear-gradient(135deg, rgba(249, 115, 22, 0.04), rgba(168, 85, 247, 0.04));
-    overflow: hidden;
-}
-
-.trade-feed-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 14px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    color: #e2e8f0;
-    user-select: none;
-    transition: background 0.2s;
-}
-.trade-feed-header:hover { background: rgba(255, 255, 255, 0.03); }
-
-.trade-feed-badge {
-    display: inline-block;
-    background: rgba(249, 115, 22, 0.2);
-    color: #f97316;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 1px 6px;
-    border-radius: 8px;
-    margin-left: 6px;
-}
-
-.trade-feed-toggle {
-    font-size: 10px;
-    opacity: 0.5;
-}
-
-.trade-feed-body {
-    padding: 0 10px 10px;
-}
-
-.trade-feed-row {
-    display: grid;
-    grid-template-columns: 70px 1fr 1fr 50px;
-    align-items: center;
-    padding: 6px 8px;
-    border-radius: 8px;
-    font-size: 12px;
-    gap: 4px;
-    transition: background 0.15s;
-}
-.trade-feed-row:hover { background: rgba(255, 255, 255, 0.03); }
-
-.trade-feed-row.buy { border-left: 2px solid #22c55e; }
-.trade-feed-row.sell { border-left: 2px solid #ef4444; }
-
-.trade-feed-type {
-    font-weight: 700;
-    font-size: 11px;
-}
-.trade-feed-row.buy .trade-feed-type { color: #22c55e; }
-.trade-feed-row.sell .trade-feed-type { color: #ef4444; }
-
-.trade-feed-vol {
-    color: #e2e8f0;
-    font-weight: 600;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-}
-
-.trade-feed-price {
-    color: rgba(255, 255, 255, 0.5);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-}
-
-.trade-feed-time {
-    color: rgba(255, 255, 255, 0.35);
-    font-size: 10px;
-    text-align: right;
-}
-
 @media (max-width: 640px) {
     .airdrop-dashboard {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .airdrop-panel-header-v2 {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .airdrop-header-utils {
+        align-self: flex-end;
+    }
+    .airdrop-data-tabs {
+        gap: 3px;
+        padding: 3px;
+    }
+    .airdrop-data-tab {
+        font-size: 10px;
+        padding: 6px 4px;
+        gap: 3px;
+    }
+    .airdrop-data-tab span {
+        display: none;
+    }
+    .airdrop-tab-badge {
+        min-width: 16px;
+        height: 16px;
+        font-size: 9px;
     }
 }
 
@@ -2779,7 +3115,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 8px 14px;
     background: linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(168, 85, 247, 0.06));
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
+    border-radius: 999px;
     color: #e2e8f0;
     font-size: 13px;
     cursor: pointer;
@@ -2814,7 +3150,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     color: rgba(34, 197, 94, 0.6);
     flex-shrink: 0;
     padding: 2px;
-    border-radius: 4px;
+    border-radius: 999px;
     transition: all 0.15s;
 }
 
@@ -2841,7 +3177,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     justify-content: center;
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.2);
-    border-radius: 8px;
+    border-radius: 999px;
     color: #ef4444;
     cursor: pointer;
     transition: all 0.2s;
@@ -2860,7 +3196,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     margin-top: 8px;
     background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(168, 85, 247, 0.08));
     border: 1px solid rgba(99, 102, 241, 0.2);
-    border-radius: 8px;
+    border-radius: 999px;
     color: #a78bfa;
     font-size: 12px;
     font-weight: 600;
@@ -2889,7 +3225,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     width: 90%;
     max-width: 400px;
     background: linear-gradient(135deg, #1a1a2e, #16213e);
-    border-radius: 16px;
+    border-radius: 24px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -2970,7 +3306,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 8px 12px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    border-radius: 999px;
     color: #e2e8f0;
     font-size: 13px;
     font-family: inherit;
@@ -2989,7 +3325,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 8px 14px;
     background: linear-gradient(135deg, #3b82f6, #6366f1);
     border: none;
-    border-radius: 8px;
+    border-radius: 999px;
     color: white;
     font-size: 12px;
     font-weight: 600;
@@ -3033,8 +3369,8 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 
 /* ===================== Theme toggle button ===================== */
 .defi-airdrop-theme-btn {
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     border: 1px solid rgba(255, 255, 255, 0.15);
     background: rgba(255, 255, 255, 0.06);
@@ -3056,7 +3392,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 /* ===================== Language dropdown (compact professional) ===================== */
 .defi-lang-dropdown {
     position: relative;
-    z-index: 1000;
+    z-index: 200;
 }
 
 .defi-lang-trigger {
@@ -3066,7 +3402,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 6px 12px;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 10px;
+    border-radius: 999px;
     cursor: pointer;
     color: #e2e8f0;
     font-size: 12px;
@@ -3108,12 +3444,12 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(145deg, rgba(25, 18, 50, 0.98), rgba(15, 10, 35, 0.98));
     backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 14px;
+    border-radius: 12px;
     padding: 6px;
     min-width: 180px;
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
     animation: langMenuIn 0.2s ease-out;
-    z-index: 1001;
+    z-index: 201;
 }
 
 @keyframes langMenuIn {
@@ -3128,7 +3464,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 8px 12px;
     border: none;
     background: transparent;
-    border-radius: 10px;
+    border-radius: 999px;
     cursor: pointer;
     color: rgba(255, 255, 255, 0.6);
     font-size: 13px;
@@ -3256,12 +3592,6 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     color: #2d2a35;
 }
 
-.defi-airdrop-page.light .airdrop-top-btn {
-    background: rgba(0, 0, 0, 0.04);
-    border-color: rgba(0, 0, 0, 0.08);
-    color: #1a1a2e;
-}
-
 .defi-airdrop-page.light .airdrop-tab {
     color: rgba(0, 0, 0, 0.5);
 }
@@ -3301,7 +3631,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 4px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 14px;
+    border-radius: 12px;
     margin-bottom: 16px;
 }
 
@@ -3312,7 +3642,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     justify-content: center;
     gap: 7px;
     padding: 10px 14px;
-    border-radius: 11px;
+    border-radius: 999px;
     border: 1px solid transparent;
     background: transparent;
     color: rgba(255, 255, 255, 0.45);
@@ -3341,7 +3671,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     padding: 2px 6px;
-    border-radius: 6px;
+    border-radius: 999px;
     background: rgba(168, 85, 247, 0.12);
     color: rgba(168, 85, 247, 0.7);
 }
@@ -3479,7 +3809,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 10px 6px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 10px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s;
     text-align: center;
@@ -3519,7 +3849,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     font-size: 10px;
     font-weight: 700;
     padding: 1px 5px;
-    border-radius: 4px;
+    border-radius: 999px;
 }
 
 .hot-token-change.up {
@@ -3556,7 +3886,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     align-items: center;
     gap: 4px;
     padding: 5px 10px;
-    border-radius: 8px;
+    border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.06);
     background: rgba(255, 255, 255, 0.03);
     color: rgba(255, 255, 255, 0.5);
@@ -3605,12 +3935,12 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 
 .airdrop-holder-list::-webkit-scrollbar-track {
     background: transparent;
-    border-radius: 10px;
+    border-radius: 999px;
 }
 
 .airdrop-holder-list::-webkit-scrollbar-thumb {
     background: linear-gradient(180deg, rgba(168, 85, 247, 0.4), rgba(249, 115, 22, 0.3));
-    border-radius: 10px;
+    border-radius: 999px;
     transition: background 0.2s;
 }
 
@@ -3635,7 +3965,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .airdrop-book-list::-webkit-scrollbar-thumb,
 .airdrop-blacklist-items::-webkit-scrollbar-thumb {
     background: linear-gradient(180deg, rgba(168, 85, 247, 0.35), rgba(249, 115, 22, 0.25));
-    border-radius: 10px;
+    border-radius: 999px;
 }
 
 .airdrop-recipient-list-body::-webkit-scrollbar-thumb:hover,
@@ -3650,7 +3980,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     gap: 8px;
     padding: 6px 8px;
     background: rgba(255, 255, 255, 0.02);
-    border-radius: 6px;
+    border-radius: 12px;
     font-size: 11px;
     transition: background 0.15s;
 }
@@ -3673,7 +4003,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     font-size: 9px;
     font-weight: 700;
     padding: 2px 6px;
-    border-radius: 6px;
+    border-radius: 999px;
     background: rgba(34, 211, 238, 0.1);
     color: #22d3ee;
     white-space: nowrap;
@@ -3726,7 +4056,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     gap: 2px;
     padding: 6px 10px;
     background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
+    border-radius: 12px;
     min-width: 60px;
 }
 
@@ -3754,7 +4084,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 8px 12px;
     background: rgba(250, 204, 21, 0.08);
     border: 1px solid rgba(250, 204, 21, 0.2);
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 12px;
     color: #facc15;
     margin-bottom: 8px;
@@ -3768,7 +4098,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 6px 10px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 8px;
+    border-radius: 12px;
     margin-bottom: 8px;
 }
 
@@ -3787,7 +4117,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 4px 8px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
+    border-radius: 999px;
     color: #e2e8f0;
     font-size: 12px;
     font-family: 'Space Mono', monospace;
@@ -3814,7 +4144,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     margin-top: 8px;
     background: linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(249, 115, 22, 0.06));
     border: 1px solid rgba(168, 85, 247, 0.2);
-    border-radius: 10px;
+    border-radius: 12px;
 }
 
 /* Light mode for new components */
@@ -4184,7 +4514,6 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .defi-airdrop-page.light .airdrop-dash-stat-label { color: #6a6575; }
 
 /* -- Scan Results -- */
-.defi-airdrop-page.light .airdrop-scan-note { color: #6a6575; }
 .defi-airdrop-page.light .airdrop-scan-error { color: #dc2626; }
 .defi-airdrop-page.light .airdrop-scan-btn {
     color: #fff;
@@ -4305,7 +4634,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 10px 8px;
     background: linear-gradient(135deg, rgba(168, 85, 247, 0.06), rgba(249, 115, 22, 0.04));
     border: 1px solid rgba(168, 85, 247, 0.12);
-    border-radius: 10px;
+    border-radius: 12px;
 }
 
 .lb-stat-num {
@@ -4370,7 +4699,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     font-size: 8px;
     font-weight: 800;
     padding: 1px 5px;
-    border-radius: 4px;
+    border-radius: 999px;
     background: rgba(168, 85, 247, 0.2);
     color: #a855f7;
     letter-spacing: 0.5px;
@@ -4410,7 +4739,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     font-size: 9px;
     font-weight: 700;
     padding: 2px 8px;
-    border-radius: 6px;
+    border-radius: 999px;
     background: rgba(168, 85, 247, 0.1);
     color: #a855f7;
 }
@@ -4476,7 +4805,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     font-size: 8px;
     font-weight: 800;
     padding: 1px 5px;
-    border-radius: 4px;
+    border-radius: 999px;
     background: rgba(249, 115, 22, 0.15);
     color: #f97316;
     letter-spacing: 0.5px;
@@ -4507,20 +4836,27 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     grid-template-columns: 1fr 2.2fr 1fr;
     gap: 16px;
     width: 100%;
+    max-width: 100%;
     align-items: start;
     padding: 0 8px;
+    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 .airdrop-layout-3col > .airdrop-panel {
-    max-width: none;
+    max-width: 100%;
     width: 100%;
     min-width: 0;
     overflow: hidden;
+    box-sizing: border-box;
 }
 
-.airdrop-layout-3col > .airdrop-side-panel {
+.airdrop-layout-3col > .airdrop-side-panel,
+.airdrop-layout-3col > .airdrop-right-panel {
     min-width: 0;
+    max-width: 100%;
     overflow: hidden;
+    box-sizing: border-box;
 }
 
 .airdrop-side-panel {
@@ -4537,13 +4873,31 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
 }
 
+/* Scrollable list containers — virtual scroll */
+.lb-body,
+.hist-list {
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168, 85, 247, 0.2) transparent;
+}
+.lb-body::-webkit-scrollbar,
+.hist-list::-webkit-scrollbar {
+    width: 3px;
+}
+.lb-body::-webkit-scrollbar-thumb,
+.hist-list::-webkit-scrollbar-thumb {
+    background: rgba(168, 85, 247, 0.25);
+    border-radius: 999px;
+}
+
 .airdrop-side-panel::-webkit-scrollbar {
     width: 3px;
 }
 
 .airdrop-side-panel::-webkit-scrollbar-thumb {
     background: rgba(168, 85, 247, 0.2);
-    border-radius: 4px;
+    border-radius: 12px;
 }
 
 .side-panel-header {
@@ -4620,16 +4974,98 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
         order: 1;
     }
     .side-leaderboard { order: 2; }
-    .side-history { order: 3; }
+    .airdrop-right-panel { order: 3; }
     .airdrop-side-panel {
         position: static;
-        max-height: none;
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    .airdrop-right-panel > .airdrop-side-panel {
+        max-height: 450px;
+        overflow-y: auto;
     }
 }
 
 @media (max-width: 768px) {
+    .defi-airdrop-main {
+        padding: 10px 0 40px !important;
+    }
     .airdrop-layout-3col {
         grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 0 10px;
+    }
+    .airdrop-layout-3col > .airdrop-panel {
+        order: 1;
+        width: 100%;
+        max-width: 100%;
+        padding: 16px 12px;
+        border-radius: 24px;
+        border: 1px solid rgba(168, 85, 247, 0.2);
+    }
+    .side-leaderboard { order: 2; }
+    .airdrop-right-panel {
+        order: 3;
+        grid-column: 1 / -1;
+        width: 100%;
+        max-width: 100%;
+    }
+    .airdrop-side-panel {
+        position: static;
+        max-height: 400px;
+        overflow-y: auto;
+        padding: 12px 10px;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 100%;
+        border: 1px solid rgba(168, 85, 247, 0.15);
+    }
+    .airdrop-right-panel > .airdrop-side-panel {
+        max-height: 360px;
+        overflow-y: auto;
+    }
+    /* Virtual scroll: fixed containers */
+    .lb-body,
+    .hist-list {
+        max-height: 280px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(168, 85, 247, 0.2) transparent;
+    }
+    .lb-body::-webkit-scrollbar,
+    .hist-list::-webkit-scrollbar {
+        width: 3px;
+    }
+    .lb-body::-webkit-scrollbar-thumb,
+    .hist-list::-webkit-scrollbar-thumb {
+        background: rgba(168, 85, 247, 0.25);
+        border-radius: 999px;
+    }
+    /* Dashboard stats compact */
+    .airdrop-dashboard {
+        gap: 6px;
+    }
+    .airdrop-dash-stat {
+        padding: 8px 10px;
+        gap: 6px;
+    }
+    .airdrop-dash-value {
+        font-size: 13px;
+    }
+    .airdrop-dash-label {
+        font-size: 9px;
+    }
+    /* Token selector compact */
+    .airdrop-token-selector {
+        font-size: 11px;
+    }
+    /* Right panel tabs compact */
+    .right-panel-tabs {
+        padding: 3px;
+    }
+    .right-tab {
+        font-size: 10px;
+        padding: 5px 8px;
     }
 }
 
@@ -4643,7 +5079,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     justify-content: center;
     background: rgba(239, 68, 68, 0.08);
     border: 1px solid rgba(239, 68, 68, 0.15);
-    border-radius: 6px;
+    border-radius: 999px;
     color: rgba(239, 68, 68, 0.5);
     cursor: pointer;
     transition: all 0.15s;
@@ -4664,7 +5100,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     letter-spacing: 0.5px;
     background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(168, 85, 247, 0.15));
     border: 1px solid rgba(249, 115, 22, 0.3);
-    border-radius: 6px;
+    border-radius: 999px;
     color: #f97316;
     cursor: pointer;
     transition: all 0.15s;
@@ -4683,7 +5119,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     color: #22c55e;
     background: rgba(34, 197, 94, 0.1);
     padding: 1px 6px;
-    border-radius: 4px;
+    border-radius: 999px;
     margin-left: 4px;
 }
 
@@ -4692,7 +5128,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     margin-top: 12px;
     background: linear-gradient(145deg, rgba(15, 23, 42, 0.6), rgba(30, 27, 75, 0.4));
     border: 1px dashed rgba(168, 85, 247, 0.25);
-    border-radius: 14px;
+    border-radius: 12px;
     padding: 14px;
     position: relative;
 }
@@ -4747,7 +5183,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     font-weight: 700;
     background: rgba(168, 85, 247, 0.08);
     border: 1px solid rgba(168, 85, 247, 0.15);
-    border-radius: 8px;
+    border-radius: 12px;
     color: #a855f7;
     cursor: pointer;
     transition: all 0.15s;
@@ -4765,7 +5201,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     margin-bottom: 10px;
     padding: 8px;
     background: rgba(255, 255, 255, 0.02);
-    border-radius: 10px;
+    border-radius: 12px;
 }
 .lb-chart-bar {
     display: flex;
@@ -4782,13 +5218,13 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     flex: 1;
     height: 10px;
     background: rgba(255, 255, 255, 0.04);
-    border-radius: 5px;
+    border-radius: 12px;
     overflow: hidden;
 }
 .lb-chart-fill {
     height: 100%;
     background: linear-gradient(90deg, #f97316, #a855f7);
-    border-radius: 5px;
+    border-radius: 12px;
     transition: width 0.6s ease;
 }
 .lb-chart-val {
@@ -4823,7 +5259,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 3px 8px;
     background: linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(168, 85, 247, 0.08));
     border: 1px solid rgba(249, 115, 22, 0.15);
-    border-radius: 6px;
+    border-radius: 999px;
     color: rgba(255, 255, 255, 0.7);
     white-space: nowrap;
     animation: badgePop 0.3s ease;
@@ -4853,7 +5289,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     margin-top: 6px;
     background: linear-gradient(135deg, rgba(34, 197, 94, 0.06), rgba(249, 115, 22, 0.06));
     border: 1px solid rgba(34, 197, 94, 0.15);
-    border-radius: 10px;
+    border-radius: 12px;
     font-size: 11px;
     color: rgba(34, 197, 94, 0.85);
     line-height: 1.5;
@@ -4878,7 +5314,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     font-size: 10px;
     font-weight: 600;
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 8px;
+    border-radius: 999px;
     background: rgba(255, 255, 255, 0.03);
     color: rgba(255, 255, 255, 0.5);
     cursor: pointer;
@@ -4937,7 +5373,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     color: rgba(255, 255, 255, 0.35);
     cursor: pointer;
     font-size: 10px;
-    border-radius: 4px;
+    border-radius: 999px;
     transition: all 0.12s;
 }
 .lb-wallet-action:hover {
@@ -4960,7 +5396,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .lb-profile-modal {
     background: linear-gradient(135deg, #1a1145 0%, #0f0b2e 100%);
     border: 1px solid rgba(249, 115, 22, 0.15);
-    border-radius: 16px;
+    border-radius: 24px;
     padding: 24px;
     width: 380px;
     max-width: 90vw;
@@ -5010,7 +5446,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 8px 10px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
+    border-radius: 999px;
     color: rgba(255, 255, 255, 0.9);
     font-size: 13px;
     outline: none;
@@ -5033,7 +5469,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     color: white;
     font-weight: 600;
     font-size: 12px;
-    border-radius: 8px;
+    border-radius: 999px;
     cursor: pointer;
     transition: all 0.15s;
 }
@@ -5045,7 +5481,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     background: none;
     color: rgba(255, 255, 255, 0.6);
     font-size: 12px;
-    border-radius: 8px;
+    border-radius: 999px;
     cursor: pointer;
     transition: all 0.15s;
 }
@@ -5062,7 +5498,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     background: rgba(249, 115, 22, 0.06);
     color: #f97316;
     font-size: 9px;
-    border-radius: 4px;
+    border-radius: 999px;
     cursor: pointer;
     margin-left: 4px;
     transition: all 0.12s;
@@ -5118,7 +5554,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 8px 4px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 8px;
+    border-radius: 12px;
 }
 .lb-profile-view-stat-num {
     font-size: 15px;
@@ -5158,7 +5594,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 7px 0;
     font-size: 11px;
     font-weight: 600;
-    border-radius: 8px;
+    border-radius: 999px;
     cursor: pointer;
     transition: all 0.12s;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -5221,7 +5657,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 8px 12px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 10px;
+    border-radius: 12px;
 }
 
 .airdrop-footer-label {
@@ -5240,7 +5676,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     text-decoration: none;
     padding: 3px 8px;
     background: rgba(168, 85, 247, 0.08);
-    border-radius: 6px;
+    border-radius: 999px;
     transition: all 0.15s;
     word-break: break-all;
     line-height: 1.4;
@@ -5269,7 +5705,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     gap: 10px;
     padding: 6px 10px;
     background: rgba(255, 255, 255, 0.02);
-    border-radius: 8px;
+    border-radius: 12px;
     flex-wrap: wrap;
 }
 
@@ -5279,7 +5715,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     color: #22c55e;
     background: rgba(34, 197, 94, 0.08);
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: 12px;
     white-space: nowrap;
 }
 
@@ -5423,13 +5859,13 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 8px 12px;
     background: rgba(168, 85, 247, 0.06);
     border: 1px solid rgba(168, 85, 247, 0.1);
-    border-radius: 10px;
+    border-radius: 12px;
 }
 .airdrop-scan-progress-bar {
     width: 100%;
     height: 6px;
     background: rgba(255, 255, 255, 0.08);
-    border-radius: 3px;
+    border-radius: 12px;
     overflow: hidden;
     margin-bottom: 6px;
 }
@@ -5438,7 +5874,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(90deg, #a855f7, #f97316, #22c55e);
     background-size: 200% 100%;
     animation: scanProgressShimmer 1.5s ease infinite;
-    border-radius: 3px;
+    border-radius: 12px;
     transition: width 0.3s ease;
 }
 @keyframes scanProgressShimmer {
@@ -5467,7 +5903,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 }
 .hist-filter-chip {
     padding: 3px 10px;
-    border-radius: 8px;
+    border-radius: 999px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.03);
     color: rgba(255, 255, 255, 0.45);
@@ -5508,14 +5944,14 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 12px;
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 10px;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 .hist-skeleton-line {
     height: 10px;
-    border-radius: 4px;
+    border-radius: 999px;
     background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
     background-size: 200% 100%;
     animation: skeletonShimmer 1.5s infinite;
@@ -5732,7 +6168,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .footer-copy-btn {
     background: none;
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 6px;
+    border-radius: 999px;
     cursor: pointer;
     font-size: 12px;
     padding: 3px 6px;
@@ -5750,7 +6186,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 2px 8px;
     background: rgba(34, 197, 94, 0.08);
     border: 1px solid rgba(34, 197, 94, 0.15);
-    border-radius: 6px;
+    border-radius: 999px;
     font-size: 9px;
     color: #22c55e;
     font-weight: 600;
@@ -5785,7 +6221,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     gap: 2px;
     padding: 4px;
     background: rgba(255, 255, 255, 0.02);
-    border-radius: 12px 12px 0 0;
+    border-radius: 20px 20px 0 0;
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-bottom: none;
 }
@@ -5793,7 +6229,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     flex: 1;
     padding: 6px 10px;
     border: none;
-    border-radius: 8px;
+    border-radius: 999px;
     background: transparent;
     color: rgba(255, 255, 255, 0.4);
     font-size: 11px;
@@ -5807,7 +6243,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     color: #f97316;
 }
 .airdrop-right-panel > .airdrop-side-panel {
-    border-radius: 0 0 12px 12px !important;
+    border-radius: 0 0 20px 20px !important;
 }
 
 /* ===================== Analytics Dashboard ===================== */
@@ -5858,13 +6294,13 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     height: 70px;
     display: flex;
     align-items: flex-end;
-    border-radius: 3px;
+    border-radius: 999px;
     overflow: hidden;
 }
 .analytics-bar-fill {
     width: 100%;
     background: linear-gradient(to top, #f97316, #a855f7);
-    border-radius: 3px;
+    border-radius: 999px;
     transition: height 0.4s ease;
     min-height: 2px;
 }
@@ -5890,7 +6326,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     padding: 5px 8px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 10px;
 }
 .analytics-top-rank {
@@ -6195,20 +6631,100 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 0, 0, 0.3) !important;
 }
 
-/* Trade feed light mode */
-.defi-airdrop-page.light .trade-feed-widget {
-    background: linear-gradient(135deg, rgba(249, 115, 22, 0.04), rgba(168, 85, 247, 0.03)) !important;
-    border-color: rgba(0, 0, 0, 0.06) !important;
-}
-.defi-airdrop-page.light .trade-feed-header { color: #2d2a35 !important; }
-.defi-airdrop-page.light .trade-feed-header:hover { background: rgba(0, 0, 0, 0.03) !important; }
-.defi-airdrop-page.light .trade-feed-vol { color: #2d2a35 !important; }
-.defi-airdrop-page.light .trade-feed-price { color: rgba(0, 0, 0, 0.45) !important; }
-.defi-airdrop-page.light .trade-feed-time { color: rgba(0, 0, 0, 0.35) !important; }
-.defi-airdrop-page.light .trade-feed-row:hover { background: rgba(0, 0, 0, 0.02) !important; }
-
 /* Price stat light mode */
 .defi-airdrop-page.light .airdrop-dash-stat.price {
     background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(16, 185, 129, 0.04)) !important;
     border-color: rgba(34, 197, 94, 0.12) !important;
+}
+
+/* ===== Mobile Fixes — Footer & Buttons ===== */
+@media (max-width: 640px) {
+    .airdrop-footer {
+        padding: 0 10px 20px;
+    }
+    .airdrop-footer-inner {
+        padding: 16px 12px;
+        border-radius: 12px;
+    }
+    .airdrop-footer-address {
+        font-size: 8px;
+    }
+    .airdrop-footer-funcs code {
+        font-size: 9px;
+        word-break: break-all;
+    }
+    .airdrop-footer-techs {
+        gap: 4px;
+    }
+    .airdrop-footer-tech {
+        font-size: 9px;
+        padding: 3px 6px;
+    }
+    .lb-profile-modal {
+        width: calc(100vw - 24px) !important;
+        max-width: 100% !important;
+        padding: 16px 14px;
+    }
+}
+
+/* Light mode: Stepper & USD hint */
+.defi-airdrop-page.light .airdrop-step-circle {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.12);
+    color: rgba(0, 0, 0, 0.3);
+}
+.defi-airdrop-page.light .airdrop-step-label {
+    color: rgba(0, 0, 0, 0.35);
+}
+.defi-airdrop-page.light .airdrop-step-line {
+    background: rgba(0, 0, 0, 0.08);
+}
+.defi-airdrop-page.light .airdrop-step.active .airdrop-step-label {
+    color: #ea580c;
+}
+.defi-airdrop-page.light .airdrop-step.completed .airdrop-step-label {
+    color: rgba(22, 163, 74, 0.7);
+}
+.defi-airdrop-page.light .airdrop-usd-hint {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.06), rgba(16, 185, 129, 0.03));
+    border-color: rgba(34, 197, 94, 0.12);
+    color: rgba(0, 0, 0, 0.45);
+}
+
+/* Light mode: Header V2 & Data Tabs */
+.defi-airdrop-page.light .airdrop-panel-title-v2 {
+    color: #1a1a2e;
+}
+.defi-airdrop-page.light .airdrop-panel-subtitle-v2 {
+    color: rgba(0, 0, 0, 0.45);
+}
+.defi-airdrop-page.light .airdrop-util-btn {
+    border-color: rgba(0, 0, 0, 0.08);
+    background: rgba(0, 0, 0, 0.03);
+    color: rgba(0, 0, 0, 0.4);
+}
+.defi-airdrop-page.light .airdrop-util-btn:hover {
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.2);
+    color: #ea580c;
+}
+.defi-airdrop-page.light .airdrop-data-tabs {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+.defi-airdrop-page.light .airdrop-data-tab {
+    color: rgba(0, 0, 0, 0.4);
+}
+.defi-airdrop-page.light .airdrop-data-tab:hover {
+    color: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.04);
+}
+.defi-airdrop-page.light .airdrop-data-tab.active {
+    color: #ea580c;
+    background: rgba(249, 115, 22, 0.08);
+    border-color: rgba(249, 115, 22, 0.15);
+}
+.defi-airdrop-page.light .airdrop-tab-badge {
+    background: rgba(249, 115, 22, 0.12);
+    color: #ea580c;
 }

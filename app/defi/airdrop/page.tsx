@@ -37,13 +37,13 @@ function AirdropTourModal({ t, theme, onClose, onDismissForever }: { t: (key: st
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
     const steps: TourStep[] = [
-        { selector: ".airdrop-panel-header", title: t("tourAirdropStep1Title"), desc: t("tourAirdropStep1Desc"), position: "bottom" },
-        { selector: ".airdrop-top-actions", title: t("tourAirdropStep2Title"), desc: t("tourAirdropStep2Desc"), position: "bottom" },
+        { selector: ".airdrop-panel-header-v2", title: t("tourAirdropStep1Title"), desc: t("tourAirdropStep1Desc"), position: "bottom" },
+        { selector: ".airdrop-data-tabs", title: t("tourAirdropStep2Title"), desc: t("tourAirdropStep2Desc"), position: "bottom" },
         { selector: ".airdrop-tab[data-tab='manual']", title: t("tourManualTitle"), desc: t("tourManualDesc"), position: "bottom" },
         { selector: ".airdrop-tab[data-tab='scan']", title: t("tourScanTitle"), desc: t("tourScanDesc"), position: "bottom" },
         { selector: ".airdrop-tab[data-tab='csv']", title: t("tourCsvTitle"), desc: t("tourCsvDesc"), position: "bottom" },
-        { selector: ".airdrop-textarea", title: t("tourAirdropStep4Title"), desc: t("tourAirdropStep4Desc"), position: "bottom" },
-        { selector: ".airdrop-amount-mode", title: t("tourAirdropStep5Title"), desc: t("tourAirdropStep5Desc"), position: "top" },
+        { selector: ".airdrop-token-selector", title: t("tourAirdropStep4Title"), desc: t("tourAirdropStep4Desc"), position: "bottom" },
+        { selector: ".airdrop-amount-section", title: t("tourAirdropStep5Title"), desc: t("tourAirdropStep5Desc"), position: "top" },
         { selector: ".airdrop-balance-gas-row", title: t("tourAirdropStep6Title"), desc: t("tourAirdropStep6Desc"), position: "top" },
         { selector: ".airdrop-speed-mode", title: t("tourSpeedTitle"), desc: t("tourSpeedDesc"), position: "top" },
         { selector: ".airdrop-execute-btn", title: t("tourAirdropStep7Title"), desc: t("tourAirdropStep7Desc"), position: "top" },
@@ -52,6 +52,15 @@ function AirdropTourModal({ t, theme, onClose, onDismissForever }: { t: (key: st
     useEffect(() => {
         const currentStep = steps[step];
         if (!currentStep) return;
+
+        // Some steps require switching to "manual" tab to make elements visible
+        if (step === 2 || step === 5 || step === 6 || step === 7 || step === 8 || step === 9) {
+            const manualBtn = document.querySelector<HTMLElement>(".airdrop-tab[data-tab='manual']");
+            const activeTab = document.querySelector(".airdrop-tab.active");
+            if (manualBtn && activeTab && !activeTab.matches("[data-tab='manual']")) {
+                manualBtn.click();
+            }
+        }
 
         const updatePosition = () => {
             const element = document.querySelector(currentStep.selector);
@@ -64,13 +73,15 @@ function AirdropTourModal({ t, theme, onClose, onDismissForever }: { t: (key: st
             }
         };
 
-        updatePosition();
-        const timer = setTimeout(updatePosition, 300);
+        // Small delay to allow tab switch DOM updates
+        const initTimer = setTimeout(updatePosition, 150);
+        const retryTimer = setTimeout(updatePosition, 400);
         window.addEventListener("resize", updatePosition);
         window.addEventListener("scroll", updatePosition);
 
         return () => {
-            clearTimeout(timer);
+            clearTimeout(initTimer);
+            clearTimeout(retryTimer);
             window.removeEventListener("resize", updatePosition);
             window.removeEventListener("scroll", updatePosition);
         };
@@ -352,8 +363,8 @@ export default function AirdropPage() {
             {/* Header */}
             <header className="defi-airdrop-header">
                 <div className="defi-airdrop-nav">
-                    <Link href="/defi" className="defi-airdrop-back">
-                        ← DeFi Hub
+                    <Link href="/defi" className="defi-airdrop-back" aria-label={t("backToDeFi") || "Back to DeFi Hub"}>
+                        ← {t("backToDeFi") || "DeFi Hub"}
                     </Link>
                     <div className="defi-airdrop-brand">
                         <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -363,16 +374,16 @@ export default function AirdropPage() {
                             <path d="M8 11c0-3 1-6 4-9" />
                             <path d="M16 11c0-3-1-6-4-9" />
                         </svg>
-                        <span>Token Airdrop</span>
+                        <span>{t("headerBrand") || "Token Airdrop"}</span>
                     </div>
                 </div>
                 <div className="defi-airdrop-actions">
                     {/* Help Button */}
-                    <button className="defi-airdrop-help-btn" onClick={() => setShowTour(true)} title={t("guideHelpBtn")}>
+                    <button className="defi-airdrop-help-btn" onClick={() => setShowTour(true)} title={t("guideHelpBtn")} aria-label={t("guideHelpBtn") || "Help & Guide"}>
                         ?
                     </button>
                     {/* Theme Toggle */}
-                    <button className="defi-airdrop-theme-btn" onClick={toggleTheme} title={theme === "dark" ? "Light mode" : "Dark mode"}>
+                    <button className="defi-airdrop-theme-btn" onClick={toggleTheme} title={theme === "dark" ? "Light mode" : "Dark mode"} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
                         {theme === "dark" ? "☀️" : "🌙"}
                     </button>
                     {/* Language Dropdown */}
