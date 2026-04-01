@@ -19,8 +19,8 @@ const STORAGE_BOOK = "banmao_address_book";
 const STORAGE_BLACKLIST = "banmao_airdrop_blacklist";
 const STORAGE_TEMPLATES = "banmao_airdrop_templates";
 const MAX_RETRIES = 3;
-const MAX_BATCH_SIZE = 500; // OKX XLayer supports ~666 per TX, safe limit = 500
-const BATCH_SIZE_OPTIONS = [50, 100, 200, 300, 500] as const;
+const MAX_BATCH_SIZE = 200; // OKX Wallet limit: can't decode calldata > ~200 recipients
+const BATCH_SIZE_OPTIONS = [25, 50, 100, 150, 200] as const;
 const STORAGE_CONFIG = "banmao_airdrop_config";
 
 const ERC20_ABI = [
@@ -256,7 +256,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [duplicateCount, setDuplicateCount] = useState(0);
     const [duplicateAddresses, setDuplicateAddresses] = useState<string[]>([]);
     const [batchSizeConfig, setBatchSizeConfig] = useState(() => {
-        try { const v = JSON.parse(localStorage.getItem(STORAGE_CONFIG) || "{}").batchSize; return typeof v === 'number' ? v : MAX_BATCH_SIZE; } catch { return MAX_BATCH_SIZE; }
+        try { const v = JSON.parse(localStorage.getItem(STORAGE_CONFIG) || "{}").batchSize; return typeof v === 'number' ? Math.min(v, MAX_BATCH_SIZE) : MAX_BATCH_SIZE; } catch { return MAX_BATCH_SIZE; }
     });
     const [resultFilter, setResultFilter] = useState<"all" | "success" | "failed">("all");
     const [customAmounts, setCustomAmounts] = useState<Map<string, string>>(() => { try { return new Map(Object.entries(saved.current?.customAmounts || {})); } catch { return new Map(); } });
