@@ -846,7 +846,8 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                     const isEqual = amountMode === "equal";
                     let hash: string | null = null;
                     let retries = 0;
-                    const MAX_FLAG_RETRIES = 10; // max flagged addresses to skip per chunk
+                    const MAX_FLAG_RETRIES = 20; // max flagged addresses to skip per chunk
+                    let consecutiveRejects = 0;
 
                     while (!hash && retries < MAX_FLAG_RETRIES) {
                         try {
@@ -870,6 +871,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                             }
                         } catch (batchErr: any) {
                             const errMsg = batchErr?.shortMessage || batchErr?.message || "";
+                            const errFull = JSON.stringify(batchErr, Object.getOwnPropertyNames(batchErr || {})).toLowerCase();
                             // Auto-detect OKX "Legal risk" flagged addresses — multiple patterns
                             const flagPatterns = [
                                 /(?:legal\s*risk|risk\s*associated)[\s\S]*?(0x[a-fA-F0-9]{40})/i,
@@ -878,11 +880,11 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                             ];
                             let flaggedAddr: string | null = null;
                             for (const pattern of flagPatterns) {
-                                const m = errMsg.match(pattern);
+                                const m = errMsg.match(pattern) || errFull.match(pattern);
                                 if (m) { flaggedAddr = m[1].toLowerCase(); break; }
                             }
-                            // Also detect "legal risk" without specific address — try binary search isolation
-                            const isLegalRisk = /legal\s*risk|risk\s*associated|Unable\s*to\s*initiate/i.test(errMsg);
+                            const isLegalRisk = /legal\s*risk|risk\s*associated|unable\s*to\s*initiate/i.test(errMsg + errFull);
+                            const isUserReject = /rejected|denied|cancel/i.test(errMsg);
 
                             if (flaggedAddr) {
                                 // Known flagged address — remove and retry
@@ -891,48 +893,45 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                 results.push({ address: flaggedAddr, amount: amountPerWallet || "0", success: false, error: `⚠️ OKX Legal Risk — ${t("autoBlacklisted") || "auto-blacklisted"}` });
                                 setSendResults([...results]);
                                 showToast(`🚫 ${flaggedAddr.slice(0, 8)}...${flaggedAddr.slice(-4)} — ${t("legalRiskDetected") || "Legal risk detected, auto-removed"}`);
+                                consecutiveRejects = 0;
                                 retries++;
                                 if (batch.length === 0) break;
                                 continue;
-                            } else if (isLegalRisk && batch.length > 1) {
-                                // Legal risk detected but can't extract address — split batch in half and retry each half
-                                showToast(`⚠️ ${t("legalRiskSplitting") || "Legal risk detected — splitting batch to isolate..."}`);
+                            } else if ((isLegalRisk || isUserReject) && batch.length > 1) {
+                                // Legal risk OR user rejected (forced by OKX popup) → split batch in half to isolate
+                                showToast(`⚠️ ${t("legalRiskSplitting") || "Flagged address detected — splitting batch to isolate..."}`);
                                 const mid = Math.ceil(batch.length / 2);
-                                const firstHalf = batch.slice(0, mid);
                                 const secondHalf = batch.slice(mid);
-                                // Push second half back for later — mark current batch as first half only
-                                batch = firstHalf;
-                                // Add second half entries back to the main entries list for next chunk iteration
-                                entries.splice(chunk + MAX_BATCH_SIZE, 0, ...secondHalf);
+                                batch = batch.slice(0, mid);
+                                // Push second half back into entries for next chunk iteration
+                                const insertPos = chunk + MAX_BATCH_SIZE;
+                                entries.splice(insertPos, 0, ...secondHalf);
                                 retries++;
+                                consecutiveRejects++;
                                 continue;
-                            } else if (isLegalRisk && batch.length === 1) {
-                                // Single address caused legal risk — blacklist it
+                            } else if ((isLegalRisk || isUserReject) && batch.length === 1) {
+                                // Single address caused the rejection — it's the flagged one
                                 const addr = batch[0].address.toLowerCase();
                                 setBlacklist(prev => { const next = new Set(prev); next.add(addr); return next; });
                                 results.push({ address: batch[0].address, amount: batch[0].amount, success: false, error: `⚠️ OKX Legal Risk — ${t("autoBlacklisted") || "auto-blacklisted"}` });
                                 setSendResults([...results]);
                                 showToast(`🚫 ${addr.slice(0, 8)}...${addr.slice(-4)} — ${t("legalRiskDetected") || "Legal risk detected, auto-removed"}`);
                                 batch = [];
+                                consecutiveRejects = 0;
                                 break;
                             }
-                            // Not a legal risk error — check if user rejected/cancelled
-                            if (/rejected|denied|cancel/i.test(errMsg)) {
-                                throw batchErr; // User cancelled — stop entirely
-                            }
-                            // Unknown error — retry once, then fail this chunk only (not entire airdrop)
+                            // Unknown error — retry once, then fail this chunk
                             if (retries < 2) {
                                 retries++;
                                 await new Promise(r => setTimeout(r, 2000));
                                 continue;
                             }
-                            // Mark this chunk as failed but continue with next chunks
                             for (const e of batch) {
                                 results.push({ address: e.address, amount: e.amount, success: false, error: translateError(errMsg, t) });
                             }
                             setSendResults([...results]);
                             showToast(`❌ ${t("batchChunkFailed") || "Batch chunk failed"} — ${batch.length} ${t("airdropWallets") || "wallets"}`);
-                            break; // break the retry while-loop, continue to next chunk
+                            break;
                         }
                     }
 
