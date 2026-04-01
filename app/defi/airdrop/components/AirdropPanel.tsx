@@ -302,7 +302,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [showTemplates, setShowTemplates] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState("");
     // Flagged address prompt — uses direct DOM to bypass React render issues in async loops
-    const askFlaggedAddress = (batchSize?: number): Promise<string | null> => {
+    const askFlaggedAddress = (batchSize: number, labels: Record<string, string>): Promise<string | null> => {
         return new Promise((resolve) => {
             document.getElementById("okx-flag-overlay")?.remove();
             const overlay = document.createElement("div");
@@ -313,27 +313,17 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontFamily: "system-ui, sans-serif",
             });
-            const batchInfo = batchSize ? `<div style="font-size:12px;color:#888;margin-bottom:14px;text-align:center;">📦 Current batch: ${batchSize} addresses</div>` : "";
             overlay.innerHTML = `
                 <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #ff4444;border-radius:16px;padding:28px;width:min(92vw,460px);box-shadow:0 0 60px rgba(255,68,68,0.4);">
-                    <div style="font-size:22px;font-weight:700;color:#ff6b6b;margin-bottom:10px;text-align:center;">⚠️ Legal Risk Detected</div>
-                    <div style="font-size:13px;color:#ccc;margin-bottom:12px;text-align:center;line-height:1.6;">
-                        Copy the flagged address <b style="color:#ff9999;">(0x...)</b> from OKX Wallet popup and paste below.<br/>
-                        Or use <b style="color:#4ecdc4;">Auto-detect</b> to find it automatically.
-                    </div>
-                    ${batchInfo}
+                    <div style="font-size:22px;font-weight:700;color:#ff6b6b;margin-bottom:10px;text-align:center;">⚠️ ${labels.title}</div>
+                    <div style="font-size:13px;color:#ccc;margin-bottom:12px;text-align:center;line-height:1.6;">${labels.desc}</div>
+                    <div style="font-size:12px;color:#888;margin-bottom:14px;text-align:center;">📦 ${labels.batch}: ${batchSize} ${labels.addresses}</div>
                     <input id="okx-flag-input" type="text" placeholder="0x..." autofocus
                         style="width:100%;padding:14px;background:#0d1117;border:2px solid #ff4444;border-radius:10px;color:#fff;font-size:16px;font-family:monospace;outline:none;margin-bottom:14px;box-sizing:border-box;" />
                     <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                        <button id="okx-flag-cancel" style="flex:1;min-width:100px;padding:11px 0;background:#333;border:1px solid #555;border-radius:10px;color:#aaa;font-size:14px;cursor:pointer;font-weight:600;">
-                            ❌ Stop
-                        </button>
-                        <button id="okx-flag-auto" style="flex:1;min-width:100px;padding:11px 0;background:linear-gradient(135deg,#0f7b6c,#4ecdc4);border:none;border-radius:10px;color:#fff;font-size:14px;cursor:pointer;font-weight:700;">
-                            🔍 Auto-detect
-                        </button>
-                        <button id="okx-flag-submit" style="flex:1;min-width:100px;padding:11px 0;background:linear-gradient(135deg,#ff4444,#cc0000);border:none;border-radius:10px;color:#fff;font-size:14px;cursor:pointer;font-weight:700;">
-                            🚫 Remove
-                        </button>
+                        <button id="okx-flag-cancel" style="flex:1;min-width:100px;padding:11px 0;background:#333;border:1px solid #555;border-radius:10px;color:#aaa;font-size:14px;cursor:pointer;font-weight:600;">❌ ${labels.stop}</button>
+                        <button id="okx-flag-auto" style="flex:1;min-width:100px;padding:11px 0;background:linear-gradient(135deg,#0f7b6c,#4ecdc4);border:none;border-radius:10px;color:#fff;font-size:14px;cursor:pointer;font-weight:700;">🔍 ${labels.autoDetect}</button>
+                        <button id="okx-flag-submit" style="flex:1;min-width:100px;padding:11px 0;background:linear-gradient(135deg,#ff4444,#cc0000);border:none;border-radius:10px;color:#fff;font-size:14px;cursor:pointer;font-weight:700;">🚫 ${labels.remove}</button>
                     </div>
                 </div>
             `;
@@ -958,8 +948,12 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                             // Strategy 2: User rejected — show modal with paste OR auto-detect options
                             if (isUserReject || isLegalRisk) {
                                 console.log("[Airdrop] STRATEGY 2: Showing modal (batch=" + batch.length + ")");
-                                // askFlaggedAddress returns: "0x..." (paste), "AUTO" (auto-detect), or null (cancel)
-                                const userInput = await askFlaggedAddress(batch.length);
+                                const flagLabels = {
+                                    title: t("flagModalTitle"), desc: t("flagModalDesc"),
+                                    batch: t("flagModalBatch"), addresses: t("flagModalAddresses"),
+                                    stop: t("flagModalStop"), autoDetect: t("flagModalAutoDetect"), remove: t("flagModalRemove"),
+                                };
+                                const userInput = await askFlaggedAddress(batch.length, flagLabels);
                                 console.log("[Airdrop] Modal result:", userInput);
 
                                 // Option A: User pasted a specific address
@@ -978,20 +972,20 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                             batch = batch.filter(e => e.address.toLowerCase() !== pastedAddr);
                                             results.push({ address: pastedAddr, amount: amountPerWallet || "0", success: false, error: `⚠️ OKX Legal Risk — ${t("autoBlacklisted") || "auto-blacklisted"}` });
                                             setSendResults([...results]);
-                                            showToast(`🚫 ${pastedAddr.slice(0, 8)}...${pastedAddr.slice(-4)} — auto-removed`);
+                                            showToast(`🚫 ${pastedAddr.slice(0, 8)}...${pastedAddr.slice(-4)} — ${t("autoRemoved")}`);
                                             consecutiveRejects = 0;
                                             retries++;
                                             if (batch.length === 0) break;
                                             continue;
                                         } else {
-                                            showToast(`❌ Address not in batch`);
+                                            showToast(`❌ ${t("addressNotInBatch")}`);
                                         }
                                     }
                                 }
 
                                 // Option B: Auto-detect via binary search
                                 if (userInput === "AUTO") {
-                                    showToast(`🔍 Auto-detecting flagged address... (${batch.length} addresses)`);
+                                    showToast(`🔍 ${t("autoDetecting")}... (${batch.length} ${t("flagModalAddresses")})`);
                                     // Binary search: recursively split batch until we find the single flagged address
                                     const isolateFlagged = async (candidates: typeof batch): Promise<string | null> => {
                                         if (candidates.length === 0) return null;
@@ -1018,13 +1012,13 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                                 } as any);
                                             }
                                             // First half succeeded → flagged is in second half
-                                            showToast(`✅ First half OK (${firstHalf.length}) — scanning second half (${secondHalf.length})...`);
+                                            showToast(`✅ ${t("firstHalfOK")} (${firstHalf.length}/${secondHalf.length})...`);
                                             return await isolateFlagged(secondHalf);
                                         } catch (e: any) {
                                             const msg = e?.shortMessage || e?.message || "";
                                             if (/rejected|denied/i.test(msg)) {
                                                 // First half rejected → flagged is in first half
-                                                showToast(`⚠️ Flagged in first half (${firstHalf.length}) — narrowing...`);
+                                                showToast(`⚠️ ${t("flaggedInFirstHalf")} (${firstHalf.length})...`);
                                                 return await isolateFlagged(firstHalf);
                                             }
                                             // Other error → try second half
@@ -1040,9 +1034,9 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                             localStorage.setItem(STORAGE_BLACKLIST, JSON.stringify(stored));
                                         } catch(e) {}
                                         batch = batch.filter(e => e.address.toLowerCase() !== foundAddr);
-                                        results.push({ address: foundAddr, amount: amountPerWallet || "0", success: false, error: `⚠️ Auto-detected Legal Risk — blacklisted` });
+                                        results.push({ address: foundAddr, amount: amountPerWallet || "0", success: false, error: `⚠️ ${t("autoDetected")} — ${t("autoBlacklistedResult")}` });
                                         setSendResults([...results]);
-                                        showToast(`🚫 Auto-detected: ${foundAddr.slice(0, 8)}...${foundAddr.slice(-4)} — blacklisted!`);
+                                        showToast(`🚫 ${t("autoDetected")}: ${foundAddr.slice(0, 8)}...${foundAddr.slice(-4)} — ${t("autoBlacklistedResult")}!`);
                                         consecutiveRejects = 0;
                                         retries++;
                                         if (batch.length === 0) break;
