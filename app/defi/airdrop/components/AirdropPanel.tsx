@@ -301,26 +301,62 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [templates, setTemplates] = useState<AirdropTemplate[]>([]);
     const [showTemplates, setShowTemplates] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState("");
-    // Flagged address prompt state
-    const [flagPromptVisible, setFlagPromptVisible] = useState(false);
-    const [flagPromptInput, setFlagPromptInput] = useState("");
-    const flagPromptResolveRef = useRef<((value: string | null) => void) | null>(null);
+    // Flagged address prompt — uses direct DOM to bypass React render issues in async loops
     const askFlaggedAddress = (): Promise<string | null> => {
         return new Promise((resolve) => {
-            flagPromptResolveRef.current = resolve;
-            setFlagPromptInput("");
-            setFlagPromptVisible(true);
+            // Remove any existing overlay
+            document.getElementById("okx-flag-overlay")?.remove();
+            // Create overlay
+            const overlay = document.createElement("div");
+            overlay.id = "okx-flag-overlay";
+            Object.assign(overlay.style, {
+                position: "fixed", inset: "0", zIndex: "999999",
+                background: "rgba(0,0,0,0.8)", backdropFilter: "blur(6px)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: "system-ui, sans-serif",
+            });
+            overlay.innerHTML = `
+                <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #ff4444;border-radius:16px;padding:28px;width:min(92vw,460px);box-shadow:0 0 60px rgba(255,68,68,0.4);">
+                    <div style="font-size:22px;font-weight:700;color:#ff6b6b;margin-bottom:10px;text-align:center;">⚠️ Legal Risk Detected</div>
+                    <div style="font-size:13px;color:#ccc;margin-bottom:18px;text-align:center;line-height:1.6;">
+                        Copy the flagged address <b style="color:#ff9999;">(0x...)</b> from OKX Wallet popup and paste below.<br/>
+                        It will be auto-removed and airdrop will continue.
+                    </div>
+                    <input id="okx-flag-input" type="text" placeholder="0x..." autofocus
+                        style="width:100%;padding:14px;background:#0d1117;border:2px solid #ff4444;border-radius:10px;color:#fff;font-size:16px;font-family:monospace;outline:none;margin-bottom:18px;box-sizing:border-box;" />
+                    <div style="display:flex;gap:12px;">
+                        <button id="okx-flag-cancel" style="flex:1;padding:12px 0;background:#333;border:1px solid #555;border-radius:10px;color:#aaa;font-size:15px;cursor:pointer;font-weight:600;">
+                            ❌ Cancel / Stop
+                        </button>
+                        <button id="okx-flag-submit" style="flex:1;padding:12px 0;background:linear-gradient(135deg,#ff4444,#cc0000);border:none;border-radius:10px;color:#fff;font-size:15px;cursor:pointer;font-weight:700;">
+                            🚫 Remove & Continue
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            // Focus input
+            setTimeout(() => {
+                const inp = document.getElementById("okx-flag-input") as HTMLInputElement;
+                inp?.focus();
+                inp?.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter") {
+                        overlay.remove();
+                        resolve(inp.value || null);
+                    }
+                });
+            }, 100);
+            // Button handlers
+            document.getElementById("okx-flag-cancel")!.onclick = () => {
+                overlay.remove();
+                resolve(null);
+            };
+            document.getElementById("okx-flag-submit")!.onclick = () => {
+                const inp = document.getElementById("okx-flag-input") as HTMLInputElement;
+                overlay.remove();
+                resolve(inp?.value || null);
+            };
         });
-    };
-    const handleFlagPromptSubmit = () => {
-        setFlagPromptVisible(false);
-        flagPromptResolveRef.current?.(flagPromptInput || null);
-        flagPromptResolveRef.current = null;
-    };
-    const handleFlagPromptCancel = () => {
-        setFlagPromptVisible(false);
-        flagPromptResolveRef.current?.(null);
-        flagPromptResolveRef.current = null;
     };
 
     // Multi-token state (#9)
