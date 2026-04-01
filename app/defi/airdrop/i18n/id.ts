@@ -229,7 +229,7 @@ export const idAirdrop = {
     holdersImported: "pemegang diimpor!",
 
     // Dashboard stats
-    dashTotalDistributed: "$BANMAO Didistribusikan",
+    dashTotalDistributed: "Total Distribusi",
     dashTotalWallets: "Dompet Terjangkau",
     dashTotalSessions: "Total Airdrop",
 

@@ -229,7 +229,7 @@ export const enAirdrop = {
     holdersImported: "holders imported!",
 
     // Dashboard stats
-    dashTotalDistributed: "$BANMAO Distributed",
+    dashTotalDistributed: "Total Distributed",
     dashTotalWallets: "Wallets Reached",
     dashTotalSessions: "Airdrops",
 

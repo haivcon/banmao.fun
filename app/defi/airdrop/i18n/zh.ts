@@ -229,7 +229,7 @@ export const zhAirdrop = {
     holdersImported: "个持有者已导入!",
 
     // Dashboard stats
-    dashTotalDistributed: "$BANMAO 已分发",
+    dashTotalDistributed: "总分发量",
     dashTotalWallets: "已覆盖钱包",
     dashTotalSessions: "空投次数",
 

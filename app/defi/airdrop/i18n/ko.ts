@@ -229,7 +229,7 @@ export const koAirdrop = {
     holdersImported: "홀더 가져오기 완료!",
 
     // Dashboard stats
-    dashTotalDistributed: "$BANMAO 배포량",
+    dashTotalDistributed: "총 배포량",
     dashTotalWallets: "지갑 도달",
     dashTotalSessions: "에어드랍 횟수",
 

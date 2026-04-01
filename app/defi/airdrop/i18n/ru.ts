@@ -229,7 +229,7 @@ export const ruAirdrop = {
     holdersImported: "холдеров импортировано!",
 
     // Dashboard stats
-    dashTotalDistributed: "$BANMAO Распределено",
+    dashTotalDistributed: "Всего Распределено",
     dashTotalWallets: "Кошельков Охвачено",
     dashTotalSessions: "Всего Airdrop",
 

@@ -229,7 +229,7 @@ export const viAirdrop = {
     holdersImported: "holders đã nhập!",
 
     // Dashboard stats
-    dashTotalDistributed: "$BANMAO Đã Phân Phối",
+    dashTotalDistributed: "Tổng Đã Phân Phối",
     dashTotalWallets: "Ví Đã Nhận",
     dashTotalSessions: "Lần Airdrop",
 

@@ -438,12 +438,15 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             fetch("/api/airdrop-records?type=all-history&limit=50").then(r => r.json()).then(d => { if (d.success) setHistoryData(d.data); }).catch(() => {});
             fetch("/api/airdrop-records?type=stats").then(r => r.json()).then(d => { if (d.success) setLbStats(d.data); }).catch(() => {});
         }, 30000);
-        // Fetch price
-        const fetchPrice = () => fetch("/api/okx/price").then(r => r.json()).then(d => { if (d.success) setTokenPrice(parseFloat(d.price) || 0); }).catch(() => {});
+        return () => { clearInterval(histInterval); };
+    }, []);
+    // Fetch price for the currently selected token — re-runs when tokenAddress changes
+    useEffect(() => {
+        const fetchPrice = () => fetch(`/api/okx/price?tokenAddress=${tokenAddress}`).then(r => r.json()).then(d => { if (d.success) setTokenPrice(parseFloat(d.price) || 0); else setTokenPrice(0); }).catch(() => setTokenPrice(0));
         fetchPrice();
         const priceInterval = setInterval(fetchPrice, 60000);
-        return () => { clearInterval(histInterval); clearInterval(priceInterval); };
-    }, []);
+        return () => clearInterval(priceInterval);
+    }, [tokenAddress]);
     // Fetch my profile when address changes (no longer overrides history)
     useEffect(() => {
         if (address) {
@@ -2253,8 +2256,8 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                         {/* USD Value Hint */}
                         {tokenPrice > 0 && amountPerWallet && parseFloat(amountPerWallet) > 0 && (
                             <div className="airdrop-usd-hint">
-                                <span>{parseFloat(amountPerWallet).toLocaleString()} × ${tokenPrice.toFixed(10).replace(/0+$/, '').replace(/\.$/, '')} = <strong>${(parseFloat(amountPerWallet) * tokenPrice).toFixed(6).replace(/0+$/, '').replace(/\.$/, '')} USD</strong>/ví</span>
-                                {recipients.length > 0 && <span className="airdrop-usd-total">Σ {recipients.length} ví = <strong>${(parseFloat(amountPerWallet) * tokenPrice * recipients.length).toFixed(4).replace(/0+$/, '').replace(/\.$/, '')} USD</strong></span>}
+                                <span>{parseFloat(amountPerWallet).toLocaleString()} × ${tokenPrice.toFixed(10).replace(/0+$/, '').replace(/\.$/, '')} = <strong>${(parseFloat(amountPerWallet) * tokenPrice).toFixed(6).replace(/0+$/, '').replace(/\.$/, '')} USD</strong>/{t("airdropWallets") || "wallet"}</span>
+                                {recipients.length > 0 && <span className="airdrop-usd-total">Σ {recipients.length} {t("airdropWallets") || "wallets"} = <strong>${(parseFloat(amountPerWallet) * tokenPrice * recipients.length).toFixed(4).replace(/0+$/, '').replace(/\.$/, '')} USD</strong></span>}
                             </div>
                         )}
                         <div className="airdrop-quick-amounts">{[100, 500, 1000, 5000, 10000].map(a => (
