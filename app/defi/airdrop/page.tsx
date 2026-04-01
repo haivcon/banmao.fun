@@ -459,7 +459,7 @@ export default function AirdropPage() {
                         <h4 className="airdrop-footer-heading">📜 {lang === "vi" ? "Hợp Đồng Thông Minh" : lang === "zh" ? "智能合约" : lang === "ko" ? "스마트 컨트랙트" : lang === "ru" ? "Смарт-контракты" : lang === "id" ? "Smart Contract" : "Smart Contracts"}</h4>
                         <div className="airdrop-footer-contract">
                             <div className="airdrop-footer-contract-item">
-                                <span className="airdrop-footer-label">$BANMAO Token (ERC-20)</span>
+                                <span className="airdrop-footer-label">{lang === "vi" ? "Token Mặc Định" : lang === "zh" ? "默认代币" : lang === "ko" ? "기본 토큰" : lang === "ru" ? "Токен по умолчанию" : lang === "id" ? "Token Default" : "Default Token"} — $BANMAO (ERC-20)</span>
                                 <div className="airdrop-footer-addr-row">
                                     <a href="https://web3.okx.com/explorer/x-layer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78" target="_blank" rel="noopener noreferrer" className="airdrop-footer-address">
                                         0x16d91d1615fc55b76d5f92365bd60c069b46ef78

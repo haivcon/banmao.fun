@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
         const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 
         const tokensToScan = [
-            BANMAO_TOKEN,
+            DEFAULT_TOKEN,
             KNOWN_TOKENS.USDT.address,
             KNOWN_TOKENS.WOKB.address,
         ].filter(a => a !== "native");
