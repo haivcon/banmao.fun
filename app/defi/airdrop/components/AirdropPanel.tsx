@@ -1008,7 +1008,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                     stop: t("flagModalStop"), autoDetect: t("flagModalAutoDetect"), remove: t("flagModalRemove"),
                                     search: t("searchWallet"),
                                 };
-                                const userInput = await askFlaggedAddress(batch.length, flagLabels, batch.map(e => e.address));
+                                const userInput = await askFlaggedAddress(entries.length, flagLabels, entries.map(e => e.address));
                                 console.log("[Airdrop] Modal result:", userInput);
 
                                 // Option A: User pasted a specific address
