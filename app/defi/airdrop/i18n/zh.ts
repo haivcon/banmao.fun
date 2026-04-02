@@ -350,4 +350,24 @@ export const zhAirdrop = {
     scanCombinedHint1: "已持有 {token} 的钱包将自动排除。多次扫描可积累不重复的地址。",
     scanCombinedHint2: "每次扫描都会探索新的区块链区块，寻找未持有 {token} 的活跃钱包。传播 {token}，壮大社区！",
     tokenSelectorHint: "点击上方代币栏切换代币。您可以空投 XLayer 上任何 ERC-20 代币，不限于 {token}。",
+    // Full Holder Scan
+    scanAllHolders: "全部持有者",
+    scanAllHoldersDesc: "通过 RPC 扫描 Transfer 事件日志，查找所有曾收到此代币的地址，然后验证链上余额。扫描完成后自动循环。",
+    stopScan: "停止扫描",
+    leaderboard: "排行榜",
+    memepumpTokens: "Memepump",
+    airdropScanCancelled: "扫描已停止",
+    tokenLiquidity: "流动性",
+    holderSearchPlaceholder: "按名称、符号或0x地址搜索...",
+    all: "全部",
+    // Token Search
+    tokenSearchPlaceholder: "按名称、符号或 0x 地址搜索...",
+    tokenSearchLoading: "搜索中...",
+    tokenSearchNoResults: "未找到代币",
+    tokenSearchResults: "个结果",
+    // Wallet Balances
+    walletTotalValue: "总价值",
+    walletTokens: "代币",
+    walletLoadingBalances: "加载余额中...",
+    walletNoTokens: "未找到代币",
 };

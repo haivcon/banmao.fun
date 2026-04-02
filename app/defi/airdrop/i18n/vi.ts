@@ -361,4 +361,14 @@ export const viAirdrop = {
     walletTokens: "token",
     walletLoadingBalances: "Đang tải số dư...",
     walletNoTokens: "Không tìm thấy token nào",
+    // Full Holder Scan
+    scanAllHolders: "Tất cả Holders",
+    scanAllHoldersDesc: "Quét Transfer event logs qua RPC để tìm TẤT CẢ địa chỉ từng nhận token này, xác minh balance on-chain. Tự động quét lại khi hoàn thành.",
+    stopScan: "Dừng Quét",
+    leaderboard: "Xếp Hạng",
+    memepumpTokens: "Memepump",
+    airdropScanCancelled: "Đã dừng quét",
+    tokenLiquidity: "Thanh khoản",
+    holderSearchPlaceholder: "Tìm theo tên, symbol hoặc địa chỉ 0x...",
+    all: "Tất cả",
 };

@@ -361,4 +361,14 @@ export const enAirdrop = {
     walletTokens: "tokens",
     walletLoadingBalances: "Loading balances...",
     walletNoTokens: "No tokens found",
+    // Full Holder Scan
+    scanAllHolders: "All Holders",
+    scanAllHoldersDesc: "Scans Transfer event logs via RPC to find ALL addresses that ever received this token, then verifies balances on-chain. Auto-loops when complete.",
+    stopScan: "Stop Scan",
+    leaderboard: "Leaderboard",
+    memepumpTokens: "Memepump",
+    airdropScanCancelled: "Scan stopped",
+    tokenLiquidity: "Liquidity",
+    holderSearchPlaceholder: "Search by name, symbol or 0x address...",
+    all: "All",
 };

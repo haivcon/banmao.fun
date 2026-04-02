@@ -209,14 +209,29 @@ function formatNum(n: number) {
 
 function parseCSVContent(text: string): { address: string; amount?: string }[] {
     const results: { address: string; amount?: string }[] = [];
-    for (const line of text.split(/\r?\n/)) {
-        const parts = line.split(/[,;\t]+/).map(s => s.trim());
-        const addrPart = parts.find(p => /0x[a-fA-F0-9]{40}/.test(p));
+    // Strip BOM (Excel adds this) and normalize
+    const cleaned = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    for (const line of cleaned.split('\n')) {
+        if (!line.trim()) continue;
+        // Strip quotes from each field, handle Excel quoting
+        const parts = line.split(/[,;\t]+/).map(s => s.trim().replace(/^"|"$/g, ''));
+        // Find address (0x + 40 hex chars)
+        const addrPart = parts.find(p => /0x[a-fA-F0-9]{40}/i.test(p));
         if (addrPart) {
-            const match = addrPart.match(/0x[a-fA-F0-9]{40}/);
-            if (match && isAddress(match[0])) {
-                const amountPart = parts.find(p => p !== addrPart && /^\d+(\.\d+)?$/.test(p));
-                results.push({ address: match[0], amount: amountPart || undefined });
+            const match = addrPart.match(/0x[a-fA-F0-9]{40}/i);
+            if (match) {
+                // Lowercase for viem isAddress (rejects ALL-CAPS from Excel)
+                const addr = match[0].toLowerCase();
+                if (isAddress(addr)) {
+                    // Find amount — support: 123.45, 123, 1.23e5, quoted numbers
+                    const amountPart = parts.find(p => {
+                        if (p === addrPart) return false;
+                        const cleaned = p.replace(/"/g, '').replace(/,/g, '').trim();
+                        return /^\d+(\.\d+)?(e[+-]?\d+)?$/i.test(cleaned);
+                    });
+                    const amt = amountPart ? amountPart.replace(/"/g, '').replace(/,/g, '').trim() : undefined;
+                    results.push({ address: addr, amount: amt });
+                }
             }
         }
     }
@@ -467,6 +482,11 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [selectedHolders, setSelectedHolders] = useState<Set<string>>(new Set());
     const [holderMinBalance, setHolderMinBalance] = useState("");
     const [scanMode, setScanMode] = useState<"wallets" | "holders">("wallets");
+    // Full holder scan (Transfer events)
+    const [fullHolderScanning, setFullHolderScanning] = useState(false);
+    const fullHolderAbortRef = useRef(false);
+    const [fullHolderProgress, setFullHolderProgress] = useState<{scanned: number; total: number; found: number; transfers: number; pct: number} | null>(null);
+    const [holderScanMode, setHolderScanMode] = useState<"top" | "all">("top");
 
     // Leaderboard & History state
     const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
@@ -535,20 +555,29 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         } catch {}
     }, []);
 
-    // Real-time elapsed timer for scan dashboard
+    // Real-time elapsed timer — freezes when scanning stops
     const [scanElapsed, setScanElapsed] = useState("00:00");
+    const scanElapsedFrozenRef = useRef<string>("00:00");
     useEffect(() => {
-        if (!scanStats.scanStartTime) { setScanElapsed("00:00"); return; }
+        if (!scanStats.scanStartTime) { setScanElapsed("00:00"); scanElapsedFrozenRef.current = "00:00"; return; }
+        const isActive = isScanning || autoScanActive;
+        if (!isActive) {
+            // Freeze at current value
+            setScanElapsed(scanElapsedFrozenRef.current);
+            return;
+        }
         const tick = () => {
             const sec = Math.floor((Date.now() - (scanStats.scanStartTime || Date.now())) / 1000);
             const m = Math.floor(sec / 60);
             const s = sec % 60;
-            setScanElapsed(`${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+            const val = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            setScanElapsed(val);
+            scanElapsedFrozenRef.current = val;
         };
         tick();
         const id = setInterval(tick, 1000);
         return () => clearInterval(id);
-    }, [scanStats.scanStartTime]);
+    }, [scanStats.scanStartTime, isScanning, autoScanActive]);
 
     // Wallet balances state (multi-token)
     const [walletTokenBalances, setWalletTokenBalances] = useState<Record<string, {symbol: string; balance: string; valueUsd: string; logoUrl: string; tokenAddress: string; isNative: boolean}[]>>({});
@@ -1926,6 +1955,14 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         fetchHotTokens(chain);
     };
 
+    // Auto-load trending tokens when entering holders mode
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        if (scanMode === "holders" && hotTokens.length === 0 && !hotTokensLoading) {
+            fetchHotTokens(holderChain);
+        }
+    }, [scanMode]);
+
     const scanHolders = async (tokenAddr?: string) => {
         const addr = tokenAddr || selectedHotToken || holderTokenInput;
         if (!addr) { showToast(t("invalidTokenAddress") || "Enter a token address"); return; }
@@ -1961,6 +1998,122 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         setHolderScanning(false);
     };
 
+    // Scan ALL holders via Transfer event logs (paginated, real-time display, auto-loop)
+    const scanAllHolders = async (tokenAddr?: string) => {
+        const addr = tokenAddr || selectedHotToken || holderTokenInput;
+        if (!addr) { showToast(t("invalidTokenAddress") || "Enter a token address"); return; }
+        playClick();
+        fullHolderAbortRef.current = false;
+        setFullHolderScanning(true);
+        setFullHolderProgress(null);
+        // Don't clear holderResults — preserve existing holders for resume
+        // Pre-load existing results into the maps for deduplication
+        const allAddresses = new Set<string>();
+        const verifiedMap = new Map<string, {address: string; amount: string}>();
+        for (const h of holderResults) {
+            allAddresses.add(h.address.toLowerCase());
+            verifiedMap.set(h.address.toLowerCase(), h);
+        }
+        let totalTransfers = 0;
+        const BATCH = 5000;
+        const tokenAddrLower = addr.toLowerCase();
+
+        try {
+            // Smart Scan: Find first block with Transfer events (binary search)
+            showToast("🔍 Smart Scan — finding first transfer...");
+            const smartRes = await fetch(`/api/scan-all-holders?tokenAddress=${addr}&chainIndex=${holderChain}&findFirstTransfer=true`);
+            const smartData = await smartRes.json();
+            if (!smartData.success) { showToast(smartData.error || "Failed"); setFullHolderScanning(false); return; }
+            
+            let latestBlock = smartData.latestBlock;
+            let fromBlock = smartData.firstBlock || Math.max(0, latestBlock - 500000);
+            const totalRange = latestBlock - fromBlock;
+            showToast(`✅ Token activity starts at block ${fromBlock.toLocaleString()} (saved ${((1 - totalRange / latestBlock) * 100).toFixed(0)}% scan time)`);
+
+            setFullHolderProgress({ scanned: 0, total: totalRange, found: 0, transfers: 0, pct: 0 });
+
+            // Phase 1: Scan Transfer logs + verify balances in real-time
+            while (!fullHolderAbortRef.current) {
+                if (fromBlock > latestBlock) {
+                    // Auto-loop: refresh latestBlock and continue  
+                    showToast(`🔄 ${t("airdropScanCycleComplete") || "Cycle complete"} — ${allAddresses.size} ${t("holdersFound") || "addresses"}`);
+                    await new Promise(r => setTimeout(r, 3000));
+                    const refreshRes = await fetch(`/api/scan-all-holders?tokenAddress=${addr}&chainIndex=${holderChain}&fromBlock=0&batchSize=1`);
+                    const refreshData = await refreshRes.json();
+                    if (!refreshData.success) break;
+                    latestBlock = refreshData.latestBlock;
+                    fromBlock = Math.max(0, latestBlock - 500000);
+                    continue;
+                }
+
+                const res = await fetch(`/api/scan-all-holders?tokenAddress=${addr}&chainIndex=${holderChain}&fromBlock=${fromBlock}&batchSize=${BATCH}`);
+                const data = await res.json();
+                if (!data.success) { showToast(data.error || "Batch failed"); break; }
+
+                // Collect new unique addresses from this batch
+                const newAddrs: string[] = [];
+                for (const h of (data.holders || [])) {
+                    const low = h.toLowerCase();
+                    if (!allAddresses.has(low)) {
+                        allAddresses.add(low);
+                        newAddrs.push(low);
+                    }
+                }
+                totalTransfers += data.transferCount || 0;
+
+                // Verify balances via server-side API (avoids CORS)
+                if (newAddrs.length > 0) {
+                    for (let i = 0; i < newAddrs.length && !fullHolderAbortRef.current; i += 50) {
+                        const chunk = newAddrs.slice(i, i + 50);
+                        try {
+                            const vRes = await fetch("/api/verify-balances", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ tokenAddress: tokenAddrLower, addresses: chunk, chainIndex: holderChain }),
+                            });
+                            const vData = await vRes.json();
+                            if (vData.success && vData.results) {
+                                for (const r of vData.results) {
+                                    const bal = BigInt(r.balance);
+                                    if (bal > BigInt(0)) {
+                                        verifiedMap.set(r.address, { address: r.address, amount: (Number(bal) / (10 ** 18)).toString() });
+                                    }
+                                }
+                            }
+                        } catch { /* skip failed verification batch */ }
+                        // Update results in real-time
+                        const sorted = Array.from(verifiedMap.values()).sort((a, b) => parseFloat(b.amount) - parseFloat(a.amount));
+                        setHolderResults(sorted);
+                    }
+                }
+
+                const scannedSoFar = Math.min(data.scannedRange.to - (latestBlock - totalRange), totalRange);
+                setFullHolderProgress({
+                    scanned: Math.max(0, scannedSoFar),
+                    total: totalRange,
+                    found: verifiedMap.size,
+                    transfers: totalTransfers,
+                    pct: Math.round(Math.max(0, scannedSoFar) / totalRange * 100),
+                });
+
+                if (!data.hasMore || !data.nextFromBlock) {
+                    fromBlock = latestBlock + 1; // trigger auto-loop
+                } else {
+                    fromBlock = data.nextFromBlock;
+                }
+                await new Promise(r => setTimeout(r, 150));
+            }
+
+            if (fullHolderAbortRef.current) { showToast(t("airdropScanCancelled") || "Scan stopped"); }
+            else { playSuccess(); showToast(`✅ ${verifiedMap.size} holders (${totalTransfers} transfers)`); }
+        } catch (e) {
+            showToast((t("airdropScanFailed") || "Scan failed") + ": " + (e instanceof Error ? e.message : ""));
+            playError();
+        }
+        setFullHolderScanning(false);
+    };
+
+    const stopFullHolderScan = () => { fullHolderAbortRef.current = true; };
     const importHolders = () => {
         const addrs = selectedHolders.size > 0 ? Array.from(selectedHolders) : holderResults.map(h => h.address);
         if (!addrs.length) return;
@@ -3067,12 +3220,10 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                         </>
                     )}
 
-                    {/* ═══ Mode 2: Scan Token Holders (Multi-Chain) ═══ */}
+                    {/* ═══ Mode 2: Scan Token Holders (Streamlined) ═══ */}
                     {scanMode === "holders" && (
                         <>
-                            <p className="airdrop-scan-desc">{t("scanHoldersDesc")}</p>
-
-                            {/* Chain selector pills */}
+                            {/* Row 1: Chain selector (compact) */}
                             <div className="airdrop-chain-selector">
                                 {SCAN_CHAINS.map(c => (
                                     <button key={c.id} className={`airdrop-chain-pill ${holderChain === c.id ? "active" : ""}`} onClick={() => handleChainChange(c.id)} onMouseEnter={() => playHover()}>
@@ -3081,113 +3232,183 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                 ))}
                             </div>
 
-                            {/* Hot tokens grid */}
-                            {hotTokensLoading && <div className="airdrop-scan-note" style={{ textAlign: "center" }}><span className="airdrop-spinner" /> {t("hotTokensLoading")}</div>}
-                            {hotTokens.length > 0 && (
-                                <div className="airdrop-hot-tokens">
-                                    <div className="airdrop-hot-tokens-title"><AIcon name="chart" size={14} /> {t("hotTokensTitle")}</div>
-                                    <div className="airdrop-hot-tokens-grid">
-                                        {hotTokens.slice(0, 12).map(tok => (
-                                            <button key={tok.tokenContractAddress} className={`airdrop-hot-token-card ${selectedHotToken === tok.tokenContractAddress ? "active" : ""}`} onClick={() => { playClick(); setSelectedHotToken(tok.tokenContractAddress); setHolderTokenInput(""); }}>
-                                                <span className="hot-token-symbol">{tok.tokenSymbol}</span>
-                                                <span className="hot-token-price">${parseFloat(tok.price || "0") < 0.01 ? parseFloat(tok.price).toExponential(1) : parseFloat(tok.price).toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
-                                                {tok.priceChange24h && <span className={`hot-token-change ${parseFloat(tok.priceChange24h) >= 0 ? "up" : "down"}`}>{parseFloat(tok.priceChange24h) >= 0 ? "+" : ""}{parseFloat(tok.priceChange24h).toFixed(1)}%</span>}
+                            {/* Row 2: Token Selection (collapsible) */}
+                            {!selectedHotToken && !(holderTokenInput && holderTokenInput.startsWith("0x") && holderTokenInput.length >= 40) ? (
+                                <>
+                                    {/* Search input (same style as token selector above) */}
+                                    <div className="airdrop-holder-input-row">
+                                        <div className="holder-search-input-wrap">
+                                            <AIcon name="search" size={13} className="holder-search-icon" />
+                                            <input type="text" className="airdrop-book-input holder-search-input" placeholder={t("holderSearchPlaceholder") || "Search by name, symbol or 0x address..."} value={holderTokenInput} onChange={e => { setHolderTokenInput(e.target.value); setSelectedHotToken(""); }} />
+                                        </div>
+                                    </div>
+
+                                    {/* Token list (auto-loaded) */}
+                                    {hotTokensLoading && <div className="airdrop-scan-note" style={{ textAlign: "center" }}><span className="airdrop-spinner" /> {t("hotTokensLoading")}</div>}
+                                    {hotTokens.length > 0 && (
+                                        <div className="holder-token-list">
+                                            {hotTokens
+                                                .filter(tok => {
+                                                    if (!holderTokenInput) return true;
+                                                    const q = holderTokenInput.toLowerCase();
+                                                    return tok.tokenSymbol?.toLowerCase().includes(q) || tok.tokenName?.toLowerCase().includes(q) || tok.tokenContractAddress?.toLowerCase().includes(q);
+                                                })
+                                                .slice(0, 8).map(tok => (
+                                                <div key={tok.tokenContractAddress} className={`holder-token-list-card ${selectedHotToken === tok.tokenContractAddress ? "active" : ""}`} onClick={() => { playClick(); setSelectedHotToken(tok.tokenContractAddress); setHolderTokenInput(""); }}>
+                                                    <div className="holder-token-row1">
+                                                        <strong className="holder-token-symbol">${tok.tokenSymbol}</strong>
+                                                        <span className="holder-token-price-badge">${parseFloat(tok.price || "0") < 0.000001 ? parseFloat(tok.price).toExponential(2) : parseFloat(tok.price || "0") < 0.01 ? parseFloat(tok.price).toFixed(8).replace(/0+$/, '').replace(/\.$/, '') : parseFloat(tok.price).toLocaleString(undefined, { maximumFractionDigits: 6 })}</span>
+                                                    </div>
+                                                    <div className="holder-token-addr-full">
+                                                        {tok.tokenContractAddress}
+                                                        <button className="holder-addr-copy" onClick={(e) => { e.stopPropagation(); copyText(tok.tokenContractAddress); showToast(t("airdropAddressCopied")); }}><AIcon name="copy" size={11} /></button>
+                                                        <a className="holder-addr-copy" href={`https://www.okx.com/web3/explorer/xlayer/address/${tok.tokenContractAddress}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}><AIcon name="link" size={11} /></a>
+                                                    </div>
+                                                    <div className="holder-token-stats-row">
+                                                        {tok.holders && parseFloat(tok.holders) > 0 && <span className="holder-stat-chip">👛 {parseInt(tok.holders).toLocaleString()} holders</span>}
+                                                        {tok.liquidity && parseFloat(tok.liquidity) > 0 && <span className="holder-stat-chip">${parseFloat(tok.liquidity).toLocaleString(undefined, {maximumFractionDigits: 0})} liq</span>}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                /* Full token info card (like token selector — screenshot 2) */
+                                <div className="holder-token-detail-card">
+                                    {selectedHotToken && hotTokens.length > 0 ? (() => {
+                                        const tok = hotTokens.find(tk => tk.tokenContractAddress === selectedHotToken);
+                                        return tok ? (
+                                            <>
+                                                <div className="holder-token-row1">
+                                                    <strong className="holder-token-symbol">${tok.tokenSymbol}</strong>
+                                                    <span className="holder-token-price-badge">${parseFloat(tok.price || "0") < 0.000001 ? parseFloat(tok.price).toExponential(2) : parseFloat(tok.price || "0") < 0.01 ? parseFloat(tok.price).toFixed(8).replace(/0+$/, '').replace(/\.$/, '') : parseFloat(tok.price).toLocaleString(undefined, { maximumFractionDigits: 6 })}</span>
+                                                </div>
+                                                <div className="holder-token-addr-full">
+                                                    {selectedHotToken}
+                                                    <button className="holder-addr-copy" onClick={(e) => { e.stopPropagation(); copyText(selectedHotToken); showToast(t("airdropAddressCopied")); }}><AIcon name="copy" size={11} /></button>
+                                                    <a className="holder-addr-copy" href={`https://www.okx.com/web3/explorer/xlayer/address/${selectedHotToken}`} target="_blank" rel="noopener noreferrer"><AIcon name="link" size={11} /></a>
+                                                </div>
+                                                <div className="holder-token-stats-row">
+                                                    {tok.holders && parseFloat(tok.holders) > 0 && <span className="holder-stat-chip">👛 {parseInt(tok.holders).toLocaleString()} holders</span>}
+                                                    {tok.liquidity && parseFloat(tok.liquidity) > 0 && <span className="holder-stat-chip">${parseFloat(tok.liquidity).toLocaleString(undefined, {maximumFractionDigits: 0})} liq</span>}
+                                                    {tok.marketCap && parseFloat(tok.marketCap) > 0 && <span className="holder-stat-chip">MCap ${(parseFloat(tok.marketCap) / 1e6).toFixed(1)}M</span>}
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="holder-token-addr-full">{selectedHotToken}</div>
+                                        );
+                                    })() : (
+                                        <div className="holder-token-addr-full">{holderTokenInput}
+                                            <button className="holder-addr-copy" onClick={(e) => { e.stopPropagation(); copyText(holderTokenInput); showToast(t("airdropAddressCopied")); }}><AIcon name="copy" size={11} /></button>
+                                        </div>
+                                    )}
+                                    {!fullHolderScanning && !holderScanning && (
+                                        <button className="holder-change-token-btn" onClick={() => { playClick(); setSelectedHotToken(""); setHolderTokenInput(""); }}>
+                                            {t("airdropBack") || "Change"}
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Row 3: Scan mode toggle + Scan button group (centered, like XLayer pattern) */}
+                            {(() => { const hasValidToken = selectedHotToken || (holderTokenInput && holderTokenInput.startsWith("0x") && holderTokenInput.length >= 40); return hasValidToken; })() && (
+                                <>
+                                    <div className="holder-scan-mode-toggle">
+                                        <button className={`holder-scan-mode-btn ${holderScanMode === "top" ? "active" : ""}`} onClick={() => { playClick(); setHolderScanMode("top"); }}>
+                                            ⚡ {t("scanHolders") || "Quick Scan"}
+                                            <span className="holder-mode-badge">API</span>
+                                        </button>
+                                        <button className={`holder-scan-mode-btn ${holderScanMode === "all" ? "active" : ""}`} onClick={() => { playClick(); setHolderScanMode("all"); }}>
+                                            🔍 {t("scanAllHolders") || "Deep Scan"}
+                                            <span className="holder-mode-badge">RPC</span>
+                                        </button>
+                                    </div>
+
+                                    {/* Scan / Stop / Auto button group (centered) */}
+                                    <div className="airdrop-scan-btn-group" style={{ justifyContent: "center" }}>
+                                        {fullHolderScanning ? (
+                                            <button className="airdrop-scan-btn" style={{ background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)" }} onClick={stopFullHolderScan}>
+                                                <span className="airdrop-spinner" /> {t("stopScan") || "Stop"}
                                             </button>
-                                        ))}
+                                        ) : (
+                                            <>
+                                                <button className="airdrop-scan-btn" onClick={() => holderScanMode === "all" ? scanAllHolders() : scanHolders()} disabled={holderScanning} onMouseEnter={() => playHover()}>
+                                                    {holderScanning ? <><span className="airdrop-spinner" /> {t("scanningHolders")}</> : <><AIcon name="target" size={14} /> {holderResults.length > 0 ? `${t("airdropScanMore") || "Scan More"} (#${holderResults.length})` : (holderScanMode === "all" ? (t("scanAllHolders") || "Deep Scan") : t("scanHolders"))}</>}
+                                                </button>
+                                                {holderScanMode === "all" && (
+                                                    <button className="airdrop-scan-btn" style={{ background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)", flex: "0 0 auto", padding: "0 16px" }} onClick={() => { fullHolderAbortRef.current = false; scanAllHolders(); }} disabled={holderScanning || fullHolderScanning} onMouseEnter={() => playHover()} title={t("autoScanStart") || "Auto-scan"}>
+                                                        🔄 {t("autoScanStart") || "Auto"}
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
+                                        {holderResults.length > 0 && !fullHolderScanning && (
+                                            <button className="airdrop-scan-clear-btn" onClick={() => { playClick(); setHolderResults([]); setSelectedHolders(new Set()); setFullHolderProgress(null); }} onMouseEnter={() => playHover()}>
+                                                <AIcon name="trash" size={13} />
+                                            </button>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Row 5: Progress (only when scanning) */}
+                            {fullHolderProgress && (
+                                <div className="holder-scan-progress">
+                                    <div className="holder-scan-progress-stats">
+                                        <div className="holder-progress-stat">
+                                            <span className="holder-progress-icon">📦</span>
+                                            <span className="holder-progress-val">{fullHolderProgress.scanned.toLocaleString()}</span>
+                                            <span className="holder-progress-label">/ {fullHolderProgress.total.toLocaleString()} {t("scanModeWallets") === "Quét Ví" ? "blocks" : "blocks"}</span>
+                                        </div>
+                                        <div className="holder-progress-stat">
+                                            <span className="holder-progress-icon">📋</span>
+                                            <span className="holder-progress-val">{fullHolderProgress.transfers.toLocaleString()}</span>
+                                            <span className="holder-progress-label">transfers</span>
+                                        </div>
+                                        <div className="holder-progress-stat">
+                                            <span className="holder-progress-icon">👛</span>
+                                            <span className="holder-progress-val" style={{color: "#4ade80"}}>{fullHolderProgress.found.toLocaleString()}</span>
+                                            <span className="holder-progress-label">holders</span>
+                                        </div>
+                                    </div>
+                                    <div className="scan-progress-bar-bg" style={{marginTop: 8}}>
+                                        <div className="scan-progress-bar-fill" style={{ width: `${fullHolderProgress.pct}%` }}>
+                                            {fullHolderProgress.pct > 8 && <span className="scan-progress-pct">{fullHolderProgress.pct}%</span>}
+                                        </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Custom token input */}
-                            <div className="airdrop-holder-input-row">
-                                <input type="text" className="airdrop-book-input" placeholder="0x... (Token Contract Address)" value={holderTokenInput} onChange={e => { setHolderTokenInput(e.target.value); setSelectedHotToken(""); }} />
-                                {!hotTokens.length && !hotTokensLoading && (
-                                    <button className="airdrop-book-save-btn" onClick={() => fetchHotTokens(holderChain)} style={{ whiteSpace: "nowrap" }}>
-                                        <AIcon name="chart" size={13} /> {t("hotTokensTitle")}
-                                    </button>
-                                )}
-                            </div>
-
-                            {/* Tag filter */}
-                            <div className="airdrop-holder-filters">
-                                {HOLDER_TAGS.map(tag => (
-                                    <button key={tag.id} className={`airdrop-holder-tag ${holderTagFilter === tag.id ? "active" : ""}`} onClick={() => { playClick(); setHolderTagFilter(tag.id); }}>
-                                        {tag.emoji} {t(tag.label) || tag.label}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Scan holders button */}
-                            <button className="airdrop-scan-btn" onClick={() => scanHolders()} disabled={holderScanning || (!selectedHotToken && !holderTokenInput)} onMouseEnter={() => playHover()} style={{ marginTop: 8 }}>
-                                {holderScanning ? <><span className="airdrop-spinner" /> {t("scanningHolders")}</> : <><AIcon name="users" size={14} /> {t("scanHolders")}</>}
-                            </button>
-
-                            {/* Token Info Card (#6) */}
-                            {selectedHotToken && hotTokens.length > 0 && (() => {
-                                const tok = hotTokens.find(tk => tk.tokenContractAddress === selectedHotToken);
-                                if (!tok) return null;
-                                return (
-                                    <div className="airdrop-token-info-card">
-                                        <div className="token-info-header">
-                                            <span className="token-info-symbol">{tok.tokenSymbol}</span>
-                                            <span className="token-info-name">{tok.tokenName}</span>
-                                        </div>
-                                        <div className="token-info-grid">
-                                            <div className="token-info-stat">
-                                                <span className="token-info-label">{t("tokenPrice") || "Price"}</span>
-                                                <span className="token-info-value">${(() => { const p = parseFloat(tok.price || "0"); if (p === 0) return "0"; if (p < 0.000001) return p.toFixed(12).replace(/0+$/, '').replace(/\.$/, ''); if (p < 0.0001) return p.toFixed(10).replace(/0+$/, '').replace(/\.$/, ''); if (p < 0.01) return p.toFixed(8).replace(/0+$/, '').replace(/\.$/, ''); if (p < 1) return p.toFixed(6).replace(/0+$/, '').replace(/\.$/, ''); return p.toLocaleString(undefined, {maximumFractionDigits: 4}); })()}</span>
-                                            </div>
-                                            {tok.priceChange24h && <div className="token-info-stat">
-                                                <span className="token-info-label">24h</span>
-                                                <span className={`token-info-value ${parseFloat(tok.priceChange24h) >= 0 ? "up" : "down"}`}>{parseFloat(tok.priceChange24h) >= 0 ? "+" : ""}{parseFloat(tok.priceChange24h).toFixed(2)}%</span>
-                                            </div>}
-                                            {tok.marketCap && parseFloat(tok.marketCap) > 0 && <div className="token-info-stat">
-                                                <span className="token-info-label">{t("tokenMcap") || "MCap"}</span>
-                                                <span className="token-info-value">${(parseFloat(tok.marketCap) / 1e6).toFixed(1)}M</span>
-                                            </div>}
-                                            {tok.volume24h && parseFloat(tok.volume24h) > 0 && <div className="token-info-stat">
-                                                <span className="token-info-label">{t("tokenVolume") || "Vol"}</span>
-                                                <span className="token-info-value">${(parseFloat(tok.volume24h) / 1e3).toFixed(1)}K</span>
-                                            </div>}
-                                            {tok.holders && parseFloat(tok.holders) > 0 && <div className="token-info-stat">
-                                                <span className="token-info-label">{t("tokenHolders") || "Holders"}</span>
-                                                <span className="token-info-value">{parseInt(tok.holders).toLocaleString()}</span>
-                                            </div>}
-                                            {tok.liquidity && parseFloat(tok.liquidity) > 0 && <div className="token-info-stat">
-                                                <span className="token-info-label">{t("tokenLiquidity") || "Liquidity"}</span>
-                                                <span className="token-info-value">${parseFloat(tok.liquidity).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
-                                            </div>}
-                                        </div>
-                                    </div>
-                                );
-                            })()}
-
-                            {/* Holder results */}
+                            {/* Row 6: Results */}
                             {holderResults.length > 0 && (
                                 <div className="airdrop-holder-results">
-                                    {/* Overlap warning (#5) */}
+                                    {/* Overlap warning */}
                                     {holderOverlapCount > 0 && (
                                         <div className="airdrop-overlap-warning">
                                             <AIcon name="warning" size={13} /> {holderOverlapCount} {t("holdersOverlap") || "addresses already in your airdrop list"}
                                         </div>
                                     )}
 
-                                    {/* Balance filter (#2) */}
-                                    <div className="airdrop-holder-balance-filter">
-                                        <label className="holder-filter-label"><AIcon name="coins" size={12} /> {t("holderMinBalance") || "Min Balance"}</label>
-                                        <input type="number" className="holder-filter-input" placeholder="0" value={holderMinBalance} onChange={e => setHolderMinBalance(e.target.value)} min="0" step="any" />
-                                        <span className="holder-filter-count">{filteredHolders.length}/{holderResults.length}</span>
-                                    </div>
-
-                                    {/* Quick Actions bar (#9) */}
+                                    {/* Quick filter tabs + actions bar */}
                                     <div className="airdrop-scan-actions">
-                                        <span className="airdrop-scan-count">{filteredHolders.length} {t("holdersFound")}</span>
+                                        <div className="holder-quick-filters">
+                                            <button className={`holder-quick-filter ${!holderMinBalance ? "active" : ""}`} onClick={() => setHolderMinBalance("")}>
+                                                {t("all") || "All"} ({holderResults.length})
+                                            </button>
+                                            <button className={`holder-quick-filter ${holderMinBalance === "1000" ? "active" : ""}`} onClick={() => setHolderMinBalance("1000")}>
+                                                &gt;1K
+                                            </button>
+                                            <button className={`holder-quick-filter ${holderMinBalance === "100000" ? "active" : ""}`} onClick={() => setHolderMinBalance("100000")}>
+                                                &gt;100K
+                                            </button>
+                                            <button className={`holder-quick-filter ${holderMinBalance === "1000000" ? "active" : ""}`} onClick={() => setHolderMinBalance("1000000")}>
+                                                🐋 &gt;1M
+                                            </button>
+                                        </div>
                                         <div className="airdrop-scan-buttons">
                                             <button className="airdrop-select-btn" onClick={() => { playClick(); setSelectedHolders(new Set(filteredHolders.map(h => h.address))); }}>
                                                 <AIcon name="checkSmall" size={12} /> {t("airdropSelectAll")}
-                                            </button>
-                                            <button className="airdrop-select-btn" onClick={() => { playClick(); setSelectedHolders(new Set()); }}>
-                                                <AIcon name="xCircle" size={12} /> {t("airdropDeselectAll")}
                                             </button>
                                             <button className="airdrop-select-btn" onClick={exportHoldersCSV}>
                                                 <AIcon name="file" size={12} /> CSV
@@ -3195,9 +3416,9 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                         </div>
                                     </div>
 
-                                    {/* Holder list with checkboxes */}
+                                    {/* Holder list */}
                                     <div className="airdrop-holder-list">
-                                        {filteredHolders.slice(0, 30).map((h, i) => (
+                                        {filteredHolders.map((h, i) => (
                                             <div key={h.address} className={`airdrop-holder-item ${selectedHolders.has(h.address) ? "selected" : ""}`} onClick={() => { playClick(); setSelectedHolders(prev => { const s = new Set(prev); s.has(h.address) ? s.delete(h.address) : s.add(h.address); return s; }); }}>
                                                 <div className="airdrop-wallet-check">{selectedHolders.has(h.address) ? <AIcon name="check" size={14} className="text-green" /> : <span className="check-empty" />}</div>
                                                 <span className="airdrop-recipient-index">#{i + 1}</span>
@@ -3209,18 +3430,20 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                                 </div>
                                             </div>
                                         ))}
-                                        {filteredHolders.length > 30 && <div className="airdrop-recipient-more">+{filteredHolders.length - 30} {t("airdropMoreAddresses")}</div>}
                                     </div>
 
-                                    {/* Import selected */}
-                                    {(selectedHolders.size > 0 || filteredHolders.length > 0) && (
-                                        <div className="airdrop-holder-import-bar">
-                                            <span className="airdrop-selected-count"><AIcon name="check" size={13} /> {selectedHolders.size > 0 ? `${selectedHolders.size} ${t("airdropSelected")}` : t("importAllHolders") || "Import all"}</span>
-                                            <button className="airdrop-scan-btn" onClick={importHolders} style={{ padding: "8px 20px", fontSize: 13 }}>
-                                                <AIcon name="download" size={14} /> {t("importHolders")}
+                                    {/* Import bar with Airdrop Now button */}
+                                    <div className="airdrop-holder-import-bar">
+                                        <span className="airdrop-selected-count"><AIcon name="check" size={13} /> {selectedHolders.size > 0 ? `${selectedHolders.size} ${t("airdropSelected")}` : `${filteredHolders.length} holders`}</span>
+                                        <div className="holder-import-actions">
+                                            <button className="airdrop-select-btn" onClick={importHolders} style={{ padding: "8px 16px" }}>
+                                                <AIcon name="download" size={13} /> {t("importHolders")}
+                                            </button>
+                                            <button className="airdrop-scan-btn holder-airdrop-now-btn" onClick={() => { importHolders(); setTimeout(() => { const manualTab = document.querySelector('[data-tab="manual"]') as HTMLButtonElement; if (manualTab) manualTab.click(); }, 200); }} style={{ padding: "8px 20px", fontSize: 13 }}>
+                                                ⚡ Airdrop
                                             </button>
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             )}
                         </>

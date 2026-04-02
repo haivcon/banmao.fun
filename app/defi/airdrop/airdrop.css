@@ -3752,6 +3752,333 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 
 /* ===================== Scan Token Holders ===================== */
 
+/* Holder Scan Mode Toggle */
+.holder-scan-mode-toggle {
+    display: flex;
+    gap: 0;
+    margin: 8px 0;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 3px;
+    overflow: hidden;
+}
+.holder-scan-mode-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 50px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+.holder-scan-mode-btn:hover { background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.7); }
+.holder-scan-mode-btn.active {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(249, 115, 22, 0.12));
+    color: #c084fc;
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.15);
+}
+.holder-mode-badge {
+    font-size: 8px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.holder-scan-mode-btn.active .holder-mode-badge {
+    background: rgba(168, 85, 247, 0.2);
+    color: #a855f7;
+}
+
+/* Holder scan info box */
+.holder-scan-info {
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px solid rgba(59, 130, 246, 0.12);
+    font-size: 11px;
+    color: rgba(59, 130, 246, 0.7);
+    line-height: 1.4;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    margin: 4px 0;
+}
+
+/* Holder scan button area */
+.holder-scan-btn-area {
+    margin: 8px 0;
+}
+
+/* Full scan progress */
+.holder-scan-progress {
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(168, 85, 247, 0.04);
+    border: 1px solid rgba(168, 85, 247, 0.1);
+    margin: 8px 0;
+}
+.holder-scan-progress-stats {
+    display: flex;
+    justify-content: space-around;
+    gap: 8px;
+}
+.holder-progress-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+}
+.holder-progress-icon { font-size: 13px; }
+.holder-progress-val {
+    font-weight: 800;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: #c084fc;
+    font-size: 13px;
+}
+.holder-progress-label {
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 10px;
+}
+
+/* Light theme */
+.defi-airdrop-page.light .holder-scan-mode-toggle { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.08); }
+.defi-airdrop-page.light .holder-scan-mode-btn { color: rgba(0,0,0,0.45); }
+.defi-airdrop-page.light .holder-scan-mode-btn:hover { background: rgba(0,0,0,0.04); }
+.defi-airdrop-page.light .holder-scan-mode-btn.active { background: rgba(168,85,247,0.08); color: #7c3aed; }
+.defi-airdrop-page.light .holder-scan-info { background: rgba(59,130,246,0.04); color: #3b82f6; }
+.defi-airdrop-page.light .holder-scan-progress { background: rgba(168,85,247,0.03); }
+.defi-airdrop-page.light .holder-progress-label { color: rgba(0,0,0,0.4); }
+
+/* Holder list scrollable */
+.airdrop-holder-results .airdrop-holder-list {
+    max-height: 500px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(168, 85, 247, 0.2) transparent;
+}
+
+/* Discovery Source Tabs */
+.holder-discover-tabs {
+    display: flex;
+    gap: 0;
+    margin: 6px 0;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 3px;
+}
+.holder-discover-tab {
+    flex: 1;
+    padding: 7px 10px;
+    border: none;
+    border-radius: 50px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.holder-discover-tab:hover { background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.7); }
+.holder-discover-tab.active {
+    background: linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(249, 115, 22, 0.1));
+    color: #fb923c;
+    box-shadow: 0 2px 6px rgba(249, 115, 22, 0.12);
+}
+/* Light theme */
+.defi-airdrop-page.light .holder-discover-tabs { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.06); }
+.defi-airdrop-page.light .holder-discover-tab { color: rgba(0,0,0,0.4); }
+.defi-airdrop-page.light .holder-discover-tab.active { background: rgba(249,115,22,0.08); color: #ea580c; }
+
+/* Selected Token Bar (collapsed state) */
+.holder-selected-token-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(168, 85, 247, 0.06);
+    border: 1px solid rgba(168, 85, 247, 0.15);
+    border-radius: 50px;
+    gap: 12px;
+    margin: 6px 0;
+}
+.holder-selected-info { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; overflow: hidden; }
+.holder-token-compact { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.holder-token-compact strong { font-size: 14px; color: #c084fc; }
+.holder-token-price { color: rgba(255,255,255,0.7); font-size: 12px; }
+.holder-token-meta { color: rgba(255,255,255,0.35); font-size: 11px; }
+.holder-token-addr { font-family: monospace; font-size: 12px; color: rgba(255,255,255,0.5); }
+.holder-change-token-btn {
+    border: none; background: rgba(255,255,255,0.06); border-radius: 50px;
+    padding: 5px 14px; font-size: 11px; color: rgba(255,255,255,0.5);
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.holder-change-token-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.defi-airdrop-page.light .holder-selected-token-bar { background: rgba(168,85,247,0.04); border-color: rgba(168,85,247,0.1); }
+.defi-airdrop-page.light .holder-token-compact strong { color: #7c3aed; }
+.defi-airdrop-page.light .holder-token-price { color: rgba(0,0,0,0.5); }
+.defi-airdrop-page.light .holder-token-meta { color: rgba(0,0,0,0.3); }
+.defi-airdrop-page.light .holder-token-addr { color: rgba(0,0,0,0.4); }
+.defi-airdrop-page.light .holder-change-token-btn { background: rgba(0,0,0,0.04); color: rgba(0,0,0,0.4); }
+
+/* Quick Filter Tabs for results */
+.holder-quick-filters { display: flex; gap: 2px; }
+.holder-quick-filter {
+    border: none; background: transparent; padding: 4px 10px; border-radius: 50px;
+    font-size: 11px; font-weight: 500; color: rgba(255,255,255,0.35);
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.holder-quick-filter:hover { color: rgba(255,255,255,0.6); background: rgba(255,255,255,0.04); }
+.holder-quick-filter.active { color: #a78bfa; background: rgba(168,85,247,0.1); font-weight: 600; }
+.defi-airdrop-page.light .holder-quick-filter { color: rgba(0,0,0,0.3); }
+.defi-airdrop-page.light .holder-quick-filter.active { color: #7c3aed; background: rgba(124,58,237,0.06); }
+
+/* Import actions row */
+.holder-import-actions { display: flex; gap: 8px; align-items: center; }
+.holder-airdrop-now-btn {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%) !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.3px;
+}
+.holder-airdrop-now-btn:hover { filter: brightness(1.1); }
+
+/* Full Token Detail Card (like token selector) */
+.holder-token-detail-card {
+    background: rgba(168, 85, 247, 0.04);
+    border: 1px solid rgba(168, 85, 247, 0.12);
+    border-radius: 16px;
+    padding: 14px 18px;
+    margin: 6px 0;
+    position: relative;
+}
+.holder-token-row1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+.holder-token-symbol {
+    font-size: 15px;
+    font-weight: 700;
+    color: #c084fc;
+}
+.holder-token-price-badge {
+    background: rgba(34, 197, 94, 0.12);
+    color: #4ade80;
+    padding: 2px 10px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.holder-token-addr-full {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.4);
+    word-break: break-all;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+.holder-addr-copy {
+    border: none;
+    background: rgba(255,255,255,0.05);
+    border-radius: 4px;
+    padding: 2px 5px;
+    color: rgba(255,255,255,0.3);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex;
+    text-decoration: none;
+}
+.holder-addr-copy:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.holder-token-stats-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+.holder-stat-chip {
+    background: rgba(168, 85, 247, 0.08);
+    color: rgba(255,255,255,0.55);
+    padding: 2px 10px;
+    border-radius: 50px;
+    font-size: 11px;
+    font-weight: 500;
+}
+.holder-token-detail-card .holder-change-token-btn {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+}
+/* Light theme */
+.defi-airdrop-page.light .holder-token-detail-card { background: rgba(168,85,247,0.03); border-color: rgba(168,85,247,0.08); }
+.defi-airdrop-page.light .holder-token-symbol { color: #7c3aed; }
+.defi-airdrop-page.light .holder-token-price-badge { background: rgba(34,197,94,0.08); color: #16a34a; }
+.defi-airdrop-page.light .holder-token-addr-full { color: rgba(0,0,0,0.35); }
+.defi-airdrop-page.light .holder-addr-copy { background: rgba(0,0,0,0.03); color: rgba(0,0,0,0.3); }
+.defi-airdrop-page.light .holder-stat-chip { background: rgba(168,85,247,0.05); color: rgba(0,0,0,0.45); }
+
+/* Token List Cards (like screenshot 2) */
+.holder-token-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 360px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.holder-token-list-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.holder-token-list-card:hover {
+    background: rgba(168, 85, 247, 0.06);
+    border-color: rgba(168, 85, 247, 0.15);
+}
+.holder-token-list-card.active {
+    background: rgba(168, 85, 247, 0.1);
+    border-color: rgba(168, 85, 247, 0.25);
+    box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.15);
+}
+.defi-airdrop-page.light .holder-token-list-card { background: rgba(0,0,0,0.01); border-color: rgba(0,0,0,0.06); }
+.defi-airdrop-page.light .holder-token-list-card:hover { background: rgba(168,85,247,0.03); border-color: rgba(168,85,247,0.1); }
+
+/* Search input with icon */
+.holder-search-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+.holder-search-icon {
+    position: absolute;
+    left: 14px;
+    color: rgba(255,255,255,0.25);
+    pointer-events: none;
+}
+.holder-search-input {
+    padding-left: 36px !important;
+}
+.defi-airdrop-page.light .holder-search-icon { color: rgba(0,0,0,0.25); }
+
 /* Divider between existing scan and holder scan */
 .airdrop-scan-divider {
     display: flex;
