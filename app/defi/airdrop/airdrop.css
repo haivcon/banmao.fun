@@ -5892,42 +5892,281 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     .airdrop-footer-bottom { flex-direction: column; align-items: center; text-align: center; }
 }
 
-/* ===================== NEW FEATURES CSS ===================== */
+/* ===================== PROFESSIONAL SCAN DASHBOARD ===================== */
 
-/* #3 Scan Progress Bar */
-.airdrop-scan-progress {
-    margin: 8px 0;
-    padding: 8px 12px;
-    background: rgba(168, 85, 247, 0.06);
+/* Dashboard container */
+.scan-dashboard {
+    margin: 10px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* === Stats Grid (6 cards) === */
+.scan-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+.scan-stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 6px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+.scan-stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 200%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+    animation: scanStatShimmer 3s ease infinite;
+}
+@keyframes scanStatShimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+.scan-stat-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    transform: translateY(-1px);
+}
+.scan-stat-icon {
+    font-size: 16px;
+    margin-bottom: 2px;
+}
+.scan-stat-value {
+    font-size: 20px;
+    font-weight: 800;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+    transition: all 0.3s ease;
+}
+.scan-stat-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: rgba(255, 255, 255, 0.35);
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+/* === Enhanced Progress Bar === */
+.scan-progress-enhanced {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: rgba(168, 85, 247, 0.04);
     border: 1px solid rgba(168, 85, 247, 0.1);
     border-radius: 12px;
 }
-.airdrop-scan-progress-bar {
-    width: 100%;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
-    overflow: hidden;
-    margin-bottom: 6px;
+.scan-progress-bar-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
-.airdrop-scan-progress-fill {
+.scan-progress-bar-bg {
+    width: 100%;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+.scan-progress-bar-fill {
     height: 100%;
     background: linear-gradient(90deg, #a855f7, #f97316, #22c55e);
     background-size: 200% 100%;
     animation: scanProgressShimmer 1.5s ease infinite;
-    border-radius: 12px;
-    transition: width 0.3s ease;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 0;
+    position: relative;
 }
 @keyframes scanProgressShimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
 }
-.airdrop-scan-progress-info {
+.scan-progress-pct {
+    font-size: 7px;
+    font-weight: 800;
+    color: #fff;
+    padding-right: 4px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+}
+.scan-progress-meta {
     display: flex;
     justify-content: space-between;
     font-size: 10px;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.4);
 }
+.scan-progress-eta {
+    color: #facc15;
+    font-weight: 600;
+}
+
+/* === Hit Rate Gauge === */
+.scan-hitrate {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    position: relative;
+    width: 52px;
+}
+.scan-hitrate-svg {
+    width: 48px;
+    height: 48px;
+    transform: rotate(-90deg);
+}
+.scan-hitrate-fill {
+    transition: stroke-dasharray 0.5s ease;
+}
+.scan-hitrate-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: -2px;
+}
+.scan-hitrate-value {
+    font-size: 11px;
+    font-weight: 800;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    line-height: 1;
+}
+.scan-hitrate-label {
+    font-size: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.3);
+    font-weight: 600;
+}
+
+/* === Activity Feed === */
+.scan-feed {
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.2);
+}
+.scan-feed-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    transition: background 0.15s;
+}
+.scan-feed-header:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+.scan-feed-body {
+    max-height: 160px;
+    overflow-y: auto;
+    padding: 4px 0;
+}
+.scan-feed-entry {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    font-size: 10px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: rgba(255, 255, 255, 0.4);
+    animation: scanFeedSlideIn 0.3s ease forwards;
+    opacity: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+.scan-feed-entry:last-child { border-bottom: none; }
+@keyframes scanFeedSlideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+.scan-feed-time {
+    color: rgba(255, 255, 255, 0.25);
+    flex-shrink: 0;
+}
+.scan-feed-blocks {
+    color: rgba(168, 85, 247, 0.7);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.scan-feed-found {
+    color: #4ade80;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.scan-feed-skipped {
+    color: #f87171;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.scan-feed-total {
+    color: rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+}
+
+/* === Lifetime Stats Banner === */
+.scan-lifetime {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(234, 179, 8, 0.04);
+    border: 1px solid rgba(234, 179, 8, 0.08);
+    font-size: 10px;
+    color: rgba(234, 179, 8, 0.5);
+    font-weight: 500;
+}
+.scan-lifetime svg { color: rgba(234, 179, 8, 0.6); }
+
+/* === Responsive === */
+@media (max-width: 600px) {
+    .scan-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .scan-stat-value { font-size: 16px; }
+    .scan-progress-enhanced { flex-direction: column; }
+    .scan-hitrate { width: 100%; flex-direction: row; gap: 8px; }
+    .scan-hitrate-text { position: static; transform: none; }
+    .scan-feed-blocks { max-width: 100px; }
+}
+
+/* Light theme overrides */
+.defi-airdrop-page.light .scan-stat-card { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.06); }
+.defi-airdrop-page.light .scan-stat-card::before { background: linear-gradient(90deg, transparent, rgba(0,0,0,0.02), transparent); }
+.defi-airdrop-page.light .scan-stat-label { color: rgba(0,0,0,0.4); }
+.defi-airdrop-page.light .scan-progress-enhanced { background: rgba(168,85,247,0.03); border-color: rgba(168,85,247,0.08); }
+.defi-airdrop-page.light .scan-progress-bar-bg { background: rgba(0,0,0,0.06); }
+.defi-airdrop-page.light .scan-feed { background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.06); }
+.defi-airdrop-page.light .scan-feed-header { color: rgba(0,0,0,0.5); }
+.defi-airdrop-page.light .scan-feed-entry { color: rgba(0,0,0,0.4); }
+.defi-airdrop-page.light .scan-lifetime { background: rgba(234,179,8,0.04); color: rgba(180,130,0,0.6); }
 
 /* #4 History Filter Bar */
 .hist-filter-bar {

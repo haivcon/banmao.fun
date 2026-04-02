@@ -303,6 +303,24 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [scanCount, setScanCount] = useState(0);
     // Scan progress tracking
     const [scanProgress, setScanProgress] = useState<{scannedBlocks: number; totalBlocks: number; walletsFound: number} | null>(null);
+    // Enhanced scan statistics dashboard
+    const [scanStats, setScanStats] = useState<{
+        totalBlocksScanned: number;
+        walletsSkipped: number;
+        walletsChecked: number;
+        scanStartTime: number | null;
+        scanSpeed: number;
+        bestRound: number;
+        hitRate: number;
+        lastRoundFound: number;
+        lastRoundSkipped: number;
+    }>({ totalBlocksScanned: 0, walletsSkipped: 0, walletsChecked: 0, scanStartTime: null, scanSpeed: 0, bestRound: 0, hitRate: 100, lastRoundFound: 0, lastRoundSkipped: 0 });
+    const [scanActivityLog, setScanActivityLog] = useState<{time: string; blockRange: string; found: number; skipped: number; total: number}[]>([]);
+    const [showActivityLog, setShowActivityLog] = useState(true);
+    const scanStatsRef = useRef(scanStats);
+    scanStatsRef.current = scanStats;
+    // Lifetime persistent stats
+    const [lifetimeStats, setLifetimeStats] = useState<{totalBlocks: number; totalWallets: number; totalSessions: number; totalSkipped: number} | null>(null);
     // History filters
     const [histFilter, setHistFilter] = useState<"all" | "mine">("all");
     const [histStatusFilter, setHistStatusFilter] = useState<"all" | "success" | "failed">("all");
@@ -508,6 +526,29 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             }
         }).catch(() => { setCurrentTokenHolders(""); setCurrentTokenLiquidity(""); });
     }, [tokenAddress]);
+
+    // Load lifetime scan stats from localStorage on mount
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem("airdrop_scan_lifetime");
+            if (saved) setLifetimeStats(JSON.parse(saved));
+        } catch {}
+    }, []);
+
+    // Real-time elapsed timer for scan dashboard
+    const [scanElapsed, setScanElapsed] = useState("00:00");
+    useEffect(() => {
+        if (!scanStats.scanStartTime) { setScanElapsed("00:00"); return; }
+        const tick = () => {
+            const sec = Math.floor((Date.now() - (scanStats.scanStartTime || Date.now())) / 1000);
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            setScanElapsed(`${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+        };
+        tick();
+        const id = setInterval(tick, 1000);
+        return () => clearInterval(id);
+    }, [scanStats.scanStartTime]);
 
     // Wallet balances state (multi-token)
     const [walletTokenBalances, setWalletTokenBalances] = useState<Record<string, {symbol: string; balance: string; valueUsd: string; logoUrl: string; tokenAddress: string; isNative: boolean}[]>>({});
@@ -777,10 +818,14 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
 
     const handleScan = async () => {
         playClick(); setIsScanning(true); setScanError("");
+        const roundStartTime = Date.now();
+        // Set scan start time if first scan
+        if (!scanStatsRef.current.scanStartTime) {
+            setScanStats(prev => ({ ...prev, scanStartTime: Date.now() }));
+        }
         try {
             let apiUrl: string;
             if (scanChain === "xlayer") {
-                // Build paginated URL with cursor + skip list from ref (always latest)
                 const skipAddrs = scannedWalletsRef.current.map(w => w.address.toLowerCase()).join(",");
                 const cursorParam = scanCursorRef.current ? `&cursor=${scanCursorRef.current}` : "";
                 const skipParam = skipAddrs ? `&skip=${skipAddrs}` : "";
@@ -792,19 +837,24 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             const res = await fetch(apiUrl);
             const data = await res.json();
             if (data.success) {
-                // Save cursor for next page (XLayer only)
+                // Track blocks scanned this round
+                let roundBlocks = 0;
+                let blockRangeStr = "";
                 if (scanChain === "xlayer") {
                     scanCursorRef.current = data.cursor || null;
-                    // #3 Scan Progress Bar
                     if (data.scannedRange && data.latestBlock) {
                         const scannedSoFar = data.latestBlock - data.scannedRange.from;
+                        roundBlocks = data.scannedRange.to - data.scannedRange.from;
+                        blockRangeStr = `${data.scannedRange.from.toLocaleString()}–${data.scannedRange.to.toLocaleString()}`;
                         setScanProgress({ scannedBlocks: scannedSoFar, totalBlocks: 50000, walletsFound: scannedWalletsRef.current.length + (data.wallets?.length || 0) });
                     }
                 }
 
                 let newWallets = (data.wallets || []).filter((w: any) => w.address.toLowerCase() !== address?.toLowerCase());
+                const walletsCheckedThisRound = newWallets.length;
                 
                 // Frontend re-verify: check selected token balance on-chain
+                let holdersRemoved = 0;
                 if (newWallets.length > 0) {
                     const RPC = "https://rpc.xlayer.tech";
                     const filterTokenAddr = (tokenAddress as string).toLowerCase();
@@ -819,24 +869,49 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                             } catch { return { wallet: w, hasToken: false, tokenBalance: 0 }; }
                         })
                     );
-                    const holdersRemoved = verifyResults.filter(v => v.hasToken).length;
+                    holdersRemoved = verifyResults.filter(v => v.hasToken).length;
                     newWallets = verifyResults.filter(v => !v.hasToken).map(v => v.wallet);
                     if (holdersRemoved > 0) {
                         showToast(`🔍 ${holdersRemoved} ${(t("scanFilteredBanmao") || "wallets filtered (already hold {token})").replace(/\$BANMAO|\{token\}/g, `$${tokenSymbol}`)}`);
                     }
                 }
 
+                // Update scan statistics
+                const roundElapsed = (Date.now() - roundStartTime) / 1000;
+                const roundFound = newWallets.length;
+                setScanStats(prev => {
+                    const totalChecked = prev.walletsChecked + walletsCheckedThisRound;
+                    const totalSkipped = prev.walletsSkipped + holdersRemoved;
+                    const totalBlocks = prev.totalBlocksScanned + roundBlocks;
+                    const elapsed = prev.scanStartTime ? (Date.now() - prev.scanStartTime) / 1000 : roundElapsed;
+                    const speed = elapsed > 0 ? (scannedWalletsRef.current.length + roundFound) / elapsed : 0;
+                    const hitRate = totalChecked > 0 ? ((totalChecked - totalSkipped) / totalChecked) * 100 : 100;
+                    return {
+                        ...prev,
+                        totalBlocksScanned: totalBlocks,
+                        walletsSkipped: totalSkipped,
+                        walletsChecked: totalChecked,
+                        scanSpeed: Math.round(speed * 10) / 10,
+                        bestRound: Math.max(prev.bestRound, roundFound),
+                        hitRate: Math.round(hitRate * 10) / 10,
+                        lastRoundFound: roundFound,
+                        lastRoundSkipped: holdersRemoved,
+                    };
+                });
+
+                // Add activity log entry
+                const now = new Date();
+                const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+                setScanActivityLog(prev => [...prev.slice(-19), { time: timeStr, blockRange: blockRangeStr || "—", found: roundFound, skipped: holdersRemoved, total: scannedWalletsRef.current.length + roundFound }]);
+
                 if (!newWallets.length && scannedWalletsRef.current.length === 0) { 
-                    // If no cursor left, we've scanned all blocks
                     if (scanChain === "xlayer" && !scanCursorRef.current) {
                         setScanError(t("airdropNoWalletsFound"));
                     } else {
-                        // More pages available, show "no new wallets this page"
                         showToast(`${t("airdropNoNewWallets")} — ${data.scannedRange ? `blocks ${data.scannedRange.from}-${data.scannedRange.to}` : ""}`);
                     }
                 } else {
-                    // Accumulate & deduplicate using functional updater (GUARANTEED latest state)
-                    const walletsToAdd = newWallets; // capture for closure
+                    const walletsToAdd = newWallets;
                     setScannedWallets(prev => {
                         const existingMap = new Map(prev.map(w => [w.address.toLowerCase(), w]));
                         let added = 0;
@@ -845,7 +920,6 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                             if (!existingMap.has(key)) { existingMap.set(key, w); added++; }
                         }
                         const merged = Array.from(existingMap.values());
-                        // Sync ref immediately
                         scannedWalletsRef.current = merged;
                         if (added > 0) {
                             const rangeInfo = data.scannedRange ? ` [${data.scannedRange.from}-${data.scannedRange.to}]` : "";
@@ -856,7 +930,6 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                         return merged;
                     });
                     setScanCount(prev => prev + 1);
-                    // Auto-fetch total values for new wallets (background, non-blocking)
                     if (newWallets.length > 0) {
                         fetchBatchWalletData(newWallets.map((w: ScannedWallet) => w.address)).catch(() => {});
                     }
@@ -867,8 +940,25 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     };
 
     const clearScanned = () => {
-        playClick(); scannedWalletsRef.current = []; setScannedWallets([]); setSelectedWallets(new Set()); setScanCount(0);
-        scanCursorRef.current = null; // Reset cursor
+        playClick();
+        // Save to lifetime stats before clearing
+        try {
+            const prev = JSON.parse(localStorage.getItem("airdrop_scan_lifetime") || '{"totalBlocks":0,"totalWallets":0,"totalSessions":0,"totalSkipped":0}');
+            const updated = {
+                totalBlocks: prev.totalBlocks + scanStatsRef.current.totalBlocksScanned,
+                totalWallets: prev.totalWallets + scannedWalletsRef.current.length,
+                totalSessions: prev.totalSessions + 1,
+                totalSkipped: prev.totalSkipped + scanStatsRef.current.walletsSkipped,
+            };
+            localStorage.setItem("airdrop_scan_lifetime", JSON.stringify(updated));
+            setLifetimeStats(updated);
+        } catch {}
+        // Reset everything
+        scannedWalletsRef.current = []; setScannedWallets([]); setSelectedWallets(new Set()); setScanCount(0);
+        scanCursorRef.current = null;
+        setScanStats({ totalBlocksScanned: 0, walletsSkipped: 0, walletsChecked: 0, scanStartTime: null, scanSpeed: 0, bestRound: 0, hitRate: 100, lastRoundFound: 0, lastRoundSkipped: 0 });
+        setScanActivityLog([]);
+        setScanProgress(null);
         stopAutoScan();
     };
 
@@ -2773,23 +2863,113 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                     )}
                                 </div>
                             </div>
-                            {/* #3 Scan Progress Bar */}
-                            {(isScanning || autoScanActive) && scanProgress && (
-                                <div className="airdrop-scan-progress">
-                                    <div className="airdrop-scan-progress-bar">
-                                        <div className="airdrop-scan-progress-fill" style={{ width: `${Math.min(100, (scanProgress.scannedBlocks / scanProgress.totalBlocks) * 100)}%` }} />
+                            {/* ═══ Professional Scan Dashboard ═══ */}
+                            {(isScanning || autoScanActive || scannedWallets.length > 0 || scanStats.totalBlocksScanned > 0) && (
+                                <div className="scan-dashboard">
+                                    {/* Stats Grid — 6 cards */}
+                                    <div className="scan-stats-grid">
+                                        <div className="scan-stat-card">
+                                            <div className="scan-stat-icon" style={{color: "#a855f7"}}>👛</div>
+                                            <div className="scan-stat-value" style={{color: "#c084fc"}}>{scannedWallets.length.toLocaleString()}</div>
+                                            <div className="scan-stat-label">{t("airdropScanCount") || "Wallets"}</div>
+                                        </div>
+                                        <div className="scan-stat-card">
+                                            <div className="scan-stat-icon" style={{color: "#3b82f6"}}>🔄</div>
+                                            <div className="scan-stat-value" style={{color: "#60a5fa"}}>{scanCount}</div>
+                                            <div className="scan-stat-label">{t("airdropScanTimes") || "Rounds"}</div>
+                                        </div>
+                                        <div className="scan-stat-card">
+                                            <div className="scan-stat-icon" style={{color: "#f97316"}}>📦</div>
+                                            <div className="scan-stat-value" style={{color: "#fb923c"}}>{scanStats.totalBlocksScanned.toLocaleString()}</div>
+                                            <div className="scan-stat-label">Blocks</div>
+                                        </div>
+                                        <div className="scan-stat-card">
+                                            <div className="scan-stat-icon" style={{color: "#ef4444"}}>🚫</div>
+                                            <div className="scan-stat-value" style={{color: "#f87171"}}>{scanStats.walletsSkipped.toLocaleString()}</div>
+                                            <div className="scan-stat-label">Skipped</div>
+                                        </div>
+                                        <div className="scan-stat-card">
+                                            <div className="scan-stat-icon" style={{color: "#eab308"}}>⚡</div>
+                                            <div className="scan-stat-value" style={{color: "#facc15"}}>{scanStats.scanSpeed}/s</div>
+                                            <div className="scan-stat-label">Speed</div>
+                                        </div>
+                                        <div className="scan-stat-card">
+                                            <div className="scan-stat-icon" style={{color: "#22c55e"}}>⏱</div>
+                                            <div className="scan-stat-value" style={{color: "#4ade80"}}>{scanElapsed}</div>
+                                            <div className="scan-stat-label">Elapsed</div>
+                                        </div>
                                     </div>
-                                    <div className="airdrop-scan-progress-info">
-                                        <span>📦 {scanProgress.scannedBlocks.toLocaleString()} / {scanProgress.totalBlocks.toLocaleString()} blocks</span>
-                                        <span>👛 {scanProgress.walletsFound} {t("airdropScanCount")}</span>
-                                    </div>
+
+                                    {/* Enhanced Progress Bar with % and ETA */}
+                                    {scanProgress && (
+                                        <div className="scan-progress-enhanced">
+                                            <div className="scan-progress-bar-wrap">
+                                                <div className="scan-progress-bar-bg">
+                                                    <div className="scan-progress-bar-fill" style={{ width: `${Math.min(100, (scanProgress.scannedBlocks / scanProgress.totalBlocks) * 100)}%` }}>
+                                                        {(scanProgress.scannedBlocks / scanProgress.totalBlocks * 100) > 8 && (
+                                                            <span className="scan-progress-pct">{Math.round(scanProgress.scannedBlocks / scanProgress.totalBlocks * 100)}%</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="scan-progress-meta">
+                                                    <span>📦 {scanProgress.scannedBlocks.toLocaleString()} / {scanProgress.totalBlocks.toLocaleString()} blocks</span>
+                                                    {scanStats.scanSpeed > 0 && scanProgress.scannedBlocks < scanProgress.totalBlocks && (
+                                                        <span className="scan-progress-eta">~{Math.ceil((scanProgress.totalBlocks - scanProgress.scannedBlocks) / (scanStats.scanSpeed > 0 ? scanStats.scanSpeed * 60 : 1))} min</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            {/* Hit Rate Gauge */}
+                                            {scanStats.walletsChecked > 0 && (
+                                                <div className="scan-hitrate">
+                                                    <svg viewBox="0 0 36 36" className="scan-hitrate-svg">
+                                                        <path className="scan-hitrate-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
+                                                        <path className="scan-hitrate-fill" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={scanStats.hitRate > 50 ? "#4ade80" : scanStats.hitRate > 20 ? "#facc15" : "#f87171"} strokeWidth="3" strokeDasharray={`${scanStats.hitRate}, 100`} strokeLinecap="round" />
+                                                    </svg>
+                                                    <div className="scan-hitrate-text">
+                                                        <span className="scan-hitrate-value" style={{color: scanStats.hitRate > 50 ? "#4ade80" : scanStats.hitRate > 20 ? "#facc15" : "#f87171"}}>{scanStats.hitRate}%</span>
+                                                        <span className="scan-hitrate-label">hit rate</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Activity Feed */}
+                                    {scanActivityLog.length > 0 && (
+                                        <div className="scan-feed">
+                                            <div className="scan-feed-header" onClick={() => setShowActivityLog(!showActivityLog)}>
+                                                <span><AIcon name="list" size={11} /> Activity Log ({scanActivityLog.length})</span>
+                                                <span className="lang-arrow">{showActivityLog ? "▲" : "▼"}</span>
+                                            </div>
+                                            {showActivityLog && (
+                                                <div className="scan-feed-body">
+                                                    {scanActivityLog.slice(-8).map((entry, i) => (
+                                                        <div key={i} className="scan-feed-entry" style={{animationDelay: `${i * 0.05}s`}}>
+                                                            <span className="scan-feed-time">[{entry.time}]</span>
+                                                            <span className="scan-feed-blocks">■ {entry.blockRange}</span>
+                                                            <span className="scan-feed-found">+{entry.found}</span>
+                                                            {entry.skipped > 0 && <span className="scan-feed-skipped">−{entry.skipped}</span>}
+                                                            <span className="scan-feed-total">({entry.total})</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Lifetime Stats Banner */}
+                                    {lifetimeStats && lifetimeStats.totalSessions > 0 && (
+                                        <div className="scan-lifetime">
+                                            <AIcon name="trophy" size={10} /> All-time: {lifetimeStats.totalBlocks.toLocaleString()} blocks · {lifetimeStats.totalWallets.toLocaleString()} wallets · {lifetimeStats.totalSessions} sessions · {lifetimeStats.totalSkipped.toLocaleString()} skipped
+                                        </div>
+                                    )}
                                 </div>
                             )}
                             {scanError && <div className="airdrop-scan-error"><AIcon name="warning" size={14} /> {scanError}</div>}
                             {scannedWallets.length > 0 && (
                                 <>
                                     <div className="airdrop-scan-actions">
-                                        <span className="airdrop-scan-count">{scannedWallets.length} {t("airdropScanCount")} · {scanCount} {t("airdropScanTimes")}</span>
+                                        <span className="airdrop-scan-count">{scannedWallets.length} {t("airdropScanCount")} · {scanCount} {t("airdropScanTimes")}{scanStats.walletsSkipped > 0 ? ` · 🚫${scanStats.walletsSkipped} skipped` : ""}</span>
                                         <div className="airdrop-scan-buttons">
                                             <button className="airdrop-select-btn" onClick={() => { playClick(); setSelectedWallets(new Set(scannedWallets.map(w => w.address))); }}><AIcon name="checkSmall" size={12} /> {t("airdropSelectAll")}</button>
                                             <button className="airdrop-select-btn" onClick={() => { playClick(); setSelectedWallets(new Set()); }}><AIcon name="xCircle" size={12} /> {t("airdropDeselectAll")}</button>
