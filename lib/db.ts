@@ -3153,8 +3153,27 @@ export async function upsertAirdropProfile(
     }
 }
 
-export async function getAirdropLeaderboard(limit = 20, offset = 0) {
+export async function getAirdropLeaderboard(limit = 20, offset = 0, token?: string) {
     await initializeDatabase();
+    if (token) {
+        // Filter by token: aggregate from airdrop_history
+        const result = await db.execute({
+            sql: `SELECT sender_address as address, 
+                  CAST(SUM(CAST(total_amount AS REAL)) AS TEXT) as total_amount,
+                  SUM(recipient_count) as total_recipients,
+                  COUNT(*) as total_airdrops,
+                  COUNT(*) as total_tx,
+                  MIN(timestamp) as first_airdrop,
+                  MAX(timestamp) as last_airdrop
+                  FROM airdrop_history
+                  WHERE LOWER(token_address) = LOWER(?)
+                  GROUP BY LOWER(sender_address)
+                  ORDER BY SUM(CAST(total_amount AS REAL)) DESC
+                  LIMIT ? OFFSET ?`,
+            args: [token, limit, offset]
+        });
+        return result.rows;
+    }
     const result = await db.execute({
         sql: `SELECT * FROM airdrop_profiles ORDER BY LENGTH(total_amount) DESC, total_amount DESC LIMIT ? OFFSET ?`,
         args: [limit, offset]
@@ -3171,8 +3190,15 @@ export async function getAirdropHistory(senderAddress: string, limit = 20) {
     return result.rows;
 }
 
-export async function getAllAirdropHistory(limit = 50) {
+export async function getAllAirdropHistory(limit = 50, token?: string) {
     await initializeDatabase();
+    if (token) {
+        const result = await db.execute({
+            sql: `SELECT * FROM airdrop_history WHERE LOWER(token_address) = LOWER(?) ORDER BY timestamp DESC LIMIT ?`,
+            args: [token, limit]
+        });
+        return result.rows;
+    }
     const result = await db.execute({
         sql: `SELECT * FROM airdrop_history ORDER BY timestamp DESC LIMIT ?`,
         args: [limit]
@@ -3180,17 +3206,20 @@ export async function getAllAirdropHistory(limit = 50) {
     return result.rows;
 }
 
-export async function getAirdropStats() {
+export async function getAirdropStats(token?: string) {
     await initializeDatabase();
-    const result = await db.execute(`
-        SELECT
+    const tokenFilter = token ? `WHERE LOWER(token_address) = LOWER(?)` : ``;
+    const args = token ? [token] : [];
+    const result = await db.execute({
+        sql: `SELECT
             COUNT(*) as total_airdrops,
             COALESCE(SUM(recipient_count), 0) as total_recipients,
             COALESCE(SUM(success_count), 0) as total_success,
             COUNT(DISTINCT sender_address) as unique_senders,
             COALESCE(SUM(CAST(total_amount AS REAL)), 0) as total_amount_raw
-        FROM airdrop_history
-    `);
+        FROM airdrop_history ${tokenFilter}`,
+        args
+    });
     const row: any = result.rows[0] || {};
     // Convert total_amount from wei (18 decimals) to human-readable
     const rawAmt = BigInt(Math.floor(Number(row.total_amount_raw || 0)));
@@ -3198,30 +3227,36 @@ export async function getAirdropStats() {
     return row;
 }
 
-export async function getAirdropAnalytics() {
+export async function getAirdropAnalytics(token?: string) {
     await initializeDatabase();
+    const tokenFilter = token ? `AND LOWER(token_address) = LOWER(?)` : ``;
+    const tokenFilterWhere = token ? `WHERE LOWER(token_address) = LOWER(?)` : ``;
+    const tokenArgs = token ? [token] : [];
     // Daily stats for last 14 days
-    const daily = await db.execute(`
-        SELECT 
+    const daily = await db.execute({
+        sql: `SELECT 
             DATE(timestamp, 'unixepoch') as day,
             COUNT(*) as count,
             COALESCE(SUM(recipient_count), 0) as recipients,
             COALESCE(SUM(success_count), 0) as successes
         FROM airdrop_history
-        WHERE timestamp > (strftime('%s', 'now') - 14 * 86400)
+        WHERE timestamp > (strftime('%s', 'now') - 14 * 86400) ${tokenFilter}
         GROUP BY day
-        ORDER BY day ASC
-    `);
+        ORDER BY day ASC`,
+        args: tokenArgs
+    });
     // Top 5 senders
-    const topSenders = await db.execute(`
-        SELECT 
+    const topSenders = await db.execute({
+        sql: `SELECT 
             sender_address,
             COUNT(*) as count,
             COALESCE(SUM(recipient_count), 0) as total_recipients
         FROM airdrop_history
+        ${tokenFilterWhere}
         GROUP BY sender_address
         ORDER BY count DESC
-        LIMIT 5
-    `);
+        LIMIT 5`,
+        args: tokenArgs
+    });
     return { daily: daily.rows, topSenders: topSenders.rows };
 }

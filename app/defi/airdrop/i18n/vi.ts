@@ -351,4 +351,14 @@ export const viAirdrop = {
     scanCombinedHint1: "Ví đã nắm giữ {token} sẽ tự động bị loại trừ. Quét nhiều lần để tích lũy địa chỉ duy nhất, không trùng lặp.",
     scanCombinedHint2: "Mỗi lần quét sẽ khám phá các block mới trên blockchain để tìm ví hoạt động chưa có {token}. Hãy lan tỏa {token} và phát triển cộng đồng!",
     tokenSelectorHint: "Nhấn vào thanh token phía trên để đổi token. Bạn có thể airdrop bất kỳ token ERC-20 nào trên XLayer, không chỉ {token}.",
+    // Token Search
+    tokenSearchPlaceholder: "Tìm theo tên, symbol hoặc địa chỉ 0x...",
+    tokenSearchLoading: "Đang tìm kiếm...",
+    tokenSearchNoResults: "Không tìm thấy token",
+    tokenSearchResults: "kết quả",
+    // Wallet Balances
+    walletTotalValue: "Tổng Giá Trị",
+    walletTokens: "token",
+    walletLoadingBalances: "Đang tải số dư...",
+    walletNoTokens: "Không tìm thấy token nào",
 };

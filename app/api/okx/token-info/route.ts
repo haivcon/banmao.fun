@@ -27,12 +27,12 @@ interface TokenInfoResponse {
 
 async function fetchTokenInfo(chainIndex: string, tokenAddress: string): Promise<TokenInfoResponse> {
     const timestamp = new Date().toISOString();
-    const queryString = `?chainIndex=${chainIndex}&tokenContractAddress=${tokenAddress}`;
-    const requestPath = "/api/v6/dex/market/token/basic-info" + queryString;
+    const requestPath = "/api/v6/dex/market/token/basic-info";
+    const bodyStr = JSON.stringify({ chainIndex, tokenContractAddress: tokenAddress });
     const headers: Record<string, string> = { "Content-Type": "application/json" };
 
     if (process.env.OKX_API_KEY && process.env.OKX_SECRET_KEY && process.env.OKX_PASSPHRASE) {
-        const prehash = timestamp + "POST" + requestPath;
+        const prehash = timestamp + "POST" + requestPath + bodyStr;
         const signature = crypto.createHmac("sha256", process.env.OKX_SECRET_KEY).update(prehash).digest("base64");
         headers["OK-ACCESS-KEY"] = process.env.OKX_API_KEY;
         headers["OK-ACCESS-SIGN"] = signature;
@@ -41,7 +41,7 @@ async function fetchTokenInfo(chainIndex: string, tokenAddress: string): Promise
         if (process.env.OKX_PROJECT_ID) headers["OK-ACCESS-PROJECT"] = process.env.OKX_PROJECT_ID;
     }
 
-    const response = await fetch(`https://web3.okx.com${requestPath}`, { method: "POST", headers, signal: AbortSignal.timeout(10000) });
+    const response = await fetch(`https://web3.okx.com${requestPath}`, { method: "POST", headers, body: bodyStr, signal: AbortSignal.timeout(10000) });
     const data = await response.json();
 
     if (data.code === "0" && data.data) {
@@ -77,15 +77,24 @@ export async function GET(req: NextRequest) {
         if (cached) return addHeaders(NextResponse.json({ ...cached, fromCache: true, cacheAge: apiCache.getAge(cacheKey) }));
 
         const pending = apiCache.getPendingRequest<TokenInfoResponse>(cacheKey);
-        if (pending) { const r = await pending; return addHeaders(NextResponse.json({ ...r, fromCache: true })); }
+        if (pending) {
+            try { const r = await pending; return addHeaders(NextResponse.json({ ...r, fromCache: true })); }
+            catch { return addHeaders(NextResponse.json({ success: false, error: "Pending request failed" }, { status: 500 })); }
+        }
 
-        const promise = fetchTokenInfo(chainIndex, tokenAddress);
+        const promise = fetchTokenInfo(chainIndex, tokenAddress).catch(err => {
+            throw err;
+        });
         apiCache.setPendingRequest(cacheKey, promise);
-        const data = await promise;
-        apiCache.set(cacheKey, data, 60000); // 1 min
-        return addHeaders(NextResponse.json(data));
+        try {
+            const data = await promise;
+            apiCache.set(cacheKey, data, 60000); // 1 min
+            return addHeaders(NextResponse.json(data));
+        } finally {
+            apiCache.setPendingRequest(cacheKey, null as any);
+        }
     } catch (error) {
-        console.error("[Token Info API] ❌", error);
+        console.error("[Token Info API] ❌", error instanceof Error ? error.message : error);
         return addHeaders(NextResponse.json({ success: false, error: error instanceof Error ? error.message : "Unknown" }, { status: 500 }));
     }
 }

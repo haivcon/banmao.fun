@@ -643,7 +643,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .airdrop-amount-input {
     width: 100%;
     box-sizing: border-box;
-    padding: 14px 110px 14px 18px;
+    padding: 14px 150px 14px 18px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 999px;
@@ -676,13 +676,47 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     appearance: textfield;
 }
 
-.airdrop-amount-suffix {
+/* Actions container (clear + max + suffix) */
+.airdrop-amount-actions {
     position: absolute;
-    right: 18px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.airdrop-amount-suffix {
     color: rgba(255, 255, 255, 0.5);
     font-size: 12px;
     font-weight: 600;
     pointer-events: none;
+    white-space: nowrap;
+}
+
+/* Clear amount button */
+.airdrop-clear-amount-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 999px;
+    background: rgba(239, 68, 68, 0.08);
+    color: rgba(239, 68, 68, 0.7);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    line-height: 1;
+    padding: 0;
+    flex-shrink: 0;
+}
+.airdrop-clear-amount-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+    color: #ef4444;
+    transform: scale(1.1);
 }
 
 .airdrop-quick-amounts {
@@ -693,7 +727,7 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 }
 
 .airdrop-quick-btn {
-    padding: 6px 14px;
+    padding: 5px 12px;
     background: rgba(168, 85, 247, 0.1);
     border: 1px solid rgba(168, 85, 247, 0.2);
     border-radius: 20px;
@@ -709,6 +743,13 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     border-color: rgba(168, 85, 247, 0.4);
     color: #fff;
     transform: scale(1.05);
+}
+
+.airdrop-quick-btn.active {
+    background: rgba(168, 85, 247, 0.3);
+    border-color: #a855f7;
+    color: #fff;
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.2);
 }
 
 .airdrop-balance-display {
@@ -6728,3 +6769,449 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     background: rgba(249, 115, 22, 0.12);
     color: #ea580c;
 }
+
+/* ===================== TOKEN SEARCH ===================== */
+.token-search-container {
+    padding: 8px 0;
+}
+.token-search-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 12px;
+    transition: border-color 0.2s;
+}
+.token-search-input-wrap:focus-within {
+    border-color: rgba(168, 85, 247, 0.4);
+    background: rgba(255, 255, 255, 0.08);
+}
+.token-search-input-wrap svg { color: rgba(255, 255, 255, 0.4); flex-shrink: 0; }
+.token-search-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+}
+.token-search-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+.token-search-results {
+    margin-top: 6px;
+    max-height: 240px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 4px;
+}
+/* token-search-result styles moved to PRESET TOKEN ITEMS section below */
+.token-search-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    object-fit: cover;
+    background: rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+}
+.token-search-logo-placeholder {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: rgba(168, 85, 247, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: rgba(168, 85, 247, 0.7);
+}
+.token-search-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+.token-search-symbol {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+}
+.token-search-name {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.token-search-addr {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.25);
+    flex-shrink: 0;
+}
+.token-search-empty {
+    padding: 12px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+/* Light theme */
+.defi-airdrop-page.light .token-search-input-wrap {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+.defi-airdrop-page.light .token-search-input { color: #333; }
+.defi-airdrop-page.light .token-search-input::placeholder { color: rgba(0, 0, 0, 0.35); }
+.defi-airdrop-page.light .token-search-results {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+.defi-airdrop-page.light .token-search-result:hover { background: rgba(249, 115, 22, 0.08); }
+.defi-airdrop-page.light .token-search-symbol { color: #222; }
+.defi-airdrop-page.light .token-search-name { color: #888; }
+.defi-airdrop-page.light .token-search-addr { color: #aaa; }
+
+/* ===================== PRESET TOKEN ITEMS ===================== */
+.preset-token-item {
+    gap: 10px;
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+    transition: background 0.15s;
+}
+.preset-token-item:hover { background: rgba(168, 85, 247, 0.08) !important; }
+.preset-token-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    object-fit: cover;
+    background: rgba(255, 255, 255, 0.06);
+    flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.preset-token-logo-placeholder {
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: rgba(168, 85, 247, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: rgba(168, 85, 247, 0.7);
+}
+.preset-token-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+.preset-token-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.preset-token-symbol {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+}
+.preset-token-price {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 7px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.05));
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    white-space: nowrap;
+}
+.preset-token-holders {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 7px;
+    border-radius: 6px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.preset-token-holders svg { color: #60a5fa; }
+.preset-token-stats-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+    flex-wrap: wrap;
+}
+.preset-token-liquidity {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 7px;
+    border-radius: 6px;
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.preset-token-liquidity svg { color: #4ade80; }
+.preset-token-addr-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.preset-token-addr {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 320px;
+}
+.preset-token-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+.preset-token-action-btn:hover {
+    background: rgba(168, 85, 247, 0.2);
+    color: #a855f7;
+}
+
+/* Token current header logo */
+.token-current-logo {
+    width: 20px;
+    height: 20px;
+    border-radius: 999px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.airdrop-token-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+.airdrop-token-copy-btn:hover { background: rgba(168, 85, 247, 0.2); color: #a855f7; }
+
+/* Token holders badge in header */
+.token-holders-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.token-holders-badge svg { color: #60a5fa; }
+
+/* Enhanced search result layout */
+.token-search-result {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0 !important;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: left;
+    width: 100%;
+}
+.token-search-result:hover { background: rgba(168, 85, 247, 0.12); }
+.token-search-result-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px 4px;
+    cursor: pointer;
+}
+.token-search-top-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.token-search-price {
+    display: inline-flex;
+    padding: 1px 6px;
+    border-radius: 5px;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(34, 197, 94, 0.05));
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+    font-size: 10px;
+    font-weight: 600;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+}
+.token-search-addr-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.token-search-addr-full {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.25);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.token-search-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 12px 8px;
+    justify-content: flex-end;
+}
+
+/* Light theme preset tokens */
+.defi-airdrop-page.light .preset-token-symbol { color: #222; }
+.defi-airdrop-page.light .preset-token-addr { color: #999; }
+.defi-airdrop-page.light .preset-token-action-btn { background: rgba(0, 0, 0, 0.04); color: #888; }
+.defi-airdrop-page.light .preset-token-action-btn:hover { background: rgba(249, 115, 22, 0.12); color: #ea580c; }
+.defi-airdrop-page.light .token-holders-badge { background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+
+/* ===================== WALLET TOTAL VALUE BADGE ===================== */
+.wallet-total-value-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(59, 130, 246, 0.12));
+    border: 1px solid rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    white-space: nowrap;
+}
+.wallet-total-value-badge svg { color: #22c55e; }
+.defi-airdrop-page.light .wallet-total-value-badge {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(59, 130, 246, 0.08));
+    color: #16a34a;
+}
+
+/* ===================== WALLET OKB BADGE ===================== */
+.wallet-okb-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.12), rgba(251, 191, 36, 0.12));
+    border: 1px solid rgba(249, 115, 22, 0.2);
+    color: #fb923c;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    white-space: nowrap;
+}
+.wallet-okb-badge svg { color: #f97316; }
+.defi-airdrop-page.light .wallet-okb-badge {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.08), rgba(251, 191, 36, 0.08));
+    color: #ea580c;
+}
+
+/* ===================== WALLET TOKEN CHIP LOGO ===================== */
+.wallet-token-chip-logo {
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    object-fit: cover;
+    margin-right: 2px;
+    vertical-align: middle;
+}
+
+/* ===================== WALLET DETAIL ENHANCEMENTS ===================== */
+.wallet-detail-total {
+    color: #4ade80;
+    font-weight: 600;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px;
+}
+.wallet-detail-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 11px;
+}
+.wallet-asset-logo {
+    width: 16px;
+    height: 16px;
+    border-radius: 999px;
+    object-fit: cover;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+.asset-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.asset-usd {
+    color: rgba(74, 222, 128, 0.7);
+    font-weight: 500;
+    font-size: 10px;
+}
+.airdrop-wallet-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 10px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+

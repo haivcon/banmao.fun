@@ -16,11 +16,12 @@ export async function GET(req: NextRequest) {
     try {
         const { searchParams } = new URL(req.url);
         const type = searchParams.get("type") || "leaderboard";
+        const token = searchParams.get("token") || undefined;
 
         if (type === "leaderboard") {
             const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
             const offset = parseInt(searchParams.get("offset") || "0");
-            const rows = await getAirdropLeaderboard(limit, offset);
+            const rows = await getAirdropLeaderboard(limit, offset, token);
             return NextResponse.json({ success: true, data: rows });
         }
 
@@ -36,17 +37,17 @@ export async function GET(req: NextRequest) {
 
         if (type === "all-history") {
             const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
-            const rows = await getAllAirdropHistory(limit);
+            const rows = await getAllAirdropHistory(limit, token);
             return NextResponse.json({ success: true, data: rows });
         }
 
         if (type === "stats") {
-            const stats = await getAirdropStats();
+            const stats = await getAirdropStats(token);
             return NextResponse.json({ success: true, data: stats });
         }
 
         if (type === "analytics") {
-            const analytics = await getAirdropAnalytics();
+            const analytics = await getAirdropAnalytics(token);
             return NextResponse.json({ success: true, data: analytics });
         }
 

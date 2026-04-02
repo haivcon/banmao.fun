@@ -351,4 +351,14 @@ export const enAirdrop = {
     scanCombinedHint1: "Wallets already holding {token} are automatically excluded. Scan multiple times to accumulate unique addresses without duplicates.",
     scanCombinedHint2: "Each scan explores new blockchain blocks to find active wallets without {token}. Spread {token} and grow the community!",
     tokenSelectorHint: "Tap the token bar above to switch tokens. You can airdrop any ERC-20 token on XLayer, not just {token}.",
+    // Token Search
+    tokenSearchPlaceholder: "Search by name, symbol or 0x address...",
+    tokenSearchLoading: "Searching...",
+    tokenSearchNoResults: "No tokens found",
+    tokenSearchResults: "results",
+    // Wallet Balances
+    walletTotalValue: "Total Value",
+    walletTokens: "tokens",
+    walletLoadingBalances: "Loading balances...",
+    walletNoTokens: "No tokens found",
 };

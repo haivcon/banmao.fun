@@ -14,6 +14,14 @@ const GAS_PER_TRANSFER = 65000; // gas for single ERC20 transfer
 const GAS_PER_BATCH_RECIPIENT = 45000; // gas per recipient in batch contract
 const GAS_BATCH_BASE = 50000; // base overhead for batch contract call
 const GAS_PRICE_GWEI = 0.1; // XLayer default gas price
+
+// Preset popular tokens on XLayer
+const PRESET_TOKENS: {address: string; symbol: string; name: string; decimals: number; logo: string}[] = [
+    { address: "0x16d91d1615fc55b76d5f92365bd60c069b46ef78", symbol: "banmao", name: "banmao", decimals: 18, logo: "https://static.oklink.com/cdn/web3/currency/token/large/196-0x16d91d1615fc55b76d5f92365bd60c069b46ef78-110/type=default_90_0?v=1767692192564" },
+    { address: "0x87669801a1fad6dad9db70d27ac752f452989667", symbol: "NIUMA", name: "Niuma", decimals: 18, logo: "https://static.oklink.com/cdn/web3/currency/token/large/196-0x87669801a1fad6dad9db70d27ac752f452989667-110/type=default_90_0?v=1764921295782" },
+    { address: "0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e", symbol: "XDOG", name: "Xdog", decimals: 18, logo: "https://static.oklink.com/cdn/web3/currency/token/large/196-0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e-110/type=default_90_0?v=1764839073713" },
+    { address: "0xdcc83b32b6b4e95a61951bfcc9d71967515c0fca", symbol: "Xwizard", name: "Xwizard", decimals: 18, logo: "https://static.oklink.com/cdn/web3/currency/token/large/196-0xdcc83b32b6b4e95a61951bfcc9d71967515c0fca-107/type=default_90_0?v=1775024553859" },
+];
 const STORAGE_HISTORY = "banmao_airdrop_history";
 const STORAGE_BOOK = "banmao_address_book";
 const STORAGE_BLACKLIST = "banmao_airdrop_blacklist";
@@ -461,6 +469,65 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     // Market data states
     const [tokenPrice, setTokenPrice] = useState<number>(0);
 
+    // Token search state
+    const [tokenSearchQuery, setTokenSearchQuery] = useState("");
+    const [tokenSearchResults, setTokenSearchResults] = useState<{tokenContractAddress: string; tokenSymbol: string; tokenName: string; tokenLogoUrl: string; decimals: string; price: string}[]>([]);
+    const [tokenSearchLoading, setTokenSearchLoading] = useState(false);
+    const tokenSearchTimerRef = useRef<any>(null);
+    // Preset token metadata (price + holders + liquidity) — from token-search API
+    const [presetTokenMeta, setPresetTokenMeta] = useState<Record<string, {price: string; holders: string; liquidity: string}>>({});
+    const fetchPresetTokenMeta = useCallback(async () => {
+        for (const pt of PRESET_TOKENS) {
+            const key = pt.address.toLowerCase();
+            if (presetTokenMeta[key]?.price) continue; // already loaded
+            try {
+                const res = await fetch(`/api/okx/token-search?search=${pt.symbol}&chains=196`).then(r => r.json());
+                if (res.success && res.tokens?.length) {
+                    const tok = res.tokens.find((t: any) => t.tokenContractAddress?.toLowerCase() === key) || res.tokens[0];
+                    const price = tok.price && tok.price !== "0" ? tok.price : "";
+                    const holders = tok.holders && tok.holders !== "0" ? tok.holders : "";
+                    const liquidity = tok.liquidity && tok.liquidity !== "0" ? tok.liquidity : "";
+                    setPresetTokenMeta(prev => ({ ...prev, [key]: { price, holders, liquidity } }));
+                }
+            } catch {}
+            await new Promise(r => setTimeout(r, 1100)); // rate limit (1 req/s)
+        }
+    }, [presetTokenMeta]);
+    // Current token holder count + liquidity
+    const [currentTokenHolders, setCurrentTokenHolders] = useState("");
+    const [currentTokenLiquidity, setCurrentTokenLiquidity] = useState("");
+    useEffect(() => {
+        fetch(`/api/okx/token-search?search=${tokenAddress}&chains=196`).then(r => r.json()).then(d => {
+            if (d.success && d.tokens?.length) {
+                const tok = d.tokens.find((t: any) => t.tokenContractAddress?.toLowerCase() === tokenAddress.toLowerCase()) || d.tokens[0];
+                setCurrentTokenHolders(tok.holders && tok.holders !== "0" ? tok.holders : "");
+                setCurrentTokenLiquidity(tok.liquidity && tok.liquidity !== "0" ? tok.liquidity : "");
+            } else {
+                setCurrentTokenHolders("");
+                setCurrentTokenLiquidity("");
+            }
+        }).catch(() => { setCurrentTokenHolders(""); setCurrentTokenLiquidity(""); });
+    }, [tokenAddress]);
+
+    // Wallet balances state (multi-token)
+    const [walletTokenBalances, setWalletTokenBalances] = useState<Record<string, {symbol: string; balance: string; valueUsd: string; logoUrl: string; tokenAddress: string; isNative: boolean}[]>>({});
+    const [walletTotalValues, setWalletTotalValues] = useState<Record<string, string>>({});
+    const [walletBalancesLoading, setWalletBalancesLoading] = useState<Set<string>>(new Set());
+
+    // Smart number formatter: comma separators + reasonable decimals
+    const fmtBal = (val: string | number): string => {
+        const n = typeof val === "string" ? parseFloat(val) : val;
+        if (isNaN(n) || n === 0) return "0";
+        const abs = Math.abs(n);
+        let formatted: string;
+        if (abs >= 1_000_000) formatted = (n / 1_000_000).toFixed(2) + "M";
+        else if (abs >= 1_000) formatted = n.toLocaleString("en-US", { maximumFractionDigits: 2 });
+        else if (abs >= 1) formatted = n.toLocaleString("en-US", { maximumFractionDigits: 4 });
+        else if (abs >= 0.0001) formatted = n.toLocaleString("en-US", { maximumFractionDigits: 6 });
+        else formatted = n.toExponential(2);
+        return formatted;
+    };
+
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { data: banmaoBalance, refetch: refetchBalance } = useBalance({ address, token: tokenAddress as `0x${string}` });
     const { data: okbBalance } = useBalance({ address }); // Native OKB
@@ -512,9 +579,10 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         });
     }, [step, activeTab, sendMode, amountMode, addressInput, parsedAddresses, amountPerWallet, customAmounts, tokenAddress, tokenSymbol, tokenDecimals]);
 
-    // Auto-fetch leaderboard & history on mount
+    // Auto-fetch leaderboard & history — re-runs when tokenAddress changes
     useEffect(() => {
-        fetch("/api/airdrop-records?type=leaderboard&limit=20").then(r => r.json()).then(d => {
+        const tokenParam = tokenAddress ? `&token=${tokenAddress}` : "";
+        fetch(`/api/airdrop-records?type=leaderboard&limit=20${tokenParam}`).then(r => r.json()).then(d => {
             if (d.success) {
                 setLeaderboardData(d.data);
                 const addrs = (d.data as any[]).map((r: any) => r.address).filter(Boolean);
@@ -527,19 +595,19 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 });
             }
         }).catch(() => {});
-        fetch("/api/airdrop-records?type=stats").then(r => r.json()).then(d => { if (d.success) setLbStats(d.data); }).catch(() => {});
+        fetch(`/api/airdrop-records?type=stats${tokenParam}`).then(r => r.json()).then(d => { if (d.success) setLbStats(d.data); }).catch(() => {});
         // Fetch ALL users' history
         setHistoryLoading(true);
-        fetch("/api/airdrop-records?type=all-history&limit=50").then(r => r.json()).then(d => { if (d.success) setHistoryData(d.data); }).catch(() => {}).finally(() => setHistoryLoading(false));
+        fetch(`/api/airdrop-records?type=all-history&limit=50${tokenParam}`).then(r => r.json()).then(d => { if (d.success) setHistoryData(d.data); }).catch(() => {}).finally(() => setHistoryLoading(false));
         // #12 Fetch analytics
-        fetch("/api/airdrop-records?type=analytics").then(r => r.json()).then(d => { if (d.success) setAnalyticsData(d.data); }).catch(() => {});
+        fetch(`/api/airdrop-records?type=analytics${tokenParam}`).then(r => r.json()).then(d => { if (d.success) setAnalyticsData(d.data); }).catch(() => {});
         // Auto-refresh history every 30s (#1 Realtime History)
         const histInterval = setInterval(() => {
-            fetch("/api/airdrop-records?type=all-history&limit=50").then(r => r.json()).then(d => { if (d.success) setHistoryData(d.data); }).catch(() => {});
-            fetch("/api/airdrop-records?type=stats").then(r => r.json()).then(d => { if (d.success) setLbStats(d.data); }).catch(() => {});
+            fetch(`/api/airdrop-records?type=all-history&limit=50${tokenParam}`).then(r => r.json()).then(d => { if (d.success) setHistoryData(d.data); }).catch(() => {});
+            fetch(`/api/airdrop-records?type=stats${tokenParam}`).then(r => r.json()).then(d => { if (d.success) setLbStats(d.data); }).catch(() => {});
         }, 30000);
         return () => { clearInterval(histInterval); };
-    }, []);
+    }, [tokenAddress]);
     // Fetch price for the currently selected token — re-runs when tokenAddress changes
     useEffect(() => {
         const fetchPrice = () => fetch(`/api/okx/price?tokenAddress=${tokenAddress}`).then(r => r.json()).then(d => { if (d.success) setTokenPrice(parseFloat(d.price) || 0); else setTokenPrice(0); }).catch(() => setTokenPrice(0));
@@ -788,6 +856,10 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                         return merged;
                     });
                     setScanCount(prev => prev + 1);
+                    // Auto-fetch total values for new wallets (background, non-blocking)
+                    if (newWallets.length > 0) {
+                        fetchBatchWalletData(newWallets.map((w: ScannedWallet) => w.address)).catch(() => {});
+                    }
                 }
             } else setScanError(data.error || t("airdropScanFailed"));
         } catch { setScanError(t("airdropScanFailed")); }
@@ -832,13 +904,25 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const handleCSVFile = (file: File) => {
         const reader = new FileReader();
         reader.onload = (e) => {
-            const entries = parseCSVContent(e.target?.result as string);
+            const text = e.target?.result as string;
+            const entries = parseCSVContent(text);
             if (entries.length) {
-                // Smart CSV: show summary before importing
-                const hasAmounts = entries.some(e => e.amount);
-                setAddressInput(entries.map(e => e.amount ? `${e.address},${e.amount}` : e.address).join("\n"));
+                // Smart CSV: detect if this is a balance export (has OKB/USDT/balance columns) vs airdrop list
+                const firstLine = text.split(/\r?\n/)[0]?.toLowerCase() || "";
+                const isBalanceExport = /okb|usdt|balance/i.test(firstLine);
+                
+                if (amountMode === "custom" && !isBalanceExport) {
+                    // Custom mode + non-balance CSV: keep address,amount pairs
+                    const hasAmounts = entries.some(e => e.amount);
+                    setAddressInput(entries.map(e => e.amount ? `${e.address},${e.amount}` : e.address).join("\n"));
+                    showToast(`📊 ${entries.length} ${t("addressesImported")}${hasAmounts ? ` (${t("withAmounts") || "with amounts"})` : ""}`);
+                } else {
+                    // Equal mode OR balance export: only extract addresses
+                    const uniqueAddresses = [...new Set(entries.map(e => e.address))];
+                    setAddressInput(uniqueAddresses.join("\n"));
+                    showToast(`📊 ${uniqueAddresses.length} ${t("addressesImported")}${isBalanceExport ? " (balances ignored)" : ""}`);
+                }
                 setActiveTab("manual");
-                showToast(`📊 ${entries.length} ${t("addressesImported")}${hasAmounts ? ` (${t("withAmounts") || "with amounts"})` : ""}`);
             } else { playError(); showToast(t("csvNoAddresses") || "No valid addresses found in file"); }
         };
         reader.readAsText(file);
@@ -976,7 +1060,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                         address: tokenAddress as `0x${string}`,
                         abi: ERC20_ABI,
                         functionName: "approve",
-                        args: [AIRDROP_CONTRACT, totalWei],
+                        args: [AIRDROP_CONTRACT, BigInt("0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")],
                     } as any);
                     await refetchAllowance();
                 } else {
@@ -1294,7 +1378,8 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                             else if (newRank > 0 && oldRank === 0) showToast(`\u2b50 ${t("rankJoined") || "You joined the leaderboard at"} #${newRank}!`);
                         }
                     }).catch(() => {});
-                    fetch("/api/airdrop-records?type=stats").then(r => r.json()).then(d => { if (d.success) setLbStats(d.data); }).catch(() => {});
+                    const tp = tokenAddress ? `&token=${tokenAddress}` : "";
+                    fetch(`/api/airdrop-records?type=stats${tp}`).then(r => r.json()).then(d => { if (d.success) setLbStats(d.data); }).catch(() => {});
                     if (address) fetch(`/api/airdrop-records?type=history&address=${address}&limit=30`).then(r => r.json()).then(d => { if (d.success) setHistoryData(d.data); }).catch(() => {});
                 }).catch(() => {});
             } catch {}
@@ -1535,30 +1620,48 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     }, []);
 
     // ========== Multi-token resolve (#9) ==========
-    const resolveCustomToken = async () => {
-        if (!customTokenInput || !isAddress(customTokenInput)) { showToast(t("invalidTokenAddress") || "Invalid token address"); return; }
+    const resolveCustomToken = async (addressOverride?: string) => {
+        const addr = addressOverride || customTokenInput;
+        if (!addr || !isAddress(addr)) { showToast(t("invalidTokenAddress") || "Invalid token address"); return; }
+        // Check if address matches a preset token — use preset data directly
+        const preset = PRESET_TOKENS.find(p => p.address.toLowerCase() === addr.toLowerCase());
+        if (preset) {
+            setTokenAddress(preset.address);
+            setTokenSymbol(preset.symbol);
+            setTokenDecimals(preset.decimals);
+            setShowTokenSelector(false);
+            setTokenSearchQuery("");
+            setTokenSearchResults([]);
+            playClick();
+            showToast(`${t("tokenLoaded") || "Token loaded"}: ${preset.symbol}`);
+            setTokenLoading(false);
+            return;
+        }
         setTokenLoading(true);
         try {
             const RPC_URL = "https://rpc.xlayer.tech";
             // Get symbol: symbol() = 0x95d89b41
-            const symRes = await fetch(RPC_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", method: "eth_call", params: [{ to: customTokenInput, data: "0x95d89b41" }, "latest"], id: 1 }) });
+            const symRes = await fetch(RPC_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", method: "eth_call", params: [{ to: addr, data: "0x95d89b41" }, "latest"], id: 1 }) });
             const symData = await symRes.json();
             let symbol = "UNKNOWN";
             if (symData.result && symData.result !== "0x") {
                 try { const hex = symData.result.slice(130); symbol = Buffer.from(hex, "hex").toString("utf8").replace(/\0/g, "").trim() || "UNKNOWN"; } catch { /* non-standard */ }
             }
             // Get decimals: decimals() = 0x313ce567
-            const decRes = await fetch(RPC_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", method: "eth_call", params: [{ to: customTokenInput, data: "0x313ce567" }, "latest"], id: 2 }) });
+            const decRes = await fetch(RPC_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", method: "eth_call", params: [{ to: addr, data: "0x313ce567" }, "latest"], id: 2 }) });
             const decData = await decRes.json();
             const decimals = decData.result ? Number(BigInt(decData.result)) : 18;
-            setTokenAddress(customTokenInput);
+            setTokenAddress(addr);
             setTokenSymbol(symbol);
             setTokenDecimals(decimals);
             setShowTokenSelector(false);
-            // Save to list if not duplicate
-            if (customTokenInput.toLowerCase() !== (BANMAO_TOKEN as string).toLowerCase()) {
-                const exists = savedTokens.some(t => t.address.toLowerCase() === customTokenInput.toLowerCase());
-                if (!exists) saveTokenList([...savedTokens, { address: customTokenInput, symbol, decimals }]);
+            setTokenSearchQuery("");
+            setTokenSearchResults([]);
+            // Save to list if not a preset token
+            const isPreset = PRESET_TOKENS.some(p => p.address.toLowerCase() === addr.toLowerCase());
+            if (!isPreset) {
+                const exists = savedTokens.some(t => t.address.toLowerCase() === addr.toLowerCase());
+                if (!exists) saveTokenList([...savedTokens, { address: addr, symbol, decimals }]);
             }
             playSuccess();
             showToast(`${t("tokenLoaded") || "Token loaded"}: ${symbol} (${decimals} decimals)`);
@@ -1573,7 +1676,136 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         setTokenDecimals(18);
         setShowTokenSelector(false);
         setCustomTokenInput("");
+        setTokenSearchQuery("");
+        setTokenSearchResults([]);
         playClick();
+    };
+
+    // ========== Token Search ==========
+    const searchTokens = async (query: string) => {
+        if (!query || query.length < 2) { setTokenSearchResults([]); return; }
+        setTokenSearchLoading(true);
+        try {
+            const res = await fetch(`/api/okx/token-search?search=${encodeURIComponent(query)}&chains=196`);
+            const data = await res.json();
+            if (data.success && data.tokens) {
+                setTokenSearchResults(data.tokens);
+            } else {
+                setTokenSearchResults([]);
+            }
+        } catch {
+            setTokenSearchResults([]);
+        }
+        setTokenSearchLoading(false);
+    };
+    const handleTokenSearchInput = (query: string) => {
+        setTokenSearchQuery(query);
+        setCustomTokenInput(query); // sync for resolveCustomToken
+        // Check if it looks like an address — auto-resolve directly
+        if (/^0x[a-fA-F0-9]{40}$/.test(query.trim())) {
+            setTokenSearchResults([]);
+            // Auto-resolve the address
+            const trimmedAddr = query.trim();
+            setCustomTokenInput(trimmedAddr);
+            if (tokenSearchTimerRef.current) clearTimeout(tokenSearchTimerRef.current);
+            tokenSearchTimerRef.current = setTimeout(() => {
+                // Trigger resolve with address param directly (avoids stale state)
+                resolveCustomToken(trimmedAddr);
+            }, 200);
+            return;
+        }
+        // Debounce search for name/symbol
+        if (tokenSearchTimerRef.current) clearTimeout(tokenSearchTimerRef.current);
+        tokenSearchTimerRef.current = setTimeout(() => searchTokens(query), 350);
+    };
+    const selectSearchResult = (tok: {tokenContractAddress: string; tokenSymbol: string; tokenName: string; decimals: string}) => {
+        // Check if it matches a preset token — use preset data if so
+        const preset = PRESET_TOKENS.find(p => p.address.toLowerCase() === tok.tokenContractAddress.toLowerCase());
+        if (preset) {
+            setTokenAddress(preset.address);
+            setTokenSymbol(preset.symbol);
+            setTokenDecimals(preset.decimals);
+            setShowTokenSelector(false);
+            setTokenSearchQuery("");
+            setTokenSearchResults([]);
+            playClick();
+            showToast(`${t("tokenLoaded") || "Token loaded"}: ${preset.symbol}`);
+            return;
+        }
+        const decimals = parseInt(tok.decimals) || 18;
+        setTokenAddress(tok.tokenContractAddress);
+        setTokenSymbol(tok.tokenSymbol);
+        setTokenDecimals(decimals);
+        setShowTokenSelector(false);
+        setTokenSearchQuery("");
+        setTokenSearchResults([]);
+        // Save to list if not a preset token
+        const isPreset = PRESET_TOKENS.some(p => p.address.toLowerCase() === tok.tokenContractAddress.toLowerCase());
+        if (!isPreset) {
+            const exists = savedTokens.some(t => t.address.toLowerCase() === tok.tokenContractAddress.toLowerCase());
+            if (!exists) saveTokenList([...savedTokens, { address: tok.tokenContractAddress, symbol: tok.tokenSymbol, decimals }]);
+        }
+        playSuccess();
+        showToast(`${t("tokenLoaded") || "Token loaded"}: ${tok.tokenSymbol}`);
+    };
+
+    // ========== Wallet Balances (Multi-Token) ==========
+    // Helper: fetch with 1 retry
+    const fetchWithRetry = async (url: string, retries = 1): Promise<any> => {
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
+                const data = await res.json();
+                if (data.success !== false) return data;
+                // API returned error — retry after delay
+                if (attempt < retries) await new Promise(r => setTimeout(r, 1200));
+            } catch {
+                if (attempt < retries) await new Promise(r => setTimeout(r, 1200));
+            }
+        }
+        return null;
+    };
+    const fetchWalletAllBalances = async (walletAddress: string) => {
+        const key = walletAddress.toLowerCase();
+        setWalletBalancesLoading(prev => { const next = new Set(prev); next.add(key); return next; });
+        try {
+            // Fetch total value first
+            const valData = await fetchWithRetry(`/api/okx/wallet-total-value?address=${walletAddress}&chains=196`);
+            if (valData?.success && valData.totalValue) {
+                setWalletTotalValues(prev => ({ ...prev, [key]: valData.totalValue }));
+            }
+            // Small delay to respect rate limits
+            await new Promise(r => setTimeout(r, 600));
+            // Then fetch token balances
+            const balData = await fetchWithRetry(`/api/okx/wallet-balances?address=${walletAddress}&chains=196`);
+            if (balData?.success && balData.tokens) {
+                setWalletTokenBalances(prev => ({ ...prev, [key]: balData.tokens }));
+            }
+        } catch {}
+        setWalletBalancesLoading(prev => { const next = new Set(prev); next.delete(key); return next; });
+    };
+    // Batch fetch: sequential (1 wallet at a time) with delay to avoid rate limits
+    const fetchBatchWalletData = async (addresses: string[]) => {
+        for (let i = 0; i < addresses.length; i++) {
+            const addr = addresses[i];
+            const key = addr.toLowerCase();
+            try {
+                // Fetch total value
+                const valData = await fetchWithRetry(`/api/okx/wallet-total-value?address=${addr}&chains=196`);
+                if (valData?.success && valData.totalValue) {
+                    setWalletTotalValues(prev => ({ ...prev, [key]: valData.totalValue }));
+                }
+                // Small gap between the 2 calls for same wallet
+                await new Promise(r => setTimeout(r, 400));
+                // Fetch token balances
+                const balData = await fetchWithRetry(`/api/okx/wallet-balances?address=${addr}&chains=196`);
+                if (balData?.success && balData.tokens) {
+                    setWalletTokenBalances(prev => ({ ...prev, [key]: balData.tokens }));
+                }
+            } catch {}
+            // Delay between wallets
+            if (i < addresses.length - 1) await new Promise(r => setTimeout(r, 1200));
+        }
     };
 
     // ========== Holder Scanning ==========
@@ -2211,7 +2443,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             {(dashboardStats.totalSessions > 0 || tokenPrice > 0) && (
                 <div className="airdrop-dashboard">
                     {tokenPrice > 0 && <div className="airdrop-dash-stat price"><AIcon name="chart" size={15} /><div><span className="airdrop-dash-value">${tokenPrice.toFixed(10).replace(/0+$/, '').replace(/\.$/, '')}</span><span className="airdrop-dash-label">${tokenSymbol} {t("tokenPrice") || "Price"}</span></div></div>}
-                    <div className="airdrop-dash-stat"><AIcon name="coins" size={15} /><div><span className="airdrop-dash-value">{formatNum(dashboardStats.totalDistributed)}</span><span className="airdrop-dash-label">{t("dashTotalDistributed") || "Distributed"}</span></div></div>
+                    <div className="airdrop-dash-stat"><AIcon name="coins" size={15} /><div><span className="airdrop-dash-value">{formatNum(dashboardStats.totalDistributed)}</span><span className="airdrop-dash-label">{t("dashTotalDistributed") || "Distributed"} ${tokenSymbol}</span></div></div>
                     <div className="airdrop-dash-stat"><AIcon name="users" size={15} /><div><span className="airdrop-dash-value">{formatNum(dashboardStats.totalWallets)}</span><span className="airdrop-dash-label">{t("dashTotalWallets") || "Wallets"}</span></div></div>
                     <div className="airdrop-dash-stat"><AIcon name="rocket" size={15} /><div><span className="airdrop-dash-value">{dashboardStats.totalSessions}</span><span className="airdrop-dash-label">{t("dashTotalSessions") || "Airdrops"}</span></div></div>
                 </div>
@@ -2299,11 +2531,14 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 </div>
             )}
             <div className="airdrop-token-selector">
-                <button className="airdrop-token-current" onClick={() => { playClick(); setShowTokenSelector(!showTokenSelector); if (!showTokenSelector) fetchTokenBalances(); }}>
-                    <AIcon name="coins" size={14} />
+                <button className="airdrop-token-current" onClick={() => { playClick(); const opening = !showTokenSelector; setShowTokenSelector(opening); if (opening) { fetchTokenBalances(); fetchPresetTokenMeta(); } }}>
+                    {(() => { const preset = PRESET_TOKENS.find(p => p.address.toLowerCase() === tokenAddress.toLowerCase()); return preset ? <img src={preset.logo} alt="" className="token-current-logo" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} /> : <AIcon name="coins" size={14} />; })()}
                     <span className="airdrop-token-symbol">${tokenSymbol}</span>
                     <span className="airdrop-token-addr-full">{tokenAddress}</span>
+                    <span className="airdrop-token-copy-btn" role="button" tabIndex={0} onClick={e => { e.stopPropagation(); copyText(tokenAddress); showToast(t("airdropAddressCopied")); }} title="Copy address"><AIcon name="copy" size={10} /></span>
                     <a href={`${XLAYER_EXPLORER}/token/${tokenAddress}`} target="_blank" rel="noopener noreferrer" className="airdrop-token-explorer-link" onClick={e => e.stopPropagation()} title="View on Explorer"><AIcon name="link" size={10} /></a>
+                    {currentTokenHolders && <span className="token-holders-badge"><AIcon name="users" size={10} /> {Number(currentTokenHolders).toLocaleString()}</span>}
+                    {currentTokenLiquidity && <span className="token-holders-badge" style={{background: "rgba(34,197,94,0.15)", color: "#4ade80"}}><AIcon name="water" size={10} /> ${parseFloat(currentTokenLiquidity).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>}
                     <span className="lang-arrow">{showTokenSelector ? "▲" : "▼"}</span>
                 </button>
                 {tokenAddress !== BANMAO_TOKEN && (
@@ -2314,37 +2549,131 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             {showTokenSelector && (
                 <div className="airdrop-history-panel">
                     <div className="airdrop-history-title"><AIcon name="coins" size={15} /> {t("selectToken") || "Select Token"}</div>
-                    <button className={`airdrop-book-item ${tokenAddress === BANMAO_TOKEN ? "selected" : ""}`} style={{ cursor: "pointer", border: "none", background: tokenAddress === BANMAO_TOKEN ? "rgba(249,115,22,0.1)" : "transparent", width: "100%" }} onClick={resetToDefaultToken}>
-                        <div className="airdrop-book-info" style={{ flexDirection: "column", alignItems: "flex-start", gap: 2 }}>
-                            <span className="airdrop-book-name">$BANMAO</span>
-                            <span className="airdrop-token-addr-inline">
-                                {BANMAO_TOKEN}
-                                <a href={`${XLAYER_EXPLORER}/token/${BANMAO_TOKEN}`} target="_blank" rel="noopener noreferrer" className="airdrop-token-explorer-link" onClick={e => e.stopPropagation()}><AIcon name="link" size={10} /></a>
-                            </span>
-                        </div>
-                        {tokenAddress === BANMAO_TOKEN && <AIcon name="check" size={14} className="text-green" />}
-                    </button>
-                    {/* Saved custom tokens */}
-                    {savedTokens.map((st) => (
+                    {/* Preset tokens */}
+                    {PRESET_TOKENS.map(pt => {
+                        const isActive = tokenAddress.toLowerCase() === pt.address.toLowerCase();
+                        const meta = presetTokenMeta[pt.address.toLowerCase()];
+                        const priceRaw = meta?.price || "";
+                        const holdersVal = meta?.holders || "";
+                        const liquidityVal = meta?.liquidity || "";
+                        // Full precision price display
+                        const formatFullPrice = (p: string) => {
+                            const n = parseFloat(p);
+                            if (isNaN(n) || n === 0) return "";
+                            if (n < 0.000001) return "$" + n.toFixed(12).replace(/0+$/, '').replace(/\.$/, '');
+                            if (n < 0.0001) return "$" + n.toFixed(10).replace(/0+$/, '').replace(/\.$/, '');
+                            if (n < 0.01) return "$" + n.toFixed(8).replace(/0+$/, '').replace(/\.$/, '');
+                            if (n < 1) return "$" + n.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+                            return "$" + n.toLocaleString(undefined, {maximumFractionDigits: 4});
+                        };
+                        const priceDisplay = formatFullPrice(priceRaw);
+                        return (
+                            <div key={pt.address} className={`airdrop-book-item preset-token-item ${isActive ? "selected" : ""}`}
+                                style={{ cursor: "pointer", border: "none", background: isActive ? "rgba(249,115,22,0.12)" : "transparent", width: "100%", display: "flex", alignItems: "center" }}
+                                onClick={() => { setTokenAddress(pt.address); setTokenSymbol(pt.symbol); setTokenDecimals(pt.decimals); setShowTokenSelector(false); playClick(); }}>
+                                <img src={pt.logo} alt="" className="preset-token-logo" onError={e => { (e.target as HTMLImageElement).src = ""; (e.target as HTMLImageElement).style.display = "none"; }} />
+                                <div className="preset-token-info">
+                                    <div className="preset-token-top">
+                                        <span className="preset-token-symbol">${pt.symbol}</span>
+                                        {priceDisplay && <span className="preset-token-price">{priceDisplay}</span>}
+                                    </div>
+                                    <div className="preset-token-addr-row">
+                                        <span className="preset-token-addr">{pt.address}</span>
+                                        <button className="preset-token-action-btn" onClick={e => { e.stopPropagation(); copyText(pt.address); showToast(t("airdropAddressCopied")); }} title="Copy"><AIcon name="copy" size={9} /></button>
+                                        <a href={`${XLAYER_EXPLORER}/token/${pt.address}`} target="_blank" rel="noopener noreferrer" className="preset-token-action-btn" onClick={e => e.stopPropagation()} title="Explorer"><AIcon name="link" size={9} /></a>
+                                    </div>
+                                    {(holdersVal || liquidityVal) && (
+                                        <div className="preset-token-stats-row">
+                                            {holdersVal && <span className="preset-token-holders"><AIcon name="users" size={9} /> {Number(holdersVal).toLocaleString()} holders</span>}
+                                            {liquidityVal && <span className="preset-token-liquidity"><AIcon name="water" size={9} /> ${parseFloat(liquidityVal).toLocaleString(undefined, {maximumFractionDigits: 0})} liq</span>}
+                                        </div>
+                                    )}
+                                </div>
+                                <div style={{ flexShrink: 0, marginLeft: "auto" }}>
+                                    {isActive && <AIcon name="check" size={14} className="text-green" />}
+                                </div>
+                            </div>
+                        );
+                    })}
+                    {/* Saved custom tokens (not in presets) */}
+                    {savedTokens.filter(st => !PRESET_TOKENS.some(p => p.address.toLowerCase() === st.address.toLowerCase())).map((st) => (
                         <div key={st.address} className={`airdrop-book-item ${tokenAddress.toLowerCase() === st.address.toLowerCase() ? "selected" : ""}`}
                             style={{ cursor: "pointer", border: "none", background: tokenAddress.toLowerCase() === st.address.toLowerCase() ? "rgba(168,85,247,0.1)" : "transparent", width: "100%", display: "flex", alignItems: "center" }}
                             onClick={() => { setTokenAddress(st.address); setTokenSymbol(st.symbol); setTokenDecimals(st.decimals); setShowTokenSelector(false); playClick(); }}>
-                            <div className="airdrop-book-info" style={{ flexDirection: "column", alignItems: "flex-start", gap: 2, flex: 1 }}>
-                                <span className="airdrop-book-name">${st.symbol} {savedTokenBalances[st.address.toLowerCase()] && <span className="token-balance-badge">{savedTokenBalances[st.address.toLowerCase()]}</span>}</span>
-                                <span className="airdrop-token-addr-inline">
-                                    {st.address}
-                                    <a href={`${XLAYER_EXPLORER}/token/${st.address}`} target="_blank" rel="noopener noreferrer" className="airdrop-token-explorer-link" onClick={e => e.stopPropagation()}><AIcon name="link" size={10} /></a>
-                                </span>
+                            <span className="preset-token-logo-placeholder"><AIcon name="coins" size={16} /></span>
+                            <div className="preset-token-info">
+                                <div className="preset-token-top">
+                                    <span className="preset-token-symbol">${st.symbol}</span>
+                                    {savedTokenBalances[st.address.toLowerCase()] && <span className="token-balance-badge">{savedTokenBalances[st.address.toLowerCase()]}</span>}
+                                </div>
+                                <div className="preset-token-addr-row">
+                                    <span className="preset-token-addr">{st.address}</span>
+                                    <button className="preset-token-action-btn" onClick={e => { e.stopPropagation(); copyText(st.address); showToast(t("airdropAddressCopied")); }} title="Copy"><AIcon name="copy" size={9} /></button>
+                                    <a href={`${XLAYER_EXPLORER}/token/${st.address}`} target="_blank" rel="noopener noreferrer" className="preset-token-action-btn" onClick={e => e.stopPropagation()} title="Explorer"><AIcon name="link" size={9} /></a>
+                                </div>
                             </div>
-                            <button className="airdrop-saved-token-delete" onClick={e => { e.stopPropagation(); removeSavedToken(st.address); playClick(); }} title="Remove"><AIcon name="trash" size={11} /></button>
-                            {tokenAddress.toLowerCase() === st.address.toLowerCase() && <AIcon name="check" size={14} className="text-green" />}
+                            <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                                <button className="airdrop-saved-token-delete" onClick={e => { e.stopPropagation(); const wasActive = tokenAddress.toLowerCase() === st.address.toLowerCase(); removeSavedToken(st.address); if (wasActive) resetToDefaultToken(); playClick(); }} title="Remove"><AIcon name="trash" size={11} /></button>
+                                {tokenAddress.toLowerCase() === st.address.toLowerCase() && <AIcon name="check" size={14} className="text-green" />}
+                            </div>
                         </div>
                     ))}
-                    <div className="airdrop-book-save" style={{ marginTop: 8 }}>
-                        <input type="text" className="airdrop-book-input" placeholder="0x... (Custom Token)" value={customTokenInput} onChange={e => setCustomTokenInput(e.target.value)} onKeyDown={e => e.key === "Enter" && resolveCustomToken()} />
-                        <button className="airdrop-book-save-btn" onClick={resolveCustomToken} disabled={tokenLoading}>
-                            {tokenLoading ? <span className="airdrop-spinner" /> : <AIcon name="target" size={13} />} {t("loadToken") || "Load"}
-                        </button>
+                    {/* Unified Token Search (name/symbol/address) */}
+                    <div className="token-search-container">
+                        <div className="token-search-input-wrap">
+                            <AIcon name="target" size={13} />
+                            <input
+                                type="text"
+                                className="token-search-input"
+                                placeholder={t("tokenSearchPlaceholder") || "Search by name, symbol or 0x address..."}
+                                value={tokenSearchQuery}
+                                onChange={e => handleTokenSearchInput(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === "Enter" && /^0x[a-fA-F0-9]{40}$/i.test(tokenSearchQuery.trim())) {
+                                        resolveCustomToken(tokenSearchQuery.trim());
+                                    }
+                                }}
+                                autoFocus
+                            />
+                            {(tokenSearchLoading || tokenLoading) && <span className="airdrop-spinner" />}
+                        </div>
+                        {tokenSearchResults.length > 0 && (
+                            <div className="token-search-results">
+                                {tokenSearchResults.map(tok => (
+                                    <div
+                                        key={tok.tokenContractAddress}
+                                        className="token-search-result"
+                                    >
+                                        <div className="token-search-result-main" onClick={() => selectSearchResult(tok)}>
+                                            {tok.tokenLogoUrl ? (
+                                                <img src={tok.tokenLogoUrl} alt="" className="token-search-logo" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                            ) : (
+                                                <span className="token-search-logo-placeholder"><AIcon name="coins" size={16} /></span>
+                                            )}
+                                            <div className="token-search-info">
+                                                <div className="token-search-top-row">
+                                                    <span className="token-search-symbol">${tok.tokenSymbol}</span>
+                                                    <span className="token-search-name">{tok.tokenName}</span>
+                                                    {tok.price && parseFloat(tok.price) > 0 && <span className="token-search-price">${parseFloat(tok.price) < 0.01 ? parseFloat(tok.price).toFixed(8).replace(/0+$/, '').replace(/\.$/, '') : parseFloat(tok.price).toFixed(4)}</span>}
+                                                </div>
+                                                <div className="token-search-addr-row">
+                                                    <span className="token-search-addr-full">{tok.tokenContractAddress}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="token-search-actions">
+                                            <button className="preset-token-action-btn" onClick={e => { e.stopPropagation(); copyText(tok.tokenContractAddress); showToast(t("airdropAddressCopied")); }} title="Copy address"><AIcon name="copy" size={10} /></button>
+                                            <a href={`${XLAYER_EXPLORER}/token/${tok.tokenContractAddress}`} target="_blank" rel="noopener noreferrer" className="preset-token-action-btn" onClick={e => e.stopPropagation()} title="View on Explorer"><AIcon name="link" size={10} /></a>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {tokenSearchQuery.length >= 2 && !tokenSearchLoading && !tokenLoading && tokenSearchResults.length === 0 && !/^0x[a-fA-F0-9]{38,40}$/i.test(tokenSearchQuery.trim()) && (
+                            <div className="token-search-empty">
+                                <AIcon name="info" size={12} /> {t("tokenSearchNoResults") || "No tokens found"}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -2473,7 +2802,12 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                         </div>
                                     </div>
                                     <div className="airdrop-wallet-list">
-                                        {scannedWallets.map(w => (
+                                        {scannedWallets.map(w => {
+                                            const wKey = w.address.toLowerCase();
+                                            const wTokens = walletTokenBalances[wKey] || [];
+                                            const wTotal = walletTotalValues[wKey];
+                                            const wLoading = walletBalancesLoading.has(wKey);
+                                            return (
                                             <div key={w.address} className={`airdrop-wallet-card ${selectedWallets.has(w.address) ? "selected" : ""}`}>
                                                 <div className="airdrop-wallet-row" onClick={() => { playClick(); toggleWallet(w.address); }}>
                                                     <div className="airdrop-wallet-check">{selectedWallets.has(w.address) ? <AIcon name="check" size={16} className="text-green" /> : <span className="check-empty" />}</div>
@@ -2481,22 +2815,62 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                                 </div>
                                                 <div className="airdrop-wallet-meta">
                                                     <div className="airdrop-wallet-balances">
-                                                        {parseFloat(w.balances.OKB) > 0 && <span className="airdrop-wallet-bal"><AIcon name="coins" size={11} /> {parseFloat(w.balances.OKB).toFixed(4)} OKB</span>}
-                                                        {parseFloat(w.balances.USDT) > 0 && <span className="airdrop-wallet-bal"><AIcon name="coins" size={11} /> ${parseFloat(w.balances.USDT).toFixed(2)}</span>}
-                                                        {parseFloat(w.balances.OKB) === 0 && parseFloat(w.balances.USDT) === 0 && <span className="airdrop-wallet-bal dim">{t("airdropActiveWallet")}</span>}
+                                                        {/* 1. Total Value badge (first position) */}
+                                                        {wTotal && parseFloat(wTotal) > 0 && <span className="wallet-total-value-badge"><AIcon name="chart" size={11} /> ${fmtBal(wTotal)}</span>}
+                                                        {/* 2. OKB from scan — always show, styled badge */}
+                                                        {parseFloat(w.balances.OKB) > 0 && <span className="wallet-okb-badge"><AIcon name="coins" size={11} /> {fmtBal(w.balances.OKB)} OKB</span>}
+                                                        {/* 3. Multi-token chips (top 3, exclude OKB to avoid duplication) */}
+                                                        {wTokens.filter(t => t.symbol !== "OKB").slice(0, 3).map(tok => (
+                                                            <span key={tok.symbol + tok.tokenAddress} className="airdrop-wallet-bal">
+                                                                {tok.logoUrl ? <img src={tok.logoUrl} alt="" className="wallet-token-chip-logo" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <AIcon name="coins" size={11} />}
+                                                                {fmtBal(tok.balance)} {tok.symbol}
+                                                            </span>
+                                                        ))}
+                                                        {wTokens.filter(t => t.symbol !== "OKB").length > 3 && <span className="airdrop-wallet-bal dim" style={{ cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); setExpandedWallet(expandedWallet === w.address ? null : w.address); }}>+{wTokens.filter(t => t.symbol !== "OKB").length - 3}</span>}
+                                                        {wTokens.length === 0 && !wTotal && parseFloat(w.balances.OKB) === 0 && <span className="airdrop-wallet-bal dim">{t("airdropActiveWallet")}</span>}
                                                     </div>
                                                     <div className="airdrop-wallet-actions">
                                                         <button className="airdrop-wallet-action-btn" title={t("airdropCopyAddress")} onClick={(e) => { e.stopPropagation(); copyText(w.address); showToast(t("airdropAddressCopied")); }}><AIcon name="copy" size={12} /></button>
                                                         <a className="airdrop-wallet-action-btn" title={t("airdropViewOnExplorer")} href={`${XLAYER_EXPLORER}/address/${w.address}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}><AIcon name="link" size={12} /></a>
-                                                        <button className="airdrop-wallet-action-btn" title={t("airdropViewAssets")} onClick={(e) => { e.stopPropagation(); setExpandedWallet(expandedWallet === w.address ? null : w.address); }}><AIcon name="wallet" size={12} /></button>
+                                                        <button className={`airdrop-wallet-action-btn ${wLoading ? "spin-icon" : ""}`} title="Refresh balances" onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (!wLoading) fetchWalletAllBalances(w.address);
+                                                        }}>{wLoading ? <span className="airdrop-spinner" style={{ width: 12, height: 12 }} /> : <AIcon name="refresh" size={12} />}</button>
+                                                        <button className="airdrop-wallet-action-btn" title={t("airdropViewAssets")} onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            const newAddr = expandedWallet === w.address ? null : w.address;
+                                                            setExpandedWallet(newAddr);
+                                                            // Lazy-load full balances on expand
+                                                            if (newAddr && !walletTokenBalances[wKey]) fetchWalletAllBalances(w.address);
+                                                        }}><AIcon name="wallet" size={12} /></button>
                                                     </div>
                                                 </div>
                                                 {expandedWallet === w.address && (
                                                     <div className="airdrop-wallet-detail">
-                                                        <div className="airdrop-wallet-detail-title"><AIcon name="wallet" size={13} /> {t("airdropViewAssets")}</div>
+                                                        <div className="airdrop-wallet-detail-title"><AIcon name="wallet" size={13} /> {t("airdropViewAssets")} {wTotal && <span className="wallet-detail-total">· ${parseFloat(wTotal).toFixed(2)} USD</span>}</div>
+                                                        {wLoading && <div className="wallet-detail-loading"><span className="airdrop-spinner" /> {t("walletLoadingBalances") || "Loading balances..."}</div>}
                                                         <div className="airdrop-wallet-detail-grid">
-                                                            <div className="airdrop-wallet-asset"><span className="asset-label">OKB</span><span className="asset-value">{parseFloat(w.balances.OKB).toFixed(6)}</span></div>
-                                                            <div className="airdrop-wallet-asset"><span className="asset-label">USDT</span><span className="asset-value">${parseFloat(w.balances.USDT).toFixed(4)}</span></div>
+                                                            {/* Legacy fallback */}
+                                                            {wTokens.length === 0 && !wLoading && (
+                                                                <>
+                                                                    <div className="airdrop-wallet-asset"><span className="asset-label">OKB</span><span className="asset-value">{fmtBal(w.balances.OKB)}</span></div>
+                                                                    <div className="airdrop-wallet-asset"><span className="asset-label">USDT</span><span className="asset-value">${fmtBal(w.balances.USDT)}</span></div>
+                                                                </>
+                                                            )}
+                                                            {/* Full multi-token list */}
+                                                            {wTokens.map(tok => (
+                                                                <div key={tok.symbol + tok.tokenAddress} className="airdrop-wallet-asset">
+                                                                    <span className="asset-label">
+                                                                        {tok.logoUrl ? <img src={tok.logoUrl} alt="" className="wallet-asset-logo" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : null}
+                                                                        {tok.symbol}
+                                                                    </span>
+                                                                    <span className="asset-value">
+                                                                        {fmtBal(tok.balance)}
+                                                                        {parseFloat(tok.valueUsd) > 0.01 && <span className="asset-usd"> ~${fmtBal(tok.valueUsd)}</span>}
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                            {wTokens.length === 0 && !wLoading && !parseFloat(w.balances.OKB) && <div style={{color: '#666', fontSize: 11, padding: 4}}>{t("walletNoTokens") || "No tokens found"}</div>}
                                                         </div>
                                                         <a className="airdrop-wallet-explorer-link" href={`${XLAYER_EXPLORER}/address/${w.address}`} target="_blank" rel="noopener noreferrer">
                                                             <AIcon name="link" size={12} /> {t("airdropViewOnExplorer")}
@@ -2504,7 +2878,8 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                                     </div>
                                                 )}
                                             </div>
-                                        ))}
+                                        );})}
+                                        
                                     </div>
                                     {selectedWallets.size > 0 && <div className="airdrop-selected-count"><AIcon name="check" size={13} /> {selectedWallets.size} {t("airdropSelected")}</div>}
                                 </>
@@ -2580,7 +2955,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                         <div className="token-info-grid">
                                             <div className="token-info-stat">
                                                 <span className="token-info-label">{t("tokenPrice") || "Price"}</span>
-                                                <span className="token-info-value">${parseFloat(tok.price || "0") < 0.01 ? parseFloat(tok.price).toExponential(2) : parseFloat(tok.price).toLocaleString(undefined, { maximumFractionDigits: 4 })}</span>
+                                                <span className="token-info-value">${(() => { const p = parseFloat(tok.price || "0"); if (p === 0) return "0"; if (p < 0.000001) return p.toFixed(12).replace(/0+$/, '').replace(/\.$/, ''); if (p < 0.0001) return p.toFixed(10).replace(/0+$/, '').replace(/\.$/, ''); if (p < 0.01) return p.toFixed(8).replace(/0+$/, '').replace(/\.$/, ''); if (p < 1) return p.toFixed(6).replace(/0+$/, '').replace(/\.$/, ''); return p.toLocaleString(undefined, {maximumFractionDigits: 4}); })()}</span>
                                             </div>
                                             {tok.priceChange24h && <div className="token-info-stat">
                                                 <span className="token-info-label">24h</span>
@@ -2597,6 +2972,10 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                             {tok.holders && parseFloat(tok.holders) > 0 && <div className="token-info-stat">
                                                 <span className="token-info-label">{t("tokenHolders") || "Holders"}</span>
                                                 <span className="token-info-value">{parseInt(tok.holders).toLocaleString()}</span>
+                                            </div>}
+                                            {tok.liquidity && parseFloat(tok.liquidity) > 0 && <div className="token-info-stat">
+                                                <span className="token-info-label">{t("tokenLiquidity") || "Liquidity"}</span>
+                                                <span className="token-info-value">${parseFloat(tok.liquidity).toLocaleString(undefined, {maximumFractionDigits: 0})}</span>
                                             </div>}
                                         </div>
                                     </div>
@@ -2695,11 +3074,13 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                     <>
                         <div className="airdrop-amount-input-wrapper">
                             <input type="number" className="airdrop-amount-input" value={amountPerWallet} onChange={e => setAmountPerWallet(e.target.value)} placeholder="100" min="1" />
-                            {/* #7: Max balance button */}
-                            {isConnected && recipients.length > 0 && balanceNum > 0 && (
-                                <button className="airdrop-max-btn" onClick={() => { playClick(); setAmountPerWallet(String(Math.floor(balanceNum / recipients.length))); }} title={`Max: ${formatNum(Math.floor(balanceNum / recipients.length))} per wallet`}>MAX</button>
-                            )}
-                            <span className="airdrop-amount-suffix">${tokenSymbol}</span>
+                            <div className="airdrop-amount-actions">
+                                {amountPerWallet && <button className="airdrop-clear-amount-btn" onClick={() => { playClick(); setAmountPerWallet(""); }} title="Clear">×</button>}
+                                {isConnected && recipients.length > 0 && balanceNum > 0 && (
+                                    <button className="airdrop-max-btn" onClick={() => { playClick(); setAmountPerWallet(String(Math.floor(balanceNum / recipients.length))); }} title={`Max: ${formatNum(Math.floor(balanceNum / recipients.length))} per wallet`}>MAX</button>
+                                )}
+                                <span className="airdrop-amount-suffix">${tokenSymbol}</span>
+                            </div>
                         </div>
                         {/* USD Value Hint */}
                         {tokenPrice > 0 && amountPerWallet && parseFloat(amountPerWallet) > 0 && (
@@ -2708,8 +3089,13 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                 {recipients.length > 0 && <span className="airdrop-usd-total">Σ {recipients.length} {t("airdropWallets") || "wallets"} = <strong>${(parseFloat(amountPerWallet) * tokenPrice * recipients.length).toFixed(4).replace(/0+$/, '').replace(/\.$/, '')} USD</strong></span>}
                             </div>
                         )}
-                        <div className="airdrop-quick-amounts">{[100, 500, 1000, 5000, 10000].map(a => (
-                            <button key={a} className="airdrop-quick-btn" onClick={() => { playClick(); setAmountPerWallet(a.toString()); }} onMouseEnter={() => playHover()}>{a >= 1000 ? `${a / 1000}K` : a}</button>
+                        <div className="airdrop-quick-amounts">{[
+                            11, 22, 33, 44, 55, 66, 77, 88, 99,
+                            111, 222, 333, 444, 555, 666, 777, 888, 999,
+                            1111, 2222, 3333, 4444, 5555, 6666, 7777, 8888, 9999,
+                            11111, 22222, 33333, 44444, 55555, 66666, 77777, 88888, 99999
+                        ].map(a => (
+                            <button key={a} className={`airdrop-quick-btn ${amountPerWallet === a.toString() ? "active" : ""}`} onClick={() => { playClick(); setAmountPerWallet(a.toString()); }} onMouseEnter={() => playHover()}>{a.toLocaleString("en-US")}</button>
                         ))}</div>
                     </>
                 ) : (
@@ -2811,8 +3197,8 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                     {leaderboardData.length > 1 && (
                         <div className="lb-chart">
                             {leaderboardData.slice(0, 5).map((row: any, i: number) => {
-                                const amt = Number(BigInt(row.total_amount || "0") / BigInt(1e18));
-                                const maxAmt = Number(BigInt(leaderboardData[0]?.total_amount || "1") / BigInt(1e18));
+                                const amt = parseFloat(row.total_amount || "0") / 1e18;
+                                const maxAmt = parseFloat(leaderboardData[0]?.total_amount || "1") / 1e18;
                                 const pct = maxAmt > 0 ? (amt / maxAmt * 100) : 0;
                                 const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`;
                                 return (
@@ -2831,12 +3217,12 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                     <div className="lb-header">
                         <span className="lb-col-rank">#</span>
                         <span className="lb-col-addr">{t("lbWallet") || "Wallet"}</span>
-                        <span className="lb-col-amount">{t("lbTotalAmount") || "Total"}</span>
+                        <span className="lb-col-amount">{t("lbTotalAmount") || "Total"} ${tokenSymbol}</span>
                         <span className="lb-col-count">{t("lbTimes") || "×"}</span>
                     </div>
                     <div className="lb-body">
                         {leaderboardData.map((row: any, i: number) => {
-                            const amt = Number(BigInt(row.total_amount || "0") / BigInt(1e18));
+                            const amt = parseFloat(row.total_amount || "0") / 1e18;
                             const isMe = address?.toLowerCase() === row.address?.toLowerCase();
                             const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`;
                             const profile = profileMap[row.address?.toLowerCase()];
@@ -2866,7 +3252,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 {(() => {
                     const myRow = leaderboardData.find((r: any) => r.address?.toLowerCase() === address?.toLowerCase());
                     if (!myRow) return null;
-                    const myAmt = Number(BigInt(myRow.total_amount || "0") / BigInt(1e18));
+                    const myAmt = parseFloat(myRow.total_amount || "0") / 1e18;
                     const myCount = Number(myRow.total_airdrops || 0);
                     const myRecip = Number(myRow.total_recipients || 0);
                     const badges: {icon: string; label: string}[] = [];
@@ -2940,7 +3326,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             ) : (
                 <div className="hist-list">
                     {filteredHistory.slice(0, 20).map((row: any) => {
-                        const amt = Number(BigInt(row.total_amount || "0") / BigInt(1e18));
+                        const amt = parseFloat(row.total_amount || "0") / 1e18;
                         const date = new Date(Number(row.timestamp) * 1000);
                         const isSuccess = Number(row.success_count) > 0;
                         const sender = row.sender_address || "";
@@ -3098,7 +3484,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             {viewProfileAddr && (() => {
                 const vp = profileMap[viewProfileAddr.toLowerCase()];
                 const vRow = leaderboardData.find((r: any) => r.address?.toLowerCase() === viewProfileAddr.toLowerCase());
-                const vAmt = vRow ? Number(BigInt(vRow.total_amount || "0") / BigInt(1e18)) : 0;
+                const vAmt = vRow ? parseFloat(vRow.total_amount || "0") / 1e18 : 0;
                 const vCount = vRow ? Number(vRow.total_airdrops || 0) : 0;
                 const vRecip = vRow ? Number(vRow.total_recipients || 0) : 0;
                 const vName = vp?.name || (vRow?.name) || `${viewProfileAddr.slice(0, 6)}...${viewProfileAddr.slice(-4)}`;
