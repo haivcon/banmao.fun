@@ -494,6 +494,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [historyData, setHistoryData] = useState<any[]>([]);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [lbStats, setLbStats] = useState<any>(null);
+    const [lbSortBy, setLbSortBy] = useState<"amount" | "recipients" | "airdrops">("amount");
     // Analytics state (#12)
     const [analyticsData, setAnalyticsData] = useState<any>(null);
     const [rightTab, setRightTab] = useState<"history" | "analytics">("history");
@@ -3610,22 +3611,40 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                         <div className="lb-chart-track">
                                             <div className="lb-chart-fill" style={{ width: `${Math.max(pct, 5)}%` }} />
                                         </div>
-                                        <span className="lb-chart-val">{amt > 1e6 ? `${(amt / 1e6).toFixed(1)}M` : amt > 1e3 ? `${(amt / 1e3).toFixed(1)}K` : amt.toLocaleString()}</span>
+                                        <span className="lb-chart-val">{Math.round(amt).toLocaleString()}</span>
                                     </div>
                                 );
                             })}
                         </div>
                     )}
                     <div className="lb-table">
+                    {/* Sort buttons */}
+                    <div className="lb-sort-row">
+                        <button className={`lb-sort-btn ${lbSortBy === "amount" ? "active" : ""}`} onClick={() => { playClick(); setLbSortBy("amount"); }}>
+                            💰 {t("lbTotalAmount") || "Token"}
+                        </button>
+                        <button className={`lb-sort-btn ${lbSortBy === "recipients" ? "active" : ""}`} onClick={() => { playClick(); setLbSortBy("recipients"); }}>
+                            👛 {t("lbRecipients") || "Recipients"}
+                        </button>
+                        <button className={`lb-sort-btn ${lbSortBy === "airdrops" ? "active" : ""}`} onClick={() => { playClick(); setLbSortBy("airdrops"); }}>
+                            🎯 {t("lbTimes") || "Airdrops"}
+                        </button>
+                    </div>
                     <div className="lb-header">
                         <span className="lb-col-rank">#</span>
                         <span className="lb-col-addr">{t("lbWallet") || "Wallet"}</span>
                         <span className="lb-col-amount">{t("lbTotalAmount") || "Total"} ${tokenSymbol}</span>
+                        <span className="lb-col-recip">👛</span>
                         <span className="lb-col-count">{t("lbTimes") || "×"}</span>
                     </div>
                     <div className="lb-body">
-                        {leaderboardData.map((row: any, i: number) => {
+                        {[...leaderboardData].sort((a: any, b: any) => {
+                            if (lbSortBy === "recipients") return Number(b.total_recipients || 0) - Number(a.total_recipients || 0);
+                            if (lbSortBy === "airdrops") return Number(b.total_airdrops || 0) - Number(a.total_airdrops || 0);
+                            return parseFloat(b.total_amount || "0") - parseFloat(a.total_amount || "0");
+                        }).map((row: any, i: number) => {
                             const amt = parseFloat(row.total_amount || "0") / 1e18;
+                            const recip = Number(row.total_recipients || 0);
                             const isMe = address?.toLowerCase() === row.address?.toLowerCase();
                             const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`;
                             const profile = profileMap[row.address?.toLowerCase()];
@@ -3644,7 +3663,8 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                             <button className="lb-wallet-action" title={t("airdropViewOnExplorer") || "View on Explorer"} onClick={() => window.open(`${XLAYER_EXPLORER}/address/${row.address}`, "_blank")}><AIcon name="link" size={10} /></button>
                                         </span>
                                     </span>
-                                    <span className="lb-col-amount">{amt > 1e6 ? `${(amt / 1e6).toFixed(1)}M` : amt > 1e3 ? `${(amt / 1e3).toFixed(1)}K` : amt.toLocaleString()}</span>
+                                    <span className="lb-col-amount">{Math.round(amt).toLocaleString()}</span>
+                                    <span className="lb-col-recip">{recip.toLocaleString()}</span>
                                     <span className="lb-col-count">{row.total_airdrops}</span>
                                 </div>
                             );

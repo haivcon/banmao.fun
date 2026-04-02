@@ -5060,8 +5060,39 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .lb-col-addr a { color: #e2e8f0; text-decoration: none; font-family: 'Space Mono', monospace; }
 .lb-col-addr a:hover { color: #f97316; }
 .lb-col-amount { width: 80px; text-align: right; font-size: 12px; font-weight: 700; color: #f97316; }
-.lb-col-count { width: 50px; text-align: center; font-size: 12px; color: rgba(255, 255, 255, 0.5); }
+.lb-col-count { width: 40px; text-align: center; font-size: 12px; color: rgba(255, 255, 255, 0.5); }
+.lb-col-recip { width: 50px; text-align: right; font-size: 12px; color: rgba(168, 85, 247, 0.7); font-weight: 600; }
 .lb-col-recipients { width: 60px; text-align: right; font-size: 12px; color: rgba(255, 255, 255, 0.5); }
+
+/* Sort buttons row */
+.lb-sort-row {
+    display: flex;
+    gap: 6px;
+    padding: 8px 8px 4px;
+    justify-content: center;
+}
+.lb-sort-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+.lb-sort-btn:hover { background: rgba(168,85,247,0.08); color: rgba(255,255,255,0.7); }
+.lb-sort-btn.active {
+    background: rgba(168,85,247,0.15);
+    border-color: rgba(168,85,247,0.3);
+    color: #a855f7;
+    font-weight: 700;
+}
+.defi-airdrop-page.light .lb-sort-btn { background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.08); color: rgba(0,0,0,0.4); }
+.defi-airdrop-page.light .lb-sort-btn:hover { background: rgba(168,85,247,0.06); }
+.defi-airdrop-page.light .lb-sort-btn.active { background: rgba(168,85,247,0.1); border-color: rgba(168,85,247,0.2); color: #7c3aed; }
+.defi-airdrop-page.light .lb-col-recip { color: rgba(124, 58, 237, 0.7); }
 
 .lb-you-badge {
     font-size: 8px;
@@ -5312,9 +5343,12 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
 .airdrop-side-panel .lb-col-rank { width: 28px; font-size: 12px; }
 .airdrop-side-panel .lb-col-addr { font-size: 11px; }
 .airdrop-side-panel .lb-col-amount { width: 60px; font-size: 11px; }
-.airdrop-side-panel .lb-col-count { width: 30px; font-size: 11px; }
+.airdrop-side-panel .lb-col-count { width: 28px; font-size: 11px; }
+.airdrop-side-panel .lb-col-recip { width: 36px; font-size: 11px; }
 .airdrop-side-panel .lb-col-recipients { display: none; }
 .airdrop-side-panel .lb-row { padding: 7px 8px; }
+.airdrop-side-panel .lb-sort-row { padding: 6px 4px 2px; gap: 4px; }
+.airdrop-side-panel .lb-sort-btn { padding: 3px 8px; font-size: 10px; }
 
 .airdrop-side-panel .hist-card { padding: 10px 12px; }
 .airdrop-side-panel .hist-amount { font-size: 13px; }
