@@ -374,4 +374,6 @@ export const enAirdrop = {
     segmentEnable: "Enable segmentation",
     segmentWalletsPerPhase: "wallets / phase",
     segmentPhase: "Phase",
+    airdropMassiveNoticeTitle: "Massive Airdrop Advisory",
+    airdropMassiveNotice: "If you are airdropping to a large number of addresses, please pay attention to the gas fee for each transaction. During network congestion, gas fees can spike—consider pausing and retrying the failed wallets later when gas is cheaper. Also, if the wallet popup doesn't appear, please manually open your wallet extension to sign the transaction while the process is running.",
 };

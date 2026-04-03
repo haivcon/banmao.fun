@@ -2522,6 +2522,19 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 {isSending && sendMode !== "batch" && (
                     <button className="airdrop-cancel-btn" onClick={cancelSending}><AIcon name="xCircle" size={14} /> {t("airdropStop") || "Stop"}</button>
                 )}
+                
+                {/* Massive Airdrop Advisory */}
+                {sendTotal > 100 && (
+                    <div style={{ margin: "16px 0", padding: "16px", background: "rgba(34, 197, 94, 0.08)", border: "1px solid rgba(34, 197, 94, 0.3)", borderRadius: "12px", textAlign: "left" }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                            <div style={{ color: "#22c55e", flexShrink: 0, marginTop: "2px" }}><AIcon name="info" size={24} /></div>
+                            <div>
+                                <strong style={{ display: "block", marginBottom: "6px", fontSize: "15px", color: "#4ade80" }}>{t("airdropMassiveNoticeTitle") || "Massive Airdrop Advisory"}</strong>
+                                <div style={{ color: "#86efac", fontSize: "13px", lineHeight: "1.6" }}>{t("airdropMassiveNotice") || "If you are airdropping to a large number of addresses, please pay attention to the gas fee for each transaction. During network congestion, gas fees can spike—consider pausing and retrying the failed wallets later when gas is cheaper. Also, if the wallet popup doesn't appear, please manually open your wallet extension to sign the transaction while the process is running."}</div>
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <div className="airdrop-results-list">
                     {sendResults.slice(-10).reverse().map((r, i) => (
                         <div key={i} className={`airdrop-result-row ${r.success ? "success" : "error"}`}>

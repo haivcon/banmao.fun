@@ -371,4 +371,6 @@ export const idAirdrop = {
     segmentEnable: "Aktifkan segmentasi",
     segmentWalletsPerPhase: "dompet / fase",
     segmentPhase: "Fase",
+    airdropMassiveNoticeTitle: "Saran Airdrop Massal",
+    airdropMassiveNotice: "Jika Anda melakukan airdrop ke sejumlah besar alamat, harap perhatikan biaya gas untuk setiap pengiriman. Saat jaringan sibuk, biaya gas bisa melonjak—pertimbangkan untuk berhenti sejenak dan mencoba lagi dompet yang gagal nanti. Selain itu, jika popup tidak muncul, silakan buka manual ekstensi dompet Anda untuk mengonfirmasi saat proses berjalan.",
 };

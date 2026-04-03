@@ -371,4 +371,6 @@ export const koAirdrop = {
     segmentEnable: "분할 활성화",
     segmentWalletsPerPhase: "지갑 / 단계",
     segmentPhase: "단계",
+    airdropMassiveNoticeTitle: "대규모 에어드랍 주의사항",
+    airdropMassiveNotice: "대량의 주소로 에어드랍할 때 각 전송의 가스비에 주의하세요. 네트워크 혼잡 시 가스비가 급등할 수 있습니다. 일시 중지하고 가스비가 저렴할 때 실패한 지갑을 다시 시도하는 것이 좋습니다. 또한 지갑 팝업이 나타나지 않으면 처리 중일 때 지갑 확장 프로그램을 수동으로 열어 확인하세요.",
 };

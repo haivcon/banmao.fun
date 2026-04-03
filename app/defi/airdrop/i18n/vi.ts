@@ -374,4 +374,6 @@ export const viAirdrop = {
     segmentEnable: "Bật phân đợt",
     segmentWalletsPerPhase: "ví / đợt",
     segmentPhase: "Đợt",
+    airdropMassiveNoticeTitle: "Chú Ý Phí Gas & Xác Nhận Ví",
+    airdropMassiveNotice: "Nếu bạn airdrop với số lượng địa chỉ lớn, hãy chú ý phí gas cho từng lần gửi. Có nhiều lúc mạng lưới nghẽn khiến phí gas cao hơn bình thường - hãy tạm dừng một lát và ấn thử lại các ví chưa gửi, phí gas sẽ rẻ hơn. Ngoài ra, nhiều lúc ví không tự bật xác nhận, hãy bấm vào icon ví (Extension) để xác nhận thủ công nếu tiến trình vẫn đang chạy.",
 };
