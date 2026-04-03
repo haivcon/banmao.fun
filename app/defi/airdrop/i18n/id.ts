@@ -359,7 +359,6 @@ export const idAirdrop = {
     airdropScanCancelled: "Scan stopped",
     tokenLiquidity: "Liquidity",
     holderSearchPlaceholder: "Cari berdasarkan nama, simbol atau alamat 0x...",
-    all: "Semua",
     tokenSearchPlaceholder: "Search...",
     tokenSearchLoading: "Searching...",
     tokenSearchNoResults: "No tokens found",
@@ -368,4 +367,8 @@ export const idAirdrop = {
     walletTokens: "tokens",
     walletLoadingBalances: "Loading...",
     walletNoTokens: "No tokens",
+    segmentTitle: "Segmentasi Pintar",
+    segmentEnable: "Aktifkan segmentasi",
+    segmentWalletsPerPhase: "dompet / fase",
+    segmentPhase: "Fase",
 };

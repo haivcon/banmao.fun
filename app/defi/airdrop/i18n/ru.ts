@@ -359,7 +359,6 @@ export const ruAirdrop = {
     airdropScanCancelled: "Scan stopped",
     tokenLiquidity: "Liquidity",
     holderSearchPlaceholder: "Поиск по имени, символу или адресу 0x...",
-    all: "Все",
     tokenSearchPlaceholder: "Search...",
     tokenSearchLoading: "Searching...",
     tokenSearchNoResults: "No tokens found",
@@ -368,4 +367,8 @@ export const ruAirdrop = {
     walletTokens: "tokens",
     walletLoadingBalances: "Loading...",
     walletNoTokens: "No tokens",
+    segmentTitle: "Умное Разделение",
+    segmentEnable: "Включить разделение",
+    segmentWalletsPerPhase: "кошельков / этап",
+    segmentPhase: "Этап",
 };

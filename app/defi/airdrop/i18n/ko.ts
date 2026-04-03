@@ -359,7 +359,6 @@ export const koAirdrop = {
     airdropScanCancelled: "Scan stopped",
     tokenLiquidity: "Liquidity",
     holderSearchPlaceholder: "이름, 심볼 또는 0x 주소로 검색...",
-    all: "전체",
     tokenSearchPlaceholder: "Search...",
     tokenSearchLoading: "Searching...",
     tokenSearchNoResults: "No tokens found",
@@ -368,4 +367,8 @@ export const koAirdrop = {
     walletTokens: "tokens",
     walletLoadingBalances: "Loading...",
     walletNoTokens: "No tokens",
+    segmentTitle: "스마트 분할",
+    segmentEnable: "분할 활성화",
+    segmentWalletsPerPhase: "지갑 / 단계",
+    segmentPhase: "단계",
 };

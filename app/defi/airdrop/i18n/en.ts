@@ -370,5 +370,8 @@ export const enAirdrop = {
     airdropScanCancelled: "Scan stopped",
     tokenLiquidity: "Liquidity",
     holderSearchPlaceholder: "Search by name, symbol or 0x address...",
-    all: "All",
+    segmentTitle: "Smart Segmentation",
+    segmentEnable: "Enable segmentation",
+    segmentWalletsPerPhase: "wallets / phase",
+    segmentPhase: "Phase",
 };

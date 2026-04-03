@@ -359,7 +359,6 @@ export const zhAirdrop = {
     airdropScanCancelled: "扫描已停止",
     tokenLiquidity: "流动性",
     holderSearchPlaceholder: "按名称、符号或0x地址搜索...",
-    all: "全部",
     // Token Search
     tokenSearchPlaceholder: "按名称、符号或 0x 地址搜索...",
     tokenSearchLoading: "搜索中...",
@@ -370,4 +369,8 @@ export const zhAirdrop = {
     walletTokens: "代币",
     walletLoadingBalances: "加载余额中...",
     walletNoTokens: "未找到代币",
+    segmentTitle: "智能分段",
+    segmentEnable: "启用分段",
+    segmentWalletsPerPhase: "钱包 / 阶段",
+    segmentPhase: "阶段",
 };

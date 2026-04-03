@@ -278,6 +278,11 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [invalidAddresses, setInvalidAddresses] = useState<string[]>([]);
     const [duplicateCount, setDuplicateCount] = useState(0);
     const [duplicateAddresses, setDuplicateAddresses] = useState<string[]>([]);
+    
+    // Segmentation logic
+    const [useSegment, setUseSegment] = useState(false);
+    const [segmentSize, setSegmentSize] = useState(5000);
+    const [segmentPage, setSegmentPage] = useState(0);
     const [batchSizeConfig, setBatchSizeConfig] = useState(() => {
         try { const v = JSON.parse(localStorage.getItem(STORAGE_CONFIG) || "{}").batchSize; return typeof v === 'number' ? Math.min(v, MAX_BATCH_SIZE) : MAX_BATCH_SIZE; } catch { return MAX_BATCH_SIZE; }
     });
@@ -783,13 +788,16 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
 
     // Recipients
     const getEntries = useCallback((): RecipientEntry[] => {
-        const addrs = activeTab === "scan" ? Array.from(selectedWallets) : parsedAddresses;
+        let addrs = activeTab === "scan" ? Array.from(selectedWallets) : parsedAddresses;
+        if (activeTab === "manual" && useSegment && segmentSize > 0) {
+            addrs = addrs.slice(segmentPage * segmentSize, (segmentPage + 1) * segmentSize);
+        }
         return addrs.map(a => ({
             address: a,
             amount: amountMode === "custom" && customAmounts.has(a.toLowerCase())
                 ? customAmounts.get(a.toLowerCase())! : amountPerWallet,
         }));
-    }, [activeTab, parsedAddresses, selectedWallets, amountMode, customAmounts, amountPerWallet]);
+    }, [activeTab, parsedAddresses, selectedWallets, amountMode, customAmounts, amountPerWallet, useSegment, segmentSize, segmentPage]);
 
     const recipientEntries = getEntries();
     const recipients = recipientEntries.map(r => r.address);
@@ -1141,9 +1149,8 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             : entries.length * GAS_PER_TRANSFER;
         const gasNeeded = (gasUnits * GAS_PRICE_GWEI) / 1e9;
         if (okbNum < gasNeeded) {
-            playError();
-            showToast(`${t("errInsufficientGas")} (${okbNum.toFixed(8)} < ${gasNeeded.toFixed(8)} OKB)`);
-            return;
+            // Remove hard block - allow them to try sending even if estimate is low
+            showToast(`⚠ ${t("errInsufficientGas")} (${okbNum.toFixed(8)} < ${gasNeeded.toFixed(8)} OKB)`);
         }
 
         playClick(); setStep("sending"); setIsSending(true); setSendProgress(0); setSendTotal(entries.length); scrollToPanel();
@@ -2950,6 +2957,35 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                     ))}
                                 </div>
                             </details>
+                        )}
+                        {/* Pagination / Segment UI for Massive Airdrops */}
+                        {parsedAddresses.length > 500 && (
+                            <div className="airdrop-segment-panel" style={{ marginTop: 12, padding: 12, background: "rgba(168,85,247,0.1)", borderRadius: 8, border: "1px solid rgba(168,85,247,0.3)" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: useSegment ? 8 : 0 }}>
+                                    <span style={{ fontSize: 13, fontWeight: 600, color: "#a855f7", display: "flex", alignItems: "center", gap: 6 }}><AIcon name="layers" size={14} /> {t("segmentTitle") || "Smart Segmentation"}</span>
+                                    <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, cursor: "pointer", color: "#ccc" }}>
+                                        <input type="checkbox" checked={useSegment} onChange={e => { playClick(); setUseSegment(e.target.checked); }} style={{ accentColor: "#a855f7" }} />
+                                        {t("segmentEnable") || "Bật chia đợt"}
+                                    </label>
+                                </div>
+                                {useSegment && (
+                                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", marginTop: 10 }}>
+                                        <select className="airdrop-book-input" style={{ width: "auto", flex: 1, padding: "6px 10px", fontSize: 12 }} value={segmentSize} onChange={e => { playClick(); setSegmentSize(Number(e.target.value)); setSegmentPage(0); }}>
+                                            <option value={1000}>1,000 {t("segmentWalletsPerPhase") || "ví / đợt"}</option>
+                                            <option value={2000}>2,000 {t("segmentWalletsPerPhase") || "ví / đợt"}</option>
+                                            <option value={5000}>5,000 {t("segmentWalletsPerPhase") || "ví / đợt"}</option>
+                                            <option value={10000}>10,000 {t("segmentWalletsPerPhase") || "ví / đợt"}</option>
+                                        </select>
+                                        <select className="airdrop-book-input" style={{ width: "auto", flex: 2, padding: "6px 10px", fontSize: 12 }} value={segmentPage} onChange={e => { playClick(); setSegmentPage(Number(e.target.value)); }}>
+                                            {Array.from({ length: Math.ceil(parsedAddresses.length / segmentSize) }).map((_, i) => {
+                                                const start = i * segmentSize + 1;
+                                                const end = Math.min((i + 1) * segmentSize, parsedAddresses.length);
+                                                return <option key={i} value={i}>{t("segmentPhase") || "Đợt"} {i + 1} ({start} - {end})</option>;
+                                            })}
+                                        </select>
+                                    </div>
+                                )}
+                            </div>
                         )}
                         {/* QR Scan button (#6) */}
                         <button className="airdrop-qr-btn" onClick={startQrScanner} onMouseEnter={() => playHover()}>

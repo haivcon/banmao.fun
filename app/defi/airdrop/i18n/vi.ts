@@ -370,5 +370,8 @@ export const viAirdrop = {
     airdropScanCancelled: "Đã dừng quét",
     tokenLiquidity: "Thanh khoản",
     holderSearchPlaceholder: "Tìm theo tên, symbol hoặc địa chỉ 0x...",
-    all: "Tất cả",
+    segmentTitle: "Phân Đợt Thông Minh",
+    segmentEnable: "Bật phân đợt",
+    segmentWalletsPerPhase: "ví / đợt",
+    segmentPhase: "Đợt",
 };

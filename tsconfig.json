@@ -41,6 +41,10 @@
   ],
   "exclude": [
     "node_modules",
-    "scripts"
+    "scripts",
+    ".agent/**/*",
+    ".gemini/**/*",
+    "app/api-reference/**/*",
+    "api_docs/**/*"
   ]
 }
