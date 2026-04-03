@@ -373,4 +373,9 @@ export const idAirdrop = {
     segmentPhase: "Fase",
     airdropMassiveNoticeTitle: "Saran Airdrop Massal",
     airdropMassiveNotice: "Jika Anda melakukan airdrop ke sejumlah besar alamat, harap perhatikan biaya gas untuk setiap pengiriman. Saat jaringan sibuk, biaya gas bisa melonjak—pertimbangkan untuk berhenti sejenak dan mencoba lagi dompet yang gagal nanti. Selain itu, jika popup tidak muncul, silakan buka manual ekstensi dompet Anda untuk mengonfirmasi saat proses berjalan.",
+    csvSourceCurrent: "Sumber Data Saat Ini",
+    csvFileName: "Nama File",
+    csvPathNoticeTitle: "Pemberitahuan Privasi Jalur",
+    csvPathNoticeBody: "Browser web secara otomatis menyembunyikan jalur lokal mutlak (mis. C:\\) dari file yang berasal dari komputer Anda untuk melindungi privasi pengguna.",
+    csvHistoryTitle: "Riwayat File yang Terakhir Digunakan",
 };

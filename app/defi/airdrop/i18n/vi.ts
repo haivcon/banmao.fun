@@ -376,4 +376,9 @@ export const viAirdrop = {
     segmentPhase: "Đợt",
     airdropMassiveNoticeTitle: "Chú Ý Phí Gas & Xác Nhận Ví",
     airdropMassiveNotice: "Nếu bạn airdrop với số lượng địa chỉ lớn, hãy chú ý phí gas cho từng lần gửi. Có nhiều lúc mạng lưới nghẽn khiến phí gas cao hơn bình thường - hãy tạm dừng một lát và ấn thử lại các ví chưa gửi, phí gas sẽ rẻ hơn. Ngoài ra, nhiều lúc ví không tự bật xác nhận, hãy bấm vào icon ví (Extension) để xác nhận thủ công nếu tiến trình vẫn đang chạy.",
+    csvSourceCurrent: "Nguồn dữ liệu (Đang dùng)",
+    csvFileName: "Tên file",
+    csvPathNoticeTitle: "Bảo mật Đường Dẫn",
+    csvPathNoticeBody: "Trình duyệt web tự động ẩn đường dẫn thư mục gốc (URL/Path) của tập tin từ máy tính cá nhân để bảo vệ quyền riêng tư (Browser Security Sandbox).",
+    csvHistoryTitle: "Lịch sử file đã dùng gần đây",
 };

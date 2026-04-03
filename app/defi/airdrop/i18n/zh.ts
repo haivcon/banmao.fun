@@ -375,4 +375,9 @@ export const zhAirdrop = {
     segmentPhase: "阶段",
     airdropMassiveNoticeTitle: "大规模空投建议",
     airdropMassiveNotice: "如果您向大量地址发送空投，请密切注意每笔交易的 Gas 费。当网络拥堵时，Gas 费可能会飙升——考虑暂停并在之后重新发送失败的钱包以节省成本。此外，如果钱包弹窗没有出现，请手动打开您的钱包扩展程序以在进程运行时进行确认。",
+    csvSourceCurrent: "当前数据源",
+    csvFileName: "文件名",
+    csvPathNoticeTitle: "路径隐私声明",
+    csvPathNoticeBody: "出于保护用户隐私的考虑，网络浏览器会自动隐藏来自您个人计算机的文件的绝对本地路径（例如 C:\\）。",
+    csvHistoryTitle: "最近使用的文件历史",
 };

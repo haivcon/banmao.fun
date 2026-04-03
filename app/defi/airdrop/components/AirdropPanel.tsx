@@ -283,6 +283,11 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const [useSegment, setUseSegment] = useState(false);
     const [segmentSize, setSegmentSize] = useState(5000);
     const [segmentPage, setSegmentPage] = useState(0);
+
+    // CSV Tracking
+    const [csvFileHistory, setCsvFileHistory] = useState<{name: string, ts: number, size: string}[]>(() => { try { return JSON.parse(localStorage.getItem("banmao_csv_history") || "[]"); } catch { return []; } });
+    const [currentCsvFile, setCurrentCsvFile] = useState<{name: string, size: string} | null>(null);
+
     const [batchSizeConfig, setBatchSizeConfig] = useState(() => {
         try { const v = JSON.parse(localStorage.getItem(STORAGE_CONFIG) || "{}").batchSize; return typeof v === 'number' ? Math.min(v, MAX_BATCH_SIZE) : MAX_BATCH_SIZE; } catch { return MAX_BATCH_SIZE; }
     });
@@ -1032,9 +1037,16 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     const handleCSVFile = (file: File) => {
         const reader = new FileReader();
         reader.onload = (e) => {
+            const sizeStr = file.size > 1024 * 1024 ? (file.size / (1024 * 1024)).toFixed(2) + "MB" : (file.size / 1024).toFixed(0) + "KB";
+            setCurrentCsvFile({ name: file.name, size: sizeStr });
+            const newHist = [{ name: file.name, size: sizeStr, ts: Date.now() }, ...csvFileHistory.filter(h => h.name !== file.name)].slice(0, 5);
+            setCsvFileHistory(newHist);
+            localStorage.setItem("banmao_csv_history", JSON.stringify(newHist));
+
             const text = e.target?.result as string;
             const entries = parseCSVContent(text);
             if (entries.length) {
+                setActiveTab("manual");
                 // Smart CSV: detect if this is a balance export (has OKB/USDT/balance columns) vs airdrop list
                 const firstLine = text.split(/\r?\n/)[0]?.toLowerCase() || "";
                 const isBalanceExport = /okb|usdt|balance/i.test(firstLine);
@@ -3000,6 +3012,34 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                 )}
                             </div>
                         )}
+                        
+                        {/* CSV Upload History & Current File */}
+                        {(currentCsvFile || csvFileHistory.length > 0) && (
+                            <div className="airdrop-csv-meta" style={{ marginTop: 16 }}>
+                                {currentCsvFile && (
+                                    <div className="current-csv-info" style={{ padding: 12, background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 8, marginBottom: 12 }}>
+                                        <div style={{ fontSize: 13, color: "#a855f7", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>📄 {t("csvSourceCurrent") || "Current Data Source"}</div>
+                                        <div style={{ fontSize: 13, color: "#e2e8f0", marginTop: 4, wordBreak: "break-all" }}>{t("csvFileName") || "File Name"}: <strong>{currentCsvFile.name}</strong> <span style={{ color: "#94a3b8", fontSize: 12 }}>({currentCsvFile.size})</span></div>
+                                        <div style={{ fontSize: 11, color: "#f59e0b", marginTop: 6, lineHeight: 1.4 }}>⚠️ <strong>{t("csvPathNoticeTitle") || "Path Privacy Notice"}:</strong> {t("csvPathNoticeBody") || "Web browsers automatically hide the absolute local path of the file from your computer to protect user privacy (Browser Security Sandbox)."}</div>
+                                    </div>
+                                )}
+                                
+                                {csvFileHistory.length > 0 && (
+                                    <div className="csv-history-list" style={{ padding: 12, background: "rgba(255,255,255,0.03)", borderRadius: 8 }}>
+                                        <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 8, fontWeight: 500 }}>🕒 {t("csvHistoryTitle") || "Recent Used Files History"}</div>
+                                        <div style={{maxHeight: "80px", overflowY: "auto"}}>
+                                            {csvFileHistory.map((h, i) => (
+                                                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, padding: "5px 0", borderBottom: i < csvFileHistory.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                                                    <div style={{ color: "#cbd5e1", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "60%" }} title={h.name}>{h.name}</div>
+                                                    <div style={{ color: "#64748b" }}>{new Date(h.ts).toLocaleString(lang === "vi" ? "vi-VN" : undefined)}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {/* QR Scan button (#6) */}
                         <button className="airdrop-qr-btn" onClick={startQrScanner} onMouseEnter={() => playHover()}>
                             <AIcon name="target" size={14} /> {t("qrScanAddress") || "📷 QR Scan"}
