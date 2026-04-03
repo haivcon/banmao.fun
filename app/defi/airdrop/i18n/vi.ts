@@ -381,4 +381,9 @@ export const viAirdrop = {
     csvPathNoticeTitle: "Bảo mật Đường Dẫn",
     csvPathNoticeBody: "Trình duyệt web tự động ẩn đường dẫn thư mục gốc (URL/Path) của tập tin từ máy tính cá nhân để bảo vệ quyền riêng tư (Browser Security Sandbox).",
     csvHistoryTitle: "Lịch sử file đã dùng gần đây",
+    // Multi-select legal risk modal
+    flagSelectAll: "Chọn tất cả",
+    flagSelected: "đã chọn",
+    multiDeletedCount: "Đã xóa",
+    retryAllBlacklisted: "Tất cả địa chỉ thất bại đều nằm trong danh sách đen. Không có gì để thử lại.",
 };

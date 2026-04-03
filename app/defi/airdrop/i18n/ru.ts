@@ -378,4 +378,9 @@ export const ruAirdrop = {
     csvPathNoticeTitle: "Уведомление о конфиденциальности пути",
     csvPathNoticeBody: "Веб-браузеры автоматически скрывают абсолютный локальный путь (например, C:\\) к файлу с вашего компьютера для защиты конфиденциальности пользователя.",
     csvHistoryTitle: "История последних использованных файлов",
+    // Multi-select legal risk modal
+    flagSelectAll: "Выбрать все",
+    flagSelected: "выбрано",
+    multiDeletedCount: "Удалено",
+    retryAllBlacklisted: "Все неудачные адреса в чёрном списке. Нечего повторять.",
 };

@@ -380,4 +380,9 @@ export const zhAirdrop = {
     csvPathNoticeTitle: "路径隐私声明",
     csvPathNoticeBody: "出于保护用户隐私的考虑，网络浏览器会自动隐藏来自您个人计算机的文件的绝对本地路径（例如 C:\\）。",
     csvHistoryTitle: "最近使用的文件历史",
+    // Multi-select legal risk modal
+    flagSelectAll: "全选",
+    flagSelected: "已选择",
+    multiDeletedCount: "已移除",
+    retryAllBlacklisted: "所有失败地址均已被列入黑名单，无需重试。",
 };

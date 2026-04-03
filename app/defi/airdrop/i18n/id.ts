@@ -378,4 +378,9 @@ export const idAirdrop = {
     csvPathNoticeTitle: "Pemberitahuan Privasi Jalur",
     csvPathNoticeBody: "Browser web secara otomatis menyembunyikan jalur lokal mutlak (mis. C:\\) dari file yang berasal dari komputer Anda untuk melindungi privasi pengguna.",
     csvHistoryTitle: "Riwayat File yang Terakhir Digunakan",
+    // Multi-select legal risk modal
+    flagSelectAll: "Pilih Semua",
+    flagSelected: "dipilih",
+    multiDeletedCount: "Dihapus",
+    retryAllBlacklisted: "Semua alamat gagal masuk daftar hitam. Tidak ada yang perlu dicoba ulang.",
 };

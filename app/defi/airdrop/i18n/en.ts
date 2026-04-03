@@ -381,4 +381,9 @@ export const enAirdrop = {
     csvPathNoticeTitle: "Path Privacy Notice",
     csvPathNoticeBody: "Web browsers automatically hide the absolute local path (e.g. C:\\) of the file from your computer to protect user privacy.",
     csvHistoryTitle: "Recent Used Files History",
+    // Multi-select legal risk modal
+    flagSelectAll: "Select All",
+    flagSelected: "selected",
+    multiDeletedCount: "Removed",
+    retryAllBlacklisted: "All failed addresses are blacklisted. Nothing to retry.",
 };

@@ -378,4 +378,9 @@ export const koAirdrop = {
     csvPathNoticeTitle: "경로 개인정보 고지",
     csvPathNoticeBody: "웹 브라우저는 사용자 개인정보 보호를 위해 컴퓨터의 파일에 대한 절대 로컬 경로(예: C:\\)를 자동으로 숨깁니다.",
     csvHistoryTitle: "최근 사용된 파일 기록",
+    // Multi-select legal risk modal
+    flagSelectAll: "모두 선택",
+    flagSelected: "선택됨",
+    multiDeletedCount: "제거됨",
+    retryAllBlacklisted: "모든 실패한 주소가 블랙리스트에 있습니다. 재시도할 항목이 없습니다.",
 };
