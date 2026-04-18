@@ -2,8 +2,8 @@ import type { Metadata, ResolvingMetadata } from "next";
 import CollectionClient from "./CollectionClient";
 
 type Props = {
-    params: { [key: string]: string };
-    searchParams: { [key: string]: string | string[] | undefined };
+    params: Promise<{ [key: string]: string }>;
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
 function parseCloudinaryUrl() {
@@ -47,10 +47,11 @@ async function fetchOpenGraphImage(filename: string): Promise<string | null> {
 }
 
 export async function generateMetadata(
-    { params, searchParams }: Props,
+    props: Props,
     parent: ResolvingMetadata
 ): Promise<Metadata> {
-    const imgName = searchParams.img;
+    const searchParams = await props.searchParams;
+    const imgName = searchParams?.img;
     let ogImage = "https://www.banmao.fun/pwa/main/icon-512x512.png"; // Fixed robust fallback
 
     if (imgName && typeof imgName === "string") {
