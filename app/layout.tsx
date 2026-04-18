@@ -13,34 +13,33 @@ export const metadata: Metadata = {
 
   // Note: manifest is set by each sub-app layout for proper PWA install
 
-  // OpenGraph for Facebook/LinkedIn/Discord
-  openGraph: {
-    type: "website",
-    locale: "en_US",
-    alternateLocale: ["vi_VN", "ko_KR", "zh_CN", "ru_RU", "id_ID"],
-    url: "https://banmao.fun",
-    siteName: "BANMAO Gaming",
-    title: "BANMAO — XLayer Gaming Ecosystem",
-    description: "Experience the future of blockchain gaming on XLayer. Play, stake, and win in our immersive 3D ecosystem.",
-    images: [
-      {
-        url: "/banmao_logo.png",
-        width: 512,
-        height: 512,
-        alt: "BANMAO Logo",
-      },
-    ],
-  },
+    openGraph: {
+        type: "website",
+        locale: "en_US",
+        alternateLocale: ["vi_VN", "ko_KR", "zh_CN", "ru_RU", "id_ID"],
+        url: "https://banmao.fun",
+        siteName: "BANMAO Gaming",
+        title: "BANMAO — XLayer Gaming Ecosystem",
+        description: "Experience the future of blockchain gaming on XLayer. Play, stake, and win in our immersive 3D ecosystem.",
+        images: [
+            {
+                url: "/branding/banmao_logo.png",
+                width: 512,
+                height: 512,
+                alt: "BANMAO Logo",
+            },
+        ],
+    },
 
-  // Twitter Cards
-  twitter: {
-    card: "summary_large_image",
-    site: "@banmao_X",
-    creator: "@banmao_X",
-    title: "BANMAO — XLayer Gaming Ecosystem",
-    description: "Experience the future of blockchain gaming on XLayer. Play, stake, and win in our immersive 3D ecosystem.",
-    images: ["/banmao_logo.png"],
-  },
+    // Twitter Cards
+    twitter: {
+        card: "summary_large_image",
+        site: "@banmao_X",
+        creator: "@banmao_X",
+        title: "BANMAO — XLayer Gaming Ecosystem",
+        description: "Experience the future of blockchain gaming on XLayer. Play, stake, and win in our immersive 3D ecosystem.",
+        images: ["/branding/banmao_logo.png"],
+    },
 
   // App metadata
   applicationName: "BANMAO",

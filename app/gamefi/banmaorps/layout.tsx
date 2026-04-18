@@ -23,7 +23,20 @@ export const metadata: Metadata = {
             { url: "/games/rps/rps-icon-192x192.png", sizes: "192x192", type: "image/png" },
         ],
     },
+
+    openGraph: {
+        title: "$banmao+RPS",
+        description: "Play Rock-Paper-Scissors and collect $BANMAO tokens on XLayer",
+        images: ["/games/rps/rps-icon-512x512.png"],
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "$banmao+RPS",
+        description: "Play Rock-Paper-Scissors and collect $BANMAO tokens on XLayer",
+        images: ["/games/rps/rps-icon-512x512.png"],
+    },
 };
+
 
 export default function GameLayout({ children }: { children: React.ReactNode }) {
     return <GameLayoutClient>{children}</GameLayoutClient>;
