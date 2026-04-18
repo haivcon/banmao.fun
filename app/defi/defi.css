@@ -1,5 +1,21 @@
 /* ===================== DEFI HUB PAGE STYLES ===================== */
 
+/* ===== SCROLL FIX =====
+   landing.css sets html,body { position: fixed; overflow: hidden } for the 3D homepage.
+   We MUST undo that here so the DeFi page can scroll normally.
+   :has(.defi-page) scopes it only when this page is active. */
+html:has(.defi-page),
+html:has(.defi-page) body {
+    position: relative !important;
+    overflow: visible !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 100vh !important;
+    -webkit-overflow-scrolling: touch;
+}
+
 /* Base Variables */
 :root {
     --defi-primary: #00d4ff;
@@ -20,14 +36,12 @@
 .defi-page {
     min-height: 100vh;
     min-height: 100dvh;
-    /* iOS Safari fix */
     background-color: #050510;
     /* 3D Cyber Mesh Grid Background */
     background-image:
-        linear-gradient(rgba(0, 212, 255, 0.1) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(168, 85, 247, 0.1) 1px, transparent 1px),
-        radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.2) 0%, transparent 60%);
-    background-size: 40px 40px, 40px 40px, 100% 100%;
+        linear-gradient(rgba(0, 212, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(168, 85, 247, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px, 40px 40px;
     animation: gridMove 20s linear infinite;
     color: #fff;
     font-family: 'Space Grotesk', 'Inter', sans-serif;
@@ -35,18 +49,38 @@
     position: relative;
     overflow-x: hidden;
     overflow-y: auto;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
     perspective: 1000px;
-    /* Enable 3D perspective for child elements */
+    z-index: 1;
+}
+
+/* Gradient Mesh Blob behind everything */
+.defi-page::before {
+    content: '';
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 80vw;
+    height: 80vh;
+    background: radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.15) 0%, rgba(0, 212, 255, 0.15) 50%, rgba(239, 68, 68, 0.1) 100%);
+    filter: blur(100px);
+    transform: translate(-50%, -50%);
+    animation: meshWarp 15s ease-in-out infinite alternate;
+    pointer-events: none;
+    z-index: -1;
 }
 
 @keyframes gridMove {
-    0% {
-        background-position: 0 0, 0 0, 50% 0;
-    }
+    0% { background-position: 0 0, 0 0; }
+    100% { background-position: 0 40px, 0 40px; }
+}
 
-    100% {
-        background-position: 0 40px, 0 40px, 50% 0;
-    }
+@keyframes meshWarp {
+    0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 0.5; }
+    50% { transform: translate(-45%, -55%) scale(1.1) rotate(10deg); opacity: 0.8; }
+    100% { transform: translate(-55%, -45%) scale(0.9) rotate(-10deg); opacity: 0.5; }
 }
 
 /* ... (Keep scrollbar styles) ... */
@@ -174,28 +208,82 @@
     transform: translateX(-4px);
 }
 
-/* ===================== HERO SECTION ===================== */
-.defi-hero {
-    text-align: center;
-    margin-bottom: 2.5rem;
+/* ===================== TOP BOARD (INLINE HERO & STATS) ===================== */
+.defi-top-board {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin: 0 auto 3rem;
+    max-width: 1100px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0 1rem;
     position: relative;
     z-index: 10;
 }
 
-.defi-hero h2 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin: 0 0 0.75rem;
-    background: linear-gradient(135deg, var(--defi-primary) 0%, var(--defi-secondary) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+.defi-hero-inline {
+    flex: 1;
+    min-width: 280px;
 }
 
-.defi-hero p {
-    font-size: 1.1rem;
+.defi-hero-inline p {
     color: rgba(255, 255, 255, 0.6);
     margin: 0;
+    font-size: 1.05rem;
+}
+
+/* Shimmer Sweep Animation */
+.shimmer-text {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin: 0 0 0.5rem;
+    background: linear-gradient(
+        90deg,
+        var(--defi-primary) 0%,
+        var(--defi-secondary) 50%,
+        var(--defi-primary) 100%
+    );
+    background-size: 200% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: shimmerSweep 3s linear infinite;
+    filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.3));
+    letter-spacing: -1px;
+}
+
+@keyframes shimmerSweep {
+    to { background-position: 200% center; }
+}
+
+.defi-stats-inline {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    flex: 2;
+    min-width: 300px;
+    justify-content: flex-end;
+}
+
+@media (max-width: 850px) {
+    .defi-stats-inline {
+        justify-content: center;
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+    .defi-hero-inline {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+}
+
+@media (max-width: 850px) {
+    .defi-stats-inline {
+        justify-content: flex-start;
+    }
 }
 
 /* ===================== QUICK STATS ===================== */
@@ -276,38 +364,43 @@
     color: var(--defi-gold);
 }
 
-/* ===================== SERVICES GRID ===================== */
+/* ===================== SERVICES GRID (BENTO) ===================== */
 .defi-services-grid {
     display: grid;
-    /* Increased min-width to ensure cards don't get too squashed, grid handles wrapping */
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 2rem;
-    row-gap: 4rem;
-    /* Significant vertical separation */
-    /* Increased gap to prevent proximity/crowding */
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 2rem;
+    width: 100%;
+    max-width: 1100px;
+    box-sizing: border-box;
+    margin: 0 auto 4rem auto;
     position: relative;
     z-index: 10;
-    margin-bottom: 4rem;
     padding: 0 1rem;
-    /* Add side padding to container */
+}
+
+/* Featured Bento Card (Spans 2 columns) */
+.card-bento-featured {
+    grid-column: span 2;
+    background: linear-gradient(135deg, rgba(20, 15, 40, 0.8) 0%, rgba(10, 10, 30, 0.9) 100%) !important;
+}
+
+.card-bento-featured .service-header {
+    font-size: 1.5rem;
 }
 
 /* Mobile check: ensure cards fit on small screens */
-/* Increased breakpoint to 800px to cover layout viewport width of 700px */
 @media (max-width: 800px) {
     .defi-services-grid {
         grid-template-columns: 1fr !important;
-        /* Force single column on mobile */
-        padding: 0;
-        row-gap: 3rem !important;
+        grid-gap: 1.5rem;
         display: flex;
-        /* Fallback to flex column if grid behaves weirdly */
         flex-direction: column;
+        width: 100%;
+        box-sizing: border-box;
     }
 
-    .defi-service-card {
-        margin-bottom: -2rem !important;
-        /* Explicit separation fallback */
+    .card-bento-featured {
+        grid-column: span 1;
     }
 }
 
@@ -333,7 +426,7 @@
     /* Consistent card height - flexbox layout */
     display: flex;
     flex-direction: column;
-    height: 100%;
+    /* height: 100%; Removed to fix overlap */
 }
 
 /* Service card glow animation */
@@ -887,8 +980,8 @@
         font-size: 2rem;
     }
 
-    .defi-hero h2 {
-        font-size: 1.5rem;
+    .defi-hero h2, .shimmer-text {
+        font-size: 1.8rem;
     }
 
     .defi-hero p {
@@ -963,8 +1056,8 @@
         margin-bottom: 1.5rem;
     }
 
-    .defi-hero h2 {
-        font-size: 1.25rem;
+    .defi-hero h2, .shimmer-text {
+        font-size: 1.5rem;
     }
 
     .defi-service-card {
@@ -1072,6 +1165,7 @@
     position: relative;
     overflow: hidden;
     z-index: 10;
+    margin-top: auto; /* Push to bottom of flex container */
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
@@ -1109,3 +1203,408 @@
     box-shadow: 0 0 10px rgba(74, 222, 128, 0.4);
     border: 1px solid rgba(74, 222, 128, 0.5);
 }
+
+/* ===================== CUSTOM SCROLLBAR ===================== */
+html:has(.defi-page)::-webkit-scrollbar,
+html:has(.defi-page) body::-webkit-scrollbar,
+.defi-page::-webkit-scrollbar {
+    width: 6px;
+}
+
+html:has(.defi-page)::-webkit-scrollbar-track,
+html:has(.defi-page) body::-webkit-scrollbar-track,
+.defi-page::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+html:has(.defi-page)::-webkit-scrollbar-thumb,
+html:has(.defi-page) body::-webkit-scrollbar-thumb,
+.defi-page::-webkit-scrollbar-thumb {
+    background: rgba(0, 212, 255, 0.3);
+    border-radius: 10px;
+}
+
+html:has(.defi-page)::-webkit-scrollbar-thumb:hover,
+html:has(.defi-page) body::-webkit-scrollbar-thumb:hover,
+.defi-page::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 212, 255, 0.55);
+}
+
+html:has(.defi-page),
+html:has(.defi-page) body,
+.defi-page {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 212, 255, 0.3) transparent;
+}
+
+/* ===================== FLOATING STATS BADGES ===================== */
+
+.defi-stat-item {
+    flex: 0 1 auto;
+    min-width: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 0.75rem 1.25rem;
+    background: rgba(10, 15, 30, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.defi-stat-item:hover {
+    background: rgba(15, 20, 40, 0.8);
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 212, 255, 0.15), inset 0 0 0 1px rgba(0, 212, 255, 0.3);
+    border-color: transparent;
+}
+
+.defi-stat-item:not(:last-child)::after {
+    display: none;
+}
+
+.defi-stat-item__label {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.defi-stat-item__value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    font-family: 'Space Mono', monospace;
+    color: #fff;
+    text-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
+    transition: transform 0.3s;
+}
+
+.defi-stat-item:hover .defi-stat-item__value {
+    transform: scale(1.05);
+}
+
+.defi-stat-item__value.flash-up {
+    animation: statFlashUp 1s ease-out;
+}
+
+.defi-stat-item__value.flash-down {
+    animation: statFlashDown 1s ease-out;
+}
+
+@keyframes statFlashUp {
+    0% { color: #4ade80; transform: scale(1.15); }
+    100% { color: var(--defi-primary); transform: scale(1); }
+}
+
+@keyframes statFlashDown {
+    0% { color: #ef4444; transform: scale(0.9); }
+    100% { color: var(--defi-primary); transform: scale(1); }
+}
+
+/* Mobile stats bar flex fixed */
+@media (max-width: 768px) {
+    .defi-stats-bar, .defi-stats-inline {
+        flex-wrap: wrap;
+        border-radius: 12px;
+        margin: 0 0 1.5rem 0;
+        gap: 0.5rem;
+        justify-content: center;
+    }
+    .defi-stat-item {
+        flex: 0 1 auto;
+        min-width: 0; /* Override any min-width that causes overflow */
+        padding: 0.5rem 0.75rem;
+    }
+    .defi-stat-item__value {
+        font-size: 1.1rem;
+    }
+    .defi-stat-item__label {
+        font-size: 0.6rem;
+    }
+    .defi-service-card {
+        padding: 1rem;
+        border-radius: 16px;
+    }
+}
+
+/* ===================== NOTIFICATION BANNER ===================== */
+.defi-notification {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0.6rem 1.5rem;
+    margin: 0 auto 2rem;
+    max-width: 800px;
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    border-radius: 12px;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.85);
+    position: relative;
+    z-index: 10;
+    overflow: hidden;
+    animation: notifSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.defi-notification::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent 40%, rgba(255, 255, 255, 0.05) 50%, transparent 60%);
+    animation: notifShimmer 4s ease-in-out infinite;
+}
+
+@keyframes notifSlideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes notifShimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+.defi-notification__icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    animation: notifBounce 2s ease-in-out infinite;
+}
+
+@keyframes notifBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+.defi-notification__text {
+    flex: 1;
+    text-align: center;
+}
+
+.defi-notification__text strong {
+    color: var(--defi-primary);
+}
+
+.defi-notification__close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 4px;
+    transition: color 0.2s;
+    flex-shrink: 0;
+}
+
+.defi-notification__close:hover {
+    color: #fff;
+}
+
+/* ===================== SECTION DIVIDER ===================== */
+.defi-section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 1rem 1.5rem;
+    position: relative;
+    z-index: 10;
+}
+
+.defi-section-title__icon {
+    font-size: 1.5rem;
+}
+
+.defi-section-title__text {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+
+.defi-section-title__badge {
+    font-size: 0.65rem;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.defi-section-title__badge--live {
+    background: linear-gradient(135deg, var(--defi-success), #22c55e);
+    color: #000;
+}
+
+.defi-section-title__badge--soon {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.defi-section-title__line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(0, 212, 255, 0.3), transparent);
+}
+
+/* ===================== ENHANCED CARD HOVER ===================== */
+/* Tilt on hover */
+.defi-service-card {
+    transform-style: preserve-3d;
+}
+
+.defi-service-card:hover {
+    border-color: var(--service-color);
+    transform: translateY(-8px) perspective(800px) rotateX(2deg);
+    box-shadow:
+        0 20px 40px rgba(0, 0, 0, 0.6),
+        0 0 30px color-mix(in srgb, var(--service-color) 40%, transparent),
+        inset 0 0 30px rgba(0, 212, 255, 0.05);
+}
+
+/* CTA button ripple */
+.service-cta {
+    position: relative;
+    overflow: hidden;
+}
+
+.service-cta::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 10%, transparent 10.01%);
+    background-repeat: no-repeat;
+    background-position: 50%;
+    transform: scale(10);
+    opacity: 0;
+    transition: transform 0.5s, opacity 0.5s;
+}
+
+.service-cta:active::after {
+    transform: scale(0);
+    opacity: 1;
+    transition: 0s;
+}
+
+/* ===================== FOOTER ===================== */
+.defi-footer {
+    text-align: center;
+    padding: 3rem 1rem 2rem;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.8rem;
+    position: relative;
+    z-index: 10;
+}
+
+.defi-footer__links {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap; /* allow wrapping on mobile */
+}
+
+.footer-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.6rem 1.25rem;
+    background: rgba(10, 15, 30, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 9999px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.footer-pill svg {
+    color: rgba(255, 255, 255, 0.5);
+    transition: all 0.3s ease;
+}
+
+/* Hover effects */
+.footer-pill:hover {
+    color: #fff;
+    background: rgba(0, 212, 255, 0.1);
+    border-color: rgba(0, 212, 255, 0.4);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.2), inset 0 0 10px rgba(0, 212, 255, 0.1);
+}
+
+.footer-pill:hover svg {
+    color: var(--defi-primary);
+    transform: scale(1.1) rotate(5deg);
+}
+
+/* Active / Click effects */
+.footer-pill:active {
+    transform: translateY(1px) scale(0.95);
+    box-shadow: 0 2px 5px rgba(0, 212, 255, 0.3);
+    background: rgba(0, 212, 255, 0.2);
+    transition: all 0.1s ease;
+}
+
+.defi-footer__divider {
+    width: 200px;
+    height: 1px;
+    margin: 0 auto 1rem;
+    background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.3), transparent);
+}
+
+/* ===================== COMING SOON STRIP ===================== */
+.coming-soon-strip {
+    display: flex;
+    gap: 1.5rem;
+    overflow-x: auto;
+    padding: 1rem;
+    margin: 0 auto 4rem;
+    width: 100%;
+    max-width: 1100px;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+@media (min-width: 900px) {
+    .coming-soon-strip {
+        justify-content: center;
+    }
+}
+
+.coming-soon-strip::-webkit-scrollbar {
+    height: 6px;
+}
+
+.coming-soon-strip::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.coming-soon-strip .defi-service-card {
+    min-width: 280px;
+    flex: 0 0 280px;
+    height: auto;
+    opacity: 0.6;
+    transform: none !important; /* Disable 3D tilt */
+}
+
+.coming-soon-strip .defi-service-card:hover {
+    opacity: 1;
+    transform: translateY(-4px) !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.1);
+}

@@ -5,8 +5,8 @@
 // Polyfill localStorage for SSR to prevent RainbowKit errors
 import "./gamefi/banmaorps/lib/serverStoragePolyfill";
 
-import { ReactNode, useEffect, useMemo } from "react";
-import { WagmiProvider, createConfig, http, fallback, useAccount, useChainId, useSwitchChain } from "wagmi";
+import { ReactNode, useEffect, useMemo, useRef } from "react";
+import { WagmiProvider, createConfig, http, fallback, useAccount, useSwitchChain } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
     RainbowKitProvider,
@@ -35,11 +35,12 @@ const WC_PROJECT_ID =
 const RPC_PRIMARY = process.env.NEXT_PUBLIC_RPC_URL || "https://rpc.xlayer.tech";
 const RPC_BACKUP = "/api/rpc";
 
-
+// Target chain ID constant
+const XLAYER_CHAIN_ID = 196;
 
 // ==== XLayer Mainnet Chain (ID: 196) ====
 const xlayer: Chain = {
-    id: 196,
+    id: XLAYER_CHAIN_ID,
     name: "XLayer",
     nativeCurrency: { name: "OKB", symbol: "OKB", decimals: 18 },
     rpcUrls: {
@@ -120,20 +121,48 @@ function getQueryClient() {
 }
 
 // ==== Auto-switch to XLayer when wallet connects on wrong chain ====
+// Uses useAccount().chainId (wallet's actual chain) instead of useChainId()
+// which only returns the config default and never reflects the wallet state.
 function AutoChainSwitch({ children }: { children: ReactNode }) {
-    const { isConnected } = useAccount();
-    const chainId = useChainId();
+    const { isConnected, chainId: walletChainId } = useAccount();
     const { switchChain } = useSwitchChain();
+    const hasSwitched = useRef(false);
 
     useEffect(() => {
-        if (isConnected && chainId !== 196) {
-            try {
-                switchChain({ chainId: 196 });
-            } catch {
-                // User rejected or wallet doesn't support auto-switch — silently ignore
-            }
+        // Reset the flag when disconnected
+        if (!isConnected) {
+            hasSwitched.current = false;
+            return;
         }
-    }, [isConnected, chainId, switchChain]);
+
+        // Only auto-switch if wallet is on wrong chain
+        // walletChainId is undefined briefly during connection — wait until it resolves
+        if (!walletChainId || walletChainId === XLAYER_CHAIN_ID) return;
+
+        // Prevent retry loops if user rejects
+        if (hasSwitched.current) return;
+        hasSwitched.current = true;
+
+        // Small delay to let the connection fully establish before requesting chain switch
+        const timer = setTimeout(() => {
+            try {
+                switchChain(
+                    { chainId: XLAYER_CHAIN_ID },
+                    {
+                        onError: () => {
+                            // User rejected or wallet doesn't support auto-switch — allow manual retry
+                            hasSwitched.current = false;
+                        },
+                    }
+                );
+            } catch {
+                // Sync error fallback
+                hasSwitched.current = false;
+            }
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [isConnected, walletChainId, switchChain]);
 
     return <>{children}</>;
 }
@@ -153,7 +182,7 @@ export default function SharedProviders({ children }: { children: ReactNode }) {
     return (
         <WagmiProvider config={getWagmiConfig()}>
             <QueryClientProvider client={getQueryClient()}>
-                <RainbowKitProvider theme={theme} modalSize="compact" initialChain={196}>
+                <RainbowKitProvider theme={theme} modalSize="compact" initialChain={xlayer}>
                     <AutoChainSwitch>
                         {children}
                     </AutoChainSwitch>

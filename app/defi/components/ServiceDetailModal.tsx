@@ -13,7 +13,7 @@ interface ServiceDetailModalProps {
         name: string;
         desc: string;
         contractAddress?: string;
-        stats: { apy?: string; tvl: string };
+        stats: { label: string; value: string }[];
         color: string;
         Icon: React.ComponentType<{ className?: string }>;
         status: "live" | "coming";
@@ -56,14 +56,12 @@ export const ServiceDetailModal: React.FC<ServiceDetailModalProps> = ({ isOpen, 
                     <p className="service-modal-desc" style={{ whiteSpace: 'pre-line', textAlign: 'left' }}>{service.desc}</p>
 
                     <div className="service-modal-stats">
-                        <div className="service-stat-item">
-                            <span className="stat-label">APY</span>
-                            <span className="stat-value" style={{ color: service.color }}>{service.stats.apy || "—"}</span>
-                        </div>
-                        <div className="service-stat-item">
-                            <span className="stat-label">TVL</span>
-                            <span className="stat-value">{service.stats.tvl}</span>
-                        </div>
+                        {service.stats.map((stat, i) => (
+                            <div className="service-stat-item" key={i}>
+                                <span className="stat-label">{stat.label}</span>
+                                <span className="stat-value" style={i === 0 ? { color: service.color } : {}}>{stat.value}</span>
+                            </div>
+                        ))}
                     </div>
 
                     {service.contractAddress && (

@@ -980,3 +980,43 @@ html { scroll-behavior: smooth; }
 }
 .flash-success { animation: successFlash 0.5s ease-out; }
 .flash-error { animation: errorFlash 0.5s ease-out; }
+
+/* ===================== RAINBOWKIT MODAL SCROLLBAR ===================== */
+
+/* Webkit browsers (Chrome, Edge, Safari) */
+[data-rk] *::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+[data-rk] *::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+  margin: 8px 0;
+}
+
+[data-rk] *::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.3);
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background 0.2s;
+}
+
+[data-rk] *::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.55);
+}
+
+[data-rk] *::-webkit-scrollbar-thumb:active {
+  background: rgba(168, 85, 247, 0.75);
+}
+
+[data-rk] *::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+[data-rk] * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(168, 85, 247, 0.3) transparent;
+}

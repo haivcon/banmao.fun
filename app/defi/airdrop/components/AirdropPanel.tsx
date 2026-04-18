@@ -5,6 +5,9 @@ import { useAccount, useWriteContract, useBalance, useReadContract, usePublicCli
 import { parseUnits, isAddress, formatUnits } from "viem";
 import AIcon from "./AirdropIcons";
 import confetti from "canvas-confetti";
+import GasOracleWidget from "./GasOracle";
+import ProgressDashboard from "./ProgressDashboard";
+import { useAutoResume } from "../hooks/useAutoResume";
 
 // ===================== CONSTANTS =====================
 const BANMAO_TOKEN = "0x16d91d1615fc55b76d5f92365bd60c069b46ef78" as `0x${string}`;
@@ -3708,6 +3711,8 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                     {isConnected && okbBalance && <div className="airdrop-gas-display" title={t("tooltipOkbBalance")}><AIcon name="fuel" size={13} /> {okbNum.toFixed(4)} OKB</div>}
                     {estimatedGas && <div className="airdrop-gas-display" title={t("tooltipGasEstimate")} style={{ opacity: 0.7 }}><AIcon name="chart" size={13} /> {estimatedGas}</div>}
                 </div>
+                {/* Real-time Gas Oracle */}
+                {isConnected && <div style={{ marginTop: 8 }}><GasOracleWidget t={t} compact={true} /></div>}
                 <a href="/gamefi/banmaosnake" target="_blank" rel="noopener noreferrer" className="airdrop-game-tip">
                     <AIcon name="bolt" size={13} />
                     <span>{(t("airdropGameTip") || "").replace(/\$BANMAO/g, `$${tokenSymbol}`)}</span>
