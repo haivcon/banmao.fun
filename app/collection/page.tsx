@@ -18,7 +18,9 @@ async function fetchOpenGraphImage(filename: string): Promise<string | null> {
     const creds = parseCloudinaryUrl();
     if (!creds) return null;
 
-    const expression = `folder:banmao* AND filename:"${filename}"`;
+    const cleanName = filename.replace(/[^a-zA-Z0-9_ -]/g, "");
+    const terms = cleanName.split(/_|-|\s/g).filter(Boolean);
+    const expression = `folder:banmao* AND ${terms.join(" AND ")}`;
     const searchUrl = `https://api.cloudinary.com/v1_1/${creds.cloudName}/resources/search`;
     const authHeader = "Basic " + Buffer.from(`${creds.apiKey}:${creds.apiSecret}`).toString("base64");
 
