@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import "../../airdrop.css";
+import "../airdrop.css";
 
 interface AirdropRecord {
     sender: string;
