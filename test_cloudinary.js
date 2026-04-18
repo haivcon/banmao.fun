@@ -7,12 +7,10 @@ const parseCloudinaryUrl = () => {
 };
 
 const creds = parseCloudinaryUrl();
-const filename = 'malta_-_traditional_food';
-const terms = filename.split(/_|-/g).filter(Boolean); // ['malta', 'traditional', 'food']
 const expressions = [
-  'folder:banmao* AND filename:malta_-_traditional_food*',
-  'folder:banmao* AND ' + terms.join(' AND '),
-  `folder:banmao* AND public_id:*malta* AND public_id:*traditional* AND public_id:*food*`
+  'folder:banmao* AND 354 AND blizzard',
+  'folder:banmao* AND blizzard',
+  'folder:banmao* AND public_id:*354_blizzard*'
 ];
 
 async function testCloudinary(expr) {
