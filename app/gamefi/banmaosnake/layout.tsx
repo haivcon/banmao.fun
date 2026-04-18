@@ -23,6 +23,17 @@ export const metadata: Metadata = {
             { url: "/games/snake/snake-icon-192x192.png", sizes: "192x192", type: "image/png" },
         ],
     },
+    openGraph: {
+        title: "$banmao+snake",
+        description: "Play Snake game and collect $BANMAO tokens on XLayer",
+        images: ["/games/snake/snake-icon-512x512.png"],
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "$banmao+snake",
+        description: "Play Snake game and collect $BANMAO tokens on XLayer",
+        images: ["/games/snake/snake-icon-512x512.png"],
+    }
 };
 
 export default function SnakeLayout({ children }: { children: React.ReactNode }) {

@@ -52,7 +52,7 @@ export async function generateMetadata(
 ): Promise<Metadata> {
     const searchParams = await props.searchParams;
     const imgName = searchParams?.img;
-    let ogImage = "https://www.banmao.fun/pwa/main/icon-512x512.png"; // Fixed robust fallback
+    let ogImage = "https://www.banmao.fun/branding/gamefi-logo.jpg"; // High-quality fallback
 
     if (imgName && typeof imgName === "string") {
         const cleanName = imgName.replace(/[^a-zA-Z0-9_ -]/g, ""); // basic sanitize

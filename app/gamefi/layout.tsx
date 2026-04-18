@@ -13,6 +13,17 @@ export const metadata: Metadata = {
             { url: "/pwa/gamefi/gamefi-icon-512x512.png", sizes: "512x512", type: "image/png" },
         ],
     },
+    openGraph: {
+        title: "GameFi Zone | BANMAO",
+        description: "Explore blockchain games on BANMAO ecosystem. Play Rock-Paper-Scissors, Snake and more crypto games on XLayer.",
+        images: ["/branding/gamefi-logo.jpg"],
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "GameFi Zone | BANMAO",
+        description: "Explore blockchain games on BANMAO ecosystem. Play Rock-Paper-Scissors, Snake and more crypto games on XLayer.",
+        images: ["/branding/gamefi-logo.jpg"],
+    }
 };
 
 export default function GameFiLayout({ children }: { children: React.ReactNode }) {
