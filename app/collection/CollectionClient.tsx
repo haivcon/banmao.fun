@@ -788,22 +788,6 @@ export default function CollectionPage() {
 
 
 
-    // ——— Deep Link: auto-open lightbox from URL param ———
-    useEffect(() => {
-        if (filteredImages.length === 0 || hasOpenedDeepLink.current) return;
-        const params = new URLSearchParams(window.location.search);
-        const imgParam = params.get("img");
-        if (!imgParam) {
-            hasOpenedDeepLink.current = true;
-            return;
-        }
-        const idx = filteredImages.findIndex(i => i.src.includes(imgParam) || i.name.toLowerCase().replace(/\s+/g, "_") === imgParam.toLowerCase());
-        if (idx >= 0) {
-            setLightboxIndex(idx);
-            setImgLoading(true);
-            hasOpenedDeepLink.current = true; // Prevent re-triggering when grid sorts/filters
-        }
-    }, [filteredImages]);
 
     // ——— Deep Link & Initial State from URL ———
     useEffect(() => {
@@ -1146,6 +1130,23 @@ export default function CollectionPage() {
         }
         return filtered;
     }, [allImages, activeTab, searchQuery, favorites, favoritesOrder, typeFilter, sortBy]);
+
+    // ——— Deep Link: auto-open lightbox from URL param ———
+    useEffect(() => {
+        if (filteredImages.length === 0 || hasOpenedDeepLink.current) return;
+        const params = new URLSearchParams(window.location.search);
+        const imgParam = params.get("img");
+        if (!imgParam) {
+            hasOpenedDeepLink.current = true;
+            return;
+        }
+        const idx = filteredImages.findIndex(i => i.src.includes(imgParam) || i.name.toLowerCase().replace(/\s+/g, "_") === imgParam.toLowerCase());
+        if (idx >= 0) {
+            setLightboxIndex(idx);
+            setImgLoading(true);
+            hasOpenedDeepLink.current = true; // Prevent re-triggering when grid sorts/filters
+        }
+    }, [filteredImages]);
 
     // ——— Pagination / Infinite Scroll ———
     const totalPages = Math.ceil(filteredImages.length / itemsPerPage);
