@@ -269,31 +269,33 @@ export default function StakingPage() {
                 setShowCoinAnim(true);
                 setTimeout(() => setShowCoinAnim(false), 800);
 
-                // Create flying coin DOM element from edges
+                // Reuse pooled coin particles instead of creating/removing DOM nodes
                 const container = document.getElementById('coin-emit-container');
                 if (container) {
-                    const coin = document.createElement('div');
-                    coin.className = 'coin-particle-fly';
-                    coin.innerText = '🪙';
+                    const poolIndex = coinTickRef.current % 4; // Cycle through 4 pooled elements
+                    const coin = container.children[poolIndex] as HTMLElement;
+                    if (coin) {
+                        // Random edge position
+                        const edges = ['top', 'bottom', 'left', 'right'];
+                        const edge = edges[Math.floor(Math.random() * edges.length)];
+                        let startX = 0, startY = 0;
+                        const offset = (Math.random() - 0.5) * 150;
 
-                    // Random edge position
-                    const edges = ['top', 'bottom', 'left', 'right'];
-                    const edge = edges[Math.floor(Math.random() * edges.length)];
-                    let startX = 0, startY = 0;
-                    const offset = (Math.random() - 0.5) * 150;
+                        switch (edge) {
+                            case 'top': startY = -120; startX = offset; break;
+                            case 'bottom': startY = 120; startX = offset; break;
+                            case 'left': startX = -120; startY = offset; break;
+                            case 'right': startX = 120; startY = offset; break;
+                        }
 
-                    switch (edge) {
-                        case 'top': startY = -120; startX = offset; break;
-                        case 'bottom': startY = 120; startX = offset; break;
-                        case 'left': startX = -120; startY = offset; break;
-                        case 'right': startX = 120; startY = offset; break;
+                        coin.style.setProperty('--startX', `${startX}px`);
+                        coin.style.setProperty('--startY', `${startY}px`);
+                        // Reset animation by removing/re-adding class
+                        coin.classList.remove('coin-particle-active');
+                        // Force reflow to restart animation
+                        void coin.offsetWidth;
+                        coin.classList.add('coin-particle-active');
                     }
-
-                    coin.style.setProperty('--startX', `${startX}px`);
-                    coin.style.setProperty('--startY', `${startY}px`);
-
-                    container.appendChild(coin);
-                    setTimeout(() => coin.remove(), 1000);
                 }
             }
         }, 1000);
@@ -985,7 +987,7 @@ export default function StakingPage() {
                                             position: 'relative'
                                         }}>
                                             {displayPendingReward ? displayPendingReward.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
-                                            {/* Coin Animation Container - Coins fly INTO this! */}
+                                            {/* Coin Animation Container - Pool of 4 reusable coin particles */}
                                             <div id="coin-emit-container" style={{
                                                 position: 'absolute',
                                                 top: '50%',
@@ -993,7 +995,12 @@ export default function StakingPage() {
                                                 width: '0',
                                                 height: '0',
                                                 pointerEvents: 'none'
-                                            }}></div>
+                                            }}>
+                                                <div className="coin-particle-fly">🪙</div>
+                                                <div className="coin-particle-fly">🪙</div>
+                                                <div className="coin-particle-fly">🪙</div>
+                                                <div className="coin-particle-fly">🪙</div>
+                                            </div>
                                         </div>
                                         <div style={{ fontSize: '10px', color: '#86efac', marginTop: '2px' }}>$BANMAO</div>
 

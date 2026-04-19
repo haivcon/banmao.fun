@@ -56,15 +56,15 @@
     display: none;
 }
 
-/* ===================== GLOBAL SCROLLBAR HIDING ===================== */
-html,
-body {
+/* ===================== SCROLLBAR HIDING (scoped to staking page) ===================== */
+html:has(.staking-page),
+body:has(.staking-page) {
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
 }
 
-html::-webkit-scrollbar,
-body::-webkit-scrollbar {
+html:has(.staking-page)::-webkit-scrollbar,
+body:has(.staking-page)::-webkit-scrollbar {
     display: none !important;
     width: 0 !important;
     height: 0 !important;
@@ -127,13 +127,13 @@ body::-webkit-scrollbar {
         overflow-y: auto !important;
     }
 
-    /* Fixed header on mobile - SCALED DOWN to fit all content */
+    /* Fixed header on mobile — sizing & positioning only.
+       NOTE: transform is handled by mobile.css (no scale, to avoid RainbowKit stacking issues) */
     .header-controls-bottom {
         position: fixed;
         top: 4px;
         left: 50%;
-        transform: translateX(-50%) scale(0.8);
-        transform-origin: center top;
+        /* transform set by mobile.css — do NOT add scale() here */
         width: auto;
         max-width: none;
         flex-wrap: nowrap !important;
