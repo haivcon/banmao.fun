@@ -1,4 +1,4 @@
-﻿// English translations
+// English translations
 import type { LandingTranslations } from './index';
 
 export const en: LandingTranslations = {
@@ -138,6 +138,10 @@ export const en: LandingTranslations = {
     defiLive: "Live",
     defiComingSoon: "Coming Soon",
     defiEnter: "Enter",
+    defiTvlTooltip: "Total amount of $BANMAO locked across all smart contracts.",
+    defiStakersTooltip: "Total number of users participating in staking.",
+    defiApyTooltip: "Annual Percentage Yield: Estimated yearly return rate.",
+    defiBurnTooltip: "Total amount of $BANMAO permanently removed from supply.",
     // DeFi Services
     defiStakingName: "Staking",
     defiStakingDesc: "Lock $BANMAO, earn up to 75% APY",

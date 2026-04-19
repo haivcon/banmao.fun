@@ -32,6 +32,13 @@ export const SpotlightCard: React.FC<SpotlightCardProps> = ({
         const y = e.clientY - rect.top;
         setPosition({ x, y });
 
+        // Nếu đang rê chuột vào nút CTA thì tắt tilt (reset về 0)
+        const target = e.target as HTMLElement;
+        if (target.closest('.service-cta') || target.closest('.no-tilt')) {
+             divRef.current.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1.02, 1.02, 1.02)';
+             return;
+        }
+
         // 3D TILT EFFECT
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;

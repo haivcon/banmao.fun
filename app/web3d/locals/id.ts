@@ -137,6 +137,10 @@ export const id: LandingTranslations = {
     defiLive: "Aktif",
     defiComingSoon: "Segera Hadir",
     defiEnter: "Masuk",
+    defiTvlTooltip: "Total $BANMAO yang terkunci di semua smart contract.",
+    defiStakersTooltip: "Total pengguna yang berpartisipasi dalam staking.",
+    defiApyTooltip: "Annual Percentage Yield: Estimasi tingkat pengembalian tahunan.",
+    defiBurnTooltip: "Total $BANMAO yang dihapus secara permanen dari pasokan.",
     // DeFi Services
     defiStakingName: "Staking",
     defiStakingDesc: "Kunci $BANMAO, raih hadiah APY 75%",

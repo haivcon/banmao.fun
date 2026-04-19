@@ -1,4 +1,4 @@
-﻿// Vietnamese translations
+// Vietnamese translations
 import type { LandingTranslations } from './index';
 
 export const vi: LandingTranslations = {
@@ -137,6 +137,10 @@ export const vi: LandingTranslations = {
     defiLive: "Hoạt Động",
     defiComingSoon: "Sắp Ra Mắt",
     defiEnter: "Vào",
+    defiTvlTooltip: "Tổng giá trị $BANMAO đang được khóa trong các hợp đồng thông minh.",
+    defiStakersTooltip: "Tổng số lượng người đang tham gia Staking.",
+    defiApyTooltip: "Tỷ suất lợi nhuận hàng năm ước tính.",
+    defiBurnTooltip: "Tổng lượng $BANMAO đã bị đốt vĩnh viễn ra khỏi nguồn cung.",
     // DeFi Services
     defiStakingName: "Staking",
     defiStakingDesc: "Khóa $BANMAO, nhận thưởng APY đến 75%",

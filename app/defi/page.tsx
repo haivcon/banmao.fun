@@ -411,21 +411,37 @@ export default function DeFiPage() {
                 </div>
 
                 <div className="defi-stats-inline">
-                    <div className="defi-stat-item">
-                        <span className="defi-stat-item__label">TVL ({t('defiStakingName')})</span>
-                        <span className="defi-stat-item__value">{tvlDisplay}</span>
+                    <div className="pill-widget has-tooltip" tabIndex={0}>
+                        <div className="premium-tooltip">{t('defiTvlTooltip')}</div>
+                        <div className="stat-icon-mini" style={{color: '#a855f7'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="9" x2="9" y1="21" y2="9"/></svg></div>
+                        <div className="stat-content">
+                            <span className="defi-stat-item__label">TVL</span>
+                            <span className="defi-stat-item__value">{tvlDisplay}<span className="currency-label">$banmao</span></span>
+                        </div>
                     </div>
-                    <div className="defi-stat-item">
-                        <span className="defi-stat-item__label">Stakers</span>
-                        <span className="defi-stat-item__value">{stakersDisplay}</span>
+                    <div className="pill-widget has-tooltip" tabIndex={0}>
+                        <div className="premium-tooltip">{t('defiStakersTooltip')}</div>
+                        <div className="stat-icon-mini" style={{color: '#00f2fe'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                        <div className="stat-content">
+                            <span className="defi-stat-item__label">Stakers</span>
+                            <span className="defi-stat-item__value">{stakersDisplay}</span>
+                        </div>
                     </div>
-                    <div className="defi-stat-item">
-                        <span className="defi-stat-item__label">{t('stakingAPY')}</span>
-                        <span className="defi-stat-item__value" style={{ color: '#4ade80' }}>Up to 75%</span>
+                    <div className="pill-widget has-tooltip" tabIndex={0}>
+                        <div className="premium-tooltip">{t('defiApyTooltip')}</div>
+                        <div className="stat-icon-mini" style={{color: '#34d399'}}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg></div>
+                        <div className="stat-content">
+                            <span className="defi-stat-item__label">{t('stakingAPY')}</span>
+                            <span className="defi-stat-item__value" style={{ color: '#34d399' }}>75%</span>
+                        </div>
                     </div>
-                    <div className="defi-stat-item">
-                        <span className="defi-stat-item__label">🔥 {t('defiBurnName')}</span>
-                        <span className="defi-stat-item__value" style={{ color: '#ef4444' }}>{burnedDisplay}</span>
+                    <div className="pill-widget has-tooltip" tabIndex={0}>
+                        <div className="premium-tooltip">{t('defiBurnTooltip')}</div>
+                        <div className="stat-icon-mini" style={{color: '#ef4444'}}>🔥</div>
+                        <div className="stat-content">
+                            <span className="defi-stat-item__label">{t('defiBurnName')}</span>
+                            <span className="defi-stat-item__value" style={{ color: '#ef4444' }}>{burnedDisplay}<span className="currency-label">$banmao</span></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -473,6 +489,20 @@ export default function DeFiPage() {
                         </div>
                         <p className="service-description">{t(service.descKey)}</p>
                         <div className="service-stats">
+                            {service.id === 'staking' && (
+                                <div className="sparkline-bg">
+                                    <svg viewBox="0 0 100 30" preserveAspectRatio="none">
+                                        <path d="M0,30 L0,15 C20,15 30,5 50,15 C70,25 80,5 100,10 L100,30 Z" fill="url(#sparkline-grad)" opacity="0.3" />
+                                        <path d="M0,15 C20,15 30,5 50,15 C70,25 80,5 100,10" fill="none" stroke="#a855f7" strokeWidth="1" />
+                                        <defs>
+                                            <linearGradient id="sparkline-grad" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="0%" stopColor="#a855f7" stopOpacity="0.8" />
+                                                <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                </div>
+                            )}
                             <div className="service-stat">
                                 <span className="stat-label">{service.id === 'airdrop' ? 'Sent' : t('stakingAPY')}</span>
                                 <span className="stat-value">{service.id === 'airdrop' ? airdropSentDisplay : (service.stats.apy || t(service.stats.apyKey || 'defiComingSoon'))}</span>
@@ -510,10 +540,10 @@ export default function DeFiPage() {
                             name: t(service.nameKey),
                             desc: t((service as any).detailsKey || service.descKey),
                             contractAddress: service.contractAddress,
-                            stats: {
-                                apy: service.stats.apy || t(service.stats.apyKey || 'defiComingSoon'),
-                                tvl: service.stats.tvl
-                            },
+                            stats: [
+                                { label: 'APY', value: service.stats.apy || t(service.stats.apyKey || 'defiComingSoon') },
+                                { label: 'TVL', value: service.stats.tvl || '—' }
+                            ],
                             color: service.color,
                             Icon: service.Icon,
                             status: service.status,
@@ -566,7 +596,14 @@ export default function DeFiPage() {
                     </Link>
                 </div>
                 <div className="defi-footer__divider" />
-                <p>BANMAO DeFi — Powered by XLayer 🐱</p>
+                <p>BANMAO DeFi — Powered by XLayer</p>
+                <div className="defi-footer__partners">
+                    <span>Developed by</span>
+                    <span className="defi-footer__partner">ＤＯＲＥＭＯＮ</span>
+                </div>
+                <p className="defi-footer__copyright">
+                    © 2026 banmao🐱🍌
+                </p>
             </footer>
 
             {/* Service Detail Modal */}
@@ -576,6 +613,9 @@ export default function DeFiPage() {
                 service={selectedService}
                 enterAppLabel={t('defiEnter')}
                 comingSoonLabel={t('defiComingSoon')}
+                liveLabel={t('defiLive')}
+                contractAddressLabel={t('gamefiSmartContract')}
+                viewExplorerLabel={t('gamefiViewExplorer')}
             />
 
             {/* Scanlines effect */}

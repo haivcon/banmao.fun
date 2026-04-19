@@ -137,6 +137,10 @@ export const zh: LandingTranslations = {
     defiLive: "已上线",
     defiComingSoon: "即将推出",
     defiEnter: "进入",
+    defiTvlTooltip: "所有智能合约中锁定的 $BANMAO 总量。",
+    defiStakersTooltip: "参与质押的用户总数。",
+    defiApyTooltip: "年化收益率：预计在一年内获得的收益率。",
+    defiBurnTooltip: "永久退出流通的 $BANMAO 总量。",
     // DeFi Services
     defiStakingName: "质押",
     defiStakingDesc: "锁定$BANMAO，APY高达75%",

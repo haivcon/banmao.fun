@@ -110,11 +110,11 @@ export function GameInfoModal({ game, t, onClose, onPlay }: GameInfoModalProps) 
                 </div>
 
                 {game.contractAddress && (
-                    <div className="game-info-modal__section game-info-modal__contract">
-                        <h3>📜 {t('gamefiSmartContract')}</h3>
-                        <div className="game-info-modal__address">
-                            <code>{game.contractAddress}</code>
-                            <button onClick={copyAddress} className="game-info-modal__copy">
+                    <div className="game-info-modal__section game-info-modal__contract" style={{ borderColor: 'rgba(255, 255, 255, 0.08)', background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '12px', marginTop: '1rem', border: '1px solid rgba(255,255,255,0.08)' }}>
+                        <h3 style={{ margin: '0 0 0.75rem 0', fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('gamefiSmartContract')}</h3>
+                        <div className="game-info-modal__address" style={{ background: 'rgba(0, 0, 0, 0.3)', padding: '0.6rem 0.8rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <code style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>{game.contractAddress}</code>
+                            <button onClick={copyAddress} className="game-info-modal__copy" title="Copy" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.7)' }}>
                                 {copied ? '✓' : '📋'}
                             </button>
                         </div>
@@ -122,9 +122,34 @@ export function GameInfoModal({ game, t, onClose, onPlay }: GameInfoModalProps) 
                             href={`https://web3.okx.com/explorer/x-layer/address/${game.contractAddress}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="game-info-modal__explorer"
+                            className="explorer-link-button"
+                            style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center', 
+                                gap: '0.5rem',
+                                border: '1px solid #f59e0b',
+                                color: '#f59e0b',
+                                padding: '0.75rem',
+                                borderRadius: '9999px',
+                                textDecoration: 'none',
+                                fontWeight: '600',
+                                fontSize: '0.85rem',
+                                transition: 'all 0.2s ease',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#f59e0b';
+                                e.currentTarget.style.color = '#fff';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = '#f59e0b';
+                            }}
                         >
-                            🔍 {t('gamefiViewExplorer')}
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+                            {t('gamefiViewExplorer')}
                         </a>
                     </div>
                 )}
