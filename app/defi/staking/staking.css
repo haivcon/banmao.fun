@@ -16,9 +16,9 @@
 }
 
 /* ===================== OVERRIDE LANDING.CSS ===================== */
-/* Override landing.css which sets html/body to overflow:hidden and position:fixed */
-html,
-body {
+/* Override landing.css only when staking page is active */
+html:has(.staking-page),
+body:has(.staking-page) {
     overflow: visible !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
@@ -153,9 +153,13 @@ input[type="number"] {
     color: #ffd700;
     pointer-events: none;
     z-index: 50;
-    /* Use flyIn animation */
-    animation: flyIn 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    opacity: 0;
+    /* Hidden by default — pooled element, activated via .coin-particle-active */
     filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.5));
+}
+
+.coin-particle-fly.coin-particle-active {
+    animation: flyIn 1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
 @keyframes flyIn {
