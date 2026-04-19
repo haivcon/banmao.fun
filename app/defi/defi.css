@@ -18,33 +18,31 @@ html:has(.defi-page) body {
 
 /* Base Variables */
 :root {
-    --defi-primary: #00d4ff;
-    --defi-secondary: #a855f7;
-    --defi-accent: #06b6d4;
+    --defi-primary: #00f2fe;
+    --defi-secondary: #4facfe;
+    --defi-accent: #a855f7;
     --defi-gold: #facc15;
-    --defi-success: #4ade80;
+    --defi-success: #34d399;
     --defi-warning: #fb923c;
     --defi-error: #ef4444;
-    --defi-bg-dark: #050510;
-    --defi-bg-card: rgba(10, 10, 30, 0.8);
-    --defi-border: rgba(0, 212, 255, 0.3);
-    --defi-glow: 0 0 20px rgba(0, 212, 255, 0.4);
+    --defi-bg-dark: #030308;
+    --defi-bg-card: rgba(15, 15, 25, 0.6);
+    --defi-border: rgba(255, 255, 255, 0.05);
+    --defi-glow: 0 0 20px rgba(79, 172, 254, 0.3);
+    --transition-smooth: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-/* Main container */
 /* Main container */
 .defi-page {
     min-height: 100vh;
     min-height: 100dvh;
-    background-color: #050510;
-    /* 3D Cyber Mesh Grid Background */
-    background-image:
-        linear-gradient(rgba(0, 212, 255, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(168, 85, 247, 0.05) 1px, transparent 1px);
-    background-size: 40px 40px, 40px 40px;
-    animation: gridMove 20s linear infinite;
+    background-color: var(--defi-bg-dark);
+    /* Soft ambient background */
+    background-image: 
+        radial-gradient(ellipse at 10% 10%, rgba(79, 172, 254, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 90% 90%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
     color: #fff;
-    font-family: 'Space Grotesk', 'Inter', sans-serif;
+    font-family: 'Outfit', 'Plus Jakarta Sans', 'Inter', sans-serif;
     padding: 1rem;
     position: relative;
     overflow-x: hidden;
@@ -52,35 +50,23 @@ html:has(.defi-page) body {
     width: 100%;
     max-width: 100vw;
     box-sizing: border-box;
-    perspective: 1000px;
     z-index: 1;
 }
 
-/* Gradient Mesh Blob behind everything */
+/* Deep glass blob behind everything */
 .defi-page::before {
     content: '';
     position: fixed;
     top: 50%;
     left: 50%;
-    width: 80vw;
-    height: 80vh;
-    background: radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.15) 0%, rgba(0, 212, 255, 0.15) 50%, rgba(239, 68, 68, 0.1) 100%);
-    filter: blur(100px);
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at 30% 70%, rgba(0, 242, 254, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
+    filter: blur(80px);
     transform: translate(-50%, -50%);
-    animation: meshWarp 15s ease-in-out infinite alternate;
     pointer-events: none;
     z-index: -1;
-}
-
-@keyframes gridMove {
-    0% { background-position: 0 0, 0 0; }
-    100% { background-position: 0 40px, 0 40px; }
-}
-
-@keyframes meshWarp {
-    0% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 0.5; }
-    50% { transform: translate(-45%, -55%) scale(1.1) rotate(10deg); opacity: 0.8; }
-    100% { transform: translate(-55%, -45%) scale(0.9) rotate(-10deg); opacity: 0.5; }
 }
 
 /* ... (Keep scrollbar styles) ... */
@@ -260,17 +246,15 @@ html:has(.defi-page) body {
 }
 
 .defi-stats-inline {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
-    flex-wrap: wrap;
     flex: 2;
     min-width: 300px;
-    justify-content: flex-end;
 }
 
 @media (max-width: 850px) {
     .defi-stats-inline {
-        justify-content: center;
         flex: 1 1 100%;
         min-width: 0;
     }
@@ -280,11 +264,136 @@ html:has(.defi-page) body {
     }
 }
 
-@media (max-width: 850px) {
+@media (max-width: 500px) {
     .defi-stats-inline {
-        justify-content: flex-start;
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
     }
 }
+
+/* ===================== PILL WIDGET (TOP BOARD & QUICK STATS) ===================== */
+.pill-widget {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 9999px;
+    padding: 0.6rem 1.2rem;
+    transition: var(--transition-smooth);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.pill-widget:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* ===================== PREMIUM TOOLTIP ===================== */
+.has-tooltip {
+    position: relative;
+    cursor: help;
+}
+
+.has-tooltip:focus {
+    outline: none;
+}
+
+.premium-tooltip {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 0.6rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    width: max-content;
+    max-width: 220px;
+    text-align: center;
+    line-height: 1.5;
+    white-space: normal;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 50;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 212, 255, 0.1);
+    pointer-events: none;
+    font-family: 'Outfit', 'Inter', sans-serif;
+    letter-spacing: 0.2px;
+}
+
+.premium-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
+}
+
+.has-tooltip:hover .premium-tooltip,
+.has-tooltip:focus .premium-tooltip,
+.has-tooltip:active .premium-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.stat-icon-mini {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.defi-stat-item__label {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.defi-stat-item__value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    font-family: 'Space Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.currency-label {
+    font-size: 0.65em;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: lowercase;
+}
+
 
 /* ===================== QUICK STATS ===================== */
 .defi-stats {
@@ -381,7 +490,8 @@ html:has(.defi-page) body {
 /* Featured Bento Card (Spans 2 columns) */
 .card-bento-featured {
     grid-column: span 2;
-    background: linear-gradient(135deg, rgba(20, 15, 40, 0.8) 0%, rgba(10, 10, 30, 0.9) 100%) !important;
+    background: linear-gradient(135deg, rgba(40, 25, 60, 0.5) 0%, rgba(15, 15, 25, 0.6) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .card-bento-featured .service-header {
@@ -406,41 +516,25 @@ html:has(.defi-page) body {
 
 .defi-service-card {
     background: var(--defi-bg-card);
-    backdrop-filter: blur(10px);
-    /* Make border clearer: brighter color, thicker visual */
-    border: 2px solid rgba(0, 212, 255, 0.6);
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 212, 255, 0.05);
-    border-radius: 24px;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--defi-border);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
     padding: 1.5rem;
     text-decoration: none;
     color: inherit;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: var(--transition-smooth);
     position: relative;
     overflow: hidden;
     margin-bottom: 0;
-    /* Subtle glow pulse */
-    animation: serviceCardGlow 6s ease-in-out infinite;
-    /* Ensure stacking context */
     z-index: 1;
     isolation: isolate;
-    /* Consistent card height - flexbox layout */
     display: flex;
     flex-direction: column;
-    /* height: 100%; Removed to fix overlap */
 }
 
-/* Service card glow animation */
-@keyframes serviceCardGlow {
-
-    0%,
-    100% {
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(0, 212, 255, 0.2);
-    }
-
-    50% {
-        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5), 0 0 25px rgba(168, 85, 247, 0.2), inset 0 0 0 1px rgba(168, 85, 247, 0.4);
-    }
-}
+/* Removed auto-animation serviceCardGlow to reduce noise */
 
 /* Staggered animation delay for visual interest */
 .defi-service-card:nth-child(1) {
@@ -465,25 +559,23 @@ html:has(.defi-page) body {
     top: 0;
     left: 0;
     right: 0;
-    height: 4px;
-    /* Thicker top accent */
-    background: linear-gradient(90deg, var(--service-color), transparent);
-    opacity: 0.5;
-    /* Always visible slightly */
-    transition: opacity 0.3s, height 0.3s;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--service-color), transparent);
+    opacity: 0.3;
+    transition: var(--transition-smooth);
 }
 
 .defi-service-card:hover {
-    border-color: var(--service-color);
-    transform: translateY(-8px);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px color-mix(in srgb, var(--service-color) 40%, transparent);
+    transform: translateY(-4px) scale(1.01);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 40px color-mix(in srgb, var(--service-color) 20%, transparent);
     z-index: 10;
-    /* Bring to front on hover */
 }
 
 .defi-service-card:hover::before {
     opacity: 1;
-    height: 6px;
+    height: 2px;
+    box-shadow: 0 0 20px var(--service-color);
 }
 
 .defi-service-card.coming-soon {
@@ -532,10 +624,10 @@ html:has(.defi-page) body {
     color: #fff;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     /* Better text contrast */
-    /* Limit width to prevent overflow and ensure consistent layout */
     flex: 1;
     min-width: 0;
-    word-break: break-word;
+    word-break: keep-all;
+    overflow-wrap: break-word;
     line-height: 1.2;
 }
 
@@ -597,15 +689,34 @@ html:has(.defi-page) body {
     padding: 1rem;
     background: rgba(0, 0, 0, 0.4);
     /* Darker contrast background */
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     /* Subtle inner border */
     border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+.sparkline-bg {
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 100%;
+    height: 60%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.8;
+}
+
+.sparkline-bg svg {
+    width: 100%;
+    height: 100%;
 }
 
 .service-stat {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    z-index: 1;
 }
 
 .service-stat .stat-label {
@@ -626,26 +737,43 @@ html:has(.defi-page) body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, var(--service-color) 0%, color-mix(in srgb, var(--service-color) 70%, #a855f7) 100%);
-    /* Explicit clear border for button */
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    padding: 0.8rem 1.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
     border-radius: 9999px;
     color: #fff;
-    font-weight: 700;
-    /* Bolder text */
+    font-weight: 600;
     font-size: 0.95rem;
-    text-transform: uppercase;
     letter-spacing: 0.5px;
-    transition: all 0.3s ease;
-    /* Push to bottom of card */
+    transition: var(--transition-smooth);
     margin-top: auto;
     text-decoration: none;
+    position: relative;
+    overflow: hidden;
 }
 
-.defi-service-card:hover .service-cta {
-    box-shadow: 0 4px 15px color-mix(in srgb, var(--service-color) 40%, transparent);
+.service-cta::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.service-cta:hover {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--service-color) 40%, transparent) 0%, color-mix(in srgb, var(--service-color) 10%, transparent) 100%);
+    border-color: var(--service-color);
+    box-shadow: 0 4px 20px color-mix(in srgb, var(--service-color) 40%, transparent);
+    transform: translateY(-2px);
+}
+
+.service-cta:hover::before {
+    left: 100%;
 }
 
 /* ===================== STATS GRID ===================== */
@@ -1505,6 +1633,11 @@ html:has(.defi-page) body,
     font-size: 0.8rem;
     position: relative;
     z-index: 10;
+    margin-top: 3rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 24px 24px 0 0;
+    border-top: 1px solid rgba(0, 212, 255, 0.1);
+    backdrop-filter: blur(10px);
 }
 
 .defi-footer__links {
@@ -1562,8 +1695,47 @@ html:has(.defi-page) body,
 .defi-footer__divider {
     width: 200px;
     height: 1px;
-    margin: 0 auto 1rem;
+    margin: 0 auto 1.5rem;
     background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.3), transparent);
+}
+
+.defi-footer__partners {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 1.5rem;
+}
+
+.defi-footer__partner {
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.defi-footer__partner:hover {
+    color: #fff;
+    background: rgba(0, 212, 255, 0.15);
+    text-shadow: 0 0 15px rgba(0, 212, 255, 0.8);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.defi-footer__copyright {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.3);
+    margin: 0;
+    transition: all 0.3s ease;
+}
+
+.defi-footer__copyright:hover {
+    color: rgba(255, 255, 255, 0.7);
 }
 
 /* ===================== COMING SOON STRIP ===================== */

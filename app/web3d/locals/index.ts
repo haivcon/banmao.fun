@@ -141,6 +141,10 @@ export interface LandingTranslations {
     defiLive: string;
     defiComingSoon: string;
     defiEnter: string;
+    defiTvlTooltip: string;
+    defiStakersTooltip: string;
+    defiApyTooltip: string;
+    defiBurnTooltip: string;
     // DeFi Service Names
     defiStakingName: string;
     defiStakingDesc: string;

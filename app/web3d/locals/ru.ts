@@ -137,6 +137,10 @@ export const ru: LandingTranslations = {
     defiLive: "Онлайн",
     defiComingSoon: "Скоро",
     defiEnter: "Войти",
+    defiTvlTooltip: "Общая сумма $BANMAO, заблокированная во всех смарт-контрактах.",
+    defiStakersTooltip: "Общее количество пользователей, участвующих в стейкинге.",
+    defiApyTooltip: "Годовая процентная доходность: ожидаемая прибыль за год.",
+    defiBurnTooltip: "Общая сумма $BANMAO, навсегда изъятая из обращения.",
     // DeFi Services
     defiStakingName: "Стейкинг",
     defiStakingDesc: "Заблокируйте $BANMAO, APY до 75%",

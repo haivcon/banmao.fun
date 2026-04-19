@@ -282,6 +282,32 @@ function EnhancedFooter() {
                     </svg>
                     Home
                 </a>
+                <a
+                    href="/defi"
+                    className="enhanced-footer__social enhanced-footer__social--home"
+                    onMouseEnter={() => playSound('hover')}
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+                        <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                        <polyline points="2 17 12 22 22 17"></polyline>
+                        <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    DeFi HUB
+                </a>
+                <a
+                    href="https://web3.okx.com/token/x-layer/0x16d91d1615fc55b76d5f92365bd60c069b46ef78"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="enhanced-footer__social enhanced-footer__social--home"
+                    onMouseEnter={() => playSound('hover')}
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+                        <circle cx="8" cy="21" r="1"></circle>
+                        <circle cx="19" cy="21" r="1"></circle>
+                        <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path>
+                    </svg>
+                    Buy $BANMAO
+                </a>
             </div>
             <div className="enhanced-footer__partners">
                 <span>Developed by</span>

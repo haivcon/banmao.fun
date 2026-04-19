@@ -137,6 +137,10 @@ export const ko: LandingTranslations = {
     defiLive: "라이브",
     defiComingSoon: "출시 예정",
     defiEnter: "입장",
+    defiTvlTooltip: "모든 스마트 컨트랙트에 락업된 $BANMAO의 총 가치입니다.",
+    defiStakersTooltip: "스테이킹에 참여하고 있는 총 사용자 수입니다.",
+    defiApyTooltip: "연간 예상 수익률(APY)입니다.",
+    defiBurnTooltip: "유통량에서 영구적으로 소각된 $BANMAO의 총량입니다.",
     // DeFi Services
     defiStakingName: "스테이킹",
     defiStakingDesc: "$BANMAO 잠금, 최대 75% APY 보상",
