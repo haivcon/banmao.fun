@@ -207,6 +207,7 @@ export default function StakingPage() {
         getTimeRemaining,
         formatTokenAmount,
         LOCK_OPTIONS_INFO,
+        hasRpcError,
     } = useStaking();
 
 
@@ -659,6 +660,29 @@ export default function StakingPage() {
                 </div>
             )}
 
+            {/* RPC Data Stale Warning */}
+            {hasRpcError && !globalStats.isPaused && (
+                <div style={{
+                    position: 'fixed',
+                    top: '60px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'rgba(251, 191, 36, 0.12)',
+                    border: '1px solid rgba(251, 191, 36, 0.4)',
+                    borderRadius: '12px',
+                    padding: '10px 20px',
+                    zIndex: 1001,
+                    color: '#fbbf24',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    textAlign: 'center',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 4px 16px rgba(251, 191, 36, 0.15)',
+                    whiteSpace: 'nowrap',
+                }}>
+                    ⚠️ RPC connection issue — data may be stale
+                </div>
+            )}
             {/* RADIAL MENU LAYOUT - Dynamic classes for positioning */}
             <div className={`radial-menu-wrapper ${expandedPanel ? 'layout-panel-open' : isMenuOpen ? 'layout-menu-open' : 'layout-default'}`}>
 
@@ -867,11 +891,11 @@ export default function StakingPage() {
                         }}
                         style={{ marginTop: 0, padding: 0 }}
                     >
-                        <div className="energy-sphere-wrapper" style={isMobile ? undefined : { width: '520px', height: '520px' }}>
-                            {/* Rotating Rings — no inline sizes on mobile so CSS can control */}
-                            <div className="sphere-ring sphere-ring-1" style={isMobile ? undefined : { width: '400px', height: '400px' }}></div>
-                            <div className="sphere-ring sphere-ring-2" style={isMobile ? undefined : { width: '460px', height: '460px' }}></div>
-                            <div className="sphere-ring sphere-ring-3" style={isMobile ? undefined : { width: '520px', height: '520px' }}></div>
+                        <div className="energy-sphere-wrapper">
+                            {/* Rotating Rings — sizes handled by CSS media queries */}
+                            <div className="sphere-ring sphere-ring-1"></div>
+                            <div className="sphere-ring sphere-ring-2"></div>
+                            <div className="sphere-ring sphere-ring-3"></div>
 
                             {/* Orbiting Particles */}
                             <div className="orbit-particle"></div>
@@ -981,8 +1005,8 @@ export default function StakingPage() {
                                             WebkitBackgroundClip: 'text',
                                             WebkitTextFillColor: 'transparent',
                                             backgroundClip: 'text',
-                                            textShadow: '0 0 30px rgba(250, 204, 21, 0.4), 0 0 60px rgba(74, 222, 128, 0.3)',
-                                            filter: 'drop-shadow(0 2px 8px rgba(250, 204, 21, 0.5))',
+                                            /* textShadow removed — invisible with transparent fill, causes Firefox artifacts */
+                                            filter: 'drop-shadow(0 2px 8px rgba(250, 204, 21, 0.5)) drop-shadow(0 0 30px rgba(250, 204, 21, 0.3))',
                                             lineHeight: 1.1,
                                             position: 'relative'
                                         }}>

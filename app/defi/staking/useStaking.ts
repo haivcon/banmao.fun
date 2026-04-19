@@ -148,12 +148,12 @@ export function useStaking() {
     });
 
     // ============ Read Global Stats ============
-    const { data: totalStaked } = useReadContract({
+    const { data: totalStaked, error: totalStakedError } = useReadContract({
         address: STAKING_CONTRACT_ADDRESS,
         abi: STAKING_ABI,
         functionName: 'totalStaked',
         chainId: XLAYER_CHAIN_ID,
-        query: { refetchInterval: 15000 }, // Reduced from 5s to 15s
+        query: { refetchInterval: 15000 },
     });
 
     const { data: totalShares } = useReadContract({
@@ -216,7 +216,7 @@ export function useStaking() {
     });
 
     // ============ Read Health Check ============
-    const { data: healthData } = useReadContract({
+    const { data: healthData, error: healthCheckError } = useReadContract({
         address: STAKING_CONTRACT_ADDRESS,
         abi: STAKING_ABI,
         functionName: 'getGlobalHealthCheck',
@@ -566,6 +566,7 @@ export function useStaking() {
         isCorrectChain,
         accRewardPerShare,   // For detailed reward calculation
         devFee,              // DEV fee percentage (basis points)
+        hasRpcError: !!(totalStakedError || healthCheckError), // RPC failure indicator
 
         // Actions
         approve,

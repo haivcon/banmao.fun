@@ -77,7 +77,7 @@ export function LanguageSelector({ currentLang, onChangeLang }: LanguageSelector
                 position: "fixed",
                 top: dropdownPos.top,
                 right: dropdownPos.right,
-                zIndex: 2147483647,
+                zIndex: 'var(--z-dropdown)' as any,
             }}
         >
             <div className="defi-lang-dropdown__header">Select Language</div>
