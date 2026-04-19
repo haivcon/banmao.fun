@@ -539,8 +539,9 @@ export function useStaking() {
         return () => clearInterval(interval);
     }, [address, refetchPendingReward]);
 
-    // Debug log
+    // Debug log (dev only)
     useEffect(() => {
+        if (process.env.NODE_ENV !== 'development') return;
         console.log('=== STAKING V28 DEBUG ===');
         console.log('Contract:', STAKING_CONTRACT_ADDRESS);
         console.log('User Summary:', userSummary);

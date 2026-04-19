@@ -99,7 +99,7 @@ export function StakePanel({
                                     onClick={(e) => { e.stopPropagation(); setSelectedLockOption(option.id); }}
                                 >
                                     <div className="lock-card-name">
-                                        {option.days === 0 ? 'Flexible' : `${option.days} Days`}
+                                        {option.nameKey ? t(option.nameKey as keyof StakingTranslations) : option.name}
                                     </div>
                                     <div className="lock-card-multiplier">{option.multiplier}x</div>
                                 </div>
