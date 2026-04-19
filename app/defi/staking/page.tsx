@@ -10,7 +10,7 @@ import "./responsive-layout.css";
 import "./sphere-effects.css";
 import "./mobile.css";
 import { useStakingTranslations, Language } from "./i18n";
-import { numberToWords, SupportLanguage } from "../../web3d/locals/numberToWords";
+
 import { useStaking } from "./useStaking";
 import { useSound } from "./hooks/useSound";
 import { LOCK_OPTIONS_INFO, VIP_TIERS_INFO, BANMAO_TOKEN_ADDRESS } from "./contracts";
@@ -300,7 +300,7 @@ export default function StakingPage() {
 
         return () => clearInterval(interval);
     }, [isMobile]);
-    const { data: okbBalance } = useBalance({ address });
+    const { data: okbBalance } = useBalance({ address, chainId: 196 });
 
 
 
@@ -378,8 +378,12 @@ export default function StakingPage() {
 
     // Handle stake
     const handleStake = async () => {
+        // Guard: contract paused
+        if (globalStats.isPaused) return;
         let rawAmount = unformatInputNumber(stakeAmount);
         if (!rawAmount || isNaN(parseFloat(rawAmount)) || parseFloat(rawAmount) <= 0) return;
+        // Guard: minStake not yet loaded from contract
+        if (globalStats.minStake === BigInt(0)) return;
 
         const max = getSafeMaxStake();
         const min = Number(formatEther(globalStats.minStake));
@@ -395,12 +399,12 @@ export default function StakingPage() {
 
         // Check if approval needed
         if (needsApproval(rawAmount)) {
-            setTxStatus("Approving tokens...");
+            setTxStatus(t('processing'));
             await approve();
             return;
         }
 
-        setTxStatus("Staking...");
+        setTxStatus(t('processing'));
         await stake(rawAmount, selectedLockOption);
     };
 
@@ -418,25 +422,25 @@ export default function StakingPage() {
         setUnstakeAmount(correctedAmount);
         rawAmount = correctedAmount;
 
-        setTxStatus("Unstaking...");
+        setTxStatus(t('processing'));
         await unstake(rawAmount);
     };
 
     // Handle claim
     const handleClaim = async () => {
-        setTxStatus("Claiming rewards...");
+        setTxStatus(t('processing'));
         await claimReward();
     };
 
     // Handle compound
     const handleCompound = async () => {
-        setTxStatus("Compounding...");
+        setTxStatus(t('processing'));
         await autoCompound();
     };
 
     // Handle relock (V30)
     const handleRelock = async (stakeId: number, newLockOptionId: number) => {
-        setTxStatus("Relocking stake...");
+        setTxStatus(t('processing'));
         await relock(stakeId, newLockOptionId);
     };
 
@@ -456,12 +460,12 @@ export default function StakingPage() {
 
         // Check if approval needed for donate
         if (needsApproval(rawAmount)) {
-            setTxStatus("Approving tokens for donation...");
+            setTxStatus(t('processing'));
             await approve();
             return;
         }
 
-        setTxStatus("Donating to reward pool...");
+        setTxStatus(t('processing'));
         await donate(rawAmount);
         setDonateAmount("");
     };
@@ -627,6 +631,29 @@ export default function StakingPage() {
                 }}>
                     {isLoading && <span className="loading-spinner" style={{ marginRight: '8px' }} />}
                     {txStatus}
+                </div>
+            )}
+
+            {/* Contract Paused Warning */}
+            {globalStats.isPaused && (
+                <div style={{
+                    position: 'fixed',
+                    top: '60px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.5)',
+                    borderRadius: '12px',
+                    padding: '12px 24px',
+                    zIndex: 1001,
+                    color: '#f87171',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    textAlign: 'center',
+                    backdropFilter: 'blur(10px)',
+                    boxShadow: '0 4px 20px rgba(239, 68, 68, 0.2)',
+                }}>
+                    🚫 Contract Paused — Transactions are currently disabled
                 </div>
             )}
 
@@ -1100,7 +1127,7 @@ export default function StakingPage() {
                 <button
                     onClick={() => setShowOnboardingTour(true)}
                     className="help-button"
-                    title="Hướng dẫn sử dụng"
+                    title={t('tourWelcomeTitle')}
                     style={{
                         width: 32,
                         height: 32,

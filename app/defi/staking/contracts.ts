@@ -529,21 +529,6 @@ export const STAKING_ABI = [
             { indexed: false, name: 'newLockEndTime', type: 'uint256' },
         ],
     },
-    // ============ Admin Write Functions ============
-    {
-        name: 'setDevFee',
-        type: 'function',
-        stateMutability: 'nonpayable',
-        inputs: [{ name: '_fee', type: 'uint256' }],
-        outputs: [],
-    },
-    {
-        name: 'setDevWallet',
-        type: 'function',
-        stateMutability: 'nonpayable',
-        inputs: [{ name: '_dev', type: 'address' }],
-        outputs: [],
-    },
 ] as const;
 
 // ============ ERC20 ABI ============
