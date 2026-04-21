@@ -38,3 +38,4 @@ Thumbs.db
 yarn.lock
 api_docs
 .agent
+*.log

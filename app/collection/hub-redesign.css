@@ -1310,15 +1310,49 @@
         gap: 12px;
     }
 
+    .col-header-spacer {
+        height: 90px;
+    }
+
+    .col-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 8px;
+    }
+
+    .col-header-left {
+        order: 1;
+        flex-shrink: 0;
+    }
+
+    .col-header-right {
+        position: static;
+        order: 2;
+        flex-shrink: 0;
+    }
+
+    .col-back-btn {
+        position: static;
+    }
+
     .hub-view-toggle {
         position: static;
         transform: none;
-        order: 2;
+        width: 100%;
+        order: 3;
+        justify-content: center;
+        margin: 6px 0 0;
     }
 
     .hub-toggle-btn {
         font-size: 12px;
-        padding: 4px 10px;
+        padding: 6px 16px;
+        flex: 1;
+        max-width: 140px;
+        text-align: center;
+        justify-content: center;
     }
 
     .hub-wallet-btn button {

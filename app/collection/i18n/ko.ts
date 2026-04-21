@@ -123,5 +123,8 @@ export default {
     beFirstToShare: "Banmao 콘텐츠를 처음으로 공유하세요!",
     trendingTitle: "인기", suggestedTitle: "추천", reportPost: "게시물 신고",
     reply: "답글", replyingTo: "답글 대상", change: "변경", tip: "팁",
+    // Prompt Viewer
+    viewPrompt: "프롬프트", promptTitle: "AI 생성 프롬프트", promptEmpty: "이 폴더에는 프롬프트 데이터가 없습니다.",
+    promptLoading: "로딩 중...", shareLink: "공유 링크", openShareLink: "Gemini에서 열기",
+    copyPrompt: "프롬프트 복사", promptCopied: "프롬프트가 복사되었습니다!",
 } as Record<string, string>;
-

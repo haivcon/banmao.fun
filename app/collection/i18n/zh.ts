@@ -127,5 +127,8 @@ export default {
     beFirstToShare: "成为第一个分享Banmao内容的人！",
     trendingTitle: "热门", suggestedTitle: "推荐", reportPost: "举报帖子",
     reply: "回复", replyingTo: "回复给", change: "更换", tip: "打赏",
+    // Prompt Viewer
+    viewPrompt: "提示词", promptTitle: "AI 图像提示词", promptEmpty: "此文件夹没有提示词数据。",
+    promptLoading: "加载中...", shareLink: "分享链接", openShareLink: "在 Gemini 中打开",
+    copyPrompt: "复制提示词", promptCopied: "提示词已复制！",
 } as Record<string, string>;
-
