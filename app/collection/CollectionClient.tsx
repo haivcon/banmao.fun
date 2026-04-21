@@ -1017,6 +1017,13 @@ export default function CollectionPage() {
     // Lightbox download button state
     const [lbDownloading, setLbDownloading] = useState<"" | "downloading" | "dl-success">("");
 
+    // ——— AI Prompt & Share Link State ———
+    const [promptsCache, setPromptsCache] = useState<Record<string, { prompts: any[], shareLinks: Record<string, string>, hasPrompts: boolean }>>({});
+    const [showPromptPanel, setShowPromptPanel] = useState(false);
+    const [currentPrompt, setCurrentPrompt] = useState<{ id?: number, prompt: string, share_link?: string } | null>(null);
+    const [currentShareLink, setCurrentShareLink] = useState<string | null>(null);
+    const [promptLoading, setPromptLoading] = useState(false);
+
     // ——— PWA Install Prompt & Service Worker ———
     useEffect(() => {
         // PWA Install Prompt
@@ -1408,6 +1415,61 @@ export default function CollectionPage() {
                 setBgRemovedName(entry.name);
             }
         }).catch(err => console.error("Failed to load saved BG:", err));
+        
+        // Reset prompt logic
+        setCurrentPrompt(null);
+        setCurrentShareLink(null);
+        setShowPromptPanel(false);
+
+        const folder = currentLightboxImage.folder;
+        if (!folder) return;
+
+        const updatePromptState = (cacheData: any) => {
+            console.log("updatePromptState: cacheData=", cacheData, "for folder=", folder);
+            if (!cacheData || (!cacheData.hasPrompts && !cacheData.shareLinks)) {
+                console.log("No prompts or sharelinks found in cacheData");
+                return;
+            }
+            
+            // Try to extract the first number from the name as the prompt ID
+            const nameMatch = currentLightboxImage.name.match(/(\d+)/);
+            const promptId = nameMatch ? parseInt(nameMatch[1], 10) : (lightboxIndex !== null ? lightboxIndex + 1 : 1);
+            console.log("Extracted promptId=", promptId, "from name=", currentLightboxImage.name);
+            
+            let matchedPrompt = null;
+            if (cacheData.prompts && cacheData.prompts.length > 0) {
+                matchedPrompt = cacheData.prompts.find((p: any) => p.id === promptId) || cacheData.prompts[Math.min(promptId - 1, cacheData.prompts.length - 1)];
+                setCurrentPrompt(matchedPrompt);
+                console.log("Matched prompt:", matchedPrompt);
+            }
+            
+            // Check share links
+            let sl = matchedPrompt?.share_link;
+            if (!sl && cacheData.shareLinks) {
+                // Try original name
+                const filename = currentLightboxImage.src.split("/").pop() || "";
+                sl = cacheData.shareLinks[filename] 
+                    || cacheData.shareLinks[filename.replace(/\.[^/.]+$/, "")]
+                    || cacheData.shareLinks[`prompt_${promptId}`];
+            }
+            if (sl) setCurrentShareLink(sl);
+        };
+
+        if (promptsCache[folder]) {
+            updatePromptState(promptsCache[folder]);
+        } else {
+            setPromptLoading(true);
+            const ts = Date.now();
+            fetch(`/api/collection/prompts?folder=${encodeURIComponent(folder)}&_t=${ts}`)
+                .then(r => r.json())
+                .then(data => {
+                    setPromptsCache(prev => ({ ...prev, [folder]: data }));
+                    updatePromptState(data);
+                })
+                .catch(err => console.error("Failed to fetch prompts:", err))
+                .finally(() => setPromptLoading(false));
+        }
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentLightboxImage?.src]);
 
@@ -2347,7 +2409,45 @@ export default function CollectionPage() {
                                                 🎨 {t.edit}
                                             </button>
                                         )}
+                                        {/* Prompt button - only show if there's valid prompt data for this folder */}
+                                        <button className={`col-pill-btn col-pill-pink ${showPromptPanel ? "col-fav-active" : ""}`}
+                                            onClick={() => setShowPromptPanel(!showPromptPanel)}>
+                                            ✨ {t.viewPrompt || "Prompt"}
+                                        </button>
                                     </div>
+
+                                    {/* AI Prompt Panel */}
+                                    {showPromptPanel && (
+                                        <div className="col-prompt-panel">
+                                            <div className="col-share-title">✨ {t.promptTitle}</div>
+                                            {promptLoading ? (
+                                                <div className="col-prompt-loading"><span className="col-infinite-spinner" style={{width: 16, height: 16}}/> {t.promptLoading}</div>
+                                            ) : currentPrompt ? (
+                                                <>
+                                                    <div className="col-prompt-text">{currentPrompt.prompt}</div>
+                                                    <div className="col-prompt-actions">
+                                                        <button className="col-pill-btn col-pill-green col-prompt-action"
+                                                            onClick={async () => {
+                                                                await navigator.clipboard.writeText(currentPrompt.prompt);
+                                                                setToast(t.promptCopied);
+                                                                setTimeout(() => setToast(null), 2500);
+                                                            }}>
+                                                            📋 {t.copyPrompt}
+                                                        </button>
+                                                        {currentShareLink && (
+                                                            <a href={currentShareLink} target="_blank" rel="noopener noreferrer" className="col-pill-btn col-pill-pink col-prompt-action" style={{textDecoration: 'none'}}>
+                                                                🚀 {t.openShareLink}
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="col-prompt-empty">
+                                                    {t.promptEmpty}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
 
                                     {/* Share Panel */}
                                     {showSharePanel && (

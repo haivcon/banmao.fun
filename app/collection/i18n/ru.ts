@@ -123,5 +123,8 @@ export default {
     beFirstToShare: "Станьте первым, кто поделится контентом Banmao!",
     trendingTitle: "В тренде", suggestedTitle: "Рекомендации", reportPost: "Пожаловаться",
     reply: "Ответить", replyingTo: "Ответ для", change: "Изменить", tip: "Чаевые",
+    // Prompt Viewer
+    viewPrompt: "Промпт", promptTitle: "Промпт для генерации", promptEmpty: "Нет данных промпта для этой папки.",
+    promptLoading: "Загрузка...", shareLink: "Поделиться", openShareLink: "Открыть в Gemini",
+    copyPrompt: "Копировать промпт", promptCopied: "Промпт скопирован!",
 } as Record<string, string>;
-

@@ -210,5 +210,14 @@ export default {
     replyingTo: "Replying to",
     change: "Change",
     tip: "Tip",
+    // Prompt Viewer
+    viewPrompt: "Prompt",
+    promptTitle: "AI Generation Prompt",
+    promptEmpty: "No prompt data available for this folder.",
+    promptLoading: "Loading prompt...",
+    shareLink: "Share Link",
+    openShareLink: "Open in Gemini",
+    copyPrompt: "Copy Prompt",
+    promptCopied: "Prompt copied!",
 } as Record<string, string>;
 

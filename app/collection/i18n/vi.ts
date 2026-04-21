@@ -210,4 +210,13 @@ export default {
     replyingTo: "Đang trả lời",
     change: "Đổi",
     tip: "Tip",
+    // Prompt Viewer
+    viewPrompt: "Prompt",
+    promptTitle: "Prompt tạo ảnh AI",
+    promptEmpty: "Không có dữ liệu prompt cho thư mục này.",
+    promptLoading: "Đang tải prompt...",
+    shareLink: "Link chia sẻ",
+    openShareLink: "Mở trên Gemini",
+    copyPrompt: "Sao chép Prompt",
+    promptCopied: "Đã sao chép prompt!",
 } as Record<string, string>;

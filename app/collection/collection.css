@@ -1688,6 +1688,71 @@ body::-webkit-scrollbar {
     margin-top: 4px;
 }
 
+/* ========== PROMPT PANEL ========== */
+.col-prompt-panel {
+    width: 100%;
+    margin-top: 10px;
+    padding: 14px;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(244, 114, 182, 0.2);
+    border-radius: 12px;
+    animation: colFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.col-prompt-text {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.35;
+    color: #e2e8f0;
+    margin-bottom: 12px;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+/* Custom scrollbar for prompt text */
+.col-prompt-text::-webkit-scrollbar {
+    width: 6px;
+}
+.col-prompt-text::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 4px;
+}
+.col-prompt-text::-webkit-scrollbar-thumb {
+    background: rgba(244, 114, 182, 0.3);
+    border-radius: 4px;
+}
+
+.col-prompt-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.col-prompt-action {
+    padding: 6px 14px;
+    font-size: 12px;
+}
+
+.col-prompt-empty, .col-prompt-loading {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
 /* ========== SHARE PANEL ========== */
 .col-share-panel {
     width: 100%;
@@ -2806,21 +2871,30 @@ body::-webkit-scrollbar {
     }
 
     .col-header {
-        padding-top: calc(50px + env(safe-area-inset-top, 0px));
-        padding-bottom: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 8px;
+        text-align: center;
+    }
+
+    .col-header-left {
+        order: 1;
+        flex-shrink: 0;
     }
 
     .col-header-right {
-        top: calc(12px + env(safe-area-inset-top, 0px));
-        right: 12px;
+        position: static;
+        order: 2;
         flex-direction: row;
         align-items: center;
         gap: 6px;
+        flex-shrink: 0;
     }
 
     .col-back-btn {
-        top: calc(12px + env(safe-area-inset-top, 0px));
-        left: 12px;
+        position: static;
         font-size: 11px;
         padding: 6px 14px;
     }

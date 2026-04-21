@@ -2,7 +2,7 @@
 // Consolidates: sw-main, sw-hub, sw-gamefi, sw-rps, sw-snake, and collection cache
 // Single SW reduces Google Safe Browsing suspicion from multiple SW files
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const MAIN_CACHE = `banmao-main-${CACHE_VERSION}`;
 const STATIC_CACHE = `banmao-static-${CACHE_VERSION}`;
 const COLLECTION_CACHE = `banmao-collection-${CACHE_VERSION}`;

@@ -123,5 +123,9 @@ export default {
     beFirstToShare: "Jadilah yang pertama berbagi konten Banmao!",
     trendingTitle: "Tren", suggestedTitle: "Disarankan", reportPost: "Laporkan Posting",
     reply: "Balas", replyingTo: "Membalas", change: "Ubah", tip: "Tip",
+    // Prompt Viewer
+    viewPrompt: "Prompt", promptTitle: "Prompt AI", promptEmpty: "Tidak ada data prompt untuk folder ini.",
+    promptLoading: "Memuat...", shareLink: "Tautan Bagikan", openShareLink: "Buka di Gemini",
+    copyPrompt: "Salin Prompt", promptCopied: "Prompt disalin!",
 } as Record<string, string>;
 
