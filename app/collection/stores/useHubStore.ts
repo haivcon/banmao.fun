@@ -16,6 +16,8 @@ export interface ImageItem {
     duration?: number;
     width?: number;
     height?: number;
+    tags?: string[];
+    context?: Record<string, string>;
 }
 
 
@@ -114,7 +116,7 @@ interface HubStoreState {
 
     // Lightbox
     lightboxIndex: number | null;
-    hubEditorOverride: { src: string; name: string; isVideo: boolean; folder?: string; bytes?: number; duration?: number } | null;
+    hubEditorOverride: { src: string; name: string; isVideo: boolean; folder?: string; bytes?: number; duration?: number; width?: number; height?: number; tags?: string[]; context?: Record<string, string> } | null;
     imgLoading: boolean;
     isSlideshow: boolean;
     editor: EditorState;
@@ -192,7 +194,7 @@ interface HubStoreState {
     setCarouselIndices: (fn: (prev: Record<number, number>) => Record<number, number>) => void;
 
     setLightboxIndex: (fn: number | null | ((prev: number | null) => number | null)) => void;
-    setHubEditorOverride: (v: { src: string; name: string; isVideo: boolean; folder?: string; bytes?: number; duration?: number } | null) => void;
+    setHubEditorOverride: (v: { src: string; name: string; isVideo: boolean; folder?: string; bytes?: number; duration?: number; width?: number; height?: number; tags?: string[]; context?: Record<string, string> } | null) => void;
     setImgLoading: (v: boolean) => void;
     setIsSlideshow: (v: boolean) => void;
     setEditor: (editor: EditorState) => void;

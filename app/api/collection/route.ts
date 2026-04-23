@@ -36,6 +36,9 @@ interface CloudinaryResource {
     created_at: string;
     asset_folder?: string;
     folder?: string;
+    tags?: string[];
+    context?: Record<string, string>;
+    aspect_ratio?: number;
 }
 
 function mapResource(r: CloudinaryResource) {
@@ -50,6 +53,9 @@ function mapResource(r: CloudinaryResource) {
         duration: r.duration,
         created_at: r.created_at,
         folder: r.asset_folder || r.folder || "",
+        tags: r.tags || [],
+        context: r.context || {},
+        aspect_ratio: r.aspect_ratio || (r.width && r.height ? +(r.width / r.height).toFixed(4) : undefined),
     };
 }
 
@@ -75,6 +81,7 @@ export async function GET(request: Request) {
                 expression,
                 max_results: limit,
                 sort_by: [{ public_id: "asc" }],
+                with_field: ["tags", "context"],
             };
             if (cursorParam) body.next_cursor = cursorParam;
 
@@ -112,6 +119,7 @@ export async function GET(request: Request) {
                 expression,
                 max_results: 500,
                 sort_by: [{ public_id: "asc" }],
+                with_field: ["tags", "context"],
             };
             if (nextCursor) body.next_cursor = nextCursor;
 

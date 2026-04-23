@@ -45,7 +45,7 @@ import {
     CollectionMenu
 } from "./web3d/button";
 import { Web3DThemeProvider, TokenStatsProvider, useTokenStatsContext, CustomCameraController, useCustomCamera, createFocusTarget, SuctionProvider, useSuction } from "./web3d/contexts";
-import { FloatingParticles, GlowingOrbs, TokenCoin3D, AnimatedMascot, CommunityLinksHub3D, BlackHole3D, DancingLogo3D } from "./web3d/effects";
+import { FloatingParticles, GlowingOrbs, TokenCoin3D, AnimatedMascot, CommunityLinksHub3D, BlackHole3D, DancingLogo3D, SwimmingWhale3D } from "./web3d/effects";
 // Lazy load heavy 3D chart component for better initial load
 const TokenDistributionChart3D = dynamic(
     () => import("./web3d/effects").then(mod => ({ default: mod.TokenDistributionChart3D })),
@@ -1966,6 +1966,16 @@ function Scene() {
                     scale={isMobile ? 0.65 : 1}
                 />
             </SuctionableGroup>
+
+            {/* Swimming Whale - upper right area near OKX logo */}
+            <SwimmingWhale3D
+                center={isMobile ? [3, 3, 0] : [5, 1.5, 0]}
+                scale={isMobile ? 3 : 4}
+                speed={0.4}
+                swimRadius={isMobile ? 2.5 : 3.5}
+                verticalRange={isMobile ? 0.8 : 1.2}
+            />
+
             <StatusIndicators />
 
             {/* Black Hole - Data Reset - NOT wrapped in SuctionableGroup */}

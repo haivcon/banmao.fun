@@ -34,8 +34,10 @@ generate-*.js
 .DS_Store
 Thumbs.db
 
-# Lock file (chọn 1: nếu dùng npm thì bỏ yarn.lock, ngược lại)
+# Lock file
 yarn.lock
-api_docs
-.agent
+pnpm-lock.yaml
+
+# Assets docs
+api_docs/
 *.log
