@@ -61,6 +61,8 @@ interface ImageItem {
     duration?: number;
     width?: number;
     height?: number;
+    tags?: string[];
+    context?: Record<string, string>;
 }
 
 const ITEMS_PER_PAGE_DESKTOP = 24;
@@ -760,7 +762,7 @@ export default function CollectionPage() {
                 if (data.images) {
                     const items: ImageItem[] = data.images
                         .filter((img: { folder: string }) => !img.folder.endsWith("/a_prompt"))
-                        .map((img: { public_id: string; secure_url: string; folder: string; bytes: number; resource_type?: string; duration?: number; width?: number; height?: number }) => {
+                        .map((img: { public_id: string; secure_url: string; folder: string; bytes: number; resource_type?: string; duration?: number; width?: number; height?: number; tags?: string[]; context?: Record<string, string> }) => {
                             const isVideo = img.resource_type === "video";
                             return {
                                 src: img.secure_url,
@@ -774,6 +776,8 @@ export default function CollectionPage() {
                                 duration: img.duration,
                                 width: img.width,
                                 height: img.height,
+                                tags: img.tags || [],
+                                context: img.context || {},
                             };
                         });
                     setAllImages(items);
@@ -2363,7 +2367,25 @@ export default function CollectionPage() {
                                     <span className="col-lightbox-info">
                                         {folderLabelTranslated(currentLightboxImage.folder, lang)} · {formatBytes(currentLightboxImage.bytes)}
                                         {currentLightboxImage.isVideo && currentLightboxImage.duration ? ` · ${formatDuration(currentLightboxImage.duration)}` : ""}
+                                        {currentLightboxImage.width && currentLightboxImage.height ? ` · ${currentLightboxImage.width}×${currentLightboxImage.height}` : ""}
                                     </span>
+                                    {/* Tags */}
+                                    {currentLightboxImage.tags && currentLightboxImage.tags.length > 0 && (
+                                        <div className="col-lightbox-tags">
+                                            {currentLightboxImage.tags.map((tag) => (
+                                                <span key={tag} className="col-lightbox-tag" onClick={() => {
+                                                    setSearchQuery(tag);
+                                                    closeLightbox();
+                                                }} title={`Search: ${tag}`}>#{tag}</span>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {/* Context caption/description */}
+                                    {currentLightboxImage.context && (currentLightboxImage.context.caption || currentLightboxImage.context.alt) && (
+                                        <p className="col-lightbox-context">
+                                            {currentLightboxImage.context.caption || currentLightboxImage.context.alt}
+                                        </p>
+                                    )}
 
                                     {/* Action buttons */}
                                     <div className="col-sheet-actions">

@@ -105,6 +105,7 @@ export async function GET(request: Request) {
                 expression,
                 max_results: 100,
                 sort_by: [{ public_id: "asc" }],
+                with_field: ["tags", "context"],
             }),
         });
 
@@ -117,6 +118,7 @@ export async function GET(request: Request) {
                     expression: `folder:${folder}*`,
                     max_results: 500,
                     sort_by: [{ public_id: "asc" }],
+                    with_field: ["tags", "context"],
                 }),
             });
 
@@ -126,9 +128,12 @@ export async function GET(request: Request) {
 
             const fallbackData = await fallbackRes.json();
             const scored = (fallbackData.resources || [])
-                .map((r: { public_id: string; secure_url: string; folder?: string; format: string; resource_type: string; width: number; height: number; bytes: number; duration?: number; created_at: string; asset_folder?: string }) => ({
+                .map((r: { public_id: string; secure_url: string; folder?: string; format: string; resource_type: string; width: number; height: number; bytes: number; duration?: number; created_at: string; asset_folder?: string; tags?: string[]; context?: Record<string, string>; aspect_ratio?: number }) => ({
                     ...r,
                     folder: r.asset_folder || r.folder || "",
+                    tags: r.tags || [],
+                    context: r.context || {},
+                    aspect_ratio: r.aspect_ratio || (r.width && r.height ? +(r.width / r.height).toFixed(4) : undefined),
                     score: scoreMatch(r.public_id, r.asset_folder || r.folder || "", keywords),
                 }))
                 .filter((r: { score: number }) => r.score > 0)
@@ -136,7 +141,7 @@ export async function GET(request: Request) {
                 .slice(0, 50);
 
             return NextResponse.json({
-                results: scored.map((r: { public_id: string; secure_url: string; folder: string; format: string; resource_type: string; width: number; height: number; bytes: number; duration?: number; score: number }) => ({
+                results: scored.map((r: { public_id: string; secure_url: string; folder: string; format: string; resource_type: string; width: number; height: number; bytes: number; duration?: number; score: number; tags?: string[]; context?: Record<string, string>; aspect_ratio?: number }) => ({
                     public_id: r.public_id,
                     secure_url: r.secure_url,
                     folder: r.folder,
@@ -146,6 +151,9 @@ export async function GET(request: Request) {
                     height: r.height,
                     bytes: r.bytes,
                     duration: r.duration,
+                    tags: r.tags || [],
+                    context: r.context || {},
+                    aspect_ratio: r.aspect_ratio,
                     score: r.score,
                 })),
                 total: scored.length,
@@ -155,7 +163,7 @@ export async function GET(request: Request) {
         }
 
         const data = await response.json();
-        const results = (data.resources || []).map((r: { public_id: string; secure_url: string; folder?: string; asset_folder?: string; format: string; resource_type: string; width: number; height: number; bytes: number; duration?: number }) => ({
+        const results = (data.resources || []).map((r: { public_id: string; secure_url: string; folder?: string; asset_folder?: string; format: string; resource_type: string; width: number; height: number; bytes: number; duration?: number; tags?: string[]; context?: Record<string, string>; aspect_ratio?: number }) => ({
             public_id: r.public_id,
             secure_url: r.secure_url,
             folder: r.asset_folder || r.folder || "",
@@ -165,6 +173,9 @@ export async function GET(request: Request) {
             height: r.height,
             bytes: r.bytes,
             duration: r.duration,
+            tags: r.tags || [],
+            context: r.context || {},
+            aspect_ratio: r.aspect_ratio || (r.width && r.height ? +(r.width / r.height).toFixed(4) : undefined),
             score: scoreMatch(r.public_id, r.asset_folder || r.folder || "", keywords),
         }));
 

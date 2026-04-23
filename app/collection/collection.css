@@ -2207,6 +2207,68 @@ body::-webkit-scrollbar {
     color: rgba(255, 255, 255, 0.35);
 }
 
+/* Lightbox Tags */
+.col-lightbox-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+    animation: colFadeIn 0.3s ease;
+}
+
+.col-lightbox-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(244, 114, 182, 0.1);
+    border: 1px solid rgba(244, 114, 182, 0.2);
+    color: #f9a8d4;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.3px;
+}
+
+.col-lightbox-tag:hover {
+    background: rgba(244, 114, 182, 0.25);
+    border-color: rgba(244, 114, 182, 0.45);
+    color: #fff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(244, 114, 182, 0.2);
+}
+
+.col-lightbox-tag:active {
+    transform: scale(0.95);
+}
+
+/* Lightbox Context (caption/description) */
+.col-lightbox-context {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.5;
+    font-style: italic;
+    max-width: 400px;
+}
+
+/* Light theme overrides */
+.col-light .col-lightbox-tag {
+    background: rgba(219, 39, 119, 0.08);
+    border-color: rgba(219, 39, 119, 0.2);
+    color: #be185d;
+}
+
+.col-light .col-lightbox-tag:hover {
+    background: rgba(219, 39, 119, 0.18);
+    border-color: rgba(219, 39, 119, 0.4);
+    color: #9d174d;
+}
+
+.col-light .col-lightbox-context {
+    color: rgba(0, 0, 0, 0.5);
+}
+
 /* Zone label (page indicator) */
 .col-lightbox-zone-label {
     font-size: 10px;

@@ -134,14 +134,17 @@ export function TokenInfoPanel3D({ position, translations }: TokenInfoPanel3DPro
                     /* Mobile adjustments */
                     @media (max-width: 768px) {
                         .info-panel {
-                            width: 280px; /* Much narrower for mobile */
-                            height: 200px; /* Shorter height */
+                            width: 500px;
+                            height: auto;
+                            min-height: 220px;
+                            padding: 0;
                         }
-                        .logo-emoji { font-size: 20px; }
-                        .logo-text { font-size: 22px; }
+                        .logo-emoji { font-size: 32px; }
+                        .logo-text { font-size: 32px; }
                         .description {
-                            font-size: 13px;
-                            padding: 0 4px;
+                            font-size: 18px;
+                            line-height: 1.6;
+                            padding: 0;
                         }
                     }
                     

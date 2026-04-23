@@ -33,10 +33,9 @@ export function useHtmlScale(): number {
         // Desktop: z=13, Laptop: z=14, Mobile: z=19.5
         let zRatio = 1.0;
         if (size.width < 768) {
-            zRatio = 13 / 19.5; // Desktop Z / Mobile Z
-            zRatio *= 0.81; // Math.tan(55/2) / Math.tan(65/2) approx 0.81
-            // On mobile, height is often larger than width, we might want to bound it
-            scale = Math.min(scale, size.width / 400); 
+            // Mobile: keep text readable — minimal shrink
+            zRatio = 0.85;
+            scale = Math.min(scale, size.width / 320);
         } else if (size.width < 1440) {
             zRatio = 13 / 14;   // Desktop Z / Laptop Z
         } else {
@@ -46,7 +45,7 @@ export function useHtmlScale(): number {
 
         scale *= zRatio;
 
-        // Return a clamped scale (0.4 to 1.2)
-        return Math.max(0.4, scale);
+        // Return a clamped scale (0.6 to 1.2) — min 0.6 keeps mobile text readable
+        return Math.max(0.6, scale);
     }, [size.height, size.width]);
 }
