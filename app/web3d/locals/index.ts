@@ -158,6 +158,35 @@ export interface LandingTranslations {
     defiAirdropName: string;
     defiAirdropDesc: string;
     defiAirdropDetails: string;
+    // DeFi Infographic Bullet Keys — Staking
+    defiStakingIntro: string;
+    defiStakingBullet1Title: string;
+    defiStakingBullet1Desc: string;
+    defiStakingBullet2Title: string;
+    defiStakingBullet2Desc: string;
+    defiStakingBullet3Title: string;
+    defiStakingBullet3Desc: string;
+    defiStakingBullet4Title: string;
+    defiStakingBullet4Desc: string;
+    defiStakingOutro: string;
+    // DeFi Infographic Bullet Keys — Burn
+    defiBurnIntro: string;
+    defiBurnBullet1Title: string;
+    defiBurnBullet1Desc: string;
+    defiBurnBullet2Title: string;
+    defiBurnBullet2Desc: string;
+    defiBurnBullet3Title: string;
+    defiBurnBullet3Desc: string;
+    defiBurnOutro: string;
+    // DeFi Infographic Bullet Keys — Airdrop
+    defiAirdropIntro: string;
+    defiAirdropBullet1Title: string;
+    defiAirdropBullet1Desc: string;
+    defiAirdropBullet2Title: string;
+    defiAirdropBullet2Desc: string;
+    defiAirdropBullet3Title: string;
+    defiAirdropBullet3Desc: string;
+    defiAirdropOutro: string;
     // Staking Page UI & Status
     stakingAmountToStake: string;
     stakingAvailableBalance: string;

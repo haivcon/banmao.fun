@@ -285,13 +285,51 @@ html:has(.defi-page) body {
     padding: 0.6rem 1.2rem;
     transition: var(--transition-smooth);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    animation: pillGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes pillGlow {
+    0% {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+        border-color: rgba(255, 255, 255, 0.08);
+    }
+    100% {
+        box-shadow: 0 4px 18px rgba(0, 242, 254, 0.15), inset 0 0 0 1px rgba(0, 242, 254, 0.08);
+        border-color: rgba(0, 242, 254, 0.2);
+    }
 }
 
 .pill-widget:hover {
+    animation: none;
     background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: rgba(0, 242, 254, 0.4);
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 6px 20px rgba(0, 242, 254, 0.3);
+}
+
+/* ===================== SHIMMER TEXT ===================== */
+.shimmer-text {
+    background: linear-gradient(
+        90deg,
+        #00f2fe 0%,
+        #4facfe 25%,
+        #ffffff 50%,
+        #4facfe 75%,
+        #00f2fe 100%
+    );
+    background-size: 200% auto;
+    color: #fff;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textShine 4s linear infinite;
+    display: inline-block;
+}
+
+@keyframes textShine {
+    to {
+        background-position: 200% center;
+    }
 }
 
 /* ===================== PREMIUM TOOLTIP ===================== */
@@ -532,6 +570,18 @@ html:has(.defi-page) body {
     isolation: isolate;
     display: flex;
     flex-direction: column;
+    animation: cardIdleFloat 6s ease-in-out infinite alternate;
+}
+
+@keyframes cardIdleFloat {
+    0% {
+        transform: translateY(0);
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    100% {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 20px color-mix(in srgb, var(--service-color) 15%, transparent);
+    }
 }
 
 /* Removed auto-animation serviceCardGlow to reduce noise */
@@ -566,6 +616,7 @@ html:has(.defi-page) body {
 }
 
 .defi-service-card:hover {
+    animation: none;
     transform: translateY(-4px) scale(1.01);
     border-color: rgba(255, 255, 255, 0.15);
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 40px color-mix(in srgb, var(--service-color) 20%, transparent);
@@ -1590,6 +1641,7 @@ html:has(.defi-page) body,
 }
 
 .defi-service-card:hover {
+    animation: none;
     border-color: var(--service-color);
     transform: translateY(-8px) perspective(800px) rotateX(2deg);
     box-shadow:
@@ -1663,6 +1715,23 @@ html:has(.defi-page) body,
     backdrop-filter: blur(10px);
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    animation: footerPillGlow 4s ease-in-out infinite alternate;
+}
+
+.footer-pill:nth-child(1) { animation-delay: 0s; }
+.footer-pill:nth-child(2) { animation-delay: 1s; }
+.footer-pill:nth-child(3) { animation-delay: 2s; }
+.footer-pill:nth-child(4) { animation-delay: 3s; }
+
+@keyframes footerPillGlow {
+    0% {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    100% {
+        box-shadow: 0 6px 20px rgba(0, 212, 255, 0.15), inset 0 0 8px rgba(0, 212, 255, 0.05);
+        border-color: rgba(0, 212, 255, 0.3);
+    }
 }
 
 .footer-pill svg {
@@ -1672,6 +1741,7 @@ html:has(.defi-page) body,
 
 /* Hover effects */
 .footer-pill:hover {
+    animation: none;
     color: #fff;
     background: rgba(0, 212, 255, 0.1);
     border-color: rgba(0, 212, 255, 0.4);
@@ -1697,6 +1767,21 @@ html:has(.defi-page) body,
     height: 1px;
     margin: 0 auto 1.5rem;
     background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.3), transparent);
+    animation: dividerPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes dividerPulse {
+    0% { opacity: 0.3; width: 150px; }
+    100% { opacity: 1; width: 250px; }
+}
+
+.defi-footer > p:first-of-type {
+    background: linear-gradient(90deg, #94a3b8 0%, #e2e8f0 50%, #94a3b8 100%);
+    background-size: 200% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: textShine 4s linear infinite;
 }
 
 .defi-footer__partners {
@@ -1779,4 +1864,41 @@ html:has(.defi-page) body,
     opacity: 1;
     transform: translateY(-4px) !important;
     box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.1);
+}
+
+/* ═══ Card Mascot Background ═══ */
+.card-mascot-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.15;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    overflow: hidden;
+    border-radius: 20px; /* Match card border radius */
+}
+
+.card-mascot-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    object-position: center right; /* Keeps the mascot nicely positioned on the right */
+    filter: drop-shadow(0 0 8px rgba(255,255,255,0.1));
+}
+
+.defi-service-card:hover .card-mascot-bg {
+    opacity: 0.3;
+    transform: scale(1.05) translateY(-4px);
+}
+
+/* Ensure card content stays above mascot */
+.defi-service-card .service-header,
+.defi-service-card .service-description,
+.defi-service-card .service-stats,
+.defi-service-card .service-cta {
+    position: relative;
+    z-index: 1;
 }

@@ -41,3 +41,8 @@ pnpm-lock.yaml
 # Assets docs
 api_docs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.vercel
