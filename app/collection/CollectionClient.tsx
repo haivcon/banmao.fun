@@ -101,12 +101,14 @@ function folderLabel(folder: string): string {
 }
 
 function folderLabelTranslated(folder: string, lang: Lang): string {
+    if (folder === "__hub__") return "Hub";
     const base = folderLabel(folder);
     if (lang === "en") return base;
     return translateFolder(base, lang as "vi" | "zh" | "ko" | "ru" | "id");
 }
 
 function folderIcon(folder: string): string {
+    if (folder === "__hub__") return "🐱";
     const f = folder.toLowerCase();
     if (f.includes("avatar")) return "🎭";
     if (f.includes("countries") || f.includes("country")) return "🌍";
@@ -761,15 +763,24 @@ export default function CollectionPage() {
             .then((data) => {
                 if (data.images) {
                     const items: ImageItem[] = data.images
-                        .filter((img: { folder: string }) => !img.folder.endsWith("/a_prompt"))
+                        .filter((img: { resource_type?: string }) => img.resource_type !== "raw")
                         .map((img: { public_id: string; secure_url: string; folder: string; bytes: number; resource_type?: string; duration?: number; width?: number; height?: number; tags?: string[]; context?: Record<string, string> }) => {
                             const isVideo = img.resource_type === "video";
+                            // Remap a_prompt subfolder images to their parent folder
+                            let folder = img.folder;
+                            if (folder.endsWith("/a_prompt")) {
+                                folder = folder.replace(/\/a_prompt$/, "");
+                            }
+                            // Merge all hub/0x* folders into a single virtual "__hub__" tab
+                            if (/\/hub\/0x[a-f0-9]/i.test(folder)) {
+                                folder = "__hub__";
+                            }
                             return {
                                 src: img.secure_url,
                                 thumb: isVideo ? toVideoThumb(img.secure_url) : toThumb(img.secure_url),
                                 thumbSm: isVideo ? toVideoThumb(img.secure_url, 200) : toThumbSm(img.secure_url),
                                 name: publicIdToName(img.public_id),
-                                folder: img.folder,
+                                folder,
                                 bytes: img.bytes || 0,
                                 type: "sticker" as const,
                                 isVideo,
@@ -781,7 +792,44 @@ export default function CollectionPage() {
                             };
                         });
                     setAllImages(items);
-                    setFolders([...new Set(items.map((i: ImageItem) => i.folder))].sort());
+                    const uniqueFolders = [...new Set(items.map((i: ImageItem) => i.folder))];
+                    // Smart sort: named categories first (by image count desc), then Groups numerically, then __hub__ last
+                    const folderCounts = new Map<string, number>();
+                    for (const item of items) {
+                        folderCounts.set(item.folder, (folderCounts.get(item.folder) || 0) + 1);
+                    }
+                    uniqueFolders.sort((a, b) => {
+                        const aLabel = folderLabel(a);
+                        const bLabel = folderLabel(b);
+                        const aIsGroup = /^Group\d+/i.test(aLabel);
+                        const bIsGroup = /^Group\d+/i.test(bLabel);
+                        const aIsHub = a === "__hub__";
+                        const bIsHub = b === "__hub__";
+
+                        // Hub always last
+                        if (aIsHub && !bIsHub) return 1;
+                        if (!aIsHub && bIsHub) return -1;
+
+                        // Named categories before Groups
+                        if (!aIsGroup && !aIsHub && aIsGroup !== bIsGroup) return -1;
+                        if (!bIsGroup && !bIsHub && aIsGroup !== bIsGroup) return 1;
+
+                        // Both groups: sort numerically
+                        if (aIsGroup && bIsGroup) {
+                            const aNum = parseInt(aLabel.match(/\d+/)?.[0] || "0", 10);
+                            const bNum = parseInt(bLabel.match(/\d+/)?.[0] || "0", 10);
+                            return aNum - bNum;
+                        }
+
+                        // Both named: sort by count descending (larger folders first)
+                        if (!aIsGroup && !bIsGroup && !aIsHub && !bIsHub) {
+                            const countDiff = (folderCounts.get(b) || 0) - (folderCounts.get(a) || 0);
+                            if (countDiff !== 0) return countDiff;
+                        }
+
+                        return aLabel.localeCompare(bLabel);
+                    });
+                    setFolders(uniqueFolders);
                     setTotalBytes(items.reduce((sum: number, i: ImageItem) => sum + i.bytes, 0));
 
                 }
@@ -1730,6 +1778,15 @@ export default function CollectionPage() {
                             </div>
                             {isConnected && address && (
                                 <>
+                                    <button 
+                                        className="col-pill-btn col-pill-pink hub-desktop-profile-btn" 
+                                        onClick={() => { setHubProfileFilter(address); setHubFeedTab('newest'); setViewMode('hub'); }}
+                                        title={t.myProfile || "My Profile"}
+                                        style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 600 }}
+                                    >
+                                        <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="16" height="16"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                                        {t.myProfile || "Hồ sơ"}
+                                    </button>
                                     <ChatBellButton onClick={() => setShowChatInbox(true)} t={t} />
                                     <HubNotifications
                                         viewerAddress={address}

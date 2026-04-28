@@ -153,30 +153,29 @@ const HubPostCard = memo(function HubPostCard({
                             <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="hub-icon"><path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" /></svg>
                         )}
                     </button>
-                    {/* Mint NFT */}
-                    {isConnected && (
-                        <MintNFTButton
-                            t={t}
-                            address={address}
-                            postId={post.id}
-                            mediaUrl={post.media_url || ""}
-                            caption={post.caption || ""}
-                        />
-                    )}
                     {isConnected && address?.toLowerCase() !== post.author_address?.toLowerCase() && (
                         <button className="hub-action hub-action-tip" onClick={() => onTip(post.id, post.author_address, post.username || shortAddr(post.author_address))}>
                             <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="hub-icon"><path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
-                            Tip
+                            {t.tip}
                         </button>
                     )}
-                    {isConnected && address?.toLowerCase() !== post.author_address?.toLowerCase() && (
+                    {isConnected && (
                         <div className="hub-more-menu-wrap">
                             <button className="hub-more-btn" onClick={(e) => { e.stopPropagation(); onMoreMenuToggle(hubMoreOpen === post.id ? null : post.id); }} title="More">•••</button>
                             {hubMoreOpen === post.id && (
                                 <div className="hub-more-dropdown">
-                                    <button className="hub-more-option hub-more-danger" onClick={() => { onReport(post.id); onMoreMenuToggle(null); }}>
-                                        🚩 Report Post
-                                    </button>
+                                    <MintNFTButton
+                                        t={t}
+                                        address={address}
+                                        postId={post.id}
+                                        mediaUrl={post.media_url || ""}
+                                        caption={post.caption || ""}
+                                    />
+                                    {address?.toLowerCase() !== post.author_address?.toLowerCase() && (
+                                        <button className="hub-more-option hub-more-danger" onClick={() => { onReport(post.id); onMoreMenuToggle(null); }}>
+                                            🚩 {t.reportPost}
+                                        </button>
+                                    )}
                                 </div>
                             )}
                         </div>

@@ -127,5 +127,31 @@ export default {
     viewPrompt: "Prompt", promptTitle: "Prompt AI", promptEmpty: "Tidak ada data prompt untuk folder ini.",
     promptLoading: "Memuat...", shareLink: "Tautan Bagikan", openShareLink: "Buka di Gemini",
     copyPrompt: "Salin Prompt", promptCopied: "Prompt disalin!",
+    // Chat Widget
+    tapToChat: "Ketuk untuk chat", accept: "Terima", failedToAccept: "Gagal menerima permintaan",
+    connecting: "Menghubungkan...", connect: "Hubungkan", chats: "Chat", requests: "Permintaan",
+    loading: "Memuat...", noChats: "Belum ada chat.", noRequests: "Tidak ada permintaan pesan.",
+    unsupportedNetwork: "Jaringan tidak didukung. Silakan beralih ke XLayer atau Base.",
+    viewExplorer: "Lihat di OKX Explorer", copyAddress: "Salin Alamat",
+    fileTooLarge: "Gambar terlalu besar (maks 2MB)", sendImageFailed: "Gagal mengirim gambar",
+    editNickname: "Edit Nama Panggilan", typeNickname: "Ketik nama panggilan...", save: "Simpan",
+    loadingMessages: "Memuat pesan...", sayHello: "👋 Sapa dulu!",
+    selectChatStart: "Pilih chat untuk mulai", typeMessage: "Ketik pesan...",
+    // DailyCheckIn
+    dailyCheckIn: "Absen Harian", dayStreak: "hari berturut-turut", checkedIn: "Sudah Absen!", checkInNow: "Absen Sekarang",
+    // MiniQuests
+    quests: "Misi", daily: "Harian", weekly: "Mingguan",
+    questSharePost: "Bagikan Posting", questSharePostDesc: "Buat posting hari ini",
+    questShowLove: "Tunjukkan Cinta", questShowLoveDesc: "Sukai 3 posting",
+    questJoinChat: "Ikut Ngobrol", questJoinChatDesc: "Tinggalkan komentar",
+    questDailyCheckin: "Absen Harian", questDailyCheckinDesc: "Selesaikan absen harian",
+    questWeeklyCreator: "Kreator Mingguan", questWeeklyCreatorDesc: "Buat 5 posting minggu ini",
+    questCommunityChampion: "Juara Komunitas", questCommunityChampionDesc: "Sukai 20 posting minggu ini",
+    questGenerousTipper: "Si Dermawan", questGenerousTipperDesc: "Kirim tip minggu ini",
+    quest7DayStreak: "Streak 7 Hari", quest7DayStreakDesc: "Pertahankan streak absen 7 hari",
+    // Tip extras
+    tipBalance: "Saldo", tipApproving: "Menyetujui Token...", viewTransaction: "Lihat Transaksi ↗",
+    // Badges
+    achievements: "Pencapaian", locked: "Terkunci", earnedOn: "Diperoleh pada", keepGoing: "Terus berpartisipasi untuk membuka!",
 } as Record<string, string>;
 

@@ -13,6 +13,7 @@ out
 # IDE / Editor
 .agent
 .vscode
+.idea
 
 # Build cache
 tsconfig.tsbuildinfo
@@ -33,16 +34,24 @@ generate-*.js
 # OS files
 .DS_Store
 Thumbs.db
+Desktop.ini
 
-# Lock file
+# Lock files
 yarn.lock
 pnpm-lock.yaml
 
 # Assets docs
 api_docs/
+
+# Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+
+# Vercel
 .vercel
+
+# Gemini / AI agent data
+.gemini

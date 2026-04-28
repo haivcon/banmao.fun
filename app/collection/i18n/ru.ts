@@ -127,4 +127,30 @@ export default {
     viewPrompt: "Промпт", promptTitle: "Промпт для генерации", promptEmpty: "Нет данных промпта для этой папки.",
     promptLoading: "Загрузка...", shareLink: "Поделиться", openShareLink: "Открыть в Gemini",
     copyPrompt: "Копировать промпт", promptCopied: "Промпт скопирован!",
+    // Chat Widget
+    tapToChat: "Нажмите для чата", accept: "Принять", failedToAccept: "Ошибка принятия запроса",
+    connecting: "Подключение...", connect: "Подключить", chats: "Чаты", requests: "Запросы",
+    loading: "Загрузка...", noChats: "Чатов пока нет.", noRequests: "Нет запросов на сообщения.",
+    unsupportedNetwork: "Неподдерживаемая сеть. Переключитесь на XLayer или Base.",
+    viewExplorer: "Открыть в OKX Explorer", copyAddress: "Копировать адрес",
+    fileTooLarge: "Файл слишком большой (макс. 2MB)", sendImageFailed: "Ошибка отправки изображения",
+    editNickname: "Изменить ник", typeNickname: "Введите ник...", save: "Сохранить",
+    loadingMessages: "Загрузка сообщений...", sayHello: "👋 Поздоровайтесь!",
+    selectChatStart: "Выберите чат для начала", typeMessage: "Введите сообщение...",
+    // DailyCheckIn
+    dailyCheckIn: "Ежедневная отметка", dayStreak: "дней подряд", checkedIn: "Отмечено!", checkInNow: "Отметиться",
+    // MiniQuests
+    quests: "Задания", daily: "Ежедневные", weekly: "Еженедельные",
+    questSharePost: "Поделитесь постом", questSharePostDesc: "Создайте пост сегодня",
+    questShowLove: "Покажите любовь", questShowLoveDesc: "Лайкните 3 поста",
+    questJoinChat: "Присоединяйтесь", questJoinChatDesc: "Оставьте комментарий",
+    questDailyCheckin: "Ежедневная отметка", questDailyCheckinDesc: "Завершите ежедневную отметку",
+    questWeeklyCreator: "Автор недели", questWeeklyCreatorDesc: "5 постов за неделю",
+    questCommunityChampion: "Чемпион сообщества", questCommunityChampionDesc: "20 лайков за неделю",
+    questGenerousTipper: "Щедрый донатер", questGenerousTipperDesc: "Отправьте чаевые на этой неделе",
+    quest7DayStreak: "7 дней подряд", quest7DayStreakDesc: "Сохраняйте 7-дневную серию",
+    // Tip extras
+    tipBalance: "Баланс", tipApproving: "Одобрение токена...", viewTransaction: "Посмотреть транзакцию ↗",
+    // Badges
+    achievements: "Достижения", locked: "Заблокировано", earnedOn: "Получено", keepGoing: "Продолжайте участвовать для разблокировки!",
 } as Record<string, string>;

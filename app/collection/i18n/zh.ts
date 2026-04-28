@@ -131,4 +131,30 @@ export default {
     viewPrompt: "提示词", promptTitle: "AI 图像提示词", promptEmpty: "此文件夹没有提示词数据。",
     promptLoading: "加载中...", shareLink: "分享链接", openShareLink: "在 Gemini 中打开",
     copyPrompt: "复制提示词", promptCopied: "提示词已复制！",
+    // Chat Widget
+    tapToChat: "点击聊天", accept: "接受", failedToAccept: "接受请求失败",
+    connecting: "连接中...", connect: "连接", chats: "聊天", requests: "请求",
+    loading: "加载中...", noChats: "还没有聊天。", noRequests: "没有消息请求。",
+    unsupportedNetwork: "不支持的网络。请切换到 XLayer 或 Base。",
+    viewExplorer: "在 OKX Explorer 查看", copyAddress: "复制地址",
+    fileTooLarge: "图片太大（最大 2MB）", sendImageFailed: "发送图片失败",
+    editNickname: "编辑昵称", typeNickname: "输入昵称...", save: "保存",
+    loadingMessages: "加载消息...", sayHello: "👋 打个招呼！",
+    selectChatStart: "选择一个对话开始聊天", typeMessage: "输入消息...",
+    // DailyCheckIn
+    dailyCheckIn: "每日签到", dayStreak: "天连续", checkedIn: "已签到！", checkInNow: "立即签到",
+    // MiniQuests
+    quests: "任务", daily: "每日", weekly: "每周",
+    questSharePost: "分享帖子", questSharePostDesc: "今天创建一篇帖子",
+    questShowLove: "表达喜爱", questShowLoveDesc: "点赞 3 篇帖子",
+    questJoinChat: "加入聊天", questJoinChatDesc: "留下一条评论",
+    questDailyCheckin: "每日签到", questDailyCheckinDesc: "完成每日签到",
+    questWeeklyCreator: "周创作者", questWeeklyCreatorDesc: "本周创建 5 篇帖子",
+    questCommunityChampion: "社区冠军", questCommunityChampionDesc: "本周点赞 20 篇帖子",
+    questGenerousTipper: "慰劳者", questGenerousTipperDesc: "本周发送一笔打赏",
+    quest7DayStreak: "7天连续", quest7DayStreakDesc: "保持 7 天连续签到",
+    // Tip extras
+    tipBalance: "余额", tipApproving: "授权中...", viewTransaction: "查看交易 ↗",
+    // Badges
+    achievements: "成就", locked: "未解锁", earnedOn: "获得于", keepGoing: "继续参与以解锁！",
 } as Record<string, string>;

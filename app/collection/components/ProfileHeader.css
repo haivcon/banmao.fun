@@ -1,16 +1,16 @@
 .hub-profile-container {
-    background: var(--card-bg, #fff);
+    background: var(--card-bg, #1a1a2e);
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     margin-bottom: 24px;
-    border: 1px solid var(--border-color, #eaeaea);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
 }
 
-.col-dark .hub-profile-container {
-    background: #1c1c1f;
-    border-color: #2c2c30;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+.col-light .hub-profile-container {
+    background: var(--card-bg, #fff);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 /* --- Banner --- */
@@ -72,13 +72,13 @@
     margin-top: -48px;
     margin-bottom: 16px;
     padding: 4px;
-    background: var(--card-bg, #fff);
+    background: var(--card-bg, #1a1a2e);
     border-radius: 50%;
     z-index: 2;
 }
 
-.col-dark .hub-profile-avatar-wrap {
-    background: #1c1c1f;
+.col-light .hub-profile-avatar-wrap {
+    background: var(--card-bg, #fff);
 }
 
 .hub-profile-avatar {
@@ -110,30 +110,30 @@
     margin: 0;
     font-size: 24px;
     font-weight: 700;
-    color: var(--text-color, #111827);
+    color: var(--hub-text, #f0f0f0);
 }
 
-.col-dark .hub-profile-name {
-    color: #f9fafb;
+.col-light .hub-profile-name {
+    color: var(--hub-text-light, #1a1a2e);
 }
 
 .hub-profile-address {
     margin: 4px 0 12px;
     font-size: 14px;
-    color: #6b7280;
+    color: var(--hub-text-muted, #9ca3af);
     font-family: monospace;
 }
 
 .hub-profile-bio {
     margin: 0;
     font-size: 15px;
-    color: var(--text-color, #374151);
+    color: var(--hub-text, #d1d5db);
     line-height: 1.5;
     max-width: 600px;
 }
 
-.col-dark .hub-profile-bio {
-    color: #d1d5db;
+.col-light .hub-profile-bio {
+    color: var(--hub-text-light, #374151);
 }
 
 /* --- Stats --- */
@@ -151,29 +151,29 @@
 .hub-stat-value {
     font-size: 20px;
     font-weight: 700;
-    color: var(--text-color, #111827);
+    color: var(--hub-text, #f0f0f0);
 }
 
-.col-dark .hub-stat-value {
-    color: #fff;
+.col-light .hub-stat-value {
+    color: var(--hub-text-light, #1a1a2e);
 }
 
 .hub-stat-label {
     font-size: 13px;
-    color: #6b7280;
+    color: var(--hub-text-muted, #9ca3af);
     font-weight: 500;
 }
 
 /* --- Profile Tabs --- */
 .hub-profile-tabs {
     display: flex;
-    border-top: 1px solid var(--border-color, #eaeaea);
-    background: var(--card-bg, #fff);
+    border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    background: var(--card-bg, #1a1a2e);
 }
 
-.col-dark .hub-profile-tabs {
-    border-top-color: #2c2c30;
-    background: #1c1c1f;
+.col-light .hub-profile-tabs {
+    border-top-color: rgba(0, 0, 0, 0.08);
+    background: var(--card-bg, #fff);
 }
 
 .hub-ptab {
@@ -183,7 +183,7 @@
     border: none;
     font-size: 15px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--hub-text-muted, #9ca3af);
     cursor: pointer;
     border-bottom: 2px solid transparent;
     transition: all 0.2s;
@@ -194,13 +194,13 @@
 }
 
 .hub-ptab:hover {
-    color: var(--text-color, #111827);
-    background: rgba(0, 0, 0, 0.02);
+    color: var(--hub-text, #f0f0f0);
+    background: rgba(255, 255, 255, 0.02);
 }
 
-.col-dark .hub-ptab:hover {
-    color: #e5e7eb;
-    background: rgba(255, 255, 255, 0.02);
+.col-light .hub-ptab:hover {
+    color: var(--hub-text-light, #111827);
+    background: rgba(0, 0, 0, 0.02);
 }
 
 .hub-ptab.active {
@@ -210,26 +210,26 @@
 
 /* --- Skeletons --- */
 .hub-profile-header-skeleton {
-    background: var(--card-bg, #fff);
+    background: var(--card-bg, #1a1a2e);
     border-radius: 16px;
     overflow: hidden;
     margin-bottom: 24px;
-    border: 1px solid var(--border-color, #eaeaea);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
 }
 
-.col-dark .hub-profile-header-skeleton {
-    background: #1c1c1f;
-    border-color: #2c2c30;
+.col-light .hub-profile-header-skeleton {
+    background: var(--card-bg, #fff);
+    border-color: rgba(0, 0, 0, 0.08);
 }
 
 .hub-ph-banner-skel {
     height: 180px;
-    background: var(--border-color, #e5e7eb);
+    background: var(--border-color, #374151);
     animation: pulse 1.5s infinite;
 }
 
-.col-dark .hub-ph-banner-skel {
-    background: #374151;
+.col-light .hub-ph-banner-skel {
+    background: #e5e7eb;
 }
 
 .hub-ph-info-skel {
@@ -242,29 +242,29 @@
     width: 96px;
     height: 96px;
     border-radius: 50%;
-    background: var(--border-color, #e5e7eb);
+    background: var(--border-color, #4b5563);
     margin-top: -48px;
     margin-bottom: 16px;
-    border: 4px solid var(--card-bg, #fff);
+    border: 4px solid var(--card-bg, #1a1a2e);
     animation: pulse 1.5s infinite;
 }
 
-.col-dark .hub-ph-avatar-skel {
-    background: #4b5563;
-    border-color: #1c1c1f;
+.col-light .hub-ph-avatar-skel {
+    background: #e5e7eb;
+    border-color: #fff;
 }
 
 .hub-ph-text-skel {
     width: 200px;
     height: 24px;
-    background: var(--border-color, #e5e7eb);
+    background: var(--border-color, #374151);
     border-radius: 4px;
     margin-bottom: 12px;
     animation: pulse 1.5s infinite;
 }
 
-.col-dark .hub-ph-text-skel {
-    background: #374151;
+.col-light .hub-ph-text-skel {
+    background: #e5e7eb;
 }
 
 .hub-ph-text-skel.short {
@@ -335,34 +335,34 @@
 }
 
 .hub-msg-btn {
-    background: rgba(0, 0, 0, 0.05);
-    color: var(--text-color, #111827);
-    border: 1px solid var(--border-color, #eaeaea);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--hub-text, #fff);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
 }
 
-.col-dark .hub-msg-btn {
-    background: rgba(255, 255, 255, 0.05);
-    color: #fff;
-    border-color: rgba(255, 255, 255, 0.1);
+.col-light .hub-msg-btn {
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--hub-text-light, #111827);
+    border-color: rgba(0, 0, 0, 0.08);
 }
 
 .hub-msg-btn:hover {
-    background: rgba(0, 0, 0, 0.1);
-}
-
-.col-dark .hub-msg-btn:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
+.col-light .hub-msg-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
 .hub-following-btn {
-    background: rgba(0, 0, 0, 0.05) !important;
-    color: var(--text-color, #111827) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: var(--hub-text, #fff) !important;
     box-shadow: none !important;
 }
 
-.col-dark .hub-following-btn {
-    background: rgba(255, 255, 255, 0.05) !important;
-    color: #fff !important;
+.col-light .hub-following-btn {
+    background: rgba(0, 0, 0, 0.05) !important;
+    color: var(--hub-text-light, #111827) !important;
 }
 
 /* 4. Stats Redesign */
@@ -405,4 +405,83 @@
 
 .hub-ptab.active::after {
     transform: translateX(-50%) scaleX(1);
+}
+
+/* ——— Responsive Downsizing ——— */
+@media (max-width: 600px) {
+    .hub-profile-banner {
+        height: 100px;
+    }
+
+    .hub-profile-avatar-wrap {
+        margin-top: -36px;
+        padding: 3px;
+        margin-bottom: 12px;
+    }
+
+    .hub-profile-avatar {
+        width: 72px;
+        height: 72px;
+        font-size: 28px;
+    }
+
+    .hub-profile-info-section {
+        padding: 0 16px 12px;
+    }
+
+    .hub-profile-name {
+        font-size: 18px;
+    }
+
+    .hub-profile-address {
+        font-size: 11px;
+    }
+
+    .hub-profile-bio {
+        font-size: 13px;
+        margin-bottom: 12px;
+    }
+
+    .hub-profile-stats {
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    .hub-stat-item {
+        padding: 6px;
+    }
+
+    .hub-stat-value {
+        font-size: 16px;
+    }
+
+    .hub-stat-label {
+        font-size: 10px;
+        white-space: nowrap;
+    }
+
+    .hub-ptab {
+        padding: 10px 12px;
+        font-size: 13px;
+        gap: 6px;
+    }
+
+    .hub-ptab svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .hub-profile-actions {
+        gap: 6px;
+    }
+
+    .hub-profile-actions .hub-action-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .hub-profile-actions .hub-action-btn svg {
+        width: 14px;
+        height: 14px;
+    }
 }
