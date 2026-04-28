@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useAccount, useBalance, useReadContract } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { formatEther } from 'viem';
@@ -14,7 +15,7 @@ import {
 } from "../web3d/locals";
 import { numberToWords, SupportLanguage } from "../web3d/locals/numberToWords";
 import { LanguageSelector } from "./LanguageSelector";
-import { SpotlightCard, StakingIcon, PoolIcon, FarmIcon, LendingIcon, BurnIcon, AirdropIcon, ServiceDetailModal } from "./components";
+import { SpotlightCard, StakingIcon, PoolIcon, FarmIcon, LendingIcon, BurnIcon, AirdropIcon, ServiceDetailModal, BulletItem } from "./components";
 
 // Community Wallet Address (receives donated tokens)
 const COMMUNITY_WALLET = "0x92809f2837f708163d375960063c8a3156fceacb";
@@ -291,6 +292,42 @@ export default function DeFiPage() {
             key;
     }, [lang]);
 
+    // Build bullet data for infographic modal per service
+    const getBulletsForService = useCallback((serviceId: string): { bullets: BulletItem[]; intro: string; outro: string; mascotSrc: string } | null => {
+        if (serviceId === 'staking') return {
+            intro: t('defiStakingIntro'),
+            outro: t('defiStakingOutro'),
+            mascotSrc: '/defi/banmao_staking.png',
+            bullets: [
+                { icon: '📅', title: t('defiStakingBullet1Title'), desc: t('defiStakingBullet1Desc') },
+                { icon: '📈', title: t('defiStakingBullet2Title'), desc: t('defiStakingBullet2Desc') },
+                { icon: '🔒', title: t('defiStakingBullet3Title'), desc: t('defiStakingBullet3Desc') },
+                { icon: '🎁', title: t('defiStakingBullet4Title'), desc: t('defiStakingBullet4Desc') },
+            ]
+        };
+        if (serviceId === 'burn') return {
+            intro: t('defiBurnIntro'),
+            outro: t('defiBurnOutro'),
+            mascotSrc: '/defi/banmao_burn.png',
+            bullets: [
+                { icon: '🔥', title: t('defiBurnBullet1Title'), desc: t('defiBurnBullet1Desc') },
+                { icon: '🏆', title: t('defiBurnBullet2Title'), desc: t('defiBurnBullet2Desc') },
+                { icon: '💰', title: t('defiBurnBullet3Title'), desc: t('defiBurnBullet3Desc') },
+            ]
+        };
+        if (serviceId === 'airdrop') return {
+            intro: t('defiAirdropIntro'),
+            outro: t('defiAirdropOutro'),
+            mascotSrc: '/defi/banmao_airdrop.png',
+            bullets: [
+                { icon: '🔍', title: t('defiAirdropBullet1Title'), desc: t('defiAirdropBullet1Desc') },
+                { icon: '📦', title: t('defiAirdropBullet2Title'), desc: t('defiAirdropBullet2Desc') },
+                { icon: '📥', title: t('defiAirdropBullet3Title'), desc: t('defiAirdropBullet3Desc') },
+            ]
+        };
+        return null;
+    }, [t]);
+
     // Load language from localStorage
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -480,6 +517,16 @@ export default function DeFiPage() {
                         spotlightColor={service.color}
                         style={{ '--service-color': service.color } as React.CSSProperties}
                     >
+                        {/* Card mascot background */}
+                        <div className="card-mascot-bg">
+                            <Image
+                                src={`/defi/banmao_${service.id}.png`}
+                                alt=""
+                                width={160}
+                                height={160}
+                                className="card-mascot-img"
+                            />
+                        </div>
                         <div className="service-header">
                             <span className="service-icon-wrapper" style={{ color: service.color }}>
                                 <service.Icon className="w-10 h-10" />
@@ -611,6 +658,10 @@ export default function DeFiPage() {
                 isOpen={!!selectedService}
                 onClose={() => setSelectedService(null)}
                 service={selectedService}
+                bullets={selectedService ? getBulletsForService(selectedService.id)?.bullets : undefined}
+                introText={selectedService ? getBulletsForService(selectedService.id)?.intro : undefined}
+                outroText={selectedService ? getBulletsForService(selectedService.id)?.outro : undefined}
+                mascotSrc={selectedService ? getBulletsForService(selectedService.id)?.mascotSrc : undefined}
                 enterAppLabel={t('defiEnter')}
                 comingSoonLabel={t('defiComingSoon')}
                 liveLabel={t('defiLive')}
