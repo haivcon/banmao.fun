@@ -2510,6 +2510,34 @@ body::-webkit-scrollbar {
         flex-direction: column;
         gap: 8px;
     }
+
+    /* Global Header Downsize */
+    .col-header {
+        padding: 10px 12px 8px;
+    }
+    
+    .col-back-btn {
+        top: 10px;
+        left: 12px;
+        padding: 6px 14px;
+        font-size: 11px;
+    }
+
+    .col-header-right {
+        top: 10px;
+        right: 12px;
+        gap: 4px;
+    }
+
+    .col-pill-btn {
+        font-size: 11px;
+        padding: 6px 14px;
+    }
+    
+    .col-pill-pink-sm {
+        padding: 4px 10px;
+        font-size: 10px;
+    }
 }
 
 /* ========== BG ACTION BUTTONS (with effects) ========== */
@@ -2951,6 +2979,8 @@ body::-webkit-scrollbar {
         order: 2;
         flex-direction: row;
         align-items: center;
+        flex-wrap: wrap;
+        justify-content: flex-end;
         gap: 6px;
         flex-shrink: 0;
     }

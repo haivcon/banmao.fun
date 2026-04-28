@@ -127,4 +127,30 @@ export default {
     viewPrompt: "프롬프트", promptTitle: "AI 생성 프롬프트", promptEmpty: "이 폴더에는 프롬프트 데이터가 없습니다.",
     promptLoading: "로딩 중...", shareLink: "공유 링크", openShareLink: "Gemini에서 열기",
     copyPrompt: "프롬프트 복사", promptCopied: "프롬프트가 복사되었습니다!",
+    // Chat Widget
+    tapToChat: "채팅하기", accept: "수락", failedToAccept: "요청 수락 실패",
+    connecting: "연결 중...", connect: "연결", chats: "채팅", requests: "요청",
+    loading: "로딩 중...", noChats: "채팅이 없습니다.", noRequests: "메시지 요청이 없습니다.",
+    unsupportedNetwork: "지원되지 않는 네트워크입니다. XLayer 또는 Base로 전환해 주세요.",
+    viewExplorer: "OKX Explorer에서 보기", copyAddress: "주소 복사",
+    fileTooLarge: "이미지가 너무 큽니다 (최대 2MB)", sendImageFailed: "이미지 전송 실패",
+    editNickname: "닉네임 편집", typeNickname: "닉네임 입력...", save: "저장",
+    loadingMessages: "메시지 로딩 중...", sayHello: "👋 인사하세요!",
+    selectChatStart: "채팅을 선택하여 시작하세요", typeMessage: "메시지 입력...",
+    // DailyCheckIn
+    dailyCheckIn: "매일 출석", dayStreak: "일 연속", checkedIn: "출석 완료!", checkInNow: "지금 출석",
+    // MiniQuests
+    quests: "퀴스트", daily: "매일", weekly: "매주",
+    questSharePost: "게시물 공유", questSharePostDesc: "오늘 게시물 작성",
+    questShowLove: "좋아요 표현", questShowLoveDesc: "3개 게시물 좋아요",
+    questJoinChat: "채팅 참여", questJoinChatDesc: "댓글 남기기",
+    questDailyCheckin: "매일 출석", questDailyCheckinDesc: "매일 출석 완료",
+    questWeeklyCreator: "주간 크리에이터", questWeeklyCreatorDesc: "이번 주 5개 게시물 작성",
+    questCommunityChampion: "커뮤니티 챔피언", questCommunityChampionDesc: "이번 주 20개 게시물 좋아요",
+    questGenerousTipper: "너그러운 팁 제공자", questGenerousTipperDesc: "이번 주 팁 보내기",
+    quest7DayStreak: "7일 연속", quest7DayStreakDesc: "7일 연속 출석 유지",
+    // Tip extras
+    tipBalance: "잔액", tipApproving: "토큰 승인 중...", viewTransaction: "거래 보기 ↗",
+    // Badges
+    achievements: "업적", locked: "잠김", earnedOn: "획득일", keepGoing: "계속 참여하여 잠금 해제!",
 } as Record<string, string>;

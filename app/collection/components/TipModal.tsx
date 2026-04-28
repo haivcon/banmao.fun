@@ -139,7 +139,7 @@ export default function TipModal({ t, postId, creatorAddress, creatorName, tippe
                         <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="hub-icon" style={{ color: '#ec4899' }}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
                         </svg>
-                        {t.tipCreator || "Tip Creator"}
+                        {t.tipCreator}
                     </h3>
                     <button className="hub-modal-close" onClick={onClose}>✕</button>
                 </div>
@@ -155,7 +155,7 @@ export default function TipModal({ t, postId, creatorAddress, creatorName, tippe
                     {step === "input" && (
                         <>
                             <div className="hub-tip-balance-row">
-                                <span className="hub-tip-balance-label">{t.tipAmount || "Available"}</span>
+                                <span className="hub-tip-balance-label">{t.tipBalance || t.tipAmount}</span>
                                 <span className="hub-tip-balance-val">{formatBalance(balance)} $BANMAO</span>
                             </div>
 
@@ -192,13 +192,13 @@ export default function TipModal({ t, postId, creatorAddress, creatorName, tippe
                     {step === "approve" && (
                         <div className="hub-tip-status">
                             <svg className="hub-icon" style={{ width: '32px', height: '32px', color: '#8b5cf6' }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg>
-                            {t.tipApprove || "Approving Token..."}
+                            {t.tipApproving || t.tipApprove}
                         </div>
                     )}
                     {step === "tip" && (
                         <div className="hub-tip-status">
                             <svg className="hub-icon" style={{ width: '32px', height: '32px', color: '#f59e0b' }} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" /></svg>
-                            {t.tipSending || "Sending Tip..."}
+                            {t.tipSending}
                         </div>
                     )}
                     {step === "done" && (
@@ -207,10 +207,10 @@ export default function TipModal({ t, postId, creatorAddress, creatorName, tippe
                             <div className="hub-tip-success-icon">
                                 <svg fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" style={{ width: '32px', height: '32px' }}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
                             </div>
-                            <h4>{t.tipSuccess || "Tip Sent Successfully!"}</h4>
+                            <h4>{t.tipSuccess}</h4>
                             {txHash && (
                                 <a href={`https://www.okx.com/web3/explorer/xlayer/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="hub-tip-tx-link">
-                                    View Transaction ↗
+                                    {t.viewTransaction}
                                 </a>
                             )}
                         </div>
@@ -225,11 +225,11 @@ export default function TipModal({ t, postId, creatorAddress, creatorName, tippe
                             <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="hub-icon-sm">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
                             </svg>
-                            {t.tipSend || "Send Tip"} {amount ? `${Number(amount).toLocaleString()} $BANMAO` : ""}
+                            {t.tipSend} {amount ? `${Number(amount).toLocaleString()} $BANMAO` : ""}
                         </button>
                     )}
                     {step === "done" && (
-                        <button className="hub-btn hub-btn-secondary" onClick={onClose}>✕ {t.close || "Close"}</button>
+                        <button className="hub-btn hub-btn-secondary" onClick={onClose}>✕ {t.close}</button>
                     )}
                 </div>
             </div>

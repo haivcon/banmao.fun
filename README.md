@@ -1,17 +1,27 @@
-# Banmao Fun - DeFi Hub Update
+# Banmao Fun — Social Hub & DeFi Platform
 
-## v0.1.2 (Latest Updates: DeFi UI Enhancement)
+## v0.2.0 — Mobile-First Hub Redesign
 
-### 💎 High-Fidelity DeFi Interface Optimization
-- **Mascot Infographic System**: Upgraded the `ServiceDetailModal` to utilize dynamic, 3D Banmao mascot imagery as an elegant background watermark (`.infographic-mascot-bg`). Applied `opacity` and `blur` alongside glassmorphism panels to guarantee text readability while preserving the premium mascot branding.
-- **Immersive Card Integration**: Transformed the primary DeFi landing page cards to feature dynamic mascot backgrounds (`object-fit: cover`). The mascots organically fill the card bounds without compromising the visibility of critical stats and CTA buttons.
-- **Premium Static Animations**: 
-  - Integrated continuous ambient animations to the hero title (`.shimmer-text`) with a multi-stop Cyan-to-Blue metallic gradient shine.
-  - Applied subtle, staggered breathing glow effects to the quick stat pills (`.pill-widget`) and the main service cards (`.defi-service-card`) to bring the interface to life when static.
-  - Enabled synchronized glow-pulsing on footer elements including the separator divider and social links.
-- **Precision Layout Adjustments**:
-  - Confined modal width to an optimized `640px` resolution to prevent visual stretching.
-  - Enforced `word-break: break-all` specifically on smart contract addresses to prevent layout breakage and ensure technical transparency without truncation.
+### 📱 Instagram-Style Mobile Experience
+- **Floating Pill Bottom Navigation**: A capsule-shaped (`border-radius: 9999px`) glassmorphic navigation bar fixed at the bottom of the screen with 5 tabs: Home, Explore, Create (+), Quests, and Profile. Replaces the old FAB button and scattered mobile action buttons.
+- **Compact Post Cards**: Post cards render edge-to-edge on mobile with reduced avatar (28px), smaller typography, and image height capped at `55vh` with `object-fit: cover` — mimicking the Instagram feed density.
+- **Responsive Element Downsizing**: All Hub UI components (ProfileHeader, CreatorAnalytics, feed tabs, top creators, buttons) are systematically scaled down at `≤600px` breakpoint for a native mobile-app feel.
+
+### 🌍 Full i18n Localization
+- Translated all remaining hardcoded English strings across 6 languages (EN, VI, ZH, KO, RU, ID): Creator Analytics labels, period selectors (7D/30D/All), engagement metrics, daily check-in UI, quest system, and feed tab names.
+- Added new translation keys: `activityThisWeek`, `engagementRate`, `tipsEarned`, `sevenDays`, `thirtyDays`, `allTime`, `explore`, `quests`, `home`, and more.
+
+### 👤 Profile Header Improvements
+- Full wallet address display (no truncation) with one-tap copy and external explorer link.
+- Removed redundant theme toggle from profile view.
+- Mobile-optimized banner height (100px), avatar (72px), and stat layout with `white-space: nowrap` labels.
+
+### 🔧 Layout & Bug Fixes
+- **Fixed mobile content clipping**: `hub-feed-main` now uses `flex: none` on mobile to prevent flex collapse that hid the Profile Header.
+- **Fixed Quests panel**: Added a standalone `hub-bnav-quests-panel` that renders independently from the hidden `hub-mobile-actions-wrapper`, so the bottom nav Quests button works correctly.
+- **Disabled header auto-hide on mobile**: `col-header-hidden { transform: none }` prevents the sticky header from sliding up and covering the action bar and create button.
+- **Scroll-to-top repositioned**: `col-fab` is pushed above the pill nav bar so it's always accessible.
+- **CSS cleanup**: Removed empty rulesets, fixed duplicate CSS blocks, and resolved all lint warnings.
 
 ---
-*Developed by AI Agent - Focused on Premium Web3 UX.*
+*Developed by AI Agent — Focused on Premium Web3 UX.*
