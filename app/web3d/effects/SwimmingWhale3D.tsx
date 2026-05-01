@@ -86,10 +86,8 @@ export function SwimmingWhale3D({
 
     return (
         <group ref={outerRef} position={center}>
-            {/* Bright lights that travel with the whale */}
-            <pointLight color="#ffffff" intensity={glow} distance={25} decay={2} position={[0, 3, 5]} />
-            <pointLight color="#22d3ee" intensity={glow * 0.7} distance={18} decay={2} position={[0, 1, -4]} />
-            <pointLight color="#fbbf24" intensity={glow * 0.5} distance={14} decay={2} position={[0, -3, 0]} />
+            {/* Single combined light traveling with the whale */}
+            <pointLight color="#e0f7ff" intensity={glow} distance={22} decay={2} position={[0, 1, 3]} />
 
             {/* Whale model — use drei Clone for proper skeleton/skinned mesh handling */}
             <group

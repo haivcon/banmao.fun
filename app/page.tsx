@@ -4,7 +4,6 @@ import React, { Suspense, useRef, useState, useEffect, createContext, useContext
 import dynamic from "next/dynamic";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import {
-    OrbitControls,
     TrackballControls,
     Float,
     Stars,
@@ -1680,39 +1679,10 @@ function FloatingCubes() {
 
 function PieChart3D() {
     const groupRef = useRef<THREE.Group>(null);
-    const { stats } = useTokenStatsContext();
-    const [holdersData, setHoldersData] = useState<{ top20Total: number; top20Percent: number } | null>(null);
+    const { stats, advancedInfo } = useTokenStatsContext();
 
     const TOTAL_SUPPLY = 1_000_000_000;
-    const BLACK_HOLE_ADDRESS = "0x8f00767450fd12fd1329b11b78be7340be2584ea";
 
-    // Fetch top 20 holders data
-    useEffect(() => {
-        async function fetchHolders() {
-            try {
-                const response = await fetch('/api/okx/holders');
-                if (!response.ok) return;
-
-                const data = await response.json();
-                if (data.success && data.holders && Array.isArray(data.holders)) {
-                    // Sum top 20 holders (excluding black hole)
-                    let top20Total = 0;
-                    data.holders.slice(0, 20).forEach((holder: { holderWalletAddress: string; holdAmount: string }) => {
-                        if (holder.holderWalletAddress.toLowerCase() !== BLACK_HOLE_ADDRESS.toLowerCase()) {
-                            top20Total += parseFloat(holder.holdAmount);
-                        }
-                    });
-                    const top20Percent = (top20Total / TOTAL_SUPPLY) * 100;
-                    setHoldersData({ top20Total, top20Percent });
-                }
-            } catch (error) {
-                console.error("Error fetching holders for pie:", error);
-            }
-        }
-        fetchHolders();
-        const interval = setInterval(fetchHolders, 5 * 60 * 1000);
-        return () => clearInterval(interval);
-    }, []);
 
     useFrame((state) => {
         if (groupRef.current) {
@@ -1731,8 +1701,8 @@ function PieChart3D() {
         const burnedRaw = TOTAL_SUPPLY - circulatingRaw;
         const burnedActual = (burnedRaw / TOTAL_SUPPLY) * 100;
 
-        // Top 20 holders from API
-        const top20Actual = holdersData?.top20Percent || 0;
+        // Top 20 holders from advancedInfo context
+        const top20Actual = advancedInfo?.top10HoldPercent ? parseFloat(advancedInfo.top10HoldPercent) * 2 : 0;
 
         // For visual display, we show breakdown of CIRCULATING supply
         // Scale values to make all segments visible
@@ -1752,7 +1722,7 @@ function PieChart3D() {
         const total = burnedVisual + top20Visual + liquidityVisual + othersVisual;
         const scale = 100 / total;
 
-        console.log("PieChart actual:", { burnedActual, top20Actual, totalHolders });
+
 
         return [
             {
@@ -1776,7 +1746,7 @@ function PieChart3D() {
                 label: `👥 ${totalHolders.toLocaleString()}+`
             },
         ];
-    }, [stats, holdersData]);
+    }, [stats, advancedInfo]);
 
     let startAngle = 0;
 
@@ -1837,7 +1807,7 @@ function BanmaoCharacter() {
                         src="/branding/animated-icon.gif"
                         alt="Banmao"
                         style={{
-                            width: '180px',
+                            width: '260px',
                             height: 'auto',
                             filter: 'drop-shadow(0 0 40px rgba(250, 204, 21, 0.7))',
                             pointerEvents: 'none',
@@ -2101,17 +2071,6 @@ function Scene() {
             </SuctionableGroup>
 
 
-            {/* Camera Controls - adjusted for mobile */}
-            <OrbitControls
-                enableZoom={true}
-                enablePan={false}
-                autoRotate
-                autoRotateSpeed={0.1}
-                maxPolarAngle={Math.PI / 1.8}
-                minPolarAngle={Math.PI / 5}
-                maxDistance={isMobile ? 28 : 18}
-                minDistance={isMobile ? 10 : 6}
-            />
         </>
     );
 }
@@ -2170,7 +2129,8 @@ export default function BanmaoWebsite() {
                     {isClient && (
                         <Canvas
                             camera={{ position: [0, 2, 12], fov: 50 }}
-                            gl={{ antialias: true, alpha: false }}
+                            gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+                            dpr={[1, 1.5]}
                             style={{ width: '100%', height: '100%', display: 'block' }}
                         >
                             <Web3DThemeProvider>

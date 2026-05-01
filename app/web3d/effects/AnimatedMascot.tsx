@@ -63,7 +63,7 @@ interface AnimatedMascotProps {
 
 export function AnimatedMascot({
     position = [0, -0.5, 0],
-    size = 180,
+    size = 220,
     imageSrc = "/branding/animated-icon.gif",
 }: AnimatedMascotProps) {
     const groupRef = useRef<THREE.Group>(null);
@@ -246,7 +246,7 @@ export function AnimatedMascot({
                             alt="Banmao Mascot"
                             draggable={false}
                             style={{
-                                width: `clamp(120px, 22vw, ${size}px)`,
+                                width: `clamp(160px, 25vw, ${size}px)`,
                                 height: "auto",
                                 filter: `drop-shadow(0 0 ${80 * glowIntensity}px ${glowColor}${glowIntensity}) drop-shadow(0 0 ${40 * glowIntensity}px ${glowColor}${glowIntensity * 0.8})`,
                                 pointerEvents: "none",

@@ -43,33 +43,38 @@ export function FloatingParticles({
         return { positions, scales, speeds };
     }, [count, spread]);
 
-    // Animate particles
+    // Animate particles (throttled to every other frame for performance)
+    const frameCount = useRef(0);
     useFrame((state) => {
         if (!pointsRef.current) return;
+        frameCount.current++;
 
-        const positions = pointsRef.current.geometry.attributes.position.array as Float32Array;
-        const time = state.clock.elapsedTime * speed;
+        // Only update positions every other frame — motion is subtle enough
+        if (frameCount.current % 2 === 0) {
+            const positions = pointsRef.current.geometry.attributes.position.array as Float32Array;
+            const time = state.clock.elapsedTime * speed;
 
-        for (let i = 0; i < count; i++) {
-            const i3 = i * 3;
-            const particleSpeed = particles.speeds[i];
+            for (let i = 0; i < count; i++) {
+                const i3 = i * 3;
+                const particleSpeed = particles.speeds[i];
 
-            // Gentle floating motion
-            positions[i3 + 1] += Math.sin(time + i * 0.1) * 0.002 * particleSpeed;
+                // Gentle floating motion
+                positions[i3 + 1] += Math.sin(time + i * 0.1) * 0.002 * particleSpeed;
 
-            // Subtle horizontal drift
-            positions[i3] += Math.cos(time * 0.5 + i * 0.2) * 0.001 * particleSpeed;
-            positions[i3 + 2] += Math.sin(time * 0.3 + i * 0.3) * 0.001 * particleSpeed;
+                // Subtle horizontal drift
+                positions[i3] += Math.cos(time * 0.5 + i * 0.2) * 0.001 * particleSpeed;
+                positions[i3 + 2] += Math.sin(time * 0.3 + i * 0.3) * 0.001 * particleSpeed;
 
-            // Wrap particles that go too far
-            if (positions[i3 + 1] > spread / 2) positions[i3 + 1] = -spread / 2;
-            if (positions[i3 + 1] < -spread / 2) positions[i3 + 1] = spread / 2;
+                // Wrap particles that go too far
+                if (positions[i3 + 1] > spread / 2) positions[i3 + 1] = -spread / 2;
+                if (positions[i3 + 1] < -spread / 2) positions[i3 + 1] = spread / 2;
+            }
+
+            pointsRef.current.geometry.attributes.position.needsUpdate = true;
         }
 
-        pointsRef.current.geometry.attributes.position.needsUpdate = true;
-
         // Slow rotation of entire particle system
-        pointsRef.current.rotation.y = time * 0.02;
+        pointsRef.current.rotation.y = state.clock.elapsedTime * speed * 0.02;
     });
 
     // Theme-aware particle color

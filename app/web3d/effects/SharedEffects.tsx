@@ -288,7 +288,8 @@ export class SoundManager {
 
     // Start continuous drum loop for $banmao logo hover 🥁
     static startDrumLoop() {
-        this.stopDrumLoop(); // Clear any existing loop
+        this.stopDrumLoop();
+        if (this.isMuted()) return;
         // Play immediately
         this.playDrumDance();
         // Then repeat every 1200ms (slower tempo)
@@ -307,7 +308,8 @@ export class SoundManager {
 
     // Start continuous metallic loop for OKX logo hover ⚙️
     static startMetallicLoop() {
-        this.stopMetallicLoop(); // Clear any existing loop
+        this.stopMetallicLoop();
+        if (this.isMuted()) return;
         // Play immediately
         this.playMetallic();
         // Then repeat every 1200ms (slower tempo)
@@ -345,6 +347,7 @@ export class SoundManager {
     // Start continuous vortex loop for black hole hover 🌀
     static startVortexLoop() {
         this.stopVortexLoop();
+        if (this.isMuted()) return;
         this.playVortex();
         this.vortexLoopId = setInterval(() => {
             this.playVortex();
@@ -431,6 +434,7 @@ export class SoundManager {
     // Start touring ambient loop
     static startTouringLoop() {
         this.stopTouringLoop();
+        if (this.isMuted()) return;
         this.playTouringNote();
         this.touringLoopId = setInterval(() => {
             this.playTouringNote();
@@ -456,6 +460,7 @@ export class SoundManager {
     // Start spinning loop (accelerates over time)
     static startSpinningLoop() {
         this.stopSpinningLoop();
+        if (this.isMuted()) return;
         let interval = 400;
         const spin = () => {
             this.playSpinningNote();
@@ -484,10 +489,11 @@ export class SoundManager {
     // Start text forming loop
     static startFormingLoop() {
         this.stopFormingLoop();
+        if (this.isMuted()) return;
         this.playFormingNote();
         this.formingLoopId = setInterval(() => {
             this.playFormingNote();
-        }, 120); // Fast for assembly effect
+        }, 200); // Forming assembly effect
     }
 
     // Stop forming loop
