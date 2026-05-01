@@ -402,16 +402,41 @@ function ConfettiBurst({ colors }: { colors: string[] }) {
 }
 
 function MilledEdge({ size, thickness, color, ridgeCount }: { size: number; thickness: number; color: string; ridgeCount: number }) {
-    const ridges = useMemo(() => Array.from({ length: ridgeCount }).map((_, i) => {
-        const angle = (i / ridgeCount) * Math.PI * 2;
-        return (
-            <mesh key={i} position={[Math.cos(angle) * size * 0.99, 0, Math.sin(angle) * size * 0.99]} rotation={[0, -angle + Math.PI / 2, 0]}>
-                <boxGeometry args={[0.02, thickness * 0.9, 0.04]} />
-                <meshPhysicalMaterial color={color} metalness={1} roughness={0.25} clearcoat={0.5} />
-            </mesh>
-        );
-    }), [size, thickness, color, ridgeCount]);
-    return <group>{ridges}</group>;
+    const meshRef = useRef<THREE.InstancedMesh>(null);
+
+    useMemo(() => {
+        if (!meshRef.current) return;
+        const dummy = new THREE.Object3D();
+        for (let i = 0; i < ridgeCount; i++) {
+            const angle = (i / ridgeCount) * Math.PI * 2;
+            dummy.position.set(Math.cos(angle) * size * 0.99, 0, Math.sin(angle) * size * 0.99);
+            dummy.rotation.set(0, -angle + Math.PI / 2, 0);
+            dummy.updateMatrix();
+            meshRef.current.setMatrixAt(i, dummy.matrix);
+        }
+        meshRef.current.instanceMatrix.needsUpdate = true;
+    }, [size, thickness, ridgeCount]);
+
+    // Need to set matrices after mount too
+    useEffect(() => {
+        if (!meshRef.current) return;
+        const dummy = new THREE.Object3D();
+        for (let i = 0; i < ridgeCount; i++) {
+            const angle = (i / ridgeCount) * Math.PI * 2;
+            dummy.position.set(Math.cos(angle) * size * 0.99, 0, Math.sin(angle) * size * 0.99);
+            dummy.rotation.set(0, -angle + Math.PI / 2, 0);
+            dummy.updateMatrix();
+            meshRef.current!.setMatrixAt(i, dummy.matrix);
+        }
+        meshRef.current.instanceMatrix.needsUpdate = true;
+    }, [size, thickness, ridgeCount]);
+
+    return (
+        <instancedMesh ref={meshRef} args={[undefined, undefined, ridgeCount]}>
+            <boxGeometry args={[0.02, thickness * 0.9, 0.04]} />
+            <meshPhysicalMaterial color={color} metalness={1} roughness={0.25} clearcoat={0.5} />
+        </instancedMesh>
+    );
 }
 
 function GlowEffect({ size, thickness, color, intensity, isHovered, isFlipping }: { size: number; thickness: number; color: string; intensity: number; isHovered: boolean; isFlipping: boolean }) {

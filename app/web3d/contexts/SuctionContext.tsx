@@ -135,25 +135,25 @@ export function SuctionProvider({
         if (cubePositions.length === 0) return [0, 0, 0];
 
         let avoidX = 0, avoidY = 0, avoidZ = 0;
-        const avoidanceRadius = 3; // Cubes within this distance cause avoidance
-        const maxAvoidance = 2; // Maximum offset distance
+        const avoidanceRadius = 3;
+        const avoidanceRadiusSq = avoidanceRadius * avoidanceRadius;
+        const maxAvoidance = 2;
 
         cubePositions.forEach(cubePos => {
             const dx = objectPosition[0] - cubePos[0];
             const dy = objectPosition[1] - cubePos[1];
             const dz = objectPosition[2] - cubePos[2];
-            const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            const distSq = dx * dx + dy * dy + dz * dz;
 
-            if (distance < avoidanceRadius && distance > 0.01) {
-                // Repulsion force inversely proportional to distance
+            // Early exit with squared distance comparison (avoids sqrt)
+            if (distSq < avoidanceRadiusSq && distSq > 0.0001) {
+                const distance = Math.sqrt(distSq);
                 const strength = Math.pow(1 - distance / avoidanceRadius, 2) * maxAvoidance;
-                const normalizedDx = dx / distance;
-                const normalizedDy = dy / distance;
-                const normalizedDz = dz / distance;
+                const invDist = 1 / distance;
 
-                avoidX += normalizedDx * strength;
-                avoidY += normalizedDy * strength;
-                avoidZ += normalizedDz * strength;
+                avoidX += dx * invDist * strength;
+                avoidY += dy * invDist * strength;
+                avoidZ += dz * invDist * strength;
             }
         });
 

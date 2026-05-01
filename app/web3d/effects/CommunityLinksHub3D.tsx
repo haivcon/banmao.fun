@@ -56,13 +56,12 @@ export function CommunityLinksHub3D({
 }: CommunityLinksHub3DProps) {
     const groupRef = useRef<THREE.Group>(null);
     const [hoveredLink, setHoveredLink] = useState<string | null>(null);
-    const [floatPhase, setFloatPhase] = useState(0);
+    const floatPhaseRef = useRef(0);
     const { focusOn } = useCustomCamera();
 
     // Animation loop
     useFrame((state, delta) => {
-        setFloatPhase(prev => prev + delta * 0.5);
-
+        floatPhaseRef.current += delta * 0.5;
         if (groupRef.current) {
             // Slow elegant orbit
             groupRef.current.rotation.y += delta * 0.08;
@@ -90,7 +89,7 @@ export function CommunityLinksHub3D({
     const getPlanetPosition = (index: number, total: number): [number, number, number] => {
         const angle = (index / total) * Math.PI * 2 - Math.PI / 2;
         const radius = size * 1.4;
-        const floatOffset = Math.sin(floatPhase * 0.8 + index * 1.2) * 0.12;
+        const floatOffset = Math.sin(floatPhaseRef.current * 0.8 + index * 1.2) * 0.12;
         return [
             Math.cos(angle) * radius,
             floatOffset,
@@ -118,7 +117,7 @@ export function CommunityLinksHub3D({
                 <meshBasicMaterial
                     color="#facc15"
                     transparent
-                    opacity={0.2 + Math.sin(floatPhase * 1.5) * 0.08}
+                    opacity={0.2 + Math.sin(floatPhaseRef.current * 1.5) * 0.08}
                 />
             </mesh>
             {/* Outer glow layer */}
@@ -127,7 +126,7 @@ export function CommunityLinksHub3D({
                 <meshBasicMaterial
                     color="#a78bfa"
                     transparent
-                    opacity={0.08 + Math.sin(floatPhase * 2) * 0.04}
+                    opacity={0.08 + Math.sin(floatPhaseRef.current * 2) * 0.04}
                 />
             </mesh>
 
@@ -213,7 +212,7 @@ export function CommunityLinksHub3D({
                         </mesh>
 
                         {/* Second tilted ring - always visible, rotates faster on hover */}
-                        <mesh rotation={[Math.PI / 3, floatPhase * (isHovered ? 5 : 0.3), 0]}>
+                        <mesh rotation={[Math.PI / 3, floatPhaseRef.current * (isHovered ? 5 : 0.3), 0]}>
                             <torusGeometry args={[hoverRadius * 1.7, isHovered ? 0.015 : 0.008, 16, 32]} />
                             <meshBasicMaterial
                                 color={link.color}
@@ -223,7 +222,7 @@ export function CommunityLinksHub3D({
                         </mesh>
 
                         {/* Third orbit ring - perpendicular */}
-                        <mesh rotation={[0, floatPhase * (isHovered ? -4 : -0.2), Math.PI / 4]}>
+                        <mesh rotation={[0, floatPhaseRef.current * (isHovered ? -4 : -0.2), Math.PI / 4]}>
                             <torusGeometry args={[hoverRadius * 1.6, isHovered ? 0.012 : 0.006, 16, 32]} />
                             <meshBasicMaterial
                                 color={link.color}
@@ -235,9 +234,9 @@ export function CommunityLinksHub3D({
                         {/* Orbiting mini-moons/particles around each planet */}
                         {[...Array(4)].map((_, i) => {
                             const speedMultiplier = isHovered ? 8 : 1;
-                            const moonAngle = floatPhase * 1.5 * speedMultiplier + (i / 4) * Math.PI * 2;
+                            const moonAngle = floatPhaseRef.current * 1.5 * speedMultiplier + (i / 4) * Math.PI * 2;
                             const moonRadius = hoverRadius * 1.6;
-                            const moonY = Math.sin(floatPhase * 2 * speedMultiplier + i) * 0.05;
+                            const moonY = Math.sin(floatPhaseRef.current * 2 * speedMultiplier + i) * 0.05;
                             return (
                                 <mesh
                                     key={`moon-${link.id}-${i}`}
@@ -260,10 +259,10 @@ export function CommunityLinksHub3D({
                         {/* Sparkle points around planet */}
                         {[...Array(6)].map((_, i) => {
                             const speedMultiplier = isHovered ? 6 : 1;
-                            const sparkleAngle = (i / 6) * Math.PI * 2 + floatPhase * 0.8 * speedMultiplier;
-                            const sparkleRadius = hoverRadius * (1.3 + Math.sin(floatPhase * 3 * speedMultiplier + i) * 0.2);
-                            const sparkleY = Math.cos(floatPhase * 1.5 * speedMultiplier + i * 0.5) * 0.15;
-                            const sparkleSize = 0.015 + Math.sin(floatPhase * 4 * speedMultiplier + i * 2) * 0.008;
+                            const sparkleAngle = (i / 6) * Math.PI * 2 + floatPhaseRef.current * 0.8 * speedMultiplier;
+                            const sparkleRadius = hoverRadius * (1.3 + Math.sin(floatPhaseRef.current * 3 * speedMultiplier + i) * 0.2);
+                            const sparkleY = Math.cos(floatPhaseRef.current * 1.5 * speedMultiplier + i * 0.5) * 0.15;
+                            const sparkleSize = 0.015 + Math.sin(floatPhaseRef.current * 4 * speedMultiplier + i * 2) * 0.008;
                             return (
                                 <mesh
                                     key={`sparkle-${link.id}-${i}`}
@@ -277,19 +276,19 @@ export function CommunityLinksHub3D({
                                     <meshBasicMaterial
                                         color="#ffffff"
                                         transparent
-                                        opacity={0.4 + Math.sin(floatPhase * 5 * speedMultiplier + i) * 0.4}
+                                        opacity={0.4 + Math.sin(floatPhaseRef.current * 5 * speedMultiplier + i) * 0.4}
                                     />
                                 </mesh>
                             );
                         })}
 
                         {/* Energy pulse ring (always visible, stronger on hover) */}
-                        <mesh rotation={[Math.PI / 2, 0, floatPhase * (isHovered ? 8 : 1)]}>
+                        <mesh rotation={[Math.PI / 2, 0, floatPhaseRef.current * (isHovered ? 8 : 1)]}>
                             <torusGeometry args={[hoverRadius * 1.25, isHovered ? 0.01 : 0.006, 8, 32]} />
                             <meshBasicMaterial
                                 color={link.color}
                                 transparent
-                                opacity={0.25 + Math.sin(floatPhase * 2 * (isHovered ? 2 : 1)) * 0.15 + (isHovered ? 0.3 : 0)}
+                                opacity={0.25 + Math.sin(floatPhaseRef.current * 2 * (isHovered ? 2 : 1)) * 0.15 + (isHovered ? 0.3 : 0)}
                             />
                         </mesh>
 
@@ -342,11 +341,11 @@ export function CommunityLinksHub3D({
             </mesh>
 
             {/* Secondary decorative orbits */}
-            <mesh position={[0, 0, 0]} rotation={[Math.PI / 2.5, 0, floatPhase * 0.1]}>
+            <mesh position={[0, 0, 0]} rotation={[Math.PI / 2.5, 0, floatPhaseRef.current * 0.1]}>
                 <torusGeometry args={[size * 1.8, 0.005, 16, 64]} />
                 <meshBasicMaterial color="#facc15" transparent opacity={0.12} />
             </mesh>
-            <mesh position={[0, 0, 0]} rotation={[Math.PI / 3, floatPhase * 0.05, 0]}>
+            <mesh position={[0, 0, 0]} rotation={[Math.PI / 3, floatPhaseRef.current * 0.05, 0]}>
                 <torusGeometry args={[size * 2.0, 0.004, 16, 64]} />
                 <meshBasicMaterial color="#22d3ee" transparent opacity={0.08} />
             </mesh>
@@ -354,25 +353,25 @@ export function CommunityLinksHub3D({
             {/* Floating star particles */}
             {[...Array(20)].map((_, i) => {
                 const angle = (i / 20) * Math.PI * 2;
-                const radius = size * 2.2 + Math.sin(floatPhase * 0.3 + i * 0.4) * 0.4;
-                const y = Math.sin(floatPhase * 0.6 + i * 0.3) * 0.5;
-                const particleSize = 0.018 + Math.sin(floatPhase * 1.2 + i) * 0.008;
+                const radius = size * 2.2 + Math.sin(floatPhaseRef.current * 0.3 + i * 0.4) * 0.4;
+                const y = Math.sin(floatPhaseRef.current * 0.6 + i * 0.3) * 0.5;
+                const particleSize = 0.018 + Math.sin(floatPhaseRef.current * 1.2 + i) * 0.008;
                 const colors = ['#facc15', '#a78bfa', '#22d3ee', '#ffffff'];
 
                 return (
                     <mesh
                         key={`star-${i}`}
                         position={[
-                            Math.cos(angle + floatPhase * 0.1) * radius,
+                            Math.cos(angle + floatPhaseRef.current * 0.1) * radius,
                             y,
-                            Math.sin(angle + floatPhase * 0.1) * radius
+                            Math.sin(angle + floatPhaseRef.current * 0.1) * radius
                         ]}
                     >
                         <sphereGeometry args={[particleSize, 8, 8]} />
                         <meshBasicMaterial
                             color={colors[i % colors.length]}
                             transparent
-                            opacity={0.6 + Math.sin(floatPhase * 2 + i) * 0.3}
+                            opacity={0.6 + Math.sin(floatPhaseRef.current * 2 + i) * 0.3}
                         />
                     </mesh>
                 );

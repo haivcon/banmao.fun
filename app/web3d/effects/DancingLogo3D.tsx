@@ -5,6 +5,7 @@ import { Billboard, Html } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useHtmlScale } from "../hooks";
+import { SoundManager } from "./SharedEffects";
 
 // ==================== PROPS ====================
 interface DancingLogo3DProps {
@@ -90,9 +91,9 @@ export function DancingLogo3D({ position, scale = 1 }: DancingLogo3DProps) {
 
         // Hover sound - continuous wild drum dance
         if (isHovered && !wasHovered.current) {
-            import("../effects/SharedEffects").then(m => m.SoundManager.startDrumLoop());
+            SoundManager.startDrumLoop();
         } else if (!isHovered && wasHovered.current) {
-            import("../effects/SharedEffects").then(m => m.SoundManager.stopDrumLoop());
+            SoundManager.stopDrumLoop();
         }
         wasHovered.current = isHovered;
     });

@@ -83,22 +83,22 @@ function OrbitingRing({
 // =============================================================================
 function PulseRing({ radius, color }: { radius: number; color: string }) {
     const ringRef = useRef<THREE.Mesh>(null);
-    const [scale, setScale] = useState(1);
-    const [opacity, setOpacity] = useState(0.5);
 
     useFrame((state) => {
-        const t = (state.clock.elapsedTime % 2.5) / 2.5; // 2.5 second cycle (faster)
-        setScale(1 + t * 0.8);  // Expand more (was 0.5)
-        setOpacity(0.6 * (1 - t));  // Brighter (was 0.4)
+        if (!ringRef.current) return;
+        const t = (state.clock.elapsedTime % 2.5) / 2.5;
+        const scale = 1 + t * 0.8;
+        ringRef.current.scale.set(scale, scale, 1);
+        (ringRef.current.material as THREE.MeshBasicMaterial).opacity = 0.6 * (1 - t);
     });
 
     return (
-        <mesh rotation={[Math.PI / 2, 0, 0]} scale={[scale, scale, 1]}>
+        <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
             <ringGeometry args={[radius, radius + 0.06, 64]} />
             <meshBasicMaterial
                 color={color}
                 transparent
-                opacity={opacity}
+                opacity={0.5}
                 side={THREE.DoubleSide}
             />
         </mesh>
@@ -109,31 +109,38 @@ function PulseRing({ radius, color }: { radius: number; color: string }) {
 // NEON BORDER COMPONENT - Glowing edge around the donut
 // =============================================================================
 function NeonBorder({ radius, color, pulseSpeed = 2 }: { radius: number; color: string; pulseSpeed?: number }) {
-    const [intensity, setIntensity] = useState(0.5);
+    const outerRef = useRef<THREE.Mesh>(null);
+    const innerRef = useRef<THREE.Mesh>(null);
 
     useFrame((state) => {
-        setIntensity(0.3 + Math.sin(state.clock.elapsedTime * pulseSpeed) * 0.2);
+        const intensity = 0.3 + Math.sin(state.clock.elapsedTime * pulseSpeed) * 0.2;
+        if (outerRef.current) {
+            (outerRef.current.material as THREE.MeshBasicMaterial).opacity = intensity * 0.5;
+        }
+        if (innerRef.current) {
+            (innerRef.current.material as THREE.MeshBasicMaterial).opacity = intensity * 0.3;
+        }
     });
 
     return (
         <>
             {/* Outer neon glow */}
-            <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0.2, 0]}>
+            <mesh ref={outerRef} rotation={[Math.PI / 2, 0, 0]} position={[0, 0.2, 0]}>
                 <ringGeometry args={[radius - 0.02, radius + 0.08, 64]} />
                 <meshBasicMaterial
                     color={color}
                     transparent
-                    opacity={intensity * 0.5}
+                    opacity={0.25}
                     side={THREE.DoubleSide}
                 />
             </mesh>
             {/* Inner neon glow */}
-            <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 0.2, 0]}>
+            <mesh ref={innerRef} rotation={[Math.PI / 2, 0, 0]} position={[0, 0.2, 0]}>
                 <ringGeometry args={[radius * 0.48, radius * 0.52, 64]} />
                 <meshBasicMaterial
                     color={color}
                     transparent
-                    opacity={intensity * 0.4}
+                    opacity={0.15}
                     side={THREE.DoubleSide}
                 />
             </mesh>
@@ -177,8 +184,8 @@ export function TokenDistributionChart3D({
 }: TokenDistributionChart3DProps) {
     const groupRef = useRef<THREE.Group>(null);
     const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);
-    const [glowPhase, setGlowPhase] = useState(0);
-    const [rotationY, setRotationY] = useState(0);
+    const glowPhaseRef = useRef(0);
+    const rotationYRef = useRef(0);
     const [isExpanded, setIsExpanded] = useState(false);
     const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
     const [isPanelVisible, setIsPanelVisible] = useState(false);
@@ -307,8 +314,8 @@ export function TokenDistributionChart3D({
             groupRef.current.rotation.y = state.clock.elapsedTime * 0.08;
             groupRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 0.4) * 0.08;
         }
-        setGlowPhase(Math.sin(state.clock.elapsedTime * 2) * 0.5 + 0.5);
-        setRotationY(state.clock.elapsedTime);
+        glowPhaseRef.current = Math.sin(state.clock.elapsedTime * 2) * 0.5 + 0.5;
+        rotationYRef.current = state.clock.elapsedTime;
     });
 
     // Calculate distribution - Top 5 holders individually, rest grouped
@@ -453,7 +460,7 @@ export function TokenDistributionChart3D({
                     const isHovered = hoveredSegment === seg.id;
 
                     // Organic breathing offset per segment (different phase for each)
-                    const breathPhase = glowPhase + i * 0.3;
+                    const breathPhase = glowPhaseRef.current + i * 0.3;
                     const breathScale = 1 + Math.sin(breathPhase * Math.PI * 2) * 0.02;
                     const breathY = Math.sin(breathPhase * Math.PI * 2 + i) * 0.03;
 
@@ -486,7 +493,7 @@ export function TokenDistributionChart3D({
                                     <meshBasicMaterial
                                         color={seg.glowColor}
                                         transparent
-                                        opacity={isHovered ? 0.8 : 0.3 + glowPhase * 0.2}
+                                        opacity={isHovered ? 0.8 : 0.3 + glowPhaseRef.current * 0.2}
                                     />
                                 </mesh>
 
@@ -503,7 +510,7 @@ export function TokenDistributionChart3D({
                                     <meshStandardMaterial
                                         color={seg.color}
                                         emissive={seg.glowColor}
-                                        emissiveIntensity={isHovered ? 1.2 : 0.4 + glowPhase * 0.3}
+                                        emissiveIntensity={isHovered ? 1.2 : 0.4 + glowPhaseRef.current * 0.3}
                                         metalness={0.5}
                                         roughness={0.3}
                                     />
@@ -592,56 +599,56 @@ export function TokenDistributionChart3D({
                 {/* ==================== LIVING CENTER CORE ==================== */}
 
                 {/* Breathing center orb - pulsing like a heartbeat */}
-                <mesh position={[0, 0, 0]} scale={[1 + glowPhase * 0.15, 1 + glowPhase * 0.15, 1 + glowPhase * 0.15]}>
+                <mesh position={[0, 0, 0]} scale={[1 + glowPhaseRef.current * 0.15, 1 + glowPhaseRef.current * 0.15, 1 + glowPhaseRef.current * 0.15]}>
                     <sphereGeometry args={[innerRadius * 0.35, 64, 64]} />
                     <meshStandardMaterial
                         color="#facc15"
                         emissive="#f59e0b"
-                        emissiveIntensity={0.3 + glowPhase * 0.4}
+                        emissiveIntensity={0.3 + glowPhaseRef.current * 0.4}
                         transparent
-                        opacity={0.25 + glowPhase * 0.15}
+                        opacity={0.25 + glowPhaseRef.current * 0.15}
                         metalness={0.8}
                         roughness={0.2}
                     />
                 </mesh>
 
                 {/* Inner energy core */}
-                <mesh position={[0, 0, 0]} scale={[1 + glowPhase * 0.3, 1 + glowPhase * 0.3, 1 + glowPhase * 0.3]}>
+                <mesh position={[0, 0, 0]} scale={[1 + glowPhaseRef.current * 0.3, 1 + glowPhaseRef.current * 0.3, 1 + glowPhaseRef.current * 0.3]}>
                     <sphereGeometry args={[innerRadius * 0.15, 32, 32]} />
                     <meshBasicMaterial
                         color="#ffffff"
                         transparent
-                        opacity={0.5 + glowPhase * 0.3}
+                        opacity={0.5 + glowPhaseRef.current * 0.3}
                     />
                 </mesh>
 
                 {/* Multiple rotating energy rings */}
-                <mesh rotation={[Math.PI / 2, 0, rotationY * 0.8]} position={[0, 0, 0]}>
+                <mesh rotation={[Math.PI / 2, 0, rotationYRef.current * 0.8]} position={[0, 0, 0]}>
                     <ringGeometry args={[innerRadius * 0.4, innerRadius * 0.45, 64]} />
                     <meshBasicMaterial
                         color="#facc15"
                         transparent
-                        opacity={0.5 + glowPhase * 0.3}
+                        opacity={0.5 + glowPhaseRef.current * 0.3}
                         side={THREE.DoubleSide}
                     />
                 </mesh>
 
-                <mesh rotation={[Math.PI / 2 + 0.3, rotationY * -0.5, 0]} position={[0, 0, 0]}>
+                <mesh rotation={[Math.PI / 2 + 0.3, rotationYRef.current * -0.5, 0]} position={[0, 0, 0]}>
                     <ringGeometry args={[innerRadius * 0.5, innerRadius * 0.53, 64]} />
                     <meshBasicMaterial
                         color="#22d3ee"
                         transparent
-                        opacity={0.3 + glowPhase * 0.2}
+                        opacity={0.3 + glowPhaseRef.current * 0.2}
                         side={THREE.DoubleSide}
                     />
                 </mesh>
 
-                <mesh rotation={[Math.PI / 2 - 0.4, 0, rotationY * 0.6]} position={[0, 0, 0]}>
+                <mesh rotation={[Math.PI / 2 - 0.4, 0, rotationYRef.current * 0.6]} position={[0, 0, 0]}>
                     <ringGeometry args={[innerRadius * 0.58, innerRadius * 0.6, 64]} />
                     <meshBasicMaterial
                         color="#a78bfa"
                         transparent
-                        opacity={0.25 + glowPhase * 0.15}
+                        opacity={0.25 + glowPhaseRef.current * 0.15}
                         side={THREE.DoubleSide}
                     />
                 </mesh>

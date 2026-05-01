@@ -37,8 +37,8 @@ export function BlackHole3D({
     const [isHovered, setIsHovered] = useState(false);
     const [isCleared, setIsCleared] = useState(false);
     const [isSucking, setIsSucking] = useState(false);
-    const [phase, setPhase] = useState(0);
-    const [pullStrength, setPullStrength] = useState(1);
+    const phaseRef = useRef(0);
+    const pullStrengthRef = useRef(1);
     const wasHovered = useRef(false);
 
     // 120 particles for dense spiral streams
@@ -58,9 +58,9 @@ export function BlackHole3D({
     // Animation loop
     useFrame((state, delta) => {
         const speedMultiplier = isHovered || isSucking ? (isSucking ? 10 : 5) : 1.5;
-        setPhase(prev => prev + delta * speedMultiplier);
+        phaseRef.current += delta * speedMultiplier;
 
-        setPullStrength(isSucking ? 6 : (isHovered ? 3 : 1.2));
+        pullStrengthRef.current = isSucking ? 6 : (isHovered ? 3 : 1.2);
 
         if (groupRef.current) {
             groupRef.current.rotation.z += delta * 0.08 * speedMultiplier;
@@ -119,6 +119,8 @@ export function BlackHole3D({
 
     // Calculate spiral particle positions
     const getParticlePos = (particle: typeof particles[0]): [number, number, number] => {
+        const phase = phaseRef.current;
+        const pullStrength = pullStrengthRef.current;
         const spiralAngle = particle.angle + phase * particle.speed * pullStrength;
         const spiralFactor = 1 + particle.spiralArm * 0.1;
         const dist = (particle.distance * size / pullStrength) * spiralFactor;
@@ -141,7 +143,7 @@ export function BlackHole3D({
     };
 
     // Dynamic glow intensity
-    const glowPulse = 0.8 + Math.sin(phase * 2) * 0.2;
+    const glowPulse = 0.8 + Math.sin(phaseRef.current * 2) * 0.2;
     const baseIntensity = isSucking ? 8 : (isHovered ? 4 : 1.5);
 
     return (
@@ -162,12 +164,12 @@ export function BlackHole3D({
                 <meshBasicMaterial
                     color="#ffffff"
                     transparent
-                    opacity={0.9 + Math.sin(phase * 5) * 0.1}
+                    opacity={0.9 + Math.sin(phaseRef.current * 5) * 0.1}
                 />
             </mesh>
 
             {/* ========== INNER GLOW RING - Hot white/yellow ========== */}
-            <mesh rotation={[Math.PI / 2, 0, phase * 2 * (isSucking ? 3 : 1)]}>
+            <mesh rotation={[Math.PI / 2, 0, phaseRef.current * 2 * (isSucking ? 3 : 1)]}>
                 <torusGeometry args={[size * (isSucking ? 0.42 : 0.26), 0.015, 16, 64]} />
                 <meshStandardMaterial
                     color={isSucking ? "#fef08a" : "#ffffff"}
@@ -179,7 +181,7 @@ export function BlackHole3D({
             </mesh>
 
             {/* ========== ACCRETION DISK LAYER 1 - Yellow/Orange (fastest) ========== */}
-            <mesh rotation={[Math.PI / 2.2, phase * 1.5 * (isSucking ? 3 : 1), 0]}>
+            <mesh rotation={[Math.PI / 2.2, phaseRef.current * 1.5 * (isSucking ? 3 : 1), 0]}>
                 <torusGeometry args={[size * (isSucking ? 0.55 : 0.38), 0.06, 16, 64]} />
                 <meshStandardMaterial
                     color={isSucking ? "#ef4444" : "#fbbf24"}
@@ -191,7 +193,7 @@ export function BlackHole3D({
             </mesh>
 
             {/* ========== ACCRETION DISK LAYER 2 - Orange ========== */}
-            <mesh rotation={[Math.PI / 2.5, -phase * 1.2 * (isSucking ? 3 : 1), Math.PI / 8]}>
+            <mesh rotation={[Math.PI / 2.5, -phaseRef.current * 1.2 * (isSucking ? 3 : 1), Math.PI / 8]}>
                 <torusGeometry args={[size * (isSucking ? 0.7 : 0.5), 0.05, 16, 64]} />
                 <meshStandardMaterial
                     color={isSucking ? "#f97316" : "#f97316"}
@@ -203,7 +205,7 @@ export function BlackHole3D({
             </mesh>
 
             {/* ========== ACCRETION DISK LAYER 3 - Orange/Red ========== */}
-            <mesh rotation={[Math.PI / 3, phase * 0.9 * (isSucking ? 3 : 1), -Math.PI / 6]}>
+            <mesh rotation={[Math.PI / 3, phaseRef.current * 0.9 * (isSucking ? 3 : 1), -Math.PI / 6]}>
                 <torusGeometry args={[size * (isSucking ? 0.88 : 0.65), 0.045, 16, 64]} />
                 <meshStandardMaterial
                     color={isSucking ? "#dc2626" : "#ea580c"}
@@ -215,7 +217,7 @@ export function BlackHole3D({
             </mesh>
 
             {/* ========== ACCRETION DISK LAYER 4 - Red/Purple ========== */}
-            <mesh rotation={[Math.PI / 3.5, -phase * 0.6 * (isSucking ? 3 : 1), Math.PI / 5]}>
+            <mesh rotation={[Math.PI / 3.5, -phaseRef.current * 0.6 * (isSucking ? 3 : 1), Math.PI / 5]}>
                 <torusGeometry args={[size * (isSucking ? 1.1 : 0.82), 0.04, 16, 64]} />
                 <meshStandardMaterial
                     color={isSucking ? "#b91c1c" : "#c2410c"}
@@ -227,7 +229,7 @@ export function BlackHole3D({
             </mesh>
 
             {/* ========== ACCRETION DISK LAYER 5 - Purple (outermost, slowest) ========== */}
-            <mesh rotation={[Math.PI / 4, phase * 0.4 * (isSucking ? 3 : 1), -Math.PI / 4]}>
+            <mesh rotation={[Math.PI / 4, phaseRef.current * 0.4 * (isSucking ? 3 : 1), -Math.PI / 4]}>
                 <torusGeometry args={[size * (isSucking ? 1.35 : 1.0), 0.035, 16, 64]} />
                 <meshStandardMaterial
                     color={isSucking ? "#991b1b" : "#a855f7"}
@@ -250,7 +252,7 @@ export function BlackHole3D({
 
             {/* ========== SPIRAL ARMS - 6 curved streams ========== */}
             {[0, 1, 2, 3, 4, 5].map((arm) => {
-                const armAngle = (arm / 6) * Math.PI * 2 + phase * 0.3 * (isSucking ? 3 : 1);
+                const armAngle = (arm / 6) * Math.PI * 2 + phaseRef.current * 0.3 * (isSucking ? 3 : 1);
                 const spiralPoints: THREE.Vector3[] = [];
                 for (let i = 0; i < 20; i++) {
                     const t = i / 20;
@@ -270,7 +272,7 @@ export function BlackHole3D({
                         <meshBasicMaterial
                             color={isSucking ? '#ef4444' : ['#fbbf24', '#f97316', '#ea580c', '#dc2626', '#a855f7', '#7c3aed'][arm]}
                             transparent
-                            opacity={0.5 + Math.sin(phase + arm) * 0.2}
+                            opacity={0.5 + Math.sin(phaseRef.current + arm) * 0.2}
                         />
                     </mesh>
                 );
@@ -281,16 +283,16 @@ export function BlackHole3D({
                 <mesh
                     key={`ring-${i}`}
                     rotation={[
-                        Math.PI / 2 + Math.sin(phase * 0.2 + i) * 0.1,
+                        Math.PI / 2 + Math.sin(phaseRef.current * 0.2 + i) * 0.1,
                         0,
-                        phase * (0.3 + i * 0.15) * (i % 2 === 0 ? 1 : -1) * (isSucking ? 3 : 1)
+                        phaseRef.current * (0.3 + i * 0.15) * (i % 2 === 0 ? 1 : -1) * (isSucking ? 3 : 1)
                     ]}
                 >
                     <torusGeometry args={[size * radius * (isSucking ? 1.2 : 1), 0.003, 8, 128]} />
                     <meshBasicMaterial
                         color={['#fef08a', '#fbbf24', '#f97316', '#ea580c', '#dc2626', '#a855f7', '#7c3aed'][i]}
                         transparent
-                        opacity={0.4 + Math.sin(phase * 2 + i * 0.5) * 0.2}
+                        opacity={0.4 + Math.sin(phaseRef.current * 2 + i * 0.5) * 0.2}
                     />
                 </mesh>
             ))}
