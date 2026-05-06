@@ -4,10 +4,9 @@
 import React, { useState } from "react";
 import { Text } from "@react-three/drei";
 import { DexWindow3D } from "./DexWindow3D";
-import { useTokenStats } from "../hooks/useTokenStats";
+import { useTokenStatsContext, useWeb3DTheme } from "../contexts";
 import { DEFAULT_3D_FONT } from "../fonts";
 import { RoundedPlane } from "../components/RoundedPlane";
-import { useWeb3DTheme } from "../contexts";
 
 const SPACE_MONO_FONT = DEFAULT_3D_FONT;
 
@@ -29,7 +28,7 @@ interface TokenStatsPanelProps {
 }
 
 export function TokenStatsPanel({ position, translations }: TokenStatsPanelProps) {
-    const { formattedStats, advancedInfo, isLoading, isMock } = useTokenStats(60000);
+    const { formattedStats, advancedInfo, isLoading, isMock } = useTokenStatsContext();
     const [hoveredItem, setHoveredItem] = useState<number | null>(null);
     const { primaryColor } = useWeb3DTheme();
 

@@ -4,11 +4,10 @@
 import React, { useState, useEffect } from "react";
 import { Text, Html, Billboard } from "@react-three/drei";
 import { DexWindow3D } from "./DexWindow3D";
-import { usePrice } from "../hooks/usePrice";
 import { useTrades, formatTimeAgo, formatVolume, shortenAddress } from "../hooks/useTrades";
 import { DEFAULT_3D_FONT } from "../fonts";
 import { RoundedPlane } from "../components/RoundedPlane";
-import { useWeb3DTheme } from "../contexts";
+import { useWeb3DTheme, useTokenStatsContext } from "../contexts";
 import { useHtmlScale } from "../hooks";
 
 // Token contract address
@@ -27,7 +26,16 @@ interface PriceFeedPanelProps {
 }
 
 export function PriceFeedPanel({ position, translations }: PriceFeedPanelProps) {
-    const { priceUSD, network, isLoading, isMock } = usePrice(30000);
+    const { stats, isLoading, isMock } = useTokenStatsContext();
+    const priceUSD = (() => {
+        if (!stats?.price) return "$0.00";
+        const num = parseFloat(stats.price);
+        if (num < 0.0001) return `$${num.toFixed(8)}`;
+        if (num < 0.01) return `$${num.toFixed(6)}`;
+        if (num < 1) return `$${num.toFixed(4)}`;
+        return `$${num.toFixed(2)}`;
+    })();
+    const network = "X LAYER";
     const { trades } = useTrades(15000);
     const [currentTime, setCurrentTime] = useState<string>("");
     const [copied, setCopied] = useState(false);
