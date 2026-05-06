@@ -52,7 +52,6 @@ const TokenDistributionChart3D = dynamic(
 );
 import { SoundManagerProvider } from "./web3d/audio";
 import { DexWindowProvider } from "./contexts/DexWindowContext";
-import { usePrice } from "./web3d/hooks/usePrice";
 import { useResponsiveLayout } from "./web3d/layouts";
 
 /* ===================== FONT & i18n ===================== */

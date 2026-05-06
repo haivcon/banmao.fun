@@ -14,9 +14,13 @@ out
 .agent
 .vscode
 .idea
+*.swp
+*.swo
+*~
 
 # Build cache
 tsconfig.tsbuildinfo
+*.tsbuildinfo
 
 # Local database
 local.db
@@ -35,8 +39,9 @@ generate-*.js
 .DS_Store
 Thumbs.db
 Desktop.ini
+ehthumbs.db
 
-# Lock files
+# Lock files (keep package-lock.json)
 yarn.lock
 pnpm-lock.yaml
 
@@ -55,3 +60,11 @@ yarn-error.log*
 
 # Gemini / AI agent data
 .gemini
+
+# Coverage
+coverage/
+
+# Misc
+*.bak
+*.tmp
+*.orig
