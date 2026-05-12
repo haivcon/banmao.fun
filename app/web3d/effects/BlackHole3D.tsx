@@ -56,7 +56,9 @@ export function BlackHole3D({
     }, []);
 
     // Animation loop
-    useFrame((state, delta) => {
+    useFrame((state, rawDelta) => {
+        // Clamp delta to prevent massive jumps after tab inactivity
+        const delta = Math.min(rawDelta, 0.1);
         const speedMultiplier = isHovered || isSucking ? (isSucking ? 10 : 5) : 1.5;
         phaseRef.current += delta * speedMultiplier;
 

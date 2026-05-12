@@ -12,6 +12,7 @@ type MascotMood = "idle" | "happy" | "excited" | "waving" | "sleeping";
 function ParticleAura({ isHovered, mood, primaryColor }: { isHovered: boolean; mood: MascotMood; primaryColor: string }) {
     const particlesRef = useRef<THREE.Group>(null);
     const particleCount = 16;
+    const localTime = useRef(0);
 
     const particles = useMemo(() =>
         Array.from({ length: particleCount }).map((_, i) => ({
@@ -21,9 +22,10 @@ function ParticleAura({ isHovered, mood, primaryColor }: { isHovered: boolean; m
             yRange: 0.3 + Math.random() * 0.2,
         })), [particleCount]);
 
-    useFrame((state) => {
+    useFrame((state, delta) => {
         if (!particlesRef.current) return;
-        const time = state.clock.elapsedTime;
+        localTime.current += Math.min(delta, 0.1);
+        const time = localTime.current;
         const intensity = mood === "excited" ? 1.5 : (isHovered ? 1.2 : 1);
 
         particlesRef.current.children.forEach((child, i) => {
@@ -139,9 +141,11 @@ export function AnimatedMascot({
     }, [mood]);
 
     // Animation frame
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
         if (!groupRef.current) return;
-        const time = state.clock.elapsedTime;
+        localTime.current += Math.min(delta, 0.1);
+        const time = localTime.current;
         const data = animationData.current;
 
         // Base floating animation

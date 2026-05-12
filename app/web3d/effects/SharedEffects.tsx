@@ -573,12 +573,14 @@ export function useSpawnAnimation(
         if (playSound) SoundManager.init();
     }, [playSound]);
 
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
         if (!ref.current) return;
+        localTime.current += Math.min(delta, 0.1);
 
         if (!started.current) {
-            if (startTime.current === 0) startTime.current = state.clock.elapsedTime;
-            if (state.clock.elapsedTime - startTime.current < delay) {
+            if (startTime.current === 0) startTime.current = localTime.current;
+            if (localTime.current - startTime.current < delay) {
                 ref.current.scale.setScalar(0.01);
                 return;
             }
@@ -649,9 +651,11 @@ interface PulseRingProps {
 export function PulseRing({ size, color, speed = 1, count = 3 }: PulseRingProps) {
     const ringsRef = useRef<THREE.Group>(null);
 
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
         if (!ringsRef.current) return;
-        const time = state.clock.elapsedTime * speed;
+        localTime.current += Math.min(delta, 0.1);
+        const time = localTime.current * speed;
 
         ringsRef.current.children.forEach((ring, i) => {
             const offset = (i / count) * Math.PI * 2;
@@ -660,12 +664,8 @@ export function PulseRing({ size, color, speed = 1, count = 3 }: PulseRingProps)
             const opacity = (1 - progress) * 0.5;
 
             ring.scale.setScalar(scale);
-            (ring as THREE.Mesh).material = new THREE.MeshBasicMaterial({
-                color,
-                transparent: true,
-                opacity,
-                side: THREE.DoubleSide,
-            });
+            const mat = (ring as THREE.Mesh).material as THREE.MeshBasicMaterial;
+            mat.opacity = opacity;
         });
     });
 
@@ -707,8 +707,9 @@ export function ParticleBurst({ colors, count = 30, trigger, onComplete }: Parti
         }));
     }, [trigger, count, colors]);
 
-    useFrame((_, delta) => {
+    useFrame((_, rawDelta) => {
         if (!particlesRef.current || !trigger) return;
+        const delta = Math.min(rawDelta, 0.1);
 
         let allDead = true;
         particlesRef.current.children.forEach((child, i) => {
@@ -760,9 +761,11 @@ export function NeonBorder({ width, height, color, intensity = 0.8, animated = t
     const borderRef = useRef<THREE.Group>(null);
     const currentOpacity = useRef(intensity);
 
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
         if (!borderRef.current || !animated) return;
-        const pulse = 0.3 + Math.sin(state.clock.elapsedTime * 2) * 0.2;
+        localTime.current += Math.min(delta, 0.1);
+        const pulse = 0.3 + Math.sin(localTime.current * 2) * 0.2;
         currentOpacity.current = intensity * (0.7 + pulse);
 
         borderRef.current.children.forEach((child) => {
@@ -864,11 +867,13 @@ export function useFloatingAnimation(
     const { amplitude = 0.1, speed = 1, rotationSpeed = 0 } = options;
     const baseY = useRef<number | null>(null);
 
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
         if (!ref.current) return;
         if (baseY.current === null) baseY.current = ref.current.position.y;
+        localTime.current += Math.min(delta, 0.1);
 
-        const time = state.clock.elapsedTime * speed;
+        const time = localTime.current * speed;
         ref.current.position.y = baseY.current + Math.sin(time) * amplitude;
 
         if (rotationSpeed) {

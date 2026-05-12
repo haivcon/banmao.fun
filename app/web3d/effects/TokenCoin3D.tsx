@@ -179,9 +179,13 @@ export function TokenCoin3D({
         return () => window.removeEventListener('mousemove', handleMouseMove);
     }, [gl]);
 
-    useFrame((state, delta) => {
+    const localTime = useRef(0);
+    useFrame((state, rawDelta) => {
         if (!coinRef.current) return;
-        const time = state.clock.elapsedTime;
+        // Clamp delta to prevent massive jumps after tab inactivity
+        const delta = Math.min(rawDelta, 0.1);
+        localTime.current += delta;
+        const time = localTime.current;
 
         // Spawn animation
         if (!isSpawned) {
@@ -469,11 +473,14 @@ function EnhancedSparkles({ color, count, size, isFlipping }: { color: string; c
     const sparklesRef = useRef<THREE.Group>(null);
     const sparkleRefs = useRef<THREE.Mesh[]>([]);
 
-    useFrame((state) => {
-        if (sparklesRef.current) sparklesRef.current.rotation.z = state.clock.elapsedTime * 0.5;
+    const localTime = useRef(0);
+
+    useFrame((state, delta) => {
+        localTime.current += Math.min(delta, 0.1);
+        if (sparklesRef.current) sparklesRef.current.rotation.z = localTime.current * 0.5;
         sparkleRefs.current.forEach((sparkle, i) => {
             if (sparkle) {
-                const t = state.clock.elapsedTime + i * 0.5;
+                const t = localTime.current + i * 0.5;
                 sparkle.scale.setScalar(0.4 + Math.sin(t * 3) * 0.6);
                 if (isFlipping) {
                     const expandRadius = size * 1.3 + Math.sin(t * 5) * 0.5;
@@ -506,9 +513,12 @@ function ParticleTrail({ color, size, intensity }: { color: string; size: number
     const particlesRef = useRef<THREE.Group>(null);
     const particleCount = 32;
 
-    useFrame((state) => {
+    const localTime = useRef(0);
+
+    useFrame((state, delta) => {
+        localTime.current += Math.min(delta, 0.1);
         if (particlesRef.current) {
-            const time = state.clock.elapsedTime;
+            const time = localTime.current;
             particlesRef.current.children.forEach((child, i) => {
                 const mesh = child as THREE.Mesh;
                 const t = time * 2.5 + i * 0.12;

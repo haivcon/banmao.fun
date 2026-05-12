@@ -29,6 +29,7 @@ export function SwimmingWhale3D({
     const outerRef = useRef<THREE.Group>(null);
     const [hovered, setHovered] = useState(false);
     const prevAngle = useRef(0);
+    const localTime = useRef(0);
 
     // Load the GLB model
     const { scene } = useGLTF("/models/banmao-whale.glb");
@@ -37,10 +38,13 @@ export function SwimmingWhale3D({
     const onPointerOut = useCallback(() => setHovered(false), []);
 
     // Animation loop
-    useFrame((state) => {
+    useFrame((state, delta) => {
         if (!outerRef.current) return;
 
-        const t = state.clock.elapsedTime * speed;
+        // Clamp delta to prevent huge jumps when tab resumes from background
+        const clampedDelta = Math.min(delta, 0.1);
+        localTime.current += clampedDelta;
+        const t = localTime.current * speed;
         const angle = t;
 
         // Elliptical orbit around center point
