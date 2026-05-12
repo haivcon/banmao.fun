@@ -228,9 +228,11 @@ function SpaceBackground() {
     const sparkleCount1 = isMobile ? 80 : 200;
     const sparkleCount2 = isMobile ? 60 : 150;
 
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
+        localTime.current += Math.min(delta, 0.1);
         if (meshRef.current) {
-            meshRef.current.rotation.y = state.clock.elapsedTime * 0.015;
+            meshRef.current.rotation.y = localTime.current * 0.015;
         }
     });
 
@@ -280,9 +282,11 @@ function AnimatedCube({
         return () => clearInterval(blinkInterval);
     }, [isEyePosition]);
 
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
         if (!meshRef.current) return;
-        const time = state.clock.elapsedTime;
+        localTime.current += Math.min(delta, 0.1);
+        const time = localTime.current;
         const delay = cubeIndex * 0.1 + letterIndex * 0.3;
 
         // Wave animation through cubes
@@ -344,9 +348,11 @@ function LogoParticles({ isHovered, position }: { isHovered: boolean; position: 
             yRange: 0.2 + Math.random() * 0.15,
         })), []);
 
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
         if (!particlesRef.current) return;
-        const time = state.clock.elapsedTime;
+        localTime.current += Math.min(delta, 0.1);
+        const time = localTime.current;
 
         // Different animation styles: calm orbit when idle, energetic when hovered
         const speed = isHovered ? 1.5 : 0.6;
@@ -407,9 +413,11 @@ function OKXLogo3D({ position = [0, 0, 0] as [number, number, number] }) {
         import("./web3d/effects/SharedEffects").then(m => m.SoundManager.playOKX());
     };
 
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
         if (!groupRef.current) return;
-        const time = state.clock.elapsedTime;
+        localTime.current += Math.min(delta, 0.1);
+        const time = localTime.current;
 
         // Gentle swaying rotation
         groupRef.current.rotation.y = Math.sin(time * 0.4) * 0.15;
@@ -586,8 +594,10 @@ function LightningBolt({
         });
     }, [color, mainLine, branchLines]);
 
-    useFrame((state) => {
-        const time = state.clock.elapsedTime;
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
+        localTime.current += Math.min(delta, 0.1);
+        const time = localTime.current;
 
         // Flicker effect
         const flicker = 0.7 + Math.random() * 0.3;
@@ -810,9 +820,11 @@ function SpawnedCubeChild({
     const meshRef = useRef<THREE.Mesh>(null);
     const delay = letterIndex * 0.1 + cubeIndex * 0.02;
 
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
         if (!meshRef.current) return;
-        const time = state.clock.elapsedTime;
+        localTime.current += Math.min(delta, 0.1);
+        const time = localTime.current;
 
         // Eased progress with per-cube delay
         const delayedProgress = Math.max(0, Math.min(1, (progress - delay) / (1 - delay)));
@@ -1098,10 +1110,12 @@ function XLayerTextSpawner({
     }, [textCenter, parentCubePositions, letterPatterns, textPhase, textSequences]);
 
     // Multi-phase animation timing
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
+        localTime.current += Math.min(delta, 0.1);
         if (!isActive) {
-            startTime.current = state.clock.elapsedTime;
-            phaseStartTime.current = state.clock.elapsedTime;
+            startTime.current = localTime.current;
+            phaseStartTime.current = localTime.current;
             hasCompleted.current = false;
             setProgress(0);
             setTextPhase(0);
@@ -1109,7 +1123,7 @@ function XLayerTextSpawner({
             return;
         }
 
-        const elapsed = state.clock.elapsedTime - phaseStartTime.current;
+        const elapsed = localTime.current - phaseStartTime.current;
         const formDuration = 3; // seconds to form letters (slower)
         const displayDuration = 6; // seconds to display (longer)
         const scatterDuration = 1.5; // seconds to scatter before next phase
@@ -1126,7 +1140,7 @@ function XLayerTextSpawner({
                 } else {
                     setTextPhase(nextPhase);
                     setIsTransitioning(false);
-                    phaseStartTime.current = state.clock.elapsedTime;
+                    phaseStartTime.current = localTime.current;
                     setProgress(0);
                     // Start forming sound for new text (special sound for WE GO MOON)
                     import("./web3d/effects/SharedEffects").then(m => {
@@ -1156,7 +1170,7 @@ function XLayerTextSpawner({
             } else {
                 // Start scatter transition
                 setIsTransitioning(true);
-                phaseStartTime.current = state.clock.elapsedTime;
+                phaseStartTime.current = localTime.current;
                 // Play scatter explosion sound
                 import("./web3d/effects/SharedEffects").then(m => m.SoundManager.playScatter());
             }
@@ -1261,11 +1275,14 @@ function FloatingCubes() {
         }
     }, [isSucking, suctionProgress, phase]);
 
-    useFrame((state, delta) => {
+    const localTime = useRef(0);
+    useFrame((state, rawDelta) => {
+        const delta = Math.min(rawDelta, 0.1);
+        localTime.current += delta;
         // Phase 0: Normal floating (wait for click)
         if (phase === 0) {
             if (groupRef.current && !isSucking) {
-                groupRef.current.rotation.y = state.clock.elapsedTime * 0.03;
+                groupRef.current.rotation.y = localTime.current * 0.03;
             }
             return;
         }
@@ -1683,10 +1700,12 @@ function PieChart3D() {
     const TOTAL_SUPPLY = 1_000_000_000;
 
 
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
+        localTime.current += Math.min(delta, 0.1);
         if (groupRef.current) {
-            groupRef.current.rotation.y = state.clock.elapsedTime * 0.1;
-            groupRef.current.position.y = -2 + Math.sin(state.clock.elapsedTime * 0.4) * 0.15;
+            groupRef.current.rotation.y = localTime.current * 0.1;
+            groupRef.current.position.y = -2 + Math.sin(localTime.current * 0.4) * 0.15;
         }
     });
 
@@ -1792,9 +1811,11 @@ function PieChart3D() {
 function BanmaoCharacter() {
     const groupRef = useRef<THREE.Group>(null);
 
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
+        localTime.current += Math.min(delta, 0.1);
         if (groupRef.current) {
-            groupRef.current.position.y = -0.5 + Math.sin(state.clock.elapsedTime * 0.35) * 0.2;
+            groupRef.current.position.y = -0.5 + Math.sin(localTime.current * 0.35) * 0.2;
         }
     });
 

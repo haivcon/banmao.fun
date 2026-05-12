@@ -28,9 +28,11 @@ function LogoSparkles({ isHovered }: { isHovered: boolean }) {
             size: 0.025 + Math.random() * 0.015,
         })), []);
 
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
         if (!sparklesRef.current) return;
-        const time = state.clock.elapsedTime;
+        localTime.current += Math.min(delta, 0.1);
+        const time = localTime.current;
         const speed = isHovered ? 2 : 0.8;
 
         sparklesRef.current.children.forEach((child, i) => {
@@ -78,10 +80,12 @@ export function DancingLogo3D({ position, scale = 1 }: DancingLogo3DProps) {
     const [isHovered, setIsHovered] = useState(false);
     const wasHovered = useRef(false);
     const htmlScale = useHtmlScale();
+    const localTime = useRef(0);
 
-    useFrame((state) => {
+    useFrame((state, delta) => {
         if (!groupRef.current) return;
-        const time = state.clock.elapsedTime;
+        localTime.current += Math.min(delta, 0.1);
+        const time = localTime.current;
 
         // Gentle floating
         groupRef.current.position.y = position[1] + Math.sin(time * 0.4) * 0.1;

@@ -45,14 +45,17 @@ export function FloatingParticles({
 
     // Animate particles (throttled to every other frame for performance)
     const frameCount = useRef(0);
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
         if (!pointsRef.current) return;
+        // Clamp delta to prevent huge jumps on tab resume
+        localTime.current += Math.min(delta, 0.1);
         frameCount.current++;
 
         // Only update positions every other frame — motion is subtle enough
         if (frameCount.current % 2 === 0) {
             const positions = pointsRef.current.geometry.attributes.position.array as Float32Array;
-            const time = state.clock.elapsedTime * speed;
+            const time = localTime.current * speed;
 
             for (let i = 0; i < count; i++) {
                 const i3 = i * 3;
@@ -74,7 +77,7 @@ export function FloatingParticles({
         }
 
         // Slow rotation of entire particle system
-        pointsRef.current.rotation.y = state.clock.elapsedTime * speed * 0.02;
+        pointsRef.current.rotation.y = localTime.current * speed * 0.02;
     });
 
     // Theme-aware particle color
@@ -129,9 +132,11 @@ export function GlowingOrbs({
         }));
     }, [count, spread]);
 
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
         if (!groupRef.current) return;
-        const time = state.clock.elapsedTime;
+        localTime.current += Math.min(delta, 0.1);
+        const time = localTime.current;
 
         groupRef.current.children.forEach((child, i) => {
             const orb = orbs[i];

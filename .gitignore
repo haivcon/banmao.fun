@@ -68,3 +68,13 @@ coverage/
 *.bak
 *.tmp
 *.orig
+
+# Turbopack
+.turbo
+
+# Storybook
+storybook-static/
+
+# Test artifacts
+playwright-report/
+test-results/

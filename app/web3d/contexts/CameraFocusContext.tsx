@@ -282,7 +282,9 @@ export function CustomCameraController({ children }: { children: React.ReactNode
     }, []);
 
     // Main animation loop
-    useFrame((_, delta) => {
+    useFrame((_, rawDelta) => {
+        // Clamp delta to prevent camera jumps after tab inactivity
+        const delta = Math.min(rawDelta, 0.1);
         const anim = focusAnimation.current;
 
         if (anim.active) {

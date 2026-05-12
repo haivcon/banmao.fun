@@ -756,87 +756,114 @@ export default function CollectionPage() {
         return Math.floor(diff / 86400000) + "d";
     }, []);
 
-    // ——— Fetch images ———
-    useEffect(() => {
-        fetch("/api/collection?folder=banmao")
-            .then((r) => r.json())
-            .then((data) => {
-                if (data.images) {
-                    const items: ImageItem[] = data.images
-                        .filter((img: { resource_type?: string }) => img.resource_type !== "raw")
-                        .map((img: { public_id: string; secure_url: string; folder: string; bytes: number; resource_type?: string; duration?: number; width?: number; height?: number; tags?: string[]; context?: Record<string, string> }) => {
-                            const isVideo = img.resource_type === "video";
-                            // Remap a_prompt subfolder images to their parent folder
-                            let folder = img.folder;
-                            if (folder.endsWith("/a_prompt")) {
-                                folder = folder.replace(/\/a_prompt$/, "");
-                            }
-                            // Merge all hub/0x* folders into a single virtual "__hub__" tab
-                            if (/\/hub\/0x[a-f0-9]/i.test(folder)) {
-                                folder = "__hub__";
-                            }
-                            return {
-                                src: img.secure_url,
-                                thumb: isVideo ? toVideoThumb(img.secure_url) : toThumb(img.secure_url),
-                                thumbSm: isVideo ? toVideoThumb(img.secure_url, 200) : toThumbSm(img.secure_url),
-                                name: publicIdToName(img.public_id),
-                                folder,
-                                bytes: img.bytes || 0,
-                                type: "sticker" as const,
-                                isVideo,
-                                duration: img.duration,
-                                width: img.width,
-                                height: img.height,
-                                tags: img.tags || [],
-                                context: img.context || {},
-                            };
-                        });
-                    setAllImages(items);
-                    const uniqueFolders = [...new Set(items.map((i: ImageItem) => i.folder))];
-                    // Smart sort: named categories first (by image count desc), then Groups numerically, then __hub__ last
-                    const folderCounts = new Map<string, number>();
-                    for (const item of items) {
-                        folderCounts.set(item.folder, (folderCounts.get(item.folder) || 0) + 1);
-                    }
-                    uniqueFolders.sort((a, b) => {
-                        const aLabel = folderLabel(a);
-                        const bLabel = folderLabel(b);
-                        const aIsGroup = /^Group\d+/i.test(aLabel);
-                        const bIsGroup = /^Group\d+/i.test(bLabel);
-                        const aIsHub = a === "__hub__";
-                        const bIsHub = b === "__hub__";
-
-                        // Hub always last
-                        if (aIsHub && !bIsHub) return 1;
-                        if (!aIsHub && bIsHub) return -1;
-
-                        // Named categories before Groups
-                        if (!aIsGroup && !aIsHub && aIsGroup !== bIsGroup) return -1;
-                        if (!bIsGroup && !bIsHub && aIsGroup !== bIsGroup) return 1;
-
-                        // Both groups: sort numerically
-                        if (aIsGroup && bIsGroup) {
-                            const aNum = parseInt(aLabel.match(/\d+/)?.[0] || "0", 10);
-                            const bNum = parseInt(bLabel.match(/\d+/)?.[0] || "0", 10);
-                            return aNum - bNum;
-                        }
-
-                        // Both named: sort by count descending (larger folders first)
-                        if (!aIsGroup && !bIsGroup && !aIsHub && !bIsHub) {
-                            const countDiff = (folderCounts.get(b) || 0) - (folderCounts.get(a) || 0);
-                            if (countDiff !== 0) return countDiff;
-                        }
-
-                        return aLabel.localeCompare(bLabel);
-                    });
-                    setFolders(uniqueFolders);
-                    setTotalBytes(items.reduce((sum: number, i: ImageItem) => sum + i.bytes, 0));
-
-                }
-            })
-            .catch((err) => console.error("Failed to fetch images:", err))
-            .finally(() => setLoading(false));
+    // ——— Helper: map raw API resource to ImageItem ———
+    const mapRawToItem = useCallback((img: { public_id: string; secure_url: string; folder: string; bytes: number; resource_type?: string; duration?: number; width?: number; height?: number; tags?: string[]; context?: Record<string, string> }): ImageItem | null => {
+        if (img.resource_type === "raw") return null;
+        const isVideo = img.resource_type === "video";
+        let folder = img.folder;
+        if (folder.endsWith("/a_prompt")) folder = folder.replace(/\/a_prompt$/, "");
+        if (/\/hub\/0x[a-f0-9]/i.test(folder)) folder = "__hub__";
+        return {
+            src: img.secure_url,
+            thumb: isVideo ? toVideoThumb(img.secure_url) : toThumb(img.secure_url),
+            thumbSm: isVideo ? toVideoThumb(img.secure_url, 200) : toThumbSm(img.secure_url),
+            name: publicIdToName(img.public_id),
+            folder,
+            bytes: img.bytes || 0,
+            type: "sticker" as const,
+            isVideo,
+            duration: img.duration,
+            width: img.width,
+            height: img.height,
+            tags: img.tags || [],
+            context: img.context || {},
+        };
     }, []);
+
+    // ——— Helper: sort folders by category type + count ———
+    const sortFolders = useCallback((items: ImageItem[]): string[] => {
+        const uniqueFolders = [...new Set(items.map((i: ImageItem) => i.folder))];
+        const folderCounts = new Map<string, number>();
+        for (const item of items) {
+            folderCounts.set(item.folder, (folderCounts.get(item.folder) || 0) + 1);
+        }
+        uniqueFolders.sort((a, b) => {
+            const aLabel = folderLabel(a);
+            const bLabel = folderLabel(b);
+            const aIsGroup = /^Group\d+/i.test(aLabel);
+            const bIsGroup = /^Group\d+/i.test(bLabel);
+            const aIsHub = a === "__hub__";
+            const bIsHub = b === "__hub__";
+            if (aIsHub && !bIsHub) return 1;
+            if (!aIsHub && bIsHub) return -1;
+            if (!aIsGroup && !aIsHub && aIsGroup !== bIsGroup) return -1;
+            if (!bIsGroup && !bIsHub && aIsGroup !== bIsGroup) return 1;
+            if (aIsGroup && bIsGroup) {
+                const aNum = parseInt(aLabel.match(/\d+/)?.[0] || "0", 10);
+                const bNum = parseInt(bLabel.match(/\d+/)?.[0] || "0", 10);
+                return aNum - bNum;
+            }
+            if (!aIsGroup && !bIsGroup && !aIsHub && !bIsHub) {
+                const countDiff = (folderCounts.get(b) || 0) - (folderCounts.get(a) || 0);
+                if (countDiff !== 0) return countDiff;
+            }
+            return aLabel.localeCompare(bLabel);
+        });
+        return uniqueFolders;
+    }, []);
+
+    // ——— Progressive paginated fetch ———
+    const [loadProgress, setLoadProgress] = useState<{ loaded: number; total: number } | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        const BATCH_SIZE = 500;
+
+        async function fetchAllPages() {
+            let cursor: string | null = null;
+            let accumulated: ImageItem[] = [];
+            let isFirstBatch = true;
+
+            do {
+                const params = new URLSearchParams({ folder: "banmao", limit: String(BATCH_SIZE) });
+                if (cursor) params.set("cursor", cursor);
+
+                const res = await fetch(`/api/collection?${params}`);
+                const data = await res.json();
+                if (cancelled) return;
+
+                const batchItems = (data.images || [])
+                    .map(mapRawToItem)
+                    .filter((item: ImageItem | null): item is ImageItem => item !== null);
+
+                accumulated = [...accumulated, ...batchItems];
+
+                // Update state after each batch so users see images immediately
+                setAllImages(accumulated);
+                setFolders(sortFolders(accumulated));
+                setTotalBytes(accumulated.reduce((sum, i) => sum + i.bytes, 0));
+                setLoadProgress({ loaded: accumulated.length, total: data.total || accumulated.length });
+
+                // Clear full-page skeleton after first batch
+                if (isFirstBatch) {
+                    setLoading(false);
+                    isFirstBatch = false;
+                }
+
+                cursor = data.nextCursor || null;
+            } while (cursor && !cancelled);
+
+            // All done
+            if (!cancelled) setLoadProgress(null);
+        }
+
+        fetchAllPages().catch((err) => {
+            console.error("Failed to fetch images:", err);
+            if (!cancelled) setLoading(false);
+        });
+
+        return () => { cancelled = true; };
+    }, [mapRawToItem, sortFolders]);
 
 
 
@@ -2268,6 +2295,31 @@ export default function CollectionPage() {
                                         />
                                     ))}
                                 </div>
+
+                                {/* Background loading progress */}
+                                {loadProgress && loadProgress.loaded < loadProgress.total && (
+                                    <div className="col-load-progress" style={{
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        gap: "10px", padding: "12px 0", opacity: 0.7, fontSize: "13px",
+                                        color: "var(--col-text-secondary, #aaa)",
+                                    }}>
+                                        <div className="col-infinite-spinner" style={{ width: "16px", height: "16px" }} />
+                                        <span>
+                                            {t.loading || "Loading"} {loadProgress.loaded} / {loadProgress.total}
+                                        </span>
+                                        <div style={{
+                                            width: "120px", height: "4px", borderRadius: "2px",
+                                            background: "rgba(255,255,255,0.1)", overflow: "hidden",
+                                        }}>
+                                            <div style={{
+                                                width: `${Math.round((loadProgress.loaded / loadProgress.total) * 100)}%`,
+                                                height: "100%", borderRadius: "2px",
+                                                background: "linear-gradient(90deg, #22d3ee, #a78bfa)",
+                                                transition: "width 0.3s ease",
+                                            }} />
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Infinite Scroll Sentinel OR Pagination */}
                                 {isInfinite ? (

@@ -58,10 +58,12 @@ function OrbitingRing({
     tilt?: number;
 }) {
     const ringRef = useRef<THREE.Mesh>(null);
+    const localTime = useRef(0);
 
-    useFrame((state) => {
+    useFrame((state, delta) => {
         if (ringRef.current) {
-            ringRef.current.rotation.z = state.clock.elapsedTime * speed;
+            localTime.current += Math.min(delta, 0.1);
+            ringRef.current.rotation.z = localTime.current * speed;
         }
     });
 
@@ -83,10 +85,12 @@ function OrbitingRing({
 // =============================================================================
 function PulseRing({ radius, color }: { radius: number; color: string }) {
     const ringRef = useRef<THREE.Mesh>(null);
+    const localTime = useRef(0);
 
-    useFrame((state) => {
+    useFrame((state, delta) => {
         if (!ringRef.current) return;
-        const t = (state.clock.elapsedTime % 2.5) / 2.5;
+        localTime.current += Math.min(delta, 0.1);
+        const t = (localTime.current % 2.5) / 2.5;
         const scale = 1 + t * 0.8;
         ringRef.current.scale.set(scale, scale, 1);
         (ringRef.current.material as THREE.MeshBasicMaterial).opacity = 0.6 * (1 - t);
@@ -111,9 +115,11 @@ function PulseRing({ radius, color }: { radius: number; color: string }) {
 function NeonBorder({ radius, color, pulseSpeed = 2 }: { radius: number; color: string; pulseSpeed?: number }) {
     const outerRef = useRef<THREE.Mesh>(null);
     const innerRef = useRef<THREE.Mesh>(null);
+    const localTime = useRef(0);
 
-    useFrame((state) => {
-        const intensity = 0.3 + Math.sin(state.clock.elapsedTime * pulseSpeed) * 0.2;
+    useFrame((state, delta) => {
+        localTime.current += Math.min(delta, 0.1);
+        const intensity = 0.3 + Math.sin(localTime.current * pulseSpeed) * 0.2;
         if (outerRef.current) {
             (outerRef.current.material as THREE.MeshBasicMaterial).opacity = intensity * 0.5;
         }
@@ -153,10 +159,12 @@ function NeonBorder({ radius, color, pulseSpeed = 2 }: { radius: number; color: 
 // =============================================================================
 function HologramScanLine({ radius }: { radius: number }) {
     const lineRef = useRef<THREE.Mesh>(null);
+    const localTime = useRef(0);
 
-    useFrame((state) => {
+    useFrame((state, delta) => {
         if (lineRef.current) {
-            const y = Math.sin(state.clock.elapsedTime * 1.5) * 0.3;
+            localTime.current += Math.min(delta, 0.1);
+            const y = Math.sin(localTime.current * 1.5) * 0.3;
             lineRef.current.position.y = y;
         }
     });
@@ -309,13 +317,16 @@ export function TokenDistributionChart3D({
     }, []);
 
     // Animation
-    useFrame((state) => {
+    const localTime = useRef(0);
+    useFrame((state, delta) => {
+        const clampedDelta = Math.min(delta, 0.1);
+        localTime.current += clampedDelta;
         if (groupRef.current) {
-            groupRef.current.rotation.y = state.clock.elapsedTime * 0.08;
-            groupRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 0.4) * 0.08;
+            groupRef.current.rotation.y = localTime.current * 0.08;
+            groupRef.current.position.y = position[1] + Math.sin(localTime.current * 0.4) * 0.08;
         }
-        glowPhaseRef.current = Math.sin(state.clock.elapsedTime * 2) * 0.5 + 0.5;
-        rotationYRef.current = state.clock.elapsedTime;
+        glowPhaseRef.current = Math.sin(localTime.current * 2) * 0.5 + 0.5;
+        rotationYRef.current = localTime.current;
     });
 
     // Calculate distribution - Top 5 holders individually, rest grouped
