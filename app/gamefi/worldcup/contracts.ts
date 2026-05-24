@@ -1,0 +1,78 @@
+// WorldCupYieldWars contract configuration.
+export const WORLDCUP_CONTRACT_ADDRESS = (
+    process.env.NEXT_PUBLIC_WORLDCUP_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000'
+) as `0x${string}`;
+export const BANMAO_TOKEN_ADDRESS = (
+    process.env.NEXT_PUBLIC_BANMAO_TOKEN_ADDRESS || '0x0000000000000000000000000000000000000000'
+) as `0x${string}`;
+export const XLAYER_CHAIN_ID = Number(process.env.NEXT_PUBLIC_XLAYER_CHAIN_ID || 196);
+export const XLAYER_EXPLORER_BASE_URL = process.env.NEXT_PUBLIC_XLAYER_EXPLORER_URL || 'https://www.oklink.com/x-layer';
+
+export const ERC20_ABI = [
+    { type: 'function', name: 'approve', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ type: 'bool' }], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'allowance', inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
+    { type: 'function', name: 'balanceOf', inputs: [{ name: 'account', type: 'address' }], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
+    { type: 'function', name: 'decimals', inputs: [], outputs: [{ type: 'uint8' }], stateMutability: 'view' },
+    { type: 'function', name: 'symbol', inputs: [], outputs: [{ type: 'string' }], stateMutability: 'view' },
+] as const;
+
+export const WORLDCUP_ABI = [
+    { type: 'function', name: 'stakingToken', inputs: [], outputs: [{ type: 'address' }], stateMutability: 'view' },
+    { type: 'function', name: 'ABSOLUTE_MAX_TEAMS', inputs: [], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
+    { type: 'function', name: 'isMainnet', inputs: [], outputs: [{ type: 'bool' }], stateMutability: 'view' },
+    { type: 'function', name: 'stakeFee', inputs: [], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
+    { type: 'function', name: 'unstakeFee', inputs: [], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
+    { type: 'function', name: 'minStakeAmount', inputs: [], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
+    { type: 'function', name: 'maxBonusHours', inputs: [], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
+    { type: 'function', name: 'currentSeasonId', inputs: [], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
+    { type: 'function', name: 'rewardPool', inputs: [], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
+    { type: 'function', name: 'matchCount', inputs: [], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
+    { type: 'function', name: 'owner', inputs: [], outputs: [{ type: 'address' }], stateMutability: 'view' },
+    { type: 'function', name: 'paused', inputs: [], outputs: [{ type: 'bool' }], stateMutability: 'view' },
+    { type: 'function', name: 'getSeasonInfo', inputs: [{ name: 'seasonId', type: 'uint256' }], outputs: [{ name: 'maxTeams', type: 'uint256' }, { name: 'tournamentStartTime', type: 'uint256' }, { name: 'totalStakedAll', type: 'uint256' }, { name: 'totalUnclaimedRewards', type: 'uint256' }, { name: 'lockedMatchCount', type: 'uint256' }, { name: 'championTeamId', type: 'uint256' }, { name: 'tournamentStarted', type: 'bool' }, { name: 'tournamentEnded', type: 'bool' }], stateMutability: 'view' },
+    { type: 'function', name: 'getCurrentSeasonInfo', inputs: [], outputs: [{ name: 'maxTeams', type: 'uint256' }, { name: 'tournamentStartTime', type: 'uint256' }, { name: 'totalStakedAll', type: 'uint256' }, { name: 'totalUnclaimedRewards', type: 'uint256' }, { name: 'lockedMatchCount', type: 'uint256' }, { name: 'championTeamId', type: 'uint256' }, { name: 'tournamentStarted', type: 'bool' }, { name: 'tournamentEnded', type: 'bool' }], stateMutability: 'view' },
+    { type: 'function', name: 'getTeamPool', inputs: [{ name: 'seasonId', type: 'uint256' }, { name: 'teamId', type: 'uint256' }], outputs: [{ name: 'totalPrincipal', type: 'uint256' }, { name: 'totalWeight', type: 'uint256' }, { name: 'accRewardPerWeight', type: 'uint256' }, { name: 'principalIndex', type: 'uint256' }, { name: 'status', type: 'uint8' }, { name: 'locked', type: 'bool' }], stateMutability: 'view' },
+    { type: 'function', name: 'getAllTeamStats', inputs: [{ name: 'seasonId', type: 'uint256' }], outputs: [{ name: 'totalPrincipalArr', type: 'uint256[]' }, { name: 'totalWeightArr', type: 'uint256[]' }, { name: 'accRewardPerWeightArr', type: 'uint256[]' }, { name: 'principalIndexArr', type: 'uint256[]' }, { name: 'statusArr', type: 'uint8[]' }, { name: 'lockedArr', type: 'bool[]' }], stateMutability: 'view' },
+    { type: 'function', name: 'getUserInfo', inputs: [{ name: 'seasonId', type: 'uint256' }, { name: 'account', type: 'address' }, { name: 'teamId', type: 'uint256' }], outputs: [{ name: 'principal', type: 'uint256' }, { name: 'weight', type: 'uint256' }, { name: 'pendingRewards', type: 'uint256' }], stateMutability: 'view' },
+    { type: 'function', name: 'getMatch', inputs: [{ name: 'matchId', type: 'uint256' }], outputs: [{ name: 'seasonId', type: 'uint256' }, { name: 'teamA', type: 'uint256' }, { name: 'teamB', type: 'uint256' }, { name: 'winningTeam', type: 'uint256' }, { name: 'isLocked', type: 'bool' }, { name: 'isResolved', type: 'bool' }, { name: 'isElimination', type: 'bool' }, { name: 'isDraw', type: 'bool' }, { name: 'slashedAmount', type: 'uint256' }, { name: 'feeBonus', type: 'uint256' }], stateMutability: 'view' },
+    { type: 'function', name: 'getSeasonMatchIds', inputs: [{ name: 'seasonId', type: 'uint256' }], outputs: [{ name: 'ids', type: 'uint256[]' }], stateMutability: 'view' },
+    { type: 'function', name: 'getMatchRewardBreakdown', inputs: [{ name: 'matchId', type: 'uint256' }], outputs: [{ name: 'seasonId', type: 'uint256' }, { name: 'teamA', type: 'uint256' }, { name: 'teamB', type: 'uint256' }, { name: 'winningTeam', type: 'uint256' }, { name: 'losingTeam', type: 'uint256' }, { name: 'isResolved', type: 'bool' }, { name: 'isDraw', type: 'bool' }, { name: 'slashedAmount', type: 'uint256' }, { name: 'feeBonus', type: 'uint256' }, { name: 'totalReward', type: 'uint256' }, { name: 'winningPoolWeight', type: 'uint256' }, { name: 'rewardToWinners', type: 'bool' }], stateMutability: 'view' },
+    { type: 'function', name: 'previewStake', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [{ name: 'fee', type: 'uint256' }, { name: 'netAmount', type: 'uint256' }], stateMutability: 'view' },
+    { type: 'function', name: 'previewUnstake', inputs: [{ name: 'seasonId', type: 'uint256' }, { name: 'teamId', type: 'uint256' }, { name: 'account', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ name: 'currentPrincipal', type: 'uint256' }, { name: 'fee', type: 'uint256' }, { name: 'payout', type: 'uint256' }, { name: 'validAmount', type: 'bool' }], stateMutability: 'view' },
+    { type: 'function', name: 'getUserRewardShare', inputs: [{ name: 'seasonId', type: 'uint256' }, { name: 'account', type: 'address' }, { name: 'teamId', type: 'uint256' }], outputs: [{ name: 'userWeight', type: 'uint256' }, { name: 'poolWeight', type: 'uint256' }, { name: 'shareBp', type: 'uint256' }], stateMutability: 'view' },
+    { type: 'function', name: 'getTeamMetadata', inputs: [{ name: 'seasonId', type: 'uint256' }, { name: 'teamId', type: 'uint256' }], outputs: [{ name: 'name', type: 'string' }, { name: 'code', type: 'string' }, { name: 'groupName', type: 'string' }, { name: 'color', type: 'string' }, { name: 'colorSecondary', type: 'string' }], stateMutability: 'view' },
+    { type: 'function', name: 'getAllTeamMetadata', inputs: [{ name: 'seasonId', type: 'uint256' }], outputs: [{ name: 'names', type: 'string[]' }, { name: 'codes', type: 'string[]' }, { name: 'groupNames', type: 'string[]' }, { name: 'colors', type: 'string[]' }, { name: 'colorSecondaries', type: 'string[]' }], stateMutability: 'view' },
+    { type: 'function', name: 'stake', inputs: [{ name: 'teamId', type: 'uint256' }, { name: 'amount', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'unstake', inputs: [{ name: 'seasonId', type: 'uint256' }, { name: 'teamId', type: 'uint256' }, { name: 'amount', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'claimRewards', inputs: [{ name: 'seasonId', type: 'uint256' }, { name: 'teamId', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'startTournament', inputs: [], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'lockMatch', inputs: [{ name: 'teamA', type: 'uint256' }, { name: 'teamB', type: 'uint256' }, { name: 'isElimination', type: 'bool' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'resolveMatch', inputs: [{ name: 'matchId', type: 'uint256' }, { name: 'winningTeamId', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'resolveDraw', inputs: [{ name: 'matchId', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'declareChampion', inputs: [{ name: 'teamId', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'withdrawRewardPool', inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'recoverERC20', inputs: [{ name: 'token', type: 'address' }, { name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'setFees', inputs: [{ name: '_stakeFee', type: 'uint256' }, { name: '_unstakeFee', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'setMinStakeAmount', inputs: [{ name: '_minStakeAmount', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'setMaxTeams', inputs: [{ name: 'newMaxTeams', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'configureNextSeason', inputs: [{ name: 'newMaxTeams', type: 'uint256' }, { name: 'newTournamentStartTime', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'setTournamentStartTime', inputs: [{ name: 'newTournamentStartTime', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'setTeamMetadata', inputs: [{ name: 'teamId', type: 'uint256' }, { name: 'name', type: 'string' }, { name: 'code', type: 'string' }, { name: 'groupName', type: 'string' }, { name: 'color', type: 'string' }, { name: 'colorSecondary', type: 'string' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'setTeamMetadataForSeason', inputs: [{ name: 'seasonId', type: 'uint256' }, { name: 'teamId', type: 'uint256' }, { name: 'name', type: 'string' }, { name: 'code', type: 'string' }, { name: 'groupName', type: 'string' }, { name: 'color', type: 'string' }, { name: 'colorSecondary', type: 'string' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'setTeamMetadataBatch', inputs: [{ name: 'teamIds', type: 'uint256[]' }, { name: 'names', type: 'string[]' }, { name: 'codes', type: 'string[]' }, { name: 'groupNames', type: 'string[]' }, { name: 'colors', type: 'string[]' }, { name: 'colorSecondaries', type: 'string[]' }], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'pause', inputs: [], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'function', name: 'unpause', inputs: [], outputs: [], stateMutability: 'nonpayable' },
+    { type: 'event', name: 'Staked', inputs: [{ name: 'user', type: 'address', indexed: true }, { name: 'seasonId', type: 'uint256', indexed: true }, { name: 'teamId', type: 'uint256', indexed: true }, { name: 'netAmount', type: 'uint256', indexed: false }, { name: 'multiplier', type: 'uint256', indexed: false }] },
+    { type: 'event', name: 'Unstaked', inputs: [{ name: 'user', type: 'address', indexed: true }, { name: 'seasonId', type: 'uint256', indexed: true }, { name: 'teamId', type: 'uint256', indexed: true }, { name: 'amount', type: 'uint256', indexed: false }] },
+    { type: 'event', name: 'RewardClaimed', inputs: [{ name: 'user', type: 'address', indexed: true }, { name: 'seasonId', type: 'uint256', indexed: true }, { name: 'teamId', type: 'uint256', indexed: true }, { name: 'reward', type: 'uint256', indexed: false }] },
+    { type: 'event', name: 'MatchLocked', inputs: [{ name: 'matchId', type: 'uint256', indexed: true }, { name: 'seasonId', type: 'uint256', indexed: true }, { name: 'teamA', type: 'uint256', indexed: false }, { name: 'teamB', type: 'uint256', indexed: false }] },
+    { type: 'event', name: 'MatchResolved', inputs: [{ name: 'matchId', type: 'uint256', indexed: true }, { name: 'seasonId', type: 'uint256', indexed: true }, { name: 'winningTeam', type: 'uint256', indexed: false }, { name: 'losingTeam', type: 'uint256', indexed: false }, { name: 'slashedAmount', type: 'uint256', indexed: false }, { name: 'feeBonus', type: 'uint256', indexed: false }] },
+    { type: 'event', name: 'MatchDrawn', inputs: [{ name: 'matchId', type: 'uint256', indexed: true }, { name: 'seasonId', type: 'uint256', indexed: true }] },
+    { type: 'event', name: 'TeamMetadataUpdated', inputs: [{ name: 'seasonId', type: 'uint256', indexed: true }, { name: 'teamId', type: 'uint256', indexed: true }, { name: 'name', type: 'string', indexed: false }, { name: 'code', type: 'string', indexed: false }, { name: 'groupName', type: 'string', indexed: false }, { name: 'color', type: 'string', indexed: false }, { name: 'colorSecondary', type: 'string', indexed: false }] },
+    { type: 'event', name: 'FeesUpdated', inputs: [{ name: 'stakeFee', type: 'uint256', indexed: false }, { name: 'unstakeFee', type: 'uint256', indexed: false }] },
+    { type: 'event', name: 'MinStakeUpdated', inputs: [{ name: 'minStakeAmount', type: 'uint256', indexed: false }] },
+    { type: 'event', name: 'SeasonConfigured', inputs: [{ name: 'seasonId', type: 'uint256', indexed: true }, { name: 'maxTeams', type: 'uint256', indexed: false }, { name: 'tournamentStartTime', type: 'uint256', indexed: false }] },
+    { type: 'event', name: 'TournamentStarted', inputs: [{ name: 'seasonId', type: 'uint256', indexed: true }] },
+    { type: 'event', name: 'ChampionDeclared', inputs: [{ name: 'seasonId', type: 'uint256', indexed: true }, { name: 'teamId', type: 'uint256', indexed: true }] },
+    { type: 'event', name: 'RewardPoolWithdrawn', inputs: [{ name: 'to', type: 'address', indexed: true }, { name: 'amount', type: 'uint256', indexed: false }] },
+] as const;

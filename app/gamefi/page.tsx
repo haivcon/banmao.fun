@@ -601,6 +601,17 @@ export default function GameFiHubPage() {
             videoPreview: "/games/fomo/fomo-preview.mp4",
             iconImage: "/games/fomo/fomo-icon.jpg",
         },
+        {
+            id: "worldcup",
+            nameKey: "gamefiWorldCupName" as keyof LandingTranslations,
+            descKey: "gamefiWorldCupDesc" as keyof LandingTranslations,
+            icon: "⚽",
+            thumbnailIcon: "⚽",
+            href: "/gamefi/worldcup",
+            status: "live" as const,
+            contractAddress: "0x767c2194c665998F383c0dfd2B30d73736F18e1D",
+            detailsKey: "gamefiWorldCupDetails" as keyof LandingTranslations,
+        },
     ];
 
     // Visit stats state

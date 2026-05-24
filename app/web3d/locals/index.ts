@@ -85,6 +85,10 @@ export interface LandingTranslations {
     gamefiFomoDesc: string;
     gamefiFomoDetails: string;
     gamefiFomoHowToPlay: string;
+    // World Cup
+    gamefiWorldCupName: string;
+    gamefiWorldCupDesc: string;
+    gamefiWorldCupDetails: string;
     gamefiFooter: string;
     gamefiMoreGames: string;
     gamefiLoadingGame: string;

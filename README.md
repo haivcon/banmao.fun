@@ -1,59 +1,25 @@
 # Banmao Fun — Social Hub & DeFi Platform
 
-## v0.3.3 — Web3D Stability Fix & Collection Progressive Loading
+## v0.4.0 — World Cup Yield Wars Integration & Ecosystem Sync
 
-### 🎯 Web3D: Tab-Inactivity Crash Fix
-Resolved a critical production issue where the 3D homepage would **lag, spin wildly, then freeze** after the browser tab was left inactive and revisited.
+### 🏆 World Cup Yield Wars: Seamless Ecosystem Merge
+Successfully migrated the standalone World Cup Yield Wars DApp into the main `banmao-fun-full` ecosystem. This release brings cross-compatibility and a unified gaming experience.
 
-**Root Causes Identified & Fixed:**
-- **`clock.elapsedTime` time-jump** — Three.js clock accumulates while the tab is backgrounded, causing position/rotation calculations to jump hundreds of radians on resume.
-- **Unclamped frame delta** — `useFrame` delta equaled the entire inactive duration (e.g. 300s), causing incremental animations to process impossibly large time steps.
-- **GPU memory leak** — `PulseRing` component created `new THREE.MeshBasicMaterial()` on every animation frame, causing cumulative memory degradation.
-
-**Fix Applied (35 animation callbacks across 10 files):**
-```tsx
-// Pattern: Local accumulated time + delta clamping (max 100ms/frame)
-const localTime = useRef(0);
-useFrame((state, delta) => {
-    localTime.current += Math.min(delta, 0.1);
-    const time = localTime.current;
-});
-```
-
-**Files Changed:**
-| File | Fix |
-|------|-----|
-| `SwimmingWhale3D.tsx` | Local time + delta clamp |
-| `BlackHole3D.tsx` | Delta clamp |
-| `SharedEffects.tsx` | Material leak fix + delta clamp (6 hooks) |
-| `AnimatedMascot.tsx` | Local time + delta clamp (ParticleAura + main) |
-| `CameraFocusContext.tsx` | Delta clamp on camera lerp |
-| `DancingLogo3D.tsx` | Local time + delta clamp (sparkles + main) |
-| `FloatingParticles.tsx` | Local time + delta clamp (particles + orbs) |
-| `TokenCoin3D.tsx` | Delta clamp + sub-components (sparkles, trail) |
-| `TokenDistributionChart3D.tsx` | Local time + delta clamp (main + 4 sub-components) |
-| `page.tsx` | All 11 inline `useFrame` callbacks fixed |
-
----
-
-### ⚡ Collection: Progressive Paginated Loading
-Optimized the Collection gallery page to handle 3000+ Cloudinary images without the long initial wait.
-
-**Before:** Single monolithic API request fetched all 3000+ images → 5-10s blank screen.
-**After:** Progressive paginated loading in 500-image batches → first images visible within ~1-2s.
-
-- First batch renders immediately; subsequent batches stream in the background.
-- Live progress bar shows `Loading 1500/3200` with animated gradient fill.
-- Folders, search, and sort are functional from the first batch.
-- Cleanup on unmount prevents memory leaks from abandoned fetch chains.
-
-**Files Changed:**
-- `CollectionClient.tsx` — Replaced monolithic fetch with async paginated loop + progress indicator UI.
+**Key Features & Fixes:**
+- **Full Architecture Sync:** Integrated all smart contracts, hardhat scripts, tests, and API proxy routes (`/api/okx/[...path]`) directly into the main repository.
+- **Wagmi Provider Alignment:** Resolved `ChainNotConfiguredError` by aligning the World Cup's default chain configuration to match the global XLayer Mainnet settings (Chain ID 196) defined in the root `providers.tsx`.
+- **SSR Hydration Fix:** Patched a critical React Hydration mismatch error in `useWCLang` hook that caused red screen crashes due to immediate `localStorage` reads during Server-Side Rendering.
+- **Global Scrolling Conflict Resolved:** Built a `ScrollEnabler` layout wrapper that elegantly bypasses the strict `overflow-y: hidden !important` lock imposed by the 3D `landing.css`, restoring smooth scrolling for the World Cup Dashboard and Admin panels.
+- **Premium Web3 Scrollbar:** Implemented a custom Emerald-themed Webkit scrollbar scoped globally via `.worldcup-theme-scroll`, delivering a polished UI that perfectly matches the dark mode aesthetic without polluting other pages.
 
 ---
 
 <details>
-<summary><strong>Past Updates (v0.3.2 and older)</strong></summary>
+<summary><strong>Past Updates (v0.3.3 and older)</strong></summary>
+
+### v0.3.3 — Web3D Stability Fix & Collection Progressive Loading
+- **Web3D Tab-Inactivity Crash Fix:** Resolved critical production issue where 3D homepage would freeze after tab inactivity by clamping delta time and preventing material memory leaks across 10+ files.
+- **Progressive Paginated Loading:** Optimized Collection gallery to handle 3000+ Cloudinary images with paginated background fetching and animated progress UI.
 
 ### v0.3.2 — OKX API Optimization & Redundancy Elimination
 - Comprehensive OKX Web3 API audit across 14 backend routes.
