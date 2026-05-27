@@ -5204,3 +5204,13 @@
         font-size: 10px !important;
     }
 }
+
+
+/* Force scroll for worldcup pages */
+html:has(.wc-page), html:has(.wc-page) body {
+  overflow: auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  position: relative !important;
+  height: auto !important;
+}
