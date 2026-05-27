@@ -3,7 +3,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const EMPTY_MODULE = path.join(__dirname, "lib", "emptyModule.ts");
+const EMPTY_MODULE = "@/lib/emptyModule.ts";
 
 const TURBO_IGNORE_ALIAS = {
   tap: EMPTY_MODULE,
@@ -21,7 +21,7 @@ const TURBO_IGNORE_ALIAS = {
 
 const RESOLVE_ALIASES = {
   ...TURBO_IGNORE_ALIAS,
-  "thread-stream": path.join(__dirname, "lib", "threadStreamStub.ts"),
+  "thread-stream": "@/lib/threadStreamStub.ts",
   pino: "pino/browser",
 };
 
