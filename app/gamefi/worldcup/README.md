@@ -22,6 +22,7 @@ When syncing updates from the standalone `WorldCupYieldWars_XLayer` project into
    - **Contracts:** Copy `WorldCupYieldWars_XLayer/contracts/WorldCupYieldWars.sol` to `banmao-fun-full/contracts/WorldCupYieldWars.sol`
 
 ## Troubleshooting
+- **Wagmi TypeScript Error (`Type instantiation is excessively deep`)**: When syncing `hooks/useWorldCup.ts` from the standalone repo, remember to add `// @ts-ignore` above every `useReadContracts` call that accepts a dynamic array of contracts. Next.js (Vercel) will crash during build due to infinite type inference loops if you don't suppress it. It is recommended to apply this fix permanently in the standalone repo.
 - **`TypeError: Cannot read properties of undefined (reading 'ReactCurrentDispatcher')`**: This usually happens if the Next.js cache is corrupted during a hot-reload after a massive folder copy. Restart the Next.js dev server (`ctrl+c` then `npm run dev`) or clear the `.next` folder.
 - **Missing Images**: Ensure the `public/mascots` folder was correctly copied.
 - **Hydration/Script Errors**: Ensure `<Script>` from `next/script` is used instead of native `<script>` tags when injecting global scripts in Next.js layouts.
