@@ -5,6 +5,8 @@ import type { TeamPoolData, UserTeamInfo } from "../hooks/useWorldCup";
 import TeamCrest from "./TeamCrest";
 import { cleanLabel } from "../lib/labels";
 
+import { useSoundFX } from "../hooks/SoundContext";
+
 interface Props {
     team: TeamPoolData;
     userStake: UserTeamInfo;
@@ -14,6 +16,7 @@ interface Props {
 }
 
 export default function TeamCard({ team, userStake, totalStakedAll, onClick, t }: Props) {
+    const { playTick, playPop } = useSoundFX();
     const statusClass = `wc-status-${team.status}`;
     const hasStake = userStake.amount > BigInt(0);
     const share = totalStakedAll > BigInt(0) ? Number((team.totalStaked * BigInt(10000)) / totalStakedAll) / 100 : 0;
@@ -33,7 +36,9 @@ export default function TeamCard({ team, userStake, totalStakedAll, onClick, t }
     const emptyPool = team.totalStaked === BigInt(0);
 
     return (
-        <button className={`wc-team-card ${statusClass} ${hasStake ? 'wc-has-stake' : ''}`} onClick={onClick}
+        <button className={`wc-team-card ${statusClass} ${hasStake ? 'wc-has-stake' : ''} ${team.status === 'locked' ? 'wc-pulse-live' : ''}`} 
+            onClick={() => { playPop(); onClick(); }}
+            onMouseEnter={() => playTick()}
             style={{ '--team-color': team.color, '--team-color-secondary': team.colorSecondary || team.color } as React.CSSProperties}>
             <div className="wc-card-topline">
                 <span className={`wc-team-status-badge ${statusClass}`}>{statusLabel}</span>
