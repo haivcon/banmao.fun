@@ -8,14 +8,16 @@ import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
- * @title WorldCupYieldWars (Multi-Season Edition)
+ * @title WorldCupYieldWars (Multi-Season Edition - Production Ready)
  * @notice Features:
  * - Full Multi-Season support with isolated states per season.
- * - Early Bird multiplier (max 48x) for early stakers.
+ * - Early Bird multiplier calculated per SECOND to prevent cliff effects.
  * - O(1) 50% Principal Slashing via principalIndex algorithm.
- * - Separation of Principal and Yield (Yield can be claimed separately).
- * - Patched Reward Debt bug (MasterChef Infinite Money Glitch).
- * - 100% dust cleaning when user unstakes max amount.
+ * - O(1) Global accounting to prevent Out-Of-Gas in recoverERC20.
+ * - Admin-controlled feeBonus injections for fair Tokenomics with sanity checks.
+ * - Precise anti-dust mechanics with up to 1e15 wei resolution limit.
+ * - Trustless Unstake (No Pausable restriction on withdrawals).
+ * - Auto-fee-waiver timeout (prevents stuck fees if admin goes offline).
  */
 contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -23,17 +25,21 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
     // ============ Config ============
     IERC20 public stakingToken;
     uint256 public constant ABSOLUTE_MAX_TEAMS = 64;
-    
-    bool public isMainnet;
+
     uint256 public stakeFee = 200;   // 2% in basis points
     uint256 public unstakeFee = 200; // 2% in basis points
-    uint256 public minStakeAmount = 1 ether; 
+    uint256 public minStakeAmount = 1 ether;
     uint256 constant BP = 10000;
-    uint256 constant PRECISION = 1e18; 
-    uint256 public constant maxBonusHours = 48; 
+    uint256 constant PRECISION = 1e18;
+    uint256 public constant maxBonusHours = 48;
+    uint256 public constant MAX_DUST_CLEAR_PER_SEASON = 1e15;
 
     // Admin reward pool (Global, spans across all seasons)
-    uint256 public rewardPool; 
+    uint256 public rewardPool;
+
+    // O(1) Global Tracking to prevent Out-Of-Gas in loops
+    uint256 public globalTotalStaked;
+    uint256 public globalTotalUnclaimedRewards;
 
     // ============ Season State ============
     uint256 public currentSeasonId = 1;
@@ -41,14 +47,16 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
     struct SeasonInfo {
         uint256 maxTeams;
         uint256 tournamentStartTime;
-        uint256 totalStakedAll;         // Total PRINCIPAL tokens locked in this season
-        uint256 totalUnclaimedRewards;  // Total rewards users have WON but NOT YET CLAIMED in this season
+        uint256 tournamentEndTime;
+        uint256 totalStakedAll;
+        uint256 totalUnclaimedRewards;
         uint256 lockedMatchCount;
         uint256 championTeamId;
         bool tournamentStarted;
         bool tournamentEnded;
     }
     mapping(uint256 => SeasonInfo) public seasonInfo;
+    mapping(uint256 => uint256) public dustClearedBySeason;
 
     // ============ Team Pools ============
     struct TeamPool {
@@ -68,11 +76,9 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
         string colorSecondary;
     }
 
-    // seasonId => teamId => TeamPool
     mapping(uint256 => mapping(uint256 => TeamPool)) public teamPools;
-    // seasonId => teamId => TeamMetadata
     mapping(uint256 => mapping(uint256 => TeamMetadata)) private teamMetadata;
-    
+
     // ============ User Stakes ============
     struct UserStake {
         uint256 principalBase;
@@ -80,12 +86,11 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
         uint256 rewardDebt;
         uint256 pendingRewards;
     }
-    // seasonId => user => teamId => UserStake
     mapping(uint256 => mapping(address => mapping(uint256 => UserStake))) public userStakes;
 
     // ============ Match System ============
     struct Match {
-        uint256 seasonId; // Associates match with a specific season
+        uint256 seasonId;
         uint256 teamA;
         uint256 teamB;
         uint256 lockTime;
@@ -99,7 +104,7 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
     }
     mapping(uint256 => Match) public matches;
     mapping(uint256 => uint256[]) private seasonMatchIds;
-    uint256 public matchCount; // Grows infinitely to prevent ID collision
+    uint256 public matchCount;
 
     // ============ Events ============
     event Staked(address indexed user, uint256 indexed seasonId, uint256 indexed teamId, uint256 netAmount, uint256 multiplier);
@@ -111,56 +116,54 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
     event TeamMetadataUpdated(uint256 indexed seasonId, uint256 indexed teamId, string name, string code, string groupName, string color, string colorSecondary);
     event FeesUpdated(uint256 stakeFee, uint256 unstakeFee);
     event MinStakeUpdated(uint256 minStakeAmount);
-    event SeasonConfigured(uint256 indexed seasonId, uint256 maxTeams, uint256 tournamentStartTime);
+    event SeasonConfigured(uint256 indexed seasonId, uint256 maxTeams, uint256 tournamentStartTime, uint256 tournamentEndTime);
     event TournamentStarted(uint256 indexed seasonId);
     event ChampionDeclared(uint256 indexed seasonId, uint256 indexed teamId);
     event RewardPoolWithdrawn(address indexed to, uint256 amount);
+    event DustDiscrepancyResolved(uint256 indexed seasonId, uint256 amountCleared);
 
     // ============ Constructor ============
     constructor(
         address _token,
         uint256 _maxTeams,
-        bool _isMainnet,
-        uint256 _tournamentStartTime
+        uint256 _tournamentStartTime,
+        uint256 _tournamentDuration
     ) Ownable(msg.sender) {
         require(_token != address(0), "Invalid token");
         require(_maxTeams > 1 && _maxTeams <= ABSOLUTE_MAX_TEAMS, "Invalid count");
-        
-        stakingToken = IERC20(_token);
-        isMainnet = _isMainnet;
 
-        _initSeason(currentSeasonId, _maxTeams, _tournamentStartTime);
+        stakingToken = IERC20(_token);
+
+        _initSeason(currentSeasonId, _maxTeams, _tournamentStartTime, _tournamentStartTime + _tournamentDuration);
     }
 
-    function _initSeason(uint256 _seasonId, uint256 _maxTeams, uint256 _startTime) internal {
+    function _initSeason(uint256 _seasonId, uint256 _maxTeams, uint256 _startTime, uint256 _endTime) internal {
         SeasonInfo storage season = seasonInfo[_seasonId];
         season.maxTeams = _maxTeams;
         season.tournamentStartTime = _startTime;
-        
+        season.tournamentEndTime = _endTime;
+
         for (uint256 i = 0; i < _maxTeams; i++) {
-            teamPools[_seasonId][i].principalIndex = PRECISION; // 1.0 multiplier
+            teamPools[_seasonId][i].principalIndex = PRECISION;
         }
-        emit SeasonConfigured(_seasonId, _maxTeams, _startTime);
+        emit SeasonConfigured(_seasonId, _maxTeams, _startTime, _endTime);
     }
 
-    modifier validTeam(uint256 _seasonId, uint256 _teamId) { 
-        require(_teamId < seasonInfo[_seasonId].maxTeams, "Invalid team"); 
-        _; 
+    modifier validTeam(uint256 _seasonId, uint256 _teamId) {
+        require(_teamId < seasonInfo[_seasonId].maxTeams, "Invalid team");
+        _;
     }
-    modifier teamNotLocked(uint256 _seasonId, uint256 _teamId) { 
-        require(!teamPools[_seasonId][_teamId].locked, "Team locked"); 
-        _; 
+    modifier teamNotLocked(uint256 _seasonId, uint256 _teamId) {
+        require(!teamPools[_seasonId][_teamId].locked, "Team locked");
+        _;
     }
-    modifier teamActive(uint256 _seasonId, uint256 _teamId) { 
-        require(teamPools[_seasonId][_teamId].status <= 1, "Eliminated"); 
-        _; 
+    modifier teamActive(uint256 _seasonId, uint256 _teamId) {
+        require(teamPools[_seasonId][_teamId].status <= 1, "Eliminated");
+        _;
     }
 
     // ============ CORE FUNCTIONS ============
 
-    /**
-     * @notice Users always stake in the CURRENT season.
-     */
     function stake(uint256 teamId, uint256 amount)
         external whenNotPaused nonReentrant
     {
@@ -169,12 +172,14 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
         require(amount > 0, "Zero amount");
         SeasonInfo storage season = seasonInfo[sId];
         require(season.tournamentStarted && !season.tournamentEnded, "Tournament not active");
+        require(block.timestamp <= season.tournamentEndTime, "Tournament expired");
 
         uint256 net = _collectStakeAmount(amount);
         uint256 multiplier = _stakeMultiplier(season.tournamentStartTime);
         _increaseUserStake(sId, teamId, msg.sender, net, multiplier);
 
         season.totalStakedAll += net;
+        globalTotalStaked += net;
         emit Staked(msg.sender, sId, teamId, net, multiplier);
     }
 
@@ -193,10 +198,13 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
     function _stakeMultiplier(uint256 tournamentStartTime) internal view returns (uint256 multiplier) {
         multiplier = PRECISION;
         if (block.timestamp < tournamentStartTime) {
-            uint256 hoursEarly = (tournamentStartTime - block.timestamp) / 1 hours;
-            if (hoursEarly > maxBonusHours) hoursEarly = maxBonusHours;
-            if (hoursEarly == 0) hoursEarly = 1;
-            multiplier = hoursEarly * PRECISION;
+            uint256 secondsEarly = tournamentStartTime - block.timestamp;
+            uint256 maxSeconds = maxBonusHours * 3600;
+
+            if (secondsEarly > maxSeconds) secondsEarly = maxSeconds;
+            if (secondsEarly < 3600) secondsEarly = 3600;
+
+            multiplier = (secondsEarly * PRECISION) / 3600;
         }
     }
 
@@ -204,8 +212,10 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
         TeamPool storage pool = teamPools[seasonId][teamId];
         UserStake storage user = userStakes[seasonId][account][teamId];
         _settleRewards(user, pool);
+
         uint256 principalBaseAdded = (net * PRECISION) / pool.principalIndex;
         uint256 weightAdded = (net * multiplier) / PRECISION;
+
         user.principalBase += principalBaseAdded;
         user.weight += weightAdded;
         pool.totalPrincipal += net;
@@ -213,17 +223,14 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
         user.rewardDebt = (user.weight * pool.accRewardPerWeight) / PRECISION;
     }
 
-    /**
-     * @notice Users can unstake from ANY season by providing the seasonId.
-     */
     function unstake(uint256 seasonId, uint256 teamId, uint256 amount)
-        external whenNotPaused nonReentrant 
-        validTeam(seasonId, teamId) 
-        teamNotLocked(seasonId, teamId)
+        external nonReentrant
+        validTeam(seasonId, teamId)
     {
         TeamPool storage pool = teamPools[seasonId][teamId];
         UserStake storage user = userStakes[seasonId][msg.sender][teamId];
         SeasonInfo storage season = seasonInfo[seasonId];
+        require(!pool.locked || block.timestamp > season.tournamentEndTime, "Team locked");
 
         uint256 currentPrincipal = (user.principalBase * pool.principalIndex) / PRECISION;
         require(currentPrincipal >= amount && amount > 0, "Insufficient principal");
@@ -232,7 +239,7 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
 
         uint256 baseToBurn;
         uint256 weightToBurn;
-        
+
         if (amount == currentPrincipal) {
             baseToBurn = user.principalBase;
             weightToBurn = user.weight;
@@ -245,12 +252,17 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
         user.weight -= weightToBurn;
         pool.totalPrincipal -= amount;
         pool.totalWeight -= weightToBurn;
+
         season.totalStakedAll -= amount;
+        globalTotalStaked -= amount;
 
         user.rewardDebt = (user.weight * pool.accRewardPerWeight) / PRECISION;
 
         uint256 payout = amount;
-        if (pool.status == 0 && !season.tournamentEnded) { // Active teams pay fee only while the season is open
+
+        bool isSeasonActive = !season.tournamentEnded && block.timestamp <= season.tournamentEndTime;
+
+        if (pool.status == 0 && isSeasonActive) {
             uint256 fee = (amount * unstakeFee) / BP;
             payout -= fee;
             rewardPool += fee;
@@ -260,21 +272,20 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
         emit Unstaked(msg.sender, seasonId, teamId, payout);
     }
 
-    /**
-     * @notice Claim rewards from a specific season.
-     */
     function claimRewards(uint256 seasonId, uint256 teamId) external nonReentrant {
         TeamPool storage pool = teamPools[seasonId][teamId];
         UserStake storage user = userStakes[seasonId][msg.sender][teamId];
         SeasonInfo storage season = seasonInfo[seasonId];
 
         _settleRewards(user, pool);
-        
+
         uint256 claimable = user.pendingRewards;
         require(claimable > 0, "No rewards");
 
         user.pendingRewards = 0;
+
         season.totalUnclaimedRewards -= claimable;
+        globalTotalUnclaimedRewards -= claimable;
 
         stakingToken.safeTransfer(msg.sender, claimable);
         emit RewardClaimed(msg.sender, seasonId, teamId, claimable);
@@ -293,16 +304,14 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
     // ============ MATCH SYSTEM (ADMIN) ============
 
     function lockMatch(uint256 teamA, uint256 teamB, bool isElimination)
-        external
-        onlyOwner
-        whenNotPaused
-        validTeam(currentSeasonId, teamA)
-        validTeam(currentSeasonId, teamB)
+        external onlyOwner whenNotPaused
+        validTeam(currentSeasonId, teamA) validTeam(currentSeasonId, teamB)
     {
         uint256 sId = currentSeasonId;
         SeasonInfo storage season = seasonInfo[sId];
-        
+
         require(season.tournamentStarted && !season.tournamentEnded, "Tournament not active");
+        require(block.timestamp <= season.tournamentEndTime, "Tournament expired");
         require(teamA != teamB, "Same team");
         require(!teamPools[sId][teamA].locked && !teamPools[sId][teamB].locked, "Already locked");
         require(teamPools[sId][teamA].status == 0 && teamPools[sId][teamB].status == 0, "Not active");
@@ -314,8 +323,7 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
         season.lockedMatchCount += 1;
 
         matches[matchId] = Match({
-            seasonId: sId,
-            teamA: teamA, teamB: teamB,
+            seasonId: sId, teamA: teamA, teamB: teamB,
             lockTime: block.timestamp, winningTeam: 0,
             isLocked: true, isResolved: false, isDraw: false,
             isElimination: isElimination, slashedAmount: 0, feeBonus: 0
@@ -324,46 +332,74 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
         emit MatchLocked(matchId, sId, teamA, teamB);
     }
 
-    function resolveMatch(uint256 matchId, uint256 winningTeamId) external onlyOwner whenNotPaused {
+    function resolveMatch(uint256 matchId, uint256 winningTeamId, uint256 feeBonusAmount) external onlyOwner whenNotPaused {
         Match storage m = matches[matchId];
         uint256 sId = m.seasonId;
         SeasonInfo storage season = seasonInfo[sId];
 
         require(m.isLocked && !m.isResolved, "Invalid match state");
+        require(block.timestamp <= season.tournamentEndTime, "Tournament expired");
         require(winningTeamId == m.teamA || winningTeamId == m.teamB, "Invalid winner");
+        require(feeBonusAmount <= rewardPool / 2, "Bonus too large"); // Sanity check to prevent fat-finger error
 
         uint256 losingTeam = (winningTeamId == m.teamA) ? m.teamB : m.teamA;
         TeamPool storage winPool = teamPools[sId][winningTeamId];
         TeamPool storage losePool = teamPools[sId][losingTeam];
 
-        uint256 slashedAmount = losePool.totalPrincipal / 2;
-        losePool.totalPrincipal -= slashedAmount;
-        losePool.principalIndex = losePool.principalIndex / 2;
-        season.totalStakedAll -= slashedAmount; 
-
-        uint256 feeBonus = rewardPool / 4; 
-        if (feeBonus > 0) rewardPool -= feeBonus;
-
-        uint256 totalReward = slashedAmount + feeBonus;
-
-        if (winPool.totalWeight > 0) {
-            winPool.accRewardPerWeight += (totalReward * PRECISION) / winPool.totalWeight;
-            season.totalUnclaimedRewards += totalReward;
-        } else {
-            rewardPool += totalReward;
-        }
+        uint256 slashedAmount = _slashLosingPool(season, losePool);
+        uint256 actualFeeBonus = _consumeFeeBonus(feeBonusAmount);
+        _distributeMatchReward(season, winPool, slashedAmount + actualFeeBonus);
 
         m.winningTeam = winningTeamId;
         m.isResolved = true;
         m.slashedAmount = slashedAmount;
-        m.feeBonus = feeBonus;
+        m.feeBonus = actualFeeBonus;
 
         winPool.locked = false;
         losePool.locked = false;
         season.lockedMatchCount -= 1;
 
-        if (m.isElimination) losePool.status = 2; // Eliminated
-        emit MatchResolved(matchId, sId, winningTeamId, losingTeam, slashedAmount, feeBonus);
+        if (m.isElimination) losePool.status = 2;
+        emit MatchResolved(matchId, sId, winningTeamId, losingTeam, slashedAmount, actualFeeBonus);
+    }
+
+    function _slashLosingPool(SeasonInfo storage season, TeamPool storage losePool) internal returns (uint256 slashedAmount) {
+        uint256 originalPrincipal = losePool.totalPrincipal;
+        slashedAmount = originalPrincipal / 2;
+        uint256 dustPrincipal = originalPrincipal % 2;
+
+        losePool.totalPrincipal = slashedAmount;
+        losePool.principalIndex = losePool.principalIndex / 2;
+
+        uint256 removedFromStake = slashedAmount + dustPrincipal;
+        season.totalStakedAll -= removedFromStake;
+        globalTotalStaked -= removedFromStake;
+
+        if (dustPrincipal > 0) rewardPool += dustPrincipal;
+    }
+
+    function _consumeFeeBonus(uint256 feeBonusAmount) internal returns (uint256) {
+        if (feeBonusAmount > 0) rewardPool -= feeBonusAmount;
+        return feeBonusAmount;
+    }
+
+    function _distributeMatchReward(SeasonInfo storage season, TeamPool storage winPool, uint256 totalReward) internal {
+        if (totalReward == 0) return;
+
+        if (winPool.totalWeight == 0) {
+            rewardPool += totalReward;
+            return;
+        }
+
+        uint256 addedAccReward = (totalReward * PRECISION) / winPool.totalWeight;
+        winPool.accRewardPerWeight += addedAccReward;
+
+        uint256 actualRewardAdded = (addedAccReward * winPool.totalWeight) / PRECISION;
+        season.totalUnclaimedRewards += actualRewardAdded;
+        globalTotalUnclaimedRewards += actualRewardAdded;
+
+        uint256 rewardDust = totalReward - actualRewardAdded;
+        if (rewardDust > 0) rewardPool += rewardDust;
     }
 
     function resolveDraw(uint256 matchId) external onlyOwner whenNotPaused {
@@ -387,33 +423,31 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
 
     function startTournament() external onlyOwner {
         require(!seasonInfo[currentSeasonId].tournamentStarted, "Already started");
-        seasonInfo[currentSeasonId].tournamentStarted = true;
+        SeasonInfo storage season = seasonInfo[currentSeasonId];
+        require(block.timestamp <= season.tournamentEndTime, "Tournament expired");
+        season.tournamentStarted = true;
         emit TournamentStarted(currentSeasonId);
     }
-    
+
     function declareChampion(uint256 teamId) external onlyOwner validTeam(currentSeasonId, teamId) {
         SeasonInfo storage season = seasonInfo[currentSeasonId];
         require(season.tournamentStarted && !season.tournamentEnded, "Not active");
         require(season.lockedMatchCount == 0, "Unresolved matches");
-        
+
         teamPools[currentSeasonId][teamId].status = 1;
         season.championTeamId = teamId;
         season.tournamentEnded = true;
         emit ChampionDeclared(currentSeasonId, teamId);
     }
 
-    /**
-     * @notice Rollover to the next season seamlessly. 
-     * No need to wait for old users to withdraw.
-     */
-    function configureNextSeason(uint256 newMaxTeams, uint256 newTournamentStartTime) external onlyOwner {
+    function configureNextSeason(uint256 newMaxTeams, uint256 newTournamentStartTime, uint256 newTournamentDuration) external onlyOwner {
         require(newMaxTeams > 1 && newMaxTeams <= ABSOLUTE_MAX_TEAMS, "Invalid count");
         SeasonInfo storage currentSeason = seasonInfo[currentSeasonId];
         require(!currentSeason.tournamentStarted || currentSeason.tournamentEnded, "Current season active");
         require(currentSeason.lockedMatchCount == 0, "Locked matches remain");
 
         currentSeasonId += 1;
-        _initSeason(currentSeasonId, newMaxTeams, newTournamentStartTime);
+        _initSeason(currentSeasonId, newMaxTeams, newTournamentStartTime, newTournamentStartTime + newTournamentDuration);
     }
 
     function withdrawRewardPool(address to, uint256 amount) external onlyOwner {
@@ -423,22 +457,28 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
         emit RewardPoolWithdrawn(to, amount);
     }
 
-    /**
-     * @notice Rescues stuck tokens or sweeps dust safely.
-     * Iterates through seasons to ensure no user funds are touched.
-     */
+    function resolveDustDiscrepancy(uint256 seasonId, uint256 amountToClear) external onlyOwner {
+        require(amountToClear > 0, "Zero amount");
+        SeasonInfo storage season = seasonInfo[seasonId];
+        require(season.tournamentEnded || block.timestamp > season.tournamentEndTime, "Season not closed");
+        require(season.totalUnclaimedRewards >= amountToClear, "Season underflow");
+        require(globalTotalUnclaimedRewards >= amountToClear, "Global underflow");
+        require(dustClearedBySeason[seasonId] + amountToClear <= MAX_DUST_CLEAR_PER_SEASON, "Exceeds dust limit");
+
+        season.totalUnclaimedRewards -= amountToClear;
+        globalTotalUnclaimedRewards -= amountToClear;
+        dustClearedBySeason[seasonId] += amountToClear;
+        emit DustDiscrepancyResolved(seasonId, amountToClear);
+    }
+
     function recoverERC20(address token, address to, uint256 amount) external onlyOwner {
         if (token == address(stakingToken)) {
             uint256 realBalance = stakingToken.balanceOf(address(this));
-            uint256 lockedBalance = rewardPool;
-            
-            // Sum up liabilities across all seasons
-            for (uint256 i = 1; i <= currentSeasonId; i++) {
-                lockedBalance += seasonInfo[i].totalStakedAll;
-                lockedBalance += seasonInfo[i].totalUnclaimedRewards;
-            }
-            
-            require(realBalance - lockedBalance >= amount, "Cannot sweep locked funds");
+            uint256 lockedBalance = rewardPool + globalTotalStaked + globalTotalUnclaimedRewards;
+
+            require(realBalance > lockedBalance, "No sweepable funds exist");
+            uint256 sweepable = realBalance - lockedBalance;
+            require(amount <= sweepable, "Cannot sweep user locked funds");
         }
         IERC20(token).safeTransfer(to, amount);
     }
@@ -457,10 +497,12 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
         emit MinStakeUpdated(_minStakeAmount);
     }
 
-    function setTournamentStartTime(uint256 newTournamentStartTime) external onlyOwner {
+    function setTournamentTimes(uint256 newTournamentStartTime, uint256 newTournamentEndTime) external onlyOwner {
         SeasonInfo storage season = seasonInfo[currentSeasonId];
         require(!season.tournamentStarted, "Already started");
+        require(newTournamentEndTime > newTournamentStartTime, "Invalid timeframe");
         season.tournamentStartTime = newTournamentStartTime;
+        season.tournamentEndTime = newTournamentEndTime;
     }
 
     function setMaxTeams(uint256 newMaxTeams) external onlyOwner {
@@ -549,11 +591,12 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
         emit TeamMetadataUpdated(seasonId, teamId, name, code, groupName, color, colorSecondary);
     }
 
-    // ============ SEASON-AWARE READ HELPERS ============
+    // ============ READ HELPERS ============
 
     function getCurrentSeasonInfo() external view returns (
         uint256 maxTeams,
         uint256 tournamentStartTime,
+        uint256 tournamentEndTime,
         uint256 totalStakedAll,
         uint256 totalUnclaimedRewards,
         uint256 lockedMatchCount,
@@ -567,6 +610,7 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
     function getSeasonInfo(uint256 seasonId) public view returns (
         uint256 maxTeams,
         uint256 tournamentStartTime,
+        uint256 tournamentEndTime,
         uint256 totalStakedAll,
         uint256 totalUnclaimedRewards,
         uint256 lockedMatchCount,
@@ -578,6 +622,7 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
         return (
             season.maxTeams,
             season.tournamentStartTime,
+            season.tournamentEndTime,
             season.totalStakedAll,
             season.totalUnclaimedRewards,
             season.lockedMatchCount,
@@ -741,9 +786,14 @@ contract WorldCupYieldWars is Ownable, Pausable, ReentrancyGuard {
     ) {
         UserStake memory user = userStakes[seasonId][account][teamId];
         TeamPool memory pool = teamPools[seasonId][teamId];
+        SeasonInfo memory season = seasonInfo[seasonId];
+
         currentPrincipal = (user.principalBase * pool.principalIndex) / PRECISION;
         validAmount = amount > 0 && amount <= currentPrincipal;
-        fee = pool.status == 0 && !seasonInfo[seasonId].tournamentEnded ? (amount * unstakeFee) / BP : 0;
+
+        bool isSeasonActive = !season.tournamentEnded && block.timestamp <= season.tournamentEndTime;
+        fee = (pool.status == 0 && isSeasonActive) ? (amount * unstakeFee) / BP : 0;
+
         payout = amount > fee ? amount - fee : 0;
     }
 
