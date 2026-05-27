@@ -18,9 +18,11 @@ When syncing updates from the standalone `WorldCupYieldWars_XLayer` project into
    - Source: `WorldCupYieldWars_XLayer/public/mascots`
    - Target: `banmao-fun-full/public/mascots`
 
-4. **Smart Contracts (If modified)**
-   - Source: `WorldCupYieldWars_XLayer/contracts/WorldCupYieldWars.sol`
-   - Target: `banmao-fun-full/contracts/WorldCupYieldWars.sol`
+4. **Smart Contracts & Backend (If modified)**
+   - **Contracts:** Copy `WorldCupYieldWars_XLayer/contracts/*` to `banmao-fun-full/contracts/`
+   - **Scripts:** Copy `WorldCupYieldWars_XLayer/scripts/deploy.js` and `optimize-mascots.js` to `banmao-fun-full/scripts/`
+   - **ABI/Artifacts:** Copy the entire `WorldCupYieldWars_XLayer/artifacts/` folder to `banmao-fun-full/artifacts/` (or run `npx hardhat compile` inside `banmao-fun-full` if `hardhat.config.js` is present).
+   - **Hardhat Config:** Copy `WorldCupYieldWars_XLayer/hardhat.config.js` to `banmao-fun-full/hardhat.config.js`.
 
 ## Troubleshooting
 - **`TypeError: Cannot read properties of undefined (reading 'ReactCurrentDispatcher')`**: This usually happens if the Next.js cache is corrupted during a hot-reload after a massive folder copy. Restart the Next.js dev server (`ctrl+c` then `npm run dev`) or clear the `.next` folder.
