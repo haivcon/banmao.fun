@@ -137,7 +137,6 @@ export function useWorldCup() {
         functionName: 'getSeasonInfo' as const,
         args: [BigInt(i + 1)] as const,
     })), [currentSeasonId]);
-    // @ts-ignore
     const { data: seasonInfosRaw } = useReadContracts({
         contracts: seasonContracts as any,
         query: { enabled: currentSeasonId > 0, refetchInterval: 15000 },
@@ -328,7 +327,6 @@ export function useWorldCup() {
             args: [BigInt(effectiveSeasonId), address, BigInt(t.id)] as const,
         }));
     }, [address, teams, effectiveSeasonId]);
-    // @ts-ignore
     const { data: userStakesRaw } = useReadContracts({
         contracts: userStakeContracts as any,
         query: { enabled: !!address && effectiveSeasonId > 0, refetchInterval: 5000 },
@@ -348,7 +346,6 @@ export function useWorldCup() {
         functionName: 'getMatch' as const,
         args: [BigInt(id)] as const,
     })), [seasonMatchIds]);
-    // @ts-ignore
     const { data: matchesRaw } = useReadContracts({
         contracts: matchContracts as any,
         query: { enabled: seasonMatchIds.length > 0, refetchInterval: 12000 },
@@ -358,7 +355,6 @@ export function useWorldCup() {
         functionName: 'getMatchRewardBreakdown' as const,
         args: [BigInt(id)] as const,
     })), [seasonMatchIds]);
-    // @ts-ignore
     const { data: matchBreakdownsRaw } = useReadContracts({
         contracts: matchBreakdownContracts as any,
         query: { enabled: seasonMatchIds.length > 0, retry: 1, refetchInterval: 12000 },
