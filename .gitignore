@@ -47,7 +47,7 @@ pnpm-lock.yaml
 
 # Assets docs
 api_docs/
-
+test/
 # Logs
 *.log
 npm-debug.log*
