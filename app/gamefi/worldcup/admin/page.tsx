@@ -9,15 +9,44 @@ import { WORLDCUP_CONTRACT_ADDRESS, WORLDCUP_ABI, XLAYER_CHAIN_ID, XLAYER_EXPLOR
 import { WC_LANGS, useWCLang, type WCLang } from "../lib/i18n";
 import { cleanLabel } from "../lib/labels";
 import { getTeamMetadataCsv } from "../lib/teamData";
+import { getWorldCup2026GroupMatches, getWorldCup2026MetadataCsv } from "../lib/worldCup2026Groups";
 import { DEFAULT_SEASON_BRANDING, saveSeasonBranding, useSeasonBranding } from "../lib/seasonBranding";
 import WorldCupLogo from "../components/WorldCupLogo";
 import { AlertTriangle, CheckCircle2, ExternalLink, LockKeyhole, Pause, Play, ShieldX, Trophy, Zap, Loader2 } from "lucide-react";
 import { useWorldCup } from "../hooks/useWorldCup";
 import { formatEther, isAddress, parseEther } from "viem";
 import SelectMenu from "../components/SelectMenu";
+import GroupStandings, { type MatchScore } from "../components/GroupStandings";
+import KnockoutBracket from "../components/KnockoutBracket";
+import { createDefaultWorldCup2026Bracket, hasSeededTeams, seedBracketWithTeams, type BracketState } from "../lib/worldCup2026Bracket";
+import { formatFixtureKickoff, type WorldCupFixture } from "../lib/worldCup2026Fixtures";
 
 const CONTRACT = { address: WORLDCUP_CONTRACT_ADDRESS, abi: WORLDCUP_ABI, chainId: XLAYER_CHAIN_ID } as const;
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const DAY_SECONDS = 24 * 60 * 60;
+
+function unixToLocalInput(seconds: number) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return "";
+    const date = new Date(seconds * 1000);
+    const offsetMs = date.getTimezoneOffset() * 60 * 1000;
+    return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+function localInputToUnix(value: string) {
+    const ms = new Date(value).getTime();
+    return Number.isFinite(ms) ? Math.floor(ms / 1000) : 0;
+}
+
+function formatUnix(seconds: number) {
+    if (!Number.isFinite(seconds) || seconds <= 0) return "Not set";
+    return new Date(seconds * 1000).toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+}
 
 export default function WorldCupAdminPage() {
     const { address } = useAccount();
@@ -40,6 +69,7 @@ export default function WorldCupAdminPage() {
     const [seasonTeamCount, setSeasonTeamCount] = useState("8");
     const [seasonStartTime, setSeasonStartTime] = useState("");
     const [seasonDurationDays, setSeasonDurationDays] = useState("45");
+    const [seasonScheduleTouched, setSeasonScheduleTouched] = useState(false);
     const [editTeamId, setEditTeamId] = useState(0);
     const [teamName, setTeamName] = useState("");
     const [teamCode, setTeamCode] = useState("");
@@ -59,9 +89,15 @@ export default function WorldCupAdminPage() {
     const [teamSearch, setTeamSearch] = useState("");
     const [teamStatusFilter, setTeamStatusFilter] = useState("all");
     const [queueLockedOnly, setQueueLockedOnly] = useState(false);
+    const [adminTab, setAdminTab] = useState<'overview' | 'setup' | 'fixtures' | 'safety'>('overview');
     const [scheduleRound, setScheduleRound] = useState("Group");
     const [scheduleTime, setScheduleTime] = useState("");
     const [scheduledMatches, setScheduledMatches] = useState<Array<{ id: number; teamA: number; teamB: number; round: string; time: string; elimination: boolean }>>([]);
+    const [matchScores, setMatchScores] = useState<Record<number, MatchScore>>({});
+    const [fixtures, setFixtures] = useState<WorldCupFixture[]>([]);
+    const [bracketState, setBracketState] = useState<BracketState>(() => createDefaultWorldCup2026Bracket(1));
+    const [bracketLoading, setBracketLoading] = useState(false);
+    const [bracketSaving, setBracketSaving] = useState(false);
     const [activityLog, setActivityLog] = useState<string[]>([]);
     const [confirmAction, setConfirmAction] = useState<{ title: string; details: string[]; fn: string; args: any[] } | null>(null);
     const [brandingTitle, setBrandingTitle] = useState(DEFAULT_SEASON_BRANDING.title);
@@ -76,7 +112,7 @@ export default function WorldCupAdminPage() {
     const { data: owner, isLoading: ownerLoading, error: ownerError } = useReadContract({
         ...CONTRACT,
         functionName: 'owner',
-        query: { enabled: isContractConfigured, retry: 1, refetchInterval: 10000 },
+        query: { enabled: isContractConfigured, retry: 3, retryDelay: 1500, refetchInterval: 10000 },
     });
     const { data: rewardPool } = useReadContract({ ...CONTRACT, functionName: 'rewardPool', query: { refetchInterval: 10000 } });
     const { data: stakeFee } = useReadContract({ ...CONTRACT, functionName: 'stakeFee', query: { refetchInterval: 10000 } });
@@ -158,11 +194,41 @@ export default function WorldCupAdminPage() {
     const seasonStartSeconds = Math.max(0, Number(seasonStartTime || 0));
     const seasonDurationSeconds = Math.max(1, Math.round(Number(seasonDurationDays || 0) * 24 * 60 * 60));
     const seasonEndSeconds = seasonStartSeconds + seasonDurationSeconds;
+    const seasonStartLocalValue = unixToLocalInput(seasonStartSeconds);
+    const seasonStartReadable = formatUnix(seasonStartSeconds);
+    const seasonEndReadable = formatUnix(seasonEndSeconds);
+    const applySeasonPreset = (startSeconds: number, durationDays: number) => {
+        setSeasonScheduleTouched(true);
+        setSeasonStartTime(String(Math.max(0, Math.floor(startSeconds))));
+        setSeasonDurationDays(String(durationDays));
+    };
+    const applyTomorrowMorningPreset = () => {
+        const date = new Date();
+        date.setDate(date.getDate() + 1);
+        date.setHours(9, 0, 0, 0);
+        applySeasonPreset(Math.floor(date.getTime() / 1000), 45);
+    };
+    const applyWorldCup2026Preset = () => {
+        const date = new Date(2026, 5, 11, 0, 0, 0, 0);
+        applySeasonPreset(Math.floor(date.getTime() / 1000), 45);
+    };
 
     useEffect(() => {
         setSeasonTeamCount(String(wc.maxTeams || teams.length || 8));
-        if (wc.tournamentStartTime !== undefined) setSeasonStartTime(String(wc.tournamentStartTime));
-    }, [wc.maxTeams, teams.length, wc.tournamentStartTime]);
+        if (seasonScheduleTouched || wc.tournamentStartTime === undefined) return;
+        const now = Math.floor(Date.now() / 1000);
+        const currentStart = Number(wc.tournamentStartTime || BigInt(0));
+        const currentEnd = Number(wc.tournamentEndTime || BigInt(0));
+        if (currentStart <= 0 || currentEnd <= now) {
+            setSeasonStartTime(String(now + 300));
+            setSeasonDurationDays("45");
+            return;
+        }
+        setSeasonStartTime(String(currentStart));
+        if (currentEnd > currentStart) {
+            setSeasonDurationDays(String(Math.max(1, Math.ceil((currentEnd - currentStart) / DAY_SECONDS))));
+        }
+    }, [wc.maxTeams, teams.length, wc.tournamentStartTime, wc.tournamentEndTime, seasonScheduleTouched]);
 
     useEffect(() => {
         if (typeof stakeFee === 'bigint') setStakeFeeInput(String(Number(stakeFee) / 100));
@@ -192,12 +258,70 @@ export default function WorldCupAdminPage() {
         try {
             const raw = localStorage.getItem('wc_admin_schedule');
             if (raw) setScheduledMatches(JSON.parse(raw));
+            const rawScores = localStorage.getItem('wc_admin_group_scores');
+            if (rawScores) setMatchScores(JSON.parse(rawScores));
         } catch {}
     }, []);
 
     useEffect(() => {
         localStorage.setItem('wc_admin_schedule', JSON.stringify(scheduledMatches));
     }, [scheduledMatches]);
+
+    useEffect(() => {
+        localStorage.setItem('wc_admin_group_scores', JSON.stringify(matchScores));
+    }, [matchScores]);
+
+    const applyFixturesToSchedule = React.useCallback((items: WorldCupFixture[]) => {
+        const idByCode = new Map(teams.map(team => [team.code, team.id]));
+        setScheduledMatches(items.map(item => ({
+            id: item.matchNo,
+            teamA: idByCode.get(item.teamACode) ?? item.teamAId,
+            teamB: idByCode.get(item.teamBCode) ?? item.teamBId,
+            round: `${a.group} ${item.groupName} · Match ${item.matchNo}`,
+            time: formatFixtureKickoff(item.kickoffUtc, lang),
+            elimination: false,
+        })).filter(item => item.teamA >= 0 && item.teamB >= 0));
+        setMatchScores(Object.fromEntries(items
+            .filter(item => item.scoreA !== null && item.scoreB !== null)
+            .map(item => [item.matchNo, { home: String(item.scoreA), away: String(item.scoreB) }])
+        ));
+    }, [a.group, lang, teams]);
+
+    useEffect(() => {
+        if (teams.length === 0) return;
+        let cancelled = false;
+        fetch(`/api/worldcup/fixtures?seasonId=${wc.selectedSeasonId || 1}`)
+            .then(res => res.json())
+            .then(data => {
+                if (cancelled || !Array.isArray(data?.fixtures)) return;
+                setFixtures(data.fixtures);
+                applyFixturesToSchedule(data.fixtures);
+            })
+            .catch(() => {});
+        return () => { cancelled = true; };
+    }, [applyFixturesToSchedule, teams.length, wc.selectedSeasonId]);
+
+    useEffect(() => {
+        let cancelled = false;
+        setBracketLoading(true);
+        fetch(`/api/worldcup/bracket?seasonId=${wc.selectedSeasonId || 1}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!cancelled && data?.state) setBracketState(data.state);
+            })
+            .catch(() => {
+                if (!cancelled) setBracketState(createDefaultWorldCup2026Bracket(wc.selectedSeasonId || 1));
+            })
+            .finally(() => {
+                if (!cancelled) setBracketLoading(false);
+            });
+        return () => { cancelled = true; };
+    }, [wc.selectedSeasonId]);
+
+    useEffect(() => {
+        if (bracketLoading || teams.length === 0 || hasSeededTeams(bracketState)) return;
+        setBracketState(current => seedBracketWithTeams(current, teams));
+    }, [bracketLoading, bracketState, teams]);
 
     useEffect(() => {
         setBrandingTitle(liveBranding.title);
@@ -348,12 +472,20 @@ export default function WorldCupAdminPage() {
     const estimatedTotalReward = estimatedSlash + estimatedFeeBonus;
     const resolveWinnerWeight = resolveWinner ? resolveWinner.totalWeight : BigInt(0);
     const rewardFallbackToPool = !!resolveWinner && resolveWinnerWeight === BigInt(0);
-    const canResolveSelectedMatch = viewingCurrentSeason && !!selectedMatch && selectedMatch.locked && !selectedMatch.resolved && !!resolveWinner && !!tournamentStarted && !loading;
+    const nowSeconds = BigInt(Math.floor(Date.now() / 1000));
+    const seasonExpired = !tournamentEnded && wc.tournamentEndTime !== undefined && nowSeconds > wc.tournamentEndTime;
+    const startBlocked = loading || !!tournamentStarted || !viewingCurrentSeason || seasonExpired;
+    const startButtonText = tournamentStarted
+        ? cleanLabel(t.alreadyStarted)
+        : seasonExpired
+            ? a.updateSeasonTimeFirst
+            : cleanLabel(t.startTournament);
+    const canResolveSelectedMatch = viewingCurrentSeason && !!selectedMatch && selectedMatch.locked && !selectedMatch.resolved && !!resolveWinner && !!tournamentStarted && !loading && !seasonExpired;
     const validationItems = [
         { ok: !!isOwner, text: isOwner ? a.connectedOwner : a.notOwner || t.notOwner },
         { ok: connectedChainId === XLAYER_CHAIN_ID, text: `${a.connected}: ${connectedChainId} / ${XLAYER_CHAIN_ID}` },
         { ok: viewingCurrentSeason, text: viewingCurrentSeason ? `Season ${wc.currentSeasonId}` : `Read-only Season ${wc.selectedSeasonId}` },
-        { ok: !!tournamentStarted, text: cleanLabel(tournamentStarted ? t.live : t.pending) },
+        { ok: !!tournamentStarted && !seasonExpired, text: seasonExpired ? a.seasonTimeExpired : cleanLabel(tournamentStarted ? t.live : t.pending) },
         { ok: teamA !== teamB, text: teamA === teamB ? `${t.teamA} = ${t.teamB}` : `${teamLabel(teamA)} vs ${teamLabel(teamB)}` },
         { ok: teams[teamA]?.status === 'active' && teams[teamB]?.status === 'active', text: `${t.lockMatch}: ${teams[teamA]?.status || '-'} / ${teams[teamB]?.status || '-'}` },
         { ok: !selectedMatch || selectedMatch.teamA === winnerId || selectedMatch.teamB === winnerId || selectedMatch.resolved, text: selectedMatch ? `${t.winner}: ${teamLabel(winnerId)}` : a.inspectMatch },
@@ -369,6 +501,65 @@ export default function WorldCupAdminPage() {
     const addScheduledMatch = () => {
         if (teamA === teamB) return;
         setScheduledMatches(rows => [{ id: Date.now(), teamA, teamB, round: scheduleRound || 'Group', time: scheduleTime, elimination: isElim }, ...rows].slice(0, 24));
+    };
+    const loadWorldCup2026Groups = () => {
+        setSeasonTeamCount("48");
+        setBatchMetadata(getWorldCup2026MetadataCsv());
+        setMsg(a.worldCup2026GroupsLoaded);
+    };
+    const generateWorldCup2026Schedule = () => {
+        setScheduledMatches(getWorldCup2026GroupMatches());
+        setMatchScores({});
+        setMsg(a.groupMatchesGenerated);
+    };
+    const importFixtureCsv = async () => {
+        try {
+            const res = await fetch(`/api/worldcup/fixtures?seasonId=${wc.selectedSeasonId || 1}`, { method: "POST" });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.error || "Cannot import fixtures");
+            const next = await fetch(`/api/worldcup/fixtures?seasonId=${wc.selectedSeasonId || 1}`).then(res => res.json());
+            if (Array.isArray(next?.fixtures)) {
+                setFixtures(next.fixtures);
+                applyFixturesToSchedule(next.fixtures);
+            }
+            setMsg(`${a.fixturesImported}: ${data.imported || 0}`);
+        } catch (err) {
+            setMsg(err instanceof Error ? err.message : "Cannot import fixtures");
+        }
+    };
+    const updateMatchScore = async (matchId: number, score: MatchScore) => {
+        setMatchScores(current => ({ ...current, [matchId]: score }));
+        const fixture = fixtures.find(item => item.matchNo === matchId);
+        const scoreA = score.home === "" ? null : Number(score.home);
+        const scoreB = score.away === "" ? null : Number(score.away);
+        if (!fixture || scoreA === null || scoreB === null || !Number.isInteger(scoreA) || !Number.isInteger(scoreB)) return;
+        await fetch("/api/worldcup/fixtures", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ seasonId: wc.selectedSeasonId || 1, matchNo: matchId, scoreA, scoreB, status: "resolved" }),
+        }).catch(() => {});
+    };
+    const saveBracket = async () => {
+        setBracketSaving(true);
+        try {
+            const payload = { ...bracketState, seasonId: wc.selectedSeasonId || 1 };
+            const res = await fetch("/api/worldcup/bracket", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) throw new Error(await res.text());
+            setBracketState(payload);
+            setMsg(a.bracketSaved);
+        } catch (err) {
+            setMsg(err instanceof Error ? err.message : "Cannot save bracket");
+        } finally {
+            setBracketSaving(false);
+        }
+    };
+    const seedBracket = () => {
+        setBracketState(current => seedBracketWithTeams(current, teams));
+        setMsg(a.bracketSeeded);
     };
     const currentBranding = {
         title: brandingTitle,
@@ -400,13 +591,19 @@ export default function WorldCupAdminPage() {
     const help = (text: string) => <p className="wc-admin-field-hint">{text}</p>;
 
     const activeTeamsCount = teams.filter(tm => tm.status === 'active').length;
-    const isStep1Active = !tournamentStarted;
+    const isStep1Active = !tournamentStarted && !seasonExpired;
     const isStep2Active = !!tournamentStarted && !tournamentEnded && wc.lockedMatchCount === 0 && activeTeamsCount > 1;
     const isStep3Active = !!tournamentStarted && !tournamentEnded && wc.lockedMatchCount > 0;
     const isStep4Active = !!tournamentStarted && !tournamentEnded && wc.lockedMatchCount === 0 && activeTeamsCount <= 1;
+    const adminTabs = [
+        { id: 'overview', label: a.adminTabOverview || 'Overview', desc: `${wc.lockedMatchCount || 0} locked` },
+        { id: 'setup', label: a.adminTabSetup || 'Season & Teams', desc: `${wc.maxTeams || teams.length || 0} teams` },
+        { id: 'fixtures', label: a.adminTabFixtures || 'Fixtures & Bracket', desc: `${scheduledMatches.length} matches` },
+        { id: 'safety', label: a.adminTabSafety || 'Safety & Finance', desc: paused ? a.paused : a.running },
+    ] as const;
 
     return (
-        <div className="wc-page wc-admin-page" style={{padding:24}}>
+        <div className={`wc-page wc-admin-page wc-admin-tab-${adminTab}`} style={{padding:24}}>
             <div style={{maxWidth:1600,margin:'0 auto'}}>
                 <div className="wc-admin-topbar" style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:24,flexWrap:'wrap',gap:12}}>
                     <Link href="/gamefi/worldcup" className="wc-back-btn">{t.backToGame}</Link>
@@ -441,14 +638,30 @@ export default function WorldCupAdminPage() {
                     </div>
                 )}
 
+                <div className="wc-admin-tabs" role="tablist" aria-label="Admin sections">
+                    {adminTabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={adminTab === tab.id}
+                            className={adminTab === tab.id ? 'active' : ''}
+                            onClick={() => setAdminTab(tab.id)}
+                        >
+                            <strong>{tab.label}</strong>
+                            <span>{tab.desc}</span>
+                        </button>
+                    ))}
+                </div>
+
                 {/* --- WORKFLOW DECK GRID AT THE VERY TOP --- */}
-                <div className="wc-admin-workflow-deck-grid">
+                <div className="wc-admin-workflow-deck-grid" style={{display: adminTab === 'overview' ? undefined : 'none'}}>
                     {/* Workflow: Step 1 */}
                     <div className={`wc-admin-workflow-card ${isStep1Active ? 'wc-admin-active-step-card' : ''}`}>
                         <h2 style={{fontSize:16,marginTop:0}}>{cleanLabel(t.step1)}</h2>
-                        <p className="wc-admin-section-desc">{a.startHelp}</p>
-                        <button onClick={()=>requestConfirm(cleanLabel(t.startTournament),[a.startHelp],'startTournament',[])} disabled={loading||!!tournamentStarted||!viewingCurrentSeason} style={s.btn(tournamentStarted?'#475569':'#059669')} className={isStep1Active ? 'wc-admin-pulse-btn' : ''}>
-                            {tournamentStarted ? cleanLabel(t.alreadyStarted) : cleanLabel(t.startTournament)}
+                        <p className="wc-admin-section-desc">{seasonExpired ? a.seasonExpiredStartHelp : a.startHelp}</p>
+                        <button onClick={()=>requestConfirm(cleanLabel(t.startTournament),[a.startHelp],'startTournament',[])} disabled={startBlocked} style={s.btn(startBlocked?'#475569':'#059669')} className={isStep1Active ? 'wc-admin-pulse-btn' : ''}>
+                            {startButtonText}
                         </button>
                     </div>
 
@@ -566,13 +779,13 @@ export default function WorldCupAdminPage() {
                     </div>
                 </div>
 
-                <div className="wc-admin-dashboard-container">
+                <div className="wc-admin-dashboard-container" style={{display: adminTab === 'overview' ? 'none' : undefined}}>
                     
                     {/* COLUMN 1: Setup & Branding */}
-                    <div className="wc-admin-column">
+                    <div className="wc-admin-column" style={{display: adminTab === 'setup' ? undefined : 'none'}}>
                         
                         {/* Section 1: Season Branding */}
-                        <div style={s.section}>
+                        <div className="wc-admin-card-wide wc-admin-season-branding" style={s.section}>
                             <h2 style={{fontSize:16,marginTop:0}}>{a.seasonBranding}</h2>
                             <p className="wc-admin-section-desc">{a.seasonBrandingDesc}</p>
                             <div className="wc-branding-editor">
@@ -603,32 +816,50 @@ export default function WorldCupAdminPage() {
                         <MascotManager teams={teams} />
 
                         {/* Section 2: Season Team Setup */}
-                        <div style={s.section}>
+                        <div className="wc-admin-card-wide wc-admin-season-setup" style={s.section}>
                             <h2 style={{fontSize:16,marginTop:0}}>{a.seasonSetup}</h2>
                             <p className="wc-admin-section-desc">{a.seasonSetupDesc}</p>
                             {seasonLocked && <div style={{padding:10,borderRadius:10,background:'rgba(245,158,11,0.1)',color:'#fbbf24',fontSize:13,marginBottom:12}}>
                                 {a.seasonLocked}
                             </div>}
-                            <div style={s.row}>
-                                <label style={s.label}><span style={s.lbl}>{a.teamCount}</span>
+                            <div className="wc-season-setup-grid">
+                                <label><span style={s.lbl}>{a.teamCount}</span>
                                     <input type="number" min={2} max={64} value={seasonTeamCount} onChange={e=>setSeasonTeamCount(e.target.value)} style={s.input} disabled={setupInputsDisabled} />
                                     {help(a.teamCountHelp)}
                                 </label>
-                                <label style={s.label}><span style={s.lbl}>{a.startTimestamp}</span>
-                                    <input type="number" min={0} value={seasonStartTime} onChange={e=>setSeasonStartTime(e.target.value)} style={s.input} disabled={setupInputsDisabled} />
-                                    {help(a.startTimestampHelp)}
+                                <label className="wc-season-start-field"><span style={s.lbl}>{a.seasonStartDateTime}</span>
+                                    <input type="datetime-local" value={seasonStartLocalValue} onChange={e=>{ setSeasonScheduleTouched(true); setSeasonStartTime(String(localInputToUnix(e.target.value))); }} style={s.input} disabled={setupInputsDisabled} />
+                                    {help(a.startsAt.replace('{time}', seasonStartReadable))}
                                 </label>
-                                <label style={s.label}><span style={s.lbl}>Duration days</span>
-                                    <input type="number" min={1} value={seasonDurationDays} onChange={e=>setSeasonDurationDays(e.target.value)} style={s.input} disabled={setupInputsDisabled} />
-                                    {help('Season length used to calculate tournamentEndTime.')}
+                                <label><span style={s.lbl}>{a.durationDays}</span>
+                                    <input type="number" min={1} value={seasonDurationDays} onChange={e=>{ setSeasonScheduleTouched(true); setSeasonDurationDays(e.target.value); }} style={s.input} disabled={setupInputsDisabled} />
+                                    {help(a.endsAt.replace('{time}', seasonEndReadable))}
+                                </label>
+                                <label><span style={s.lbl}>{a.startTimestamp}</span>
+                                    <input type="number" min={0} value={seasonStartTime} onChange={e=>{ setSeasonScheduleTouched(true); setSeasonStartTime(e.target.value); }} style={s.input} disabled={setupInputsDisabled} />
+                                    {help(a.advancedUnixTimestamp)}
                                 </label>
                                 <div style={{display:'flex',alignItems:'flex-end'}}>
                                     <button onClick={()=>requestConfirm(a.saveCount,[`${a.teamCount}: ${seasonTeamCount}`],'setMaxTeams',[BigInt(Math.max(2, Math.min(64, Number(seasonTeamCount || 0))))])}
                                         disabled={currentSeasonSetupDisabled} style={s.btn(currentSeasonSetupDisabled?'#475569':'#0f766e')}>{a.saveCount}</button>
                                 </div>
                             </div>
+                            <div className="wc-season-schedule-summary">
+                                <div><span>{a.seasonStarts}</span><strong>{seasonStartReadable}</strong></div>
+                                <div><span>{a.seasonEnds}</span><strong>{seasonEndReadable}</strong></div>
+                                <div><span>{a.durationDays}</span><strong>{seasonDurationDays || '0'}</strong></div>
+                            </div>
+                            <div className="wc-season-preset-panel">
+                                <span>{a.schedulePresets}</span>
+                                <div>
+                                    <button type="button" onClick={()=>applySeasonPreset(Math.floor(Date.now() / 1000) + 300, 45)} disabled={setupInputsDisabled}>{a.startInFiveMin}</button>
+                                    <button type="button" onClick={()=>applySeasonPreset(Math.floor(Date.now() / 1000) + 3600, 45)} disabled={setupInputsDisabled}>{a.startInOneHour}</button>
+                                    <button type="button" onClick={applyTomorrowMorningPreset} disabled={setupInputsDisabled}>{a.tomorrowNine}</button>
+                                    <button type="button" onClick={applyWorldCup2026Preset} disabled={setupInputsDisabled}>{a.worldCup2026Preset}</button>
+                                </div>
+                            </div>
                             <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
-                                <button onClick={()=>requestConfirm(a.saveStartTime,[`${a.startTimestamp}: ${seasonStartSeconds}`,`End timestamp: ${seasonEndSeconds}`],'setTournamentTimes',[BigInt(seasonStartSeconds),BigInt(seasonEndSeconds)])}
+                                <button onClick={()=>requestConfirm(a.saveStartTime,[`${a.startTimestamp}: ${seasonStartSeconds}`,`${a.endTimestamp}: ${seasonEndSeconds}`],'setTournamentTimes',[BigInt(seasonStartSeconds),BigInt(seasonEndSeconds)])}
                                     disabled={currentSeasonSetupDisabled} style={s.btn(currentSeasonSetupDisabled?'#475569':'#0f766e')}>{a.saveStartTime}</button>
                                 <button onClick={()=>requestConfirm(a.configureNextSeason,[`${a.teamCount}: ${seasonTeamCount}`,`${a.startTimestamp}: ${seasonStartSeconds}`,`Duration: ${seasonDurationDays || '0'} days`,a.configureNextSeasonHelp],'configureNextSeason',[BigInt(Math.max(2, Math.min(64, Number(seasonTeamCount || 0)))),BigInt(seasonStartSeconds),BigInt(seasonDurationSeconds)])}
                                     disabled={loading || !canConfigureNextSeason}
@@ -676,13 +907,14 @@ export default function WorldCupAdminPage() {
                                 {help(a.batchCsvHelp)}
                                 <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:8}}>
                                     <button onClick={() => setBatchMetadata(getTeamMetadataCsv(wc.maxTeams || 48))} disabled={metadataDisabled} style={s.btn(metadataDisabled?'#475569':'#2563eb')}>{a.loadTemplate}</button>
+                                    <button onClick={loadWorldCup2026Groups} disabled={metadataDisabled} style={s.btn(metadataDisabled?'#475569':'#1d4ed8')}>{a.loadWorldCup2026Groups}</button>
                                     <button onClick={saveBatchMetadata} disabled={metadataDisabled || !batchMetadata.trim()} style={s.btn(metadataDisabled?'#475569':'#14b8a6')}>{a.saveBatch}</button>
                                 </div>
                             </div>
                         </div>
 
                         {/* Section 3: Team Manager */}
-                        <div style={s.section}>
+                        <div className="wc-admin-team-manager-card" style={s.section}>
                             <h2 style={{fontSize:16,marginTop:0}}>{a.teamManager}</h2>
                             <p className="wc-admin-section-desc">{a.teamManagerDesc}</p>
                             <div className="wc-admin-tools">
@@ -704,10 +936,10 @@ export default function WorldCupAdminPage() {
                     </div>
 
                     {/* COLUMN 2: Operations & Match Workflow */}
-                    <div className="wc-admin-column">
+                    <div className="wc-admin-column wc-admin-fixtures-workspace" style={{display: adminTab === 'fixtures' ? undefined : 'none'}}>
                         
                         {/* Section 1: Checklist & Health */}
-                        <div style={s.section}>
+                        <div className="wc-fixture-status-card" style={s.section}>
                             <h2 style={{fontSize:16,marginTop:0}}>{a.checklist}</h2>
                             <div className="wc-admin-workflow" style={{marginBottom: 16}}>
                                 {workflow.map((item, index) => (
@@ -734,13 +966,15 @@ export default function WorldCupAdminPage() {
                         </div>
 
                         {/* Section 2: Match Scheduler */}
-                        <div style={s.section}>
+                        <div className="wc-fixture-scheduler-card" style={s.section}>
                             <h2 style={{fontSize:16,marginTop:0}}>{a.matchScheduler}</h2>
                             <p className="wc-admin-section-desc">{a.schedulerDesc}</p>
                             <div className="wc-admin-tools">
                                 <input value={scheduleRound} onChange={e=>setScheduleRound(e.target.value)} placeholder={a.round} style={s.input} />
                                 <input value={scheduleTime} onChange={e=>setScheduleTime(e.target.value)} placeholder={a.plannedTime} style={s.input} />
                                 <button type="button" onClick={addScheduledMatch} disabled={teamA === teamB} style={s.btn('#2563eb')}>{a.addSchedule}</button>
+                                <button type="button" onClick={generateWorldCup2026Schedule} style={s.btn('#1d4ed8')}>{a.generateGroupMatches}</button>
+                                <button type="button" onClick={importFixtureCsv} style={s.btn('#0f766e')}>{a.importFixtureCsv}</button>
                             </div>
                             <div className="wc-admin-list">
                                 {scheduledMatches.length === 0 ? <span>{a.noScheduled}</span> : scheduledMatches.map(row => (
@@ -754,8 +988,61 @@ export default function WorldCupAdminPage() {
                             </div>
                         </div>
 
+                        <div className="wc-admin-card-wide wc-fixture-standings-card" style={s.section}>
+                            <h2 style={{fontSize:16,marginTop:0}}>{a.groupStageStandings}</h2>
+                            <p className="wc-admin-section-desc">{a.groupStageStandingsDesc}</p>
+                            <GroupStandings
+                                teams={teams}
+                                matches={scheduledMatches}
+                                scores={matchScores}
+                                editable
+                                onScoreChange={updateMatchScore}
+                                labels={{
+                                    standings: a.standings,
+                                    team: a.team,
+                                    playedShort: a.playedShort,
+                                    winsShort: a.winsShort,
+                                    drawsShort: a.drawsShort,
+                                    lossesShort: a.lossesShort,
+                                    goalsForShort: a.goalsForShort,
+                                    goalsAgainstShort: a.goalsAgainstShort,
+                                    goalDiffShort: a.goalDiffShort,
+                                    pointsShort: a.pointsShort,
+                                    score: a.score,
+                                    noScheduled: a.noScheduled,
+                                    eliminated: a.eliminated,
+                                }}
+                            />
+                        </div>
+
+                        <KnockoutBracket
+                            state={bracketState}
+                            teams={teams}
+                            editable
+                            saving={bracketSaving || bracketLoading}
+                            onChange={setBracketState}
+                            onSave={saveBracket}
+                            onSeed={seedBracket}
+                            onUseMatch={(match) => {
+                                if (match.teamA.teamId !== null) setTeamA(match.teamA.teamId);
+                                if (match.teamB.teamId !== null) setTeamB(match.teamB.teamId);
+                                setIsElim(true);
+                            }}
+                            labels={{
+                                knockoutBracket: a.knockoutBracket,
+                                knockoutBracketDesc: a.knockoutBracketDesc,
+                                saveBracket: a.saveBracket,
+                                seedBracket: a.seedBracket,
+                                useMatch: a.useMatch,
+                                winner: t.winner,
+                                score: a.score,
+                                eliminated: t.eliminated,
+                                emptySlot: a.emptySlot,
+                            }}
+                        />
+
                         {/* Section 3: Match Queue */}
-                        <div style={s.section}>
+                        <div className="wc-fixture-queue-card" style={s.section}>
                             <h2 style={{fontSize:16,marginTop:0}}>{a.matchQueue}</h2>
                             <p className="wc-admin-section-desc">{a.matchQueueDesc}</p>
                             <label className="wc-admin-checkbox" style={{display:'flex',alignItems:'center',gap:8,marginBottom:12,fontSize:14}}>
@@ -776,7 +1063,7 @@ export default function WorldCupAdminPage() {
                     </div>
 
                     {/* COLUMN 3: Safety & Financial System */}
-                    <div className="wc-admin-column">
+                    <div className="wc-admin-column" style={{display: adminTab === 'safety' ? undefined : 'none'}}>
                         
                         {/* Section 1: Live Contract Info */}
                         <div style={s.section}>

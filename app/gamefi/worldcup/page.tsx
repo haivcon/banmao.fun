@@ -12,6 +12,10 @@ import UserPortfolio from "./components/UserPortfolio";
 import OkxInsights from "./components/OkxInsights";
 import SelectMenu from "./components/SelectMenu";
 import SoundToggle from "./components/SoundToggle";
+import GroupStandings, { type MatchScore, type StandingMatch } from "./components/GroupStandings";
+import KnockoutBracket from "./components/KnockoutBracket";
+import { createDefaultWorldCup2026Bracket, hasSeededTeams, seedBracketWithTeams, type BracketState } from "./lib/worldCup2026Bracket";
+import { formatFixtureKickoff, formatFixtureKickoffParts, getFixtureDisplaySettings, type WorldCupFixture } from "./lib/worldCup2026Fixtures";
 import { useSoundFX } from "./hooks/SoundContext";
 import { WC_LANGS, useWCLang, type WCLang } from "./lib/i18n";
 import { WORLDCUP_CONTRACT_ADDRESS, XLAYER_EXPLORER_BASE_URL } from "./contracts";
@@ -27,7 +31,11 @@ export default function WorldCupPage() {
     const wc = useWorldCup();
     const { playTick, playPop } = useSoundFX();
     const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
-    const [view, setView] = useState<'grid' | 'leaderboard' | 'recommended'>('grid');
+    const [view, setView] = useState<'grid' | 'leaderboard' | 'recommended' | 'fixtures' | 'groups' | 'bracket'>('grid');
+    const [scheduledMatches, setScheduledMatches] = useState<StandingMatch[]>([]);
+    const [matchScores, setMatchScores] = useState<Record<number, MatchScore>>({});
+    const [fixtures, setFixtures] = useState<WorldCupFixture[]>([]);
+    const [bracketState, setBracketState] = useState<BracketState>(() => createDefaultWorldCup2026Bracket(1));
     const [teamSearch, setTeamSearch] = useState('');
     const [teamSort, setTeamSort] = useState<'group' | 'name' | 'principal' | 'weight' | 'userStake' | 'pending'>('group');
     const [teamFilter, setTeamFilter] = useState<'all' | 'active' | 'my' | 'rewards' | 'locked' | 'eliminated'>('all');
@@ -36,6 +44,60 @@ export default function WorldCupPage() {
     const { lang, setLang, t } = useWCLang();
     const [showLangPicker, setShowLangPicker] = useState(false);
     const branding = useSeasonBranding();
+
+    useEffect(() => {
+        try {
+            const rawSchedule = localStorage.getItem("wc_admin_schedule");
+            const rawScores = localStorage.getItem("wc_admin_group_scores");
+            if (rawSchedule) setScheduledMatches(JSON.parse(rawSchedule));
+            if (rawScores) setMatchScores(JSON.parse(rawScores));
+        } catch {}
+    }, []);
+
+    useEffect(() => {
+        if (wc.teamPools.length === 0) return;
+        let cancelled = false;
+        fetch(`/api/worldcup/fixtures?seasonId=${wc.selectedSeasonId || 1}`)
+            .then(res => res.json())
+            .then(data => {
+                if (cancelled || !Array.isArray(data?.fixtures)) return;
+                const items = data.fixtures as WorldCupFixture[];
+                const idByCode = new Map(wc.teamPools.map(team => [team.code, team.id]));
+                setFixtures(items);
+                setScheduledMatches(items.map(item => ({
+                    id: item.matchNo,
+                    teamA: idByCode.get(item.teamACode) ?? item.teamAId,
+                    teamB: idByCode.get(item.teamBCode) ?? item.teamBId,
+                    round: `${t.group} ${item.groupName} · Match ${item.matchNo}`,
+                    time: formatFixtureKickoff(item.kickoffUtc, lang),
+                    elimination: false,
+                })).filter(item => item.teamA >= 0 && item.teamB >= 0));
+                setMatchScores(Object.fromEntries(items
+                    .filter(item => item.scoreA !== null && item.scoreB !== null)
+                    .map(item => [item.matchNo, { home: String(item.scoreA), away: String(item.scoreB) }])
+                ));
+            })
+            .catch(() => {});
+        return () => { cancelled = true; };
+    }, [lang, t.group, wc.selectedSeasonId, wc.teamPools]);
+
+    useEffect(() => {
+        let cancelled = false;
+        fetch(`/api/worldcup/bracket?seasonId=${wc.selectedSeasonId || 1}`)
+            .then(res => res.json())
+            .then(data => {
+                if (!cancelled && data?.state) setBracketState(data.state);
+            })
+            .catch(() => {
+                if (!cancelled) setBracketState(createDefaultWorldCup2026Bracket(wc.selectedSeasonId || 1));
+            });
+        return () => { cancelled = true; };
+    }, [wc.selectedSeasonId]);
+
+    useEffect(() => {
+        if (wc.teamPools.length === 0 || hasSeededTeams(bracketState)) return;
+        setBracketState(current => seedBracketWithTeams(current, wc.teamPools));
+    }, [bracketState, wc.teamPools]);
 
     const changeLang = (l: WCLang) => { setLang(l); setShowLangPicker(false); };
     const currentLang = WC_LANGS.find(l => l.code === lang);
@@ -460,12 +522,15 @@ export default function WorldCupPage() {
             <div className="wc-view-toggle">
                 <button className={view === 'grid' ? 'active' : ''} onClick={() => setView('grid')}><Grid3X3 size={15} strokeWidth={2.4} />{cleanLabel(t.teamGrid, 'Team Grid')}</button>
                 <button className={view === 'leaderboard' ? 'active' : ''} onClick={() => setView('leaderboard')}><ChartColumn size={15} strokeWidth={2.4} />{cleanLabel(t.leaderboard, 'Leaderboard')}</button>
+                <button className={view === 'fixtures' ? 'active' : ''} onClick={() => setView('fixtures')}><Timer size={15} strokeWidth={2.4} />{t.fixturesTab}</button>
+                <button className={view === 'groups' ? 'active' : ''} onClick={() => setView('groups')}><List size={15} strokeWidth={2.4} />{t.groupStage}</button>
+                <button className={view === 'bracket' ? 'active' : ''} onClick={() => setView('bracket')}><Trophy size={15} strokeWidth={2.4} />{t.knockoutBracket}</button>
                 <button className={view === 'recommended' ? 'active' : ''} onClick={() => setView('recommended')}><Sparkles size={15} strokeWidth={2.4} />{t.recommendedView}</button>
             </div>
 
             <div className="wc-main-layout">
                 <div className="wc-content">
-                    <div className="wc-team-toolbar">
+                    {(view === 'grid' || view === 'leaderboard' || view === 'recommended') && <div className="wc-team-toolbar">
                         <label className="wc-team-search">
                             <Search size={15} strokeWidth={2.4} />
                             <input value={teamSearch} onChange={e => setTeamSearch(e.target.value)} placeholder={t.searchPlaceholder || "Search team name, code, group"} />
@@ -478,7 +543,7 @@ export default function WorldCupPage() {
                             <button className={gridDensity === 'compact' ? 'active' : ''} onClick={() => setGridDensity('compact')} title={t.compactCards || "Compact cards"}><Grid3X3 size={15} /></button>
                             <button className={gridDensity === 'list' ? 'active' : ''} onClick={() => setGridDensity('list')} title={t.listRows || "List rows"}><List size={15} /></button>
                         </div>
-                    </div>
+                    </div>}
                     {view === 'recommended' ? (
                         <div className="wc-recommended-panel">
                             <div className="wc-recommended-head">
@@ -496,6 +561,59 @@ export default function WorldCupPage() {
                                         onClick={() => setSelectedTeamId(team.id)} t={t} />
                                 ))}
                             </div>
+                        </div>
+                    ) : view === 'fixtures' ? (
+                        <FixtureTimeline fixtures={fixtures} teams={wc.teamPools} lang={lang} t={t} />
+                    ) : view === 'groups' ? (
+                        <GroupStandings
+                            teams={wc.teamPools}
+                            matches={scheduledMatches}
+                            scores={matchScores}
+                            labels={{
+                                standings: t.standings,
+                                team: t.team,
+                                playedShort: t.playedShort,
+                                winsShort: t.winsShort,
+                                drawsShort: t.drawsShort,
+                                lossesShort: t.lossesShort,
+                                goalsForShort: t.goalsForShort,
+                                goalsAgainstShort: t.goalsAgainstShort,
+                                goalDiffShort: t.goalDiffShort,
+                                pointsShort: t.pointsShort,
+                                score: t.score,
+                                noScheduled: t.noScheduled,
+                                eliminated: t.eliminated,
+                            }}
+                        />
+                    ) : view === 'bracket' ? (
+                        <div className="wc-bracket-experience">
+                            <div className="wc-bracket-guide">
+                                <div>
+                                    <span className="wc-eyebrow">{t.bracketGuideEyebrow}</span>
+                                    <h3>{t.bracketGuideTitle}</h3>
+                                    <p>{t.bracketGuideDesc}</p>
+                                </div>
+                                <div className="wc-bracket-guide-steps">
+                                    <span>{t.bracketGuideStep1}</span>
+                                    <span>{t.bracketGuideStep2}</span>
+                                    <span>{t.bracketGuideStep3}</span>
+                                </div>
+                            </div>
+                            <KnockoutBracket
+                                state={bracketState}
+                                teams={wc.teamPools}
+                                labels={{
+                                    knockoutBracket: t.knockoutBracket,
+                                    knockoutBracketDesc: t.knockoutBracketDesc,
+                                    saveBracket: t.saveBracket,
+                                    seedBracket: t.seedBracket,
+                                    useMatch: t.useMatch,
+                                    winner: t.winner,
+                                    score: t.score,
+                                    eliminated: t.eliminated,
+                                    emptySlot: t.emptySlot,
+                                }}
+                            />
                         </div>
                     ) : view === 'grid' ? (
                         <div className={`wc-team-grid wc-team-grid-${gridDensity}`}>
@@ -552,12 +670,90 @@ export default function WorldCupPage() {
 
             <nav className="wc-mobile-action-bar" aria-label="Mobile actions">
                 <button onClick={() => setView('grid')} className={view === 'grid' ? 'active' : ''}><Grid3X3 size={16} />{t.teamsTab}</button>
+                <button onClick={() => setView('fixtures')} className={view === 'fixtures' ? 'active' : ''}><Timer size={16} />{t.fixturesTabShort}</button>
+                <button onClick={() => setView('groups')} className={view === 'groups' ? 'active' : ''}><List size={16} />{t.groupsTab}</button>
+                <button onClick={() => setView('bracket')} className={view === 'bracket' ? 'active' : ''}><Trophy size={16} />{t.bracketTab}</button>
                 <button onClick={() => setView('recommended')} className={view === 'recommended' ? 'active' : ''}><Sparkles size={16} />{t.suggestTab}</button>
                 <button onClick={() => (document.querySelector('.wc-result-panel') || document.querySelector('.wc-match-center'))?.scrollIntoView({ behavior: 'smooth', block: 'start' })}><History size={16} />{t.resultsTab}</button>
                 <button onClick={() => totalPendingRewards > BigInt(0) && setSelectedTeamId(claimableTeamId >= 0 ? claimableTeamId : 0)} className={totalPendingRewards > BigInt(0) ? 'has-rewards' : ''}><Award size={16} />{t.claimTab}</button>
             </nav>
             <SoundToggle />
         </div>
+    );
+}
+
+function FixtureTimeline({
+    fixtures,
+    teams,
+    lang,
+    t,
+}: {
+    fixtures: WorldCupFixture[];
+    teams: Array<{ id: number; name: string; code: string; group: string }>;
+    lang: WCLang;
+    t: any;
+}) {
+    const settings = getFixtureDisplaySettings(lang);
+    const teamByCode = new Map(teams.map(team => [team.code, team]));
+    const rows = fixtures.map(fixture => {
+        const teamA = teamByCode.get(fixture.teamACode);
+        const teamB = teamByCode.get(fixture.teamBCode);
+        const parts = formatFixtureKickoffParts(fixture.kickoffUtc, lang);
+        const teamAName = teamA ? (t.countries?.[teamA.name] || teamA.name) : fixture.teamACode;
+        const teamBName = teamB ? (t.countries?.[teamB.name] || teamB.name) : fixture.teamBCode;
+        return { fixture, parts, teamAName, teamBName };
+    });
+    const grouped = rows.reduce<Record<string, typeof rows>>((acc, row) => {
+        acc[row.parts.date] ||= [];
+        acc[row.parts.date].push(row);
+        return acc;
+    }, {});
+
+    return (
+        <section className="wc-fixture-timeline">
+            <div className="wc-fixture-source-card">
+                <div>
+                    <span className="wc-eyebrow">{t.fixtureSourceEyebrow}</span>
+                    <h3>{t.fixtureTimelineTitle}</h3>
+                    <p>{t.fixtureTimelineDesc}</p>
+                </div>
+                <div className="wc-fixture-source-meta">
+                    <span>{fixtures.length || 72} {t.fixtureMatchesCount}</span>
+                    <span>{settings.label}</span>
+                    <span>{settings.timeZone}</span>
+                </div>
+            </div>
+
+            {fixtures.length === 0 ? (
+                <div className="wc-empty-results">{t.noScheduled}</div>
+            ) : Object.entries(grouped).map(([date, dayRows]) => (
+                <div key={date} className="wc-fixture-day">
+                    <div className="wc-fixture-day-head">
+                        <strong>{date}</strong>
+                        <span>{dayRows.length} {t.matches}</span>
+                    </div>
+                    <div className="wc-fixture-day-list">
+                        {dayRows.map(({ fixture, parts, teamAName, teamBName }) => (
+                            <article key={fixture.matchNo} className="wc-fixture-row">
+                                <div className="wc-fixture-time">
+                                    <strong>{parts.time}</strong>
+                                    <span>{parts.weekday}</span>
+                                </div>
+                                <div className="wc-fixture-match">
+                                    <span>{t.group} {fixture.groupName} · {t.matchLabel} {fixture.matchNo}</span>
+                                    <strong>{teamAName} <em>vs</em> {teamBName}</strong>
+                                </div>
+                                <div className={`wc-fixture-status is-${fixture.status}`}>
+                                    {fixture.status === "resolved" && fixture.scoreA !== null && fixture.scoreB !== null
+                                        ? `${fixture.scoreA} - ${fixture.scoreB}`
+                                        : t[fixture.status] || fixture.status}
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </section>
     );
 }
 

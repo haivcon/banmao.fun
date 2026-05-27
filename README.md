@@ -1,50 +1,81 @@
-# Banmao Fun — Social Hub & DeFi Platform
+# Banmao Fun - Social Hub & DeFi Platform
 
-## v0.5.0 — System Stability & Ecosystem Synchronization
+## v0.5.1 - World Cup 2026 Schedule and Bracket Sync
 
-### 🛠 Next.js Build Stabilization & World Cup Re-sync
-A comprehensive patch applied across the entire ecosystem to address critical Next.js Server-Side Rendering (SSR) crashes during Vercel deployments, coupled with a precise re-synchronization of the World Cup Yield Wars module.
+This release synchronizes the latest World Cup Yield Wars module into the full Banmao Fun platform while preserving the platform-specific routing and scroll wrappers.
 
-**Key Features & Fixes:**
-- **SSR `localStorage` Crash Resolved:** Safely wrapped all `localStorage.getItem`, `setItem`, and `removeItem` calls within `AirdropPanel`, `Staking`, and `Burn` modules with rigorous `typeof window !== 'undefined'` guards. This permanently resolves the `TypeError: localStorage.getItem is not a function` during `next build` static generation.
-- **Git State Restoration & Cleanup:** Executed a hard reset to the stable `2c04c23` commit and purged all untracked AI debug scripts, restoring repository integrity before the new sync.
-- **Selective World Cup Synchronization:** Precisely merged the standalone `WorldCupYieldWars_XLayer/app/gamefi/worldcup` directory into the main repository, updating the game logic without polluting global API routes or Next.js configurations.
-- **Expanded Gitignore Rules:** Updated `.gitignore` to seamlessly filter out Python/JS debug scripts and build error logs, keeping the commit history pristine.
+### World Cup Yield Wars Updates
+
+- Synced the World Cup 2026 fixture timeline, group standings, and knockout bracket UX from the standalone `WorldCupYieldWars_XLayer` repo.
+- Added Turso-backed World Cup API routes:
+  - `/api/worldcup/fixtures`
+  - `/api/worldcup/bracket`
+- Added the canonical group-stage CSV schedule at `test/lịch thi.csv`.
+- Fixture times are imported from Vietnam time, stored as UTC, and rendered by selected UI language:
+  - English: New York time
+  - Vietnamese: Vietnam time
+  - Chinese: Beijing time
+  - Korean: Korea time
+  - Japanese: Japan time
+  - Russian: Moscow time
+  - Indonesian: Jakarta time
+- Added a user-facing schedule tab with match-day timeline cards.
+- Added a bracket guide explaining the 48-team group stage and 32-team knockout transition.
+- Reworked admin World Cup tabs for clearer operations:
+  - Overview
+  - Season & Teams
+  - Fixtures & Bracket
+  - Safety & Finance
+- Improved admin card ordering, responsive layout balance, scrollbars, and mobile readability.
+
+### Platform Notes
+
+- The full Banmao Fun project keeps its own `app/gamefi/worldcup/layout.tsx` and `ScrollEnabler` integration files.
+- Local secrets remain in `.env.local` and are ignored by Git.
+- `test/lịch thi.csv` is intentionally unignored because the World Cup API uses it as a safe fixture fallback when Turso is empty.
+
+## Current Stack
+
+- Next.js 16, React 19, TypeScript.
+- Wagmi, Viem, RainbowKit, React Query.
+- Turso/libSQL for World Cup fixture and bracket state.
+- Existing Banmao Fun modules for hub, DeFi, staking, collection, and games.
+
+## Environment
+
+Required World Cup-related variables:
+
+```env
+NEXT_PUBLIC_WORLDCUP_CONTRACT_ADDRESS=0x25CB88C3db405Fdd9Ad5C059808eDE3DbC92D01a
+NEXT_PUBLIC_BANMAO_TOKEN_ADDRESS=0xYourStakingToken
+NEXT_PUBLIC_XLAYER_CHAIN_ID=196
+NEXT_PUBLIC_XLAYER_RPC_URL=https://rpc.xlayer.tech
+NEXT_PUBLIC_XLAYER_EXPLORER_URL=https://web3.okx.com/explorer/x-layer
+
+TURSO_DATABASE_URL=
+TURSO_AUTH_TOKEN=
+```
+
+Restart the dev server after changing `NEXT_PUBLIC_*` values.
+
+## Run
+
+```bash
+npm install
+npm run dev
+```
+
+World Cup routes:
+
+```text
+/gamefi/worldcup
+/gamefi/worldcup/admin
+```
+
+## Previous Releases
+
+Older releases focused on Next.js SSR stabilization, localStorage guards, World Cup integration, X Layer provider alignment, global scroll fixes, Web3D performance, collection loading, OKX API optimization, and mobile-first hub design.
 
 ---
 
-<details>
-<summary><strong>Past Updates (v0.4.0 and older)</strong></summary>
-
-### v0.4.0 — World Cup Yield Wars Integration & Ecosystem Sync
-- **Full Architecture Sync:** Integrated all smart contracts, hardhat scripts, tests, and API proxy routes directly into the main repository.
-- **Wagmi Provider Alignment:** Resolved `ChainNotConfiguredError` by aligning the World Cup's default chain configuration to match the global XLayer Mainnet settings.
-- **SSR Hydration Fix:** Patched a critical React Hydration mismatch error in `useWCLang` hook that caused red screen crashes.
-- **Global Scrolling Conflict Resolved:** Built a `ScrollEnabler` layout wrapper that elegantly bypasses the strict `overflow-y: hidden !important` lock imposed by the 3D `landing.css`.
-- **Premium Web3 Scrollbar:** Implemented a custom Emerald-themed Webkit scrollbar scoped globally via `.worldcup-theme-scroll`.
-
-### v0.3.3 — Web3D Stability Fix & Collection Progressive Loading
-- **Web3D Tab-Inactivity Crash Fix:** Resolved critical production issue where 3D homepage would freeze after tab inactivity by clamping delta time and preventing material memory leaks across 10+ files.
-- **Progressive Paginated Loading:** Optimized Collection gallery to handle 3000+ Cloudinary images with paginated background fetching and animated progress UI.
-
-### v0.3.2 — OKX API Optimization & Redundancy Elimination
-- Comprehensive OKX Web3 API audit across 14 backend routes.
-- Eliminated 2 redundant polling loops (~34% reduction in API load per session).
-- Consolidated price data source into shared `TokenStatsContext`.
-
-### v0.3.1 — Branding & UI Optimization
-- Animated mascot asset transition to transparent `.gif` format.
-- Service Worker caching update for offline GIF support.
-- Dynamic 3D scaling and responsive viewport clamping for mobile.
-
-### v0.3.0 — Web3D Performance Engine Upgrade
-- Major rendering optimizations for the 3D homepage.
-
-### v0.2.0 — Mobile-First Hub Redesign
-- Instagram-style floating pill bottom navigation.
-- Full i18n localization across 6 languages (EN, VI, ZH, KO, RU, ID).
-
-</details>
-
----
-*Developed by AI Agent — Focused on Premium Web3 UX.*
+Developed for the Banmao ecosystem.
