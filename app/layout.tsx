@@ -3,6 +3,8 @@ import "./landing.css";
 import type { Metadata } from "next";
 import { Noto_Sans, Orbitron, Rajdhani, Share_Tech_Mono, Space_Mono } from "next/font/google";
 
+import Script from "next/script";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://banmao.fun"),
   title: "BANMAO — XLayer Gaming Ecosystem",
@@ -124,7 +126,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes"
         />
         {/* Early PWA: inject manifest and capture install prompt BEFORE browser checks */}
-        <script
+        <Script
+          id="pwa-manifest-script"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               // 1. Detect current path and inject correct manifest
