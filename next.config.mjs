@@ -16,6 +16,7 @@ const TURBO_IGNORE_ALIAS = {
   "thread-stream/bench": EMPTY_MODULE,
   "thread-stream/LICENSE": EMPTY_MODULE,
   "thread-stream/README.md": EMPTY_MODULE,
+  "@react-native-async-storage/async-storage": EMPTY_MODULE,
 };
 
 const RESOLVE_ALIASES = {
