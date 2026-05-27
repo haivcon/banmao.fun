@@ -14,6 +14,7 @@ export interface SeasonData {
     seasonId: number;
     maxTeams: number;
     tournamentStartTime?: bigint;
+    tournamentEndTime?: bigint;
     totalStakedAll: bigint;
     totalUnclaimedRewards: bigint;
     lockedMatchCount: number;
@@ -80,17 +81,19 @@ function parseSeason(raw: unknown, seasonId: number): SeasonData {
     const [
         maxTeams,
         tournamentStartTime,
+        tournamentEndTime,
         totalStakedAll,
         totalUnclaimedRewards,
         lockedMatchCount,
         championTeamId,
         tournamentStarted,
         tournamentEnded,
-    ] = (raw || []) as [bigint?, bigint?, bigint?, bigint?, bigint?, bigint?, boolean?, boolean?];
+    ] = (raw || []) as [bigint?, bigint?, bigint?, bigint?, bigint?, bigint?, bigint?, boolean?, boolean?];
     return {
         seasonId,
         maxTeams: Number(maxTeams || 0),
         tournamentStartTime,
+        tournamentEndTime,
         totalStakedAll: totalStakedAll || BigInt(0),
         totalUnclaimedRewards: totalUnclaimedRewards || BigInt(0),
         lockedMatchCount: Number(lockedMatchCount || 0),
@@ -134,7 +137,6 @@ export function useWorldCup() {
         functionName: 'getSeasonInfo' as const,
         args: [BigInt(i + 1)] as const,
     })), [currentSeasonId]);
-    // @ts-ignore - TS depth limit exceeded
     const { data: seasonInfosRaw } = useReadContracts({
         contracts: seasonContracts as any,
         query: { enabled: currentSeasonId > 0, refetchInterval: 15000 },
@@ -325,7 +327,6 @@ export function useWorldCup() {
             args: [BigInt(effectiveSeasonId), address, BigInt(t.id)] as const,
         }));
     }, [address, teams, effectiveSeasonId]);
-    // @ts-ignore - TS depth limit exceeded
     const { data: userStakesRaw } = useReadContracts({
         contracts: userStakeContracts as any,
         query: { enabled: !!address && effectiveSeasonId > 0, refetchInterval: 5000 },
@@ -345,7 +346,6 @@ export function useWorldCup() {
         functionName: 'getMatch' as const,
         args: [BigInt(id)] as const,
     })), [seasonMatchIds]);
-    // @ts-ignore - TS depth limit exceeded
     const { data: matchesRaw } = useReadContracts({
         contracts: matchContracts as any,
         query: { enabled: seasonMatchIds.length > 0, refetchInterval: 12000 },
@@ -355,7 +355,6 @@ export function useWorldCup() {
         functionName: 'getMatchRewardBreakdown' as const,
         args: [BigInt(id)] as const,
     })), [seasonMatchIds]);
-    // @ts-ignore - TS depth limit exceeded
     const { data: matchBreakdownsRaw } = useReadContracts({
         contracts: matchBreakdownContracts as any,
         query: { enabled: seasonMatchIds.length > 0, retry: 1, refetchInterval: 12000 },
@@ -448,6 +447,7 @@ export function useWorldCup() {
         championTeamId: season.championTeamId,
         seasonId: effectiveSeasonId,
         tournamentStartTime: season.tournamentStartTime,
+        tournamentEndTime: season.tournamentEndTime,
         minStakeAmount: minStakeAmount as bigint | undefined,
         stakeFee: stakeFee as bigint | undefined,
         unstakeFee: unstakeFee as bigint | undefined,

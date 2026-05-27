@@ -39,6 +39,7 @@ export default function WorldCupAdminPage() {
     const [msg, setMsg] = useState("");
     const [seasonTeamCount, setSeasonTeamCount] = useState("8");
     const [seasonStartTime, setSeasonStartTime] = useState("");
+    const [seasonDurationDays, setSeasonDurationDays] = useState("45");
     const [editTeamId, setEditTeamId] = useState(0);
     const [teamName, setTeamName] = useState("");
     const [teamCode, setTeamCode] = useState("");
@@ -82,7 +83,6 @@ export default function WorldCupAdminPage() {
     const { data: unstakeFee } = useReadContract({ ...CONTRACT, functionName: 'unstakeFee', query: { refetchInterval: 10000 } });
     const { data: minStakeAmount } = useReadContract({ ...CONTRACT, functionName: 'minStakeAmount', query: { refetchInterval: 10000 } });
     const { data: stakingToken } = useReadContract({ ...CONTRACT, functionName: 'stakingToken', query: { refetchInterval: 15000 } });
-    const { data: isMainnet } = useReadContract({ ...CONTRACT, functionName: 'isMainnet', query: { refetchInterval: 15000 } });
     const { data: paused } = useReadContract({ ...CONTRACT, functionName: 'paused', query: { refetchInterval: 5000 } });
     const matchCount = BigInt(wc.matchCount || 0);
     const tournamentStarted = wc.tournamentStarted;
@@ -155,6 +155,9 @@ export default function WorldCupAdminPage() {
     const tokenExplorerUrl = typeof stakingToken === 'string' ? `${XLAYER_EXPLORER_BASE_URL.replace(/\/$/, '')}/address/${stakingToken}` : '';
     const teamOptions = teams.map(tm => ({ value: String(tm.id), label: `${tm.code} - ${tm.name}`, description: `${a.team} ${tm.id} · ${a.group} ${tm.group}` }));
     const langOptions = WC_LANGS.map(item => ({ value: item.code, label: item.label }));
+    const seasonStartSeconds = Math.max(0, Number(seasonStartTime || 0));
+    const seasonDurationSeconds = Math.max(1, Math.round(Number(seasonDurationDays || 0) * 24 * 60 * 60));
+    const seasonEndSeconds = seasonStartSeconds + seasonDurationSeconds;
 
     useEffect(() => {
         setSeasonTeamCount(String(wc.maxTeams || teams.length || 8));
@@ -507,17 +510,17 @@ export default function WorldCupAdminPage() {
                                     <div>
                                         <span>{a.rewardPool || 'Reward pool bonus'}</span>
                                         <strong>{Number(formatEther(estimatedFeeBonus)).toLocaleString(undefined,{maximumFractionDigits:2})} $BANMAO</strong>
-                                        <small>{lang === 'vi' ? '25% reward pool hiện tại' : '25% of current reward pool'}</small>
+                                        <small>{t.feePoolBonusDesc}</small>
                                     </div>
                                     <div>
-                                        <span>{lang === 'vi' ? 'Tổng phân phối' : 'Total reward'}</span>
+                                        <span>{t.totalRewardPreview}</span>
                                         <strong>{Number(formatEther(estimatedTotalReward)).toLocaleString(undefined,{maximumFractionDigits:2})} $BANMAO</strong>
-                                        <small>{rewardFallbackToPool ? (lang === 'vi' ? 'Pool thắng chưa có weight, thưởng quay lại reward pool' : 'No winner weight, reward returns to reward pool') : (lang === 'vi' ? 'Chia theo weight pool thắng' : 'Distributed by winner weight')}</small>
+                                        <small>{rewardFallbackToPool ? t.rewardReturnsToPool : t.distributedByWinnerWeight}</small>
                                     </div>
                                     <div>
-                                        <span>{lang === 'vi' ? 'Weight pool thắng' : 'Winner pool weight'}</span>
+                                        <span>{t.winnerPoolWeight}</span>
                                         <strong>{Number(formatEther(resolveWinnerWeight)).toLocaleString(undefined,{maximumFractionDigits:2})}</strong>
-                                        <small>{lang === 'vi' ? 'Cơ sở chia thưởng' : 'Reward-share base'}</small>
+                                        <small>{t.rewardShareBase}</small>
                                     </div>
                                 </div>
                             ) : (
@@ -525,7 +528,7 @@ export default function WorldCupAdminPage() {
                             )}
                         </div>
                         <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
-                            <button onClick={()=>requestConfirm(t.resolveMatch,[`${t.matchId}: ${matchId}`,`${t.winner}: ${teamLabel(winnerId)}`,`Loser: ${resolveLoser ? teamLabel(resolveLoser.id) : '-'}`,`${a.slashed}: ${Number(formatEther(estimatedSlash)).toLocaleString(undefined,{maximumFractionDigits:2})} $BANMAO`,`Fee bonus: ${Number(formatEther(estimatedFeeBonus)).toLocaleString(undefined,{maximumFractionDigits:2})} $BANMAO`,`Total reward: ${Number(formatEther(estimatedTotalReward)).toLocaleString(undefined,{maximumFractionDigits:2})} $BANMAO`, rewardFallbackToPool ? 'Warning: winner pool has no weight; reward returns to reward pool.' : `Winner weight: ${Number(formatEther(resolveWinnerWeight)).toLocaleString(undefined,{maximumFractionDigits:2})}`],'resolveMatch',[BigInt(matchId),BigInt(winnerId)])} disabled={!canResolveSelectedMatch} style={s.btn('#f59e0b')} className={isStep3Active ? 'wc-admin-pulse-btn' : ''}><Zap size={15} /> {t.resolveMatch}</button>
+                            <button onClick={()=>requestConfirm(t.resolveMatch,[`${t.matchId}: ${matchId}`,`${t.winner}: ${teamLabel(winnerId)}`,`Loser: ${resolveLoser ? teamLabel(resolveLoser.id) : '-'}`,`${a.slashed}: ${Number(formatEther(estimatedSlash)).toLocaleString(undefined,{maximumFractionDigits:2})} $BANMAO`,`Fee bonus: ${Number(formatEther(estimatedFeeBonus)).toLocaleString(undefined,{maximumFractionDigits:2})} $BANMAO`,`Total reward: ${Number(formatEther(estimatedTotalReward)).toLocaleString(undefined,{maximumFractionDigits:2})} $BANMAO`, rewardFallbackToPool ? 'Warning: winner pool has no weight; reward returns to reward pool.' : `Winner weight: ${Number(formatEther(resolveWinnerWeight)).toLocaleString(undefined,{maximumFractionDigits:2})}`],'resolveMatch',[BigInt(matchId),BigInt(winnerId),estimatedFeeBonus])} disabled={!canResolveSelectedMatch} style={s.btn('#f59e0b')} className={isStep3Active ? 'wc-admin-pulse-btn' : ''}><Zap size={15} /> {t.resolveMatch}</button>
                             <button onClick={()=>requestConfirm(a.resolveDraw,[`${t.matchId}: ${matchId}`,`${t.teamA}: ${selectedMatch ? teamLabel(selectedMatch.teamA) : '-'}`,`${t.teamB}: ${selectedMatch ? teamLabel(selectedMatch.teamB) : '-'}`,a.resolveHelp],'resolveDraw',[BigInt(matchId)])} disabled={!viewingCurrentSeason || !selectedMatch || !selectedMatch.locked || selectedMatch.resolved || loading || !tournamentStarted} style={s.btn('#64748b')}>{a.resolveDraw}</button>
                         </div>
                         <div style={{padding:12,border:'1px solid rgba(148,163,184,0.12)',borderRadius:12,background:'rgba(2,6,23,0.2)'}}>
@@ -596,6 +599,9 @@ export default function WorldCupAdminPage() {
                             </div>
                         </div>
 
+                        {/* Section: Mascot Manager */}
+                        <MascotManager teams={teams} />
+
                         {/* Section 2: Season Team Setup */}
                         <div style={s.section}>
                             <h2 style={{fontSize:16,marginTop:0}}>{a.seasonSetup}</h2>
@@ -612,15 +618,19 @@ export default function WorldCupAdminPage() {
                                     <input type="number" min={0} value={seasonStartTime} onChange={e=>setSeasonStartTime(e.target.value)} style={s.input} disabled={setupInputsDisabled} />
                                     {help(a.startTimestampHelp)}
                                 </label>
+                                <label style={s.label}><span style={s.lbl}>Duration days</span>
+                                    <input type="number" min={1} value={seasonDurationDays} onChange={e=>setSeasonDurationDays(e.target.value)} style={s.input} disabled={setupInputsDisabled} />
+                                    {help('Season length used to calculate tournamentEndTime.')}
+                                </label>
                                 <div style={{display:'flex',alignItems:'flex-end'}}>
                                     <button onClick={()=>requestConfirm(a.saveCount,[`${a.teamCount}: ${seasonTeamCount}`],'setMaxTeams',[BigInt(Math.max(2, Math.min(64, Number(seasonTeamCount || 0))))])}
                                         disabled={currentSeasonSetupDisabled} style={s.btn(currentSeasonSetupDisabled?'#475569':'#0f766e')}>{a.saveCount}</button>
                                 </div>
                             </div>
                             <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:12}}>
-                                <button onClick={()=>requestConfirm(a.saveStartTime,[`${a.startTimestamp}: ${seasonStartTime || '0'}`],'setTournamentStartTime',[BigInt(Math.max(0, Number(seasonStartTime || 0)))])}
+                                <button onClick={()=>requestConfirm(a.saveStartTime,[`${a.startTimestamp}: ${seasonStartSeconds}`,`End timestamp: ${seasonEndSeconds}`],'setTournamentTimes',[BigInt(seasonStartSeconds),BigInt(seasonEndSeconds)])}
                                     disabled={currentSeasonSetupDisabled} style={s.btn(currentSeasonSetupDisabled?'#475569':'#0f766e')}>{a.saveStartTime}</button>
-                                <button onClick={()=>requestConfirm(a.configureNextSeason,[`${a.teamCount}: ${seasonTeamCount}`,`${a.startTimestamp}: ${seasonStartTime || '0'}`,a.configureNextSeasonHelp],'configureNextSeason',[BigInt(Math.max(2, Math.min(64, Number(seasonTeamCount || 0)))),BigInt(Math.max(0, Number(seasonStartTime || 0)))])}
+                                <button onClick={()=>requestConfirm(a.configureNextSeason,[`${a.teamCount}: ${seasonTeamCount}`,`${a.startTimestamp}: ${seasonStartSeconds}`,`Duration: ${seasonDurationDays || '0'} days`,a.configureNextSeasonHelp],'configureNextSeason',[BigInt(Math.max(2, Math.min(64, Number(seasonTeamCount || 0)))),BigInt(seasonStartSeconds),BigInt(seasonDurationSeconds)])}
                                     disabled={loading || !canConfigureNextSeason}
                                     style={s.btn(canConfigureNextSeason ? '#2563eb' : '#475569')}>{a.configureNextSeason}</button>
                             </div>
@@ -790,7 +800,7 @@ export default function WorldCupAdminPage() {
                                     <span style={{padding:'4px 8px',borderRadius:999,background:'rgba(20,184,166,0.12)',color:'#5eead4',fontSize:11}}>{a.connectedOwner}</span>
                                     <span style={{padding:'4px 8px',borderRadius:999,background:'rgba(20,184,166,0.12)',color:'#5eead4',fontSize:11}}>Chain {XLAYER_CHAIN_ID}</span>
                                     <span style={{padding:'4px 8px',borderRadius:999,background:paused?'rgba(239,68,68,0.12)':'rgba(16,185,129,0.12)',color:paused?'#f87171':'#34d399',fontSize:11}}>{paused ? a.paused : a.running}</span>
-                                    <span style={{padding:'4px 8px',borderRadius:999,background:'rgba(148,163,184,0.12)',color:'#cbd5e1',fontSize:11}}>{a.oracleMode}: {isMainnet ? 'Mainnet' : a.manualTestnet}</span>
+                                    <span style={{padding:'4px 8px',borderRadius:999,background:'rgba(148,163,184,0.12)',color:'#cbd5e1',fontSize:11}}>{a.oracleMode}: {a.manualTestnet}</span>
                                 </div>
                             </div>
                         </div>
@@ -950,6 +960,111 @@ export default function WorldCupAdminPage() {
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+/* ---- Mascot Manager (admin-only) ---- */
+function MascotManager({ teams }: { teams: Array<{ id: number; code: string; name: string }> }) {
+    const [mascotCodes, setMascotCodes] = React.useState<string[]>([]);
+    const [uploading, setUploading] = React.useState<string | null>(null);
+    const [msg, setMsg] = React.useState('');
+
+    const fetchMascots = React.useCallback(async () => {
+        try {
+            const res = await fetch('/api/mascots');
+            const data = await res.json();
+            setMascotCodes(data.files || []);
+        } catch {}
+    }, []);
+
+    React.useEffect(() => { fetchMascots(); }, [fetchMascots]);
+
+    const handleUpload = async (code: string, file: File) => {
+        setUploading(code);
+        setMsg('');
+        try {
+            const form = new FormData();
+            form.append('code', code);
+            form.append('file', file);
+            const res = await fetch('/api/mascots', { method: 'POST', body: form });
+            const data = await res.json();
+            if (data.ok) {
+                setMsg(`${code} uploaded`);
+                fetchMascots();
+            } else {
+                setMsg(`Error: ${data.error}`);
+            }
+        } catch (err) {
+            setMsg(`Error: ${err}`);
+        }
+        setUploading(null);
+    };
+
+    const handleDelete = async (code: string) => {
+        if (!confirm(`Remove mascot for ${code}?`)) return;
+        try {
+            await fetch('/api/mascots', { method: 'DELETE', body: JSON.stringify({ code }), headers: { 'Content-Type': 'application/json' } });
+            setMsg(`${code} removed`);
+            fetchMascots();
+        } catch {}
+    };
+
+    const hasMascot = (code: string) => mascotCodes.includes(code.slice(0, 3).toUpperCase());
+    const coverage = teams.filter(t => hasMascot(t.code)).length;
+
+    return (
+        <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 24, padding: 20, marginBottom: 16, border: '1px solid rgba(255,255,255,0.06)' }}>
+            <h2 style={{ fontSize: 16, marginTop: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                🐱 Mascot Manager
+                <span style={{ fontSize: 12, color: '#64748b', fontWeight: 400 }}>{coverage}/{teams.length} teams</span>
+            </h2>
+            <p className="wc-admin-section-desc">
+                Upload or replace Banana Cat mascot images for each team. Images are served from <code style={{ color: '#14b8a6' }}>public/mascots/&#123;CODE&#125;.png</code>. Teams without a mascot image will use the default CSS crest.
+            </p>
+            {msg && <div style={{ padding: '8px 12px', borderRadius: 8, background: msg.startsWith('Error') ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)', color: msg.startsWith('Error') ? '#f87171' : '#34d399', fontSize: 13, marginBottom: 12 }}>{msg}</div>}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 10 }}>
+                {teams.map(team => {
+                    const code = team.code.slice(0, 3).toUpperCase();
+                    const has = hasMascot(team.code);
+                    const isUploading = uploading === code;
+                    return (
+                        <div key={team.id} style={{
+                            position: 'relative',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                            padding: 10, borderRadius: 12,
+                            background: has ? 'rgba(16,185,129,0.06)' : 'rgba(148,163,184,0.06)',
+                            border: `1px solid ${has ? 'rgba(16,185,129,0.18)' : 'rgba(148,163,184,0.1)'}`,
+                        }}>
+                            <div style={{ width: 56, height: 56, borderRadius: 8, overflow: 'hidden', background: 'rgba(2,6,23,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {has ? (
+                                    <img src={`/mascots/${code}.png`} alt={team.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                ) : (
+                                    <span style={{ fontSize: 14, fontWeight: 900, color: '#475569' }}>{code}</span>
+                                )}
+                            </div>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: '#cbd5e1', textAlign: 'center', lineHeight: 1.2 }}>{team.name}</span>
+                            <div style={{ display: 'flex', gap: 4, width: '100%' }}>
+                                <label style={{
+                                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    padding: '4px 0', borderRadius: 6, fontSize: 10, fontWeight: 800, cursor: 'pointer',
+                                    background: isUploading ? 'rgba(245,158,11,0.15)' : 'rgba(16,185,129,0.12)', color: isUploading ? '#fbbf24' : '#34d399',
+                                }}>
+                                    {isUploading ? '...' : has ? '↻' : '↑'}
+                                    <input type="file" accept="image/png,image/jpeg,image/webp" style={{ display: 'none' }}
+                                        onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(code, f); e.target.value = ''; }} />
+                                </label>
+                                {has && (
+                                    <button onClick={() => handleDelete(code)} style={{
+                                        flex: 0, padding: '4px 8px', borderRadius: 6, fontSize: 10, fontWeight: 800,
+                                        background: 'rgba(239,68,68,0.12)', color: '#f87171', border: 'none', cursor: 'pointer',
+                                    }}>✕</button>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 }

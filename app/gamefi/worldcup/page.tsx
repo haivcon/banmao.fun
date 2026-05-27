@@ -11,6 +11,8 @@ import StatsBar from "./components/StatsBar";
 import UserPortfolio from "./components/UserPortfolio";
 import OkxInsights from "./components/OkxInsights";
 import SelectMenu from "./components/SelectMenu";
+import SoundToggle from "./components/SoundToggle";
+import { useSoundFX } from "./hooks/SoundContext";
 import { WC_LANGS, useWCLang, type WCLang } from "./lib/i18n";
 import { WORLDCUP_CONTRACT_ADDRESS, XLAYER_EXPLORER_BASE_URL } from "./contracts";
 import TeamCrest from "./components/TeamCrest";
@@ -23,6 +25,7 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 export default function WorldCupPage() {
     const wc = useWorldCup();
+    const { playTick, playPop } = useSoundFX();
     const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
     const [view, setView] = useState<'grid' | 'leaderboard' | 'recommended'>('grid');
     const [teamSearch, setTeamSearch] = useState('');
@@ -119,12 +122,12 @@ export default function WorldCupPage() {
         if (!latestMatch?.isResolved || !wc.walletAddress) return null;
         const aStake = wc.userStakes[latestMatch.teamA]?.amount || BigInt(0);
         const bStake = wc.userStakes[latestMatch.teamB]?.amount || BigInt(0);
-        if (aStake === BigInt(0) && bStake === BigInt(0)) return lang === 'vi' ? 'Ví hiện không còn vị thế hoặc thưởng chờ trong trận này.' : 'This wallet currently has no active or pending position in this match.';
-        if (latestMatch.isDraw) return lang === 'vi' ? 'Ví hiện có vị thế trong trận hòa, không có slash reward.' : 'This wallet currently has a draw position, so no slash reward was created.';
-        const backedWinner = (latestMatch.winningTeam === latestMatch.teamA && aStake > BigInt(0)) || (latestMatch.winningTeam === latestMatch.teamB && bStake > BigInt(0));
-        return backedWinner
-            ? (lang === 'vi' ? 'Ví hiện đang ở pool thắng. Kiểm tra phần thưởng chờ.' : 'This wallet is currently in the winning pool. Check pending rewards.')
-            : (lang === 'vi' ? 'Ví hiện đang ở pool thua. Pool thua đã bị slash.' : 'This wallet is currently in the losing pool. The losing pool was slashed.');
+        if (aStake === BigInt(0) && bStake === BigInt(0)) return t.walletNoPosition;
+        if (latestMatch.isDraw) return t.walletDrawPosition;
+        
+        return latestUserReward > BigInt(0) 
+            ? t.walletWinningPosition
+            : t.walletLosingPosition;
     })();
     const sortOptions = [
         { value: 'group', label: t.groupOrder || 'Group order' },
@@ -140,12 +143,12 @@ export default function WorldCupPage() {
         { value: 'list', label: t.listRows || 'List rows' },
     ];
     const filterOptions = [
-        { value: 'all', label: lang === 'vi' ? 'Tất cả đội' : 'All teams' },
-        { value: 'active', label: lang === 'vi' ? 'Đang mở' : 'Active only' },
-        { value: 'my', label: lang === 'vi' ? 'Đội của tôi' : 'My staked teams' },
-        { value: 'rewards', label: lang === 'vi' ? 'Có thưởng' : 'Has rewards' },
-        { value: 'locked', label: lang === 'vi' ? 'Đang khóa' : 'Locked' },
-        { value: 'eliminated', label: lang === 'vi' ? 'Đã loại' : 'Eliminated' },
+        { value: 'all', label: t.allTeamsFilter },
+        { value: 'active', label: t.activeOnlyFilter },
+        { value: 'my', label: t.myStakedTeamsFilter },
+        { value: 'rewards', label: t.hasRewardsFilter },
+        { value: 'locked', label: t.lockedFilter },
+        { value: 'eliminated', label: t.eliminatedFilter },
     ];
     const seasonSelectOptions = wc.seasonOptions.map(item => ({
         value: String(item.seasonId),
@@ -212,13 +215,13 @@ export default function WorldCupPage() {
                 tournamentStarted={wc.tournamentStarted} tournamentEnded={wc.tournamentEnded} activeTeams={activeTeams} maxTeams={wc.maxTeams || wc.teamPools.length} t={t} />
 
             <section className="wc-season-switcher">
-                <div>
-                    <span className="wc-eyebrow">{lang === 'vi' ? 'Mùa giải đang xem' : 'Viewing season'}</span>
-                    <h2>Season {wc.selectedSeasonId}{wc.isCurrentSeason ? (lang === 'vi' ? ' · hiện tại' : ' · current') : ''}</h2>
-                    <p>
+                <div className="wc-season-panel">
+                    <span className="wc-eyebrow">{t.viewingSeason}</span>
+                    <h2>Season {wc.selectedSeasonId}{wc.isCurrentSeason ? t.seasonCurrent : ''}</h2>
+                    <p className="wc-season-description">
                         {wc.isCurrentSeason
-                            ? (lang === 'vi' ? 'Stake mới chỉ vào mùa hiện tại. Dữ liệu pool, match và phần thưởng được cách ly theo mùa.' : 'New stakes enter the current season. Pool, match, and reward data are isolated by season.')
-                            : (lang === 'vi' ? `Bạn đang xem mùa cũ. Có thể rút principal hoặc nhận thưởng của Season ${wc.selectedSeasonId}, nhưng không thể stake mới vào mùa này.` : `You are viewing an old season. You can withdraw principal or claim rewards from Season ${wc.selectedSeasonId}, but new staking is disabled here.`)}
+                            ? t.seasonCurrentDesc
+                            : t.seasonOldDesc.replace('{id}', wc.selectedSeasonId.toString())}
                     </p>
                 </div>
                 <SelectMenu label="Season" value={String(wc.selectedSeasonId)} options={seasonSelectOptions} onChange={value=>wc.setSelectedSeasonId(Number(value))} />
@@ -235,24 +238,27 @@ export default function WorldCupPage() {
 
             <section className="wc-player-command">
                 <div className="wc-player-summary">
-                    <span className="wc-eyebrow">{lang === 'vi' ? 'Bảng điều khiển người chơi' : 'Player Dashboard'}</span>
-                    <h2>{hasAnyPosition ? (lang === 'vi' ? 'Vị thế của bạn' : 'My Positions') : (lang === 'vi' ? 'Bắt đầu chơi' : 'Start Playing')}</h2>
-                    <p>
-                        {hasAnyPosition
-                            ? (lang === 'vi' ? 'Theo dõi đội đã stake, thưởng chờ và trạng thái pool trong một nơi.' : 'Track staked teams, pending rewards, and pool status in one place.')
-                            : (lang === 'vi' ? 'Kết nối ví, chọn đội đang mở, approve token rồi stake BANMAO.' : 'Connect a wallet, pick an active team, approve tokens, then stake BANMAO.')}
+                    <span className="wc-eyebrow">{t.playerDashboard}</span>
+                    <h2>{hasAnyPosition ? t.myPositions : t.startPlaying}</h2>
+                    
+                    <p className="wc-season-description">
+                        {hasAnyPosition 
+                            ? t.dashboardHasPositionsDesc
+                            : t.dashboardNoPositionsDesc}
                     </p>
                 </div>
+
                 <div className="wc-player-metrics">
-                    <div><span>{lang === 'vi' ? 'Tổng stake' : 'Total staked'}</span><strong>{Number(formatEther(totalUserStake)).toLocaleString(undefined,{maximumFractionDigits:2})}</strong><small>$BANMAO</small></div>
-                    <div><span>{lang === 'vi' ? 'Thưởng chờ' : 'Pending rewards'}</span><strong>{Number(formatEther(totalPendingRewards)).toLocaleString(undefined,{maximumFractionDigits:2})}</strong><small>$BANMAO</small></div>
-                    <div><span>{lang === 'vi' ? 'Số vị thế' : 'Positions'}</span><strong>{playerPositions.length}</strong><small>{lang === 'vi' ? 'pool' : 'pools'}</small></div>
+                    <div><span>{t.totalStakedText}</span><strong>{Number(formatEther(totalUserStake)).toLocaleString(undefined,{maximumFractionDigits:2})}</strong><small>$BANMAO</small></div>
+                    <div><span>{t.pendingRewards}</span><strong>{Number(formatEther(totalPendingRewards)).toLocaleString(undefined,{maximumFractionDigits:2})}</strong><small>$BANMAO</small></div>
+                    <div><span>{t.positionsText}</span><strong>{playerPositions.length}</strong><small>{playerPositions.length === 1 ? t.poolSingular : t.poolsPlural}</small></div>
                 </div>
+
                 {!hasAnyPosition && (
                     <div className="wc-onboarding-steps">
-                        <span><CheckCircle2 size={15} />{lang === 'vi' ? '1. Kết nối ví' : '1. Connect wallet'}</span>
-                        <span><Compass size={15} />{lang === 'vi' ? '2. Chọn đội' : '2. Pick a team'}</span>
-                        <span><WalletCards size={15} />{lang === 'vi' ? '3. Approve & Stake' : '3. Approve & Stake'}</span>
+                        <span><CheckCircle2 size={15} />{t.step1Connect}</span>
+                        <span><Compass size={15} />{t.step2Pick}</span>
+                        <span><WalletCards size={15} />{t.step3Stake}</span>
                     </div>
                 )}
                 {totalPendingRewards > BigInt(0) && (
@@ -322,19 +328,19 @@ export default function WorldCupPage() {
                         <div className={`wc-result-panel ${claimableRewards > BigInt(0) ? 'has-rewards' : ''}`}>
                             <div className="wc-result-head">
                                 <div>
-                                    <span className="wc-eyebrow">{lang === 'vi' ? 'Kết quả trận gần nhất' : 'Latest match result'} #{latestMatch.matchId + 1} · Season {latestMatch.seasonId}</span>
+                                    <span className="wc-eyebrow">{t.latestResolvedMatches} #{latestMatch.matchId + 1} · Season {latestMatch.seasonId}</span>
                                     <h3>
                                         {latestMatch.isDraw
-                                            ? (lang === 'vi' ? 'Trận đấu hòa' : 'Match drawn')
-                                            : `${latestWinner?.name || t.winner || 'Winner'} ${lang === 'vi' ? 'chiến thắng' : 'wins'}`}
+                                            ? t.matchDrawn
+                                            : `${latestWinner?.name || t.winner || 'Winner'} ${t.matchWins}`}
                                     </h3>
                                 </div>
-                                <span className="wc-result-state">{latestMatch.isDraw ? (lang === 'vi' ? 'Hòa' : 'Draw') : (lang === 'vi' ? 'Đã phân phối thưởng' : 'Rewards distributed')}</span>
+                                <span className="wc-result-state">{latestMatch.isDraw ? t.drawUpper : t.rewardsDistributed}</span>
                             </div>
 
                             <div className="wc-result-stage">
                                 <button className={`wc-result-team-card is-winner ${latestMatch.isDraw ? 'is-draw' : ''}`} onClick={() => latestMatch.isDraw ? setSelectedTeamId(latestMatch.teamA) : latestWinner && setSelectedTeamId(latestWinner.id)}>
-                                    <span>{latestMatch.isDraw ? (lang === 'vi' ? 'Đội A' : 'Team A') : 'Winner'}</span>
+                                    <span>{latestMatch.isDraw ? (t.teamA || 'Team A') : (t.winner || 'Winner')}</span>
                                     {(latestWinner || latestTeamA) && <TeamCrest code={(latestWinner || latestTeamA)!.code} name={(latestWinner || latestTeamA)!.name} color={(latestWinner || latestTeamA)!.color} colorSecondary={(latestWinner || latestTeamA)!.colorSecondary} size="md" />}
                                     <strong>{(latestWinner || latestTeamA)?.name || t.teamA}</strong>
                                     <small>{Number(formatEther((latestWinner || latestTeamA)?.totalPrincipal || BigInt(0))).toLocaleString(undefined, { maximumFractionDigits: 2 })} $BANMAO TVL</small>
@@ -342,65 +348,65 @@ export default function WorldCupPage() {
                                 <div className="wc-result-score">
                                     <Trophy size={24} strokeWidth={2.5} />
                                     <strong>{latestTeamA?.name || t.teamA}</strong>
-                                    <span>{latestMatch.isDraw ? (lang === 'vi' ? 'HÒA' : 'DRAW') : 'VS'}</span>
+                                    <span>{latestMatch.isDraw ? t.drawUpper : 'VS'}</span>
                                     <strong>{latestTeamB?.name || t.teamB}</strong>
                                 </div>
                                 <button className={`wc-result-team-card is-loser ${latestMatch.isDraw ? 'is-draw' : ''}`} onClick={() => latestMatch.isDraw ? setSelectedTeamId(latestMatch.teamB) : latestLoser && setSelectedTeamId(latestLoser.id)}>
-                                    <span>{latestMatch.isDraw ? (lang === 'vi' ? 'Đội B' : 'Team B') : 'Loser'}</span>
+                                    <span>{latestMatch.isDraw ? (t.teamB || 'Team B') : 'Loser'}</span>
                                     {(latestLoser || latestTeamB) && <TeamCrest code={(latestLoser || latestTeamB)!.code} name={(latestLoser || latestTeamB)!.name} color={(latestLoser || latestTeamB)!.color} colorSecondary={(latestLoser || latestTeamB)!.colorSecondary} size="md" />}
                                     <strong>{(latestLoser || latestTeamB)?.name || t.teamB}</strong>
-                                    <small>{latestMatch.isDraw ? (lang === 'vi' ? 'Không bị slash' : 'No slash') : `${Number(formatEther(latestSlashedAmount)).toLocaleString(undefined, { maximumFractionDigits: 2 })} $BANMAO ${lang === 'vi' ? 'bị slash' : 'slashed'}`}</small>
+                                    <small>{latestMatch.isDraw ? t.noSlash : `${Number(formatEther(latestSlashedAmount)).toLocaleString(undefined, { maximumFractionDigits: 2 })} $BANMAO ${t.slashed || 'slashed'}`}</small>
                                 </button>
                             </div>
 
                             <div className="wc-result-metrics">
                                 <div>
-                                    <span>{lang === 'vi' ? 'Pool thua bị slash' : 'Losing pool slash'}</span>
+                                    <span>{t.losingPoolSlash}</span>
                                     <strong>{Number(formatEther(latestSlashedAmount)).toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong>
                                     <small>$BANMAO</small>
                                 </div>
                                 <div>
-                                    <span>{lang === 'vi' ? 'Bonus từ fee pool' : 'Fee pool bonus'}</span>
+                                    <span>{t.feePoolBonus}</span>
                                     <strong>{Number(formatEther(latestFeeBonus)).toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong>
                                     <small>$BANMAO</small>
                                 </div>
                                 <div>
-                                    <span>{lang === 'vi' ? 'Tổng phân phối' : 'Total distributed'}</span>
+                                    <span>{t.totalDistributed}</span>
                                     <strong>{Number(formatEther(latestTotalReward)).toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong>
-                                    <small>{latestBreakdown?.rewardToWinners === false ? (lang === 'vi' ? 'trả về fee pool' : 'returned to fee pool') : '$BANMAO'}</small>
+                                    <small>{latestBreakdown?.rewardToWinners === false ? t.returnedToFeePool : '$BANMAO'}</small>
                                 </div>
                                 <div>
-                                    <span>{lang === 'vi' ? 'Tỷ lệ chia của ví' : 'Your reward share'}</span>
+                                    <span>{t.yourRewardShare}</span>
                                     <strong>{latestUserRewardShare.toLocaleString(undefined, { maximumFractionDigits: 2 })}%</strong>
                                     <small>{Number(formatEther(latestUserWeight)).toLocaleString(undefined, { maximumFractionDigits: 2 })} / {Number(formatEther(latestWinningWeight)).toLocaleString(undefined, { maximumFractionDigits: 2 })} weight</small>
                                 </div>
                                 <div>
-                                    <span>{lang === 'vi' ? 'Thưởng chờ ở pool thắng' : 'Claimable in winner pool'}</span>
+                                    <span>{t.claimableInWinnerPool}</span>
                                     <strong>{Number(formatEther(latestUserReward)).toLocaleString(undefined, { maximumFractionDigits: 2 })}</strong>
                                     <small>$BANMAO</small>
                                 </div>
                                 <div className="wc-result-claim-state">
-                                    <span>{lang === 'vi' ? 'Trạng thái ví' : 'Wallet state'}</span>
+                                    <span>{t.walletState}</span>
                                     <strong>
                                         {!wc.walletAddress
-                                            ? (lang === 'vi' ? 'Chưa kết nối ví' : 'Connect wallet')
+                                            ? t.connectWallet
                                             : claimableRewards > BigInt(0)
-                                                ? (lang === 'vi' ? 'Có thể nhận' : 'Ready to claim')
-                                                : (lang === 'vi' ? 'Không có thưởng chờ' : 'No claimable reward')}
+                                                ? t.readyToClaim
+                                                : t.noClaimableReward}
                                     </strong>
                                     <small>
                                         {claimableRewards > BigInt(0)
                                             ? `${Number(formatEther(claimableRewards)).toLocaleString(undefined, { maximumFractionDigits: 2 })} $BANMAO`
                                             : latestMatch.isDraw
-                                                ? (lang === 'vi' ? 'Trận hòa không phát thưởng slash' : 'Draw has no slash payout')
-                                                : (lang === 'vi' ? 'Ví hiện không có thưởng chờ ở pool thắng' : 'Wallet currently has no claimable reward in the winning pool')}
+                                                ? t.drawNoSlashPayout
+                                                : t.walletNoClaimableReward}
                                     </small>
                                 </div>
                                 {latestBackedState && (
                                     <div className="wc-result-claim-state">
-                                        <span>{lang === 'vi' ? 'Vị thế trận này' : 'Your match position'}</span>
+                                        <span>{t.yourMatchPosition}</span>
                                         <strong>{latestBackedState}</strong>
-                                        <small>{latestUserReward > BigInt(0) ? `${Number(formatEther(latestUserReward)).toLocaleString(undefined,{maximumFractionDigits:2})} $BANMAO` : (lang === 'vi' ? 'Không có thưởng chờ trong pool thắng' : 'No claimable reward in the winning pool')}</small>
+                                        <small>{latestUserReward > BigInt(0) ? `${Number(formatEther(latestUserReward)).toLocaleString(undefined,{maximumFractionDigits:2})} $BANMAO` : t.noClaimableRewardInWinner}</small>
                                     </div>
                                 )}
                                 {claimableRewards > BigInt(0) ? (
@@ -410,7 +416,7 @@ export default function WorldCupPage() {
                                     </button>
                                 ) : latestWinner ? (
                                     <button className="wc-result-action is-secondary" onClick={() => setSelectedTeamId(latestWinner.id)}>
-                                        {lang === 'vi' ? 'Xem pool thắng' : 'View winning pool'}
+                                        {t.viewWinningPool}
                                     </button>
                                 ) : null}
                             </div>
@@ -420,8 +426,8 @@ export default function WorldCupPage() {
                     {recentResults.length > 0 && (
                         <div className="wc-match-history">
                             <div className="wc-match-history-head">
-                                <span>{lang === 'vi' ? 'Lịch sử kết quả' : 'Match History'}</span>
-                                <small>{lang === 'vi' ? '5 trận gần nhất' : 'Latest 5 resolved matches'}</small>
+                                <span>{t.matchHistory}</span>
+                                <small>{t.latestResolvedMatches}</small>
                             </div>
                             <div className="wc-match-history-list">
                                 {recentResults.map(match => {
@@ -433,8 +439,8 @@ export default function WorldCupPage() {
                                     return (
                                         <button key={match.matchId} type="button" onClick={() => winner ? setSelectedTeamId(winner.id) : setSelectedTeamId(match.teamA)}>
                                             <strong>#{match.matchId + 1}</strong>
-                                            <span>{match.isDraw ? `${aTeam?.name || t.teamA} ${lang === 'vi' ? 'hòa' : 'drew'} ${bTeam?.name || t.teamB}` : `${winner?.name || t.winner} ${lang === 'vi' ? 'thắng' : 'defeated'} ${winner?.id === match.teamA ? bTeam?.name : aTeam?.name}`}</span>
-                                            <small>{Number(formatEther(historyReward)).toLocaleString(undefined, { maximumFractionDigits: 2 })} $BANMAO {lang === 'vi' ? 'thưởng' : 'reward'}</small>
+                                            <span>{match.isDraw ? `${aTeam?.name || t.teamA} ${t.matchDrew} ${bTeam?.name || t.teamB}` : `${winner?.name || t.winner} ${t.matchDefeated} ${winner?.id === match.teamA ? bTeam?.name : aTeam?.name}`}</span>
+                                            <small>{Number(formatEther(historyReward)).toLocaleString(undefined, { maximumFractionDigits: 2 })} $BANMAO {t.rewardAmountText}</small>
                                         </button>
                                     );
                                 })}
@@ -454,7 +460,7 @@ export default function WorldCupPage() {
             <div className="wc-view-toggle">
                 <button className={view === 'grid' ? 'active' : ''} onClick={() => setView('grid')}><Grid3X3 size={15} strokeWidth={2.4} />{cleanLabel(t.teamGrid, 'Team Grid')}</button>
                 <button className={view === 'leaderboard' ? 'active' : ''} onClick={() => setView('leaderboard')}><ChartColumn size={15} strokeWidth={2.4} />{cleanLabel(t.leaderboard, 'Leaderboard')}</button>
-                <button className={view === 'recommended' ? 'active' : ''} onClick={() => setView('recommended')}><Sparkles size={15} strokeWidth={2.4} />{lang === 'vi' ? 'Gợi ý' : 'Recommended'}</button>
+                <button className={view === 'recommended' ? 'active' : ''} onClick={() => setView('recommended')}><Sparkles size={15} strokeWidth={2.4} />{t.recommendedView}</button>
             </div>
 
             <div className="wc-main-layout">
@@ -465,7 +471,7 @@ export default function WorldCupPage() {
                             <input value={teamSearch} onChange={e => setTeamSearch(e.target.value)} placeholder={t.searchPlaceholder || "Search team name, code, group"} />
                         </label>
                         <SelectMenu label={t.sort || "Sort"} value={teamSort} options={sortOptions} onChange={value => setTeamSort(value as typeof teamSort)} />
-                        <SelectMenu label={lang === 'vi' ? 'Lọc' : 'Filter'} value={teamFilter} options={filterOptions} onChange={value => setTeamFilter(value as typeof teamFilter)} />
+                        <SelectMenu label={t.filterLabel} value={teamFilter} options={filterOptions} onChange={value => setTeamFilter(value as typeof teamFilter)} />
                         <SelectMenu label={t.view || "View"} value={gridDensity} options={densityOptions} onChange={value => setGridDensity(value as typeof gridDensity)} />
                         <div className="wc-density-buttons" aria-label="Team card layout">
                             <button className={gridDensity === 'comfortable' ? 'active' : ''} onClick={() => setGridDensity('comfortable')} title={t.comfortableCards || "Comfortable cards"}><LayoutGrid size={15} /></button>
@@ -477,9 +483,9 @@ export default function WorldCupPage() {
                         <div className="wc-recommended-panel">
                             <div className="wc-recommended-head">
                                 <div>
-                                    <span className="wc-eyebrow">{lang === 'vi' ? 'Gợi ý tham khảo' : 'Suggested pools'}</span>
-                                    <h3>{lang === 'vi' ? 'Pool đang mở đáng xem' : 'Active pools to review'}</h3>
-                                    <p>{lang === 'vi' ? 'Không phải lời khuyên tài chính. Gợi ý dựa trên trạng thái active, áp lực pool và vị thế ví của bạn.' : 'Not financial advice. Suggestions use active status, pool pressure, and your wallet position.'}</p>
+                                    <span className="wc-eyebrow">{t.suggestedPools}</span>
+                                    <h3>{t.activePoolsReview}</h3>
+                                    <p>{t.suggestionDisclaimer}</p>
                                 </div>
                                 <Filter size={18} />
                             </div>
@@ -525,6 +531,7 @@ export default function WorldCupPage() {
                         tokenBalanceLoading={wc.tokenBalanceLoading}
                         tokenBalanceError={wc.tokenBalanceError as Error | null}
                         nativeBalance={wc.nativeBalance}
+                        walletAddress={wc.walletAddress}
                         teams={wc.teamPools}
                         tournamentStarted={wc.tournamentStarted} tournamentEnded={wc.tournamentEnded}
                         onTeamClick={id => setSelectedTeamId(id)} t={t} />
@@ -544,11 +551,12 @@ export default function WorldCupPage() {
             )}
 
             <nav className="wc-mobile-action-bar" aria-label="Mobile actions">
-                <button onClick={() => setView('grid')} className={view === 'grid' ? 'active' : ''}><Grid3X3 size={16} />{lang === 'vi' ? 'Đội' : 'Teams'}</button>
-                <button onClick={() => setView('recommended')} className={view === 'recommended' ? 'active' : ''}><Sparkles size={16} />{lang === 'vi' ? 'Gợi ý' : 'Suggest'}</button>
-                <button onClick={() => (document.querySelector('.wc-result-panel') || document.querySelector('.wc-match-center'))?.scrollIntoView({ behavior: 'smooth', block: 'start' })}><History size={16} />{lang === 'vi' ? 'Kết quả' : 'Results'}</button>
-                <button onClick={() => totalPendingRewards > BigInt(0) && setSelectedTeamId(claimableTeamId >= 0 ? claimableTeamId : 0)} className={totalPendingRewards > BigInt(0) ? 'has-rewards' : ''}><Award size={16} />{lang === 'vi' ? 'Thưởng' : 'Claim'}</button>
+                <button onClick={() => setView('grid')} className={view === 'grid' ? 'active' : ''}><Grid3X3 size={16} />{t.teamsTab}</button>
+                <button onClick={() => setView('recommended')} className={view === 'recommended' ? 'active' : ''}><Sparkles size={16} />{t.suggestTab}</button>
+                <button onClick={() => (document.querySelector('.wc-result-panel') || document.querySelector('.wc-match-center'))?.scrollIntoView({ behavior: 'smooth', block: 'start' })}><History size={16} />{t.resultsTab}</button>
+                <button onClick={() => totalPendingRewards > BigInt(0) && setSelectedTeamId(claimableTeamId >= 0 ? claimableTeamId : 0)} className={totalPendingRewards > BigInt(0) ? 'has-rewards' : ''}><Award size={16} />{t.claimTab}</button>
             </nav>
+            <SoundToggle />
         </div>
     );
 }

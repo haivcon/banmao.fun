@@ -77,6 +77,7 @@ export default function OkxInsights({ walletAddress, t }: Props) {
             <div className="wc-okx-head">
                 <span className="wc-eyebrow">{t.xlayerInsights || "XLayer Insights"}</span>
                 <h3><Activity size={17} strokeWidth={2.4} />{t.okxInsights || "OKX Read-Only"}</h3>
+                <span className="wc-okx-sync-badge"><span className="wc-okx-sync-dot" />Live</span>
             </div>
             {state.disabled || state.error ? (
                 <div className="wc-okx-disabled">
@@ -85,11 +86,14 @@ export default function OkxInsights({ walletAddress, t }: Props) {
                 </div>
             ) : (
                 <div className="wc-okx-grid">
-                    <div><span><ShieldCheck size={13} />{t.chainSupport || "Chain"}</span><strong>{state.chainSupported === false ? (t.unsupported || "Unsupported") : `#${chain}`}</strong></div>
-                    <div><span><BarChart3 size={13} />BANMAO</span><strong>{state.price || "--"}</strong><small>{t.price || "Price"}</small></div>
-                    <div><span><WalletCards size={13} />{t.walletValue || "Wallet Value"}</span><strong>{state.totalValue || "--"}</strong></div>
-                    <div><span>{t.tokenBalance || "Token Balance"}</span><strong>{state.balance || "--"}</strong></div>
-                    <div className="wc-okx-news"><span><Newspaper size={13} />{t.marketNews || "Market News"}</span><strong>{state.newsTitle || "--"}</strong></div>
+
+                    <div className="wc-okx-news">
+                        <span>
+                            <Newspaper size={13} />{t.marketNews || "Market News"}
+                            <span className="wc-news-hot-badge">HOT</span>
+                        </span>
+                        <strong>{state.newsTitle || <span className="wc-shimmer wc-shimmer-title" style={{ width: '100%', height: '14px' }}></span>}</strong>
+                    </div>
                 </div>
             )}
         </div>

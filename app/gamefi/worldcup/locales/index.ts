@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
 import { en } from "./en";
 import { vi } from "./vi";
 import { zh } from "./zh";
@@ -18,7 +21,7 @@ export const WC_LANGS: { code: WCLang; label: string }[] = [
     { code: 'id', label: 'Indonesia' },
 ];
 
-const t: Record<WCLang, typeof en> = {
+const translations: Record<WCLang, typeof en> = {
     en,
     vi,
     zh,
@@ -43,36 +46,36 @@ export function detectBrowserLanguage(): WCLang {
     return 'en';
 }
 
-import { useState, useEffect } from "react";
-
+/**
+ * Proper React hook for language — always renders 'en' on server & first client
+ * paint to avoid hydration mismatch, then reads localStorage in useEffect.
+ */
 export function useWCLang(): { lang: WCLang; setLang: (l: WCLang) => void; t: typeof en } {
     const [lang, setLangState] = useState<WCLang>('en');
-    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        let stored = localStorage.getItem('wc_lang') as WCLang;
+        let stored = localStorage.getItem('wc_lang') as WCLang | null;
         if (!stored) {
             stored = detectBrowserLanguage();
             localStorage.setItem('wc_lang', stored);
         }
-        setLangState(stored);
-        setMounted(true);
+        if (stored !== 'en') {
+            setLangState(stored);
+        }
     }, []);
 
-    const setLang = (l: WCLang) => {
+    const setLang = useCallback((l: WCLang) => {
         localStorage.setItem('wc_lang', l);
-        window.location.reload();
-    };
-
-    const activeLang = mounted ? lang : 'en';
+        setLangState(l);
+    }, []);
 
     return {
-        lang: activeLang,
+        lang,
         setLang,
-        t: t[activeLang] || t.en
+        t: translations[lang] || translations.en,
     };
 }
 
 export function getWCT(lang: WCLang): typeof en {
-    return t[lang] || t.en;
+    return translations[lang] || translations.en;
 }

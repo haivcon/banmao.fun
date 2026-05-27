@@ -1740,14 +1740,14 @@
 .wc-view-toggle button { border-radius: 9999px; }
 .wc-admin-link { border-radius: 9999px; }
 .wc-back-btn { border-radius: 9999px; padding: 6px 16px; }
-.wc-modal-tabs { border-radius: 9999px; }
-.wc-modal-tabs button { border-radius: 9999px; }
-.wc-modal-input { border-radius: 9999px; padding: 14px 20px; }
-.wc-max-btn { border-radius: 9999px; }
-.wc-modal-action { border-radius: 9999px; }
-.wc-modal-warning { border-radius: 9999px; }
-.wc-modal-tip { border-radius: 9999px; }
-.wc-modal-balance { border-radius: 9999px; padding: 6px 16px; }
+.wc-modal-tabs { border-radius: 12px; }
+.wc-modal-tabs button { border-radius: 10px; }
+.wc-modal-input { border-radius: 10px; padding: 10px 16px; }
+.wc-max-btn { border-radius: 8px; }
+.wc-modal-action { border-radius: 12px; }
+.wc-modal-warning { border-radius: 12px; }
+.wc-modal-tip { border-radius: 12px; }
+.wc-modal-balance { border-radius: 8px; padding: 4px 12px; }
 .wc-lb-row { border-radius: 9999px; }
 .wc-portfolio-item { border-radius: 9999px; }
 .wc-portfolio-total { border-radius: 9999px; }
@@ -2223,9 +2223,55 @@
 .wc-crest-md .wc-crest-mark { font-size: 18px; }
 .wc-crest-lg { width: 72px; height: 80px; }
 .wc-crest-lg .wc-crest-mark { font-size: 22px; }
+
+/* ---- Mascot image variant ---- */
+.wc-crest-has-img {
+    clip-path: none;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 12px;
+    overflow: visible;
+}
+.wc-crest-has-img::before,
+.wc-crest-has-img::after {
+    content: none;
+}
+.wc-crest-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.35));
+    transition: transform 0.25s ease;
+}
+.wc-crest-has-img:hover .wc-crest-img,
+.wc-crest-has-img:active .wc-crest-img,
+.wc-team-card:hover .wc-crest-has-img .wc-crest-img,
+.wc-team-card:active .wc-crest-has-img .wc-crest-img {
+    transform: scale(2) !important;
+    z-index: 20 !important;
+}
+.wc-team-card:hover {
+    overflow: visible !important;
+    z-index: 10 !important;
+}
+.wc-crest-has-img.wc-crest-sm { width: 36px; height: 40px; }
+.wc-crest-has-img.wc-crest-md { width: 64px; height: 72px; }
+.wc-crest-has-img.wc-crest-lg { width: 84px; height: 94px; }
 .wc-team-name {
     font-size: 18px;
     line-height: 1.08;
+    transition: transform 0.25s ease, color 0.25s ease;
+    transform-origin: left center;
+}
+.wc-team-card:hover .wc-team-name,
+.wc-team-card:active .wc-team-name {
+    transform: scale(1.5);
+    z-index: 20;
+    position: relative;
+    color: #fff;
+    text-shadow: 0 4px 12px rgba(0,0,0,0.8);
 }
 .wc-team-code {
     margin-top: 4px;
@@ -2709,18 +2755,19 @@
 /* ============ Stake Amount Control ============ */
 .wc-modal-input-group {
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr) 44px 86px;
+    grid-template-columns: 36px minmax(0, 1fr) 36px !important;
     gap: 8px;
+    width: 100%;
 }
 .wc-step-btn,
-.wc-max-btn,
 .wc-modal-input {
-    min-height: 52px;
+    min-height: 38px !important;
+    height: 38px !important;
 }
 .wc-step-btn {
-    width: 44px;
-    min-width: 44px;
-    border-radius: 10px;
+    width: 36px !important;
+    min-width: 36px !important;
+    border-radius: 8px;
     background:
         linear-gradient(180deg, rgba(30,41,59,0.76), rgba(15,23,42,0.9));
     border-color: rgba(148,163,184,0.14);
@@ -2728,13 +2775,13 @@
 .wc-modal-input {
     width: 100%;
     min-width: 0;
-    padding: 0 16px;
-    border-radius: 10px;
+    padding: 0 12px;
+    border-radius: 8px;
     background:
         linear-gradient(180deg, rgba(15,23,42,0.82), rgba(2,6,23,0.38));
     border-color: rgba(148,163,184,0.16);
     color: #e2e8f0;
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 900;
     line-height: 1;
 }
@@ -2760,14 +2807,28 @@
     color: #5eead4;
 }
 
-@media (max-width: 520px) {
-    .wc-modal-input-group {
-        grid-template-columns: 42px minmax(0, 1fr) 42px;
-    }
-    .wc-max-btn {
-        grid-column: 1 / -1;
-        width: 100%;
-    }
+.wc-quick-amounts {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+    width: 100%;
+}
+.wc-quick-amounts button {
+    flex: 1;
+    min-height: 30px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(15, 23, 42, 0.45);
+    color: #94a3b8;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.wc-quick-amounts button:hover {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.35);
+    color: #34d399;
 }
 
 /* ============ Command Header / Arena Upgrade ============ */
@@ -3515,6 +3576,7 @@
 .wc-mechanic-item p {
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -3577,7 +3639,21 @@
         padding: 13px;
         margin-bottom: 14px;
     }
-    .wc-player-metrics,
+    .wc-player-metrics {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 6px !important;
+    }
+    .wc-player-metrics div {
+        min-height: auto !important;
+        padding: 6px 8px !important;
+    }
+    .wc-player-metrics strong {
+        font-size: 16px !important;
+        margin-top: 2px !important;
+    }
+    .wc-player-metrics span {
+        font-size: 9px !important;
+    }
     .wc-stake-wizard,
     .wc-tx-timeline {
         grid-template-columns: 1fr;
@@ -3793,30 +3869,1338 @@
     50% { box-shadow: 0 8px 24px var(--btn-glow, rgba(52, 211, 153, 0.55)), 0 0 0 4px rgba(52, 211, 153, 0.15); }
 }
 
-/* ================= Custom Scrollbar for WorldCup ================= */
-html::-webkit-scrollbar,
-body::-webkit-scrollbar,
-.worldcup-theme-scroll ::-webkit-scrollbar {
+/* ==========================================================================
+   PREMIUM MASCOT SYSTEM - VISUAL ENHANCEMENTS & BALANCED LAYOUTS
+   ========================================================================== */
+
+/* 1. Large Mascot Watermark Background for Stake Modal */
+.wc-modal-mascot-bg-wrap {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    border-radius: 20px;
+    z-index: 1;
+}
+
+.wc-modal-mascot-bg {
+    position: absolute;
+    bottom: -20px;
+    right: -25px;
+    width: 250px;
+    height: 250px;
+    object-fit: contain;
+    opacity: 0.08; /* Extremely elegant, subtle colorful glow that does not affect text readability */
+    transform: rotate(-8deg);
+    pointer-events: auto !important;
+    filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.45));
+    mask-image: linear-gradient(to top left, rgba(0, 0, 0, 1) 40%, rgba(0, 0, 0, 0) 90%);
+    -webkit-mask-image: linear-gradient(to top left, rgba(0, 0, 0, 1) 40%, rgba(0, 0, 0, 0) 90%);
+    transition: transform 0.3s ease;
+}
+
+.wc-modal:hover .wc-modal-mascot-bg {
+    transform: scale(1.05) rotate(-6deg);
+}
+.wc-modal-mascot-bg {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease, filter 0.3s ease !important;
+}
+.wc-modal-mascot-bg:hover {
+    transform: scale(2) rotate(-3deg) !important;
+    opacity: 0.35 !important;
+    filter: drop-shadow(0 15px 35px var(--team-color-glow-strong, rgba(255,255,255,0.2))) !important;
+}
+
+/* Ensure all normal modal content is elevated above the watermark background */
+.wc-modal > *:not(.wc-modal-mascot-bg-wrap) {
+    position: relative;
+    z-index: 2;
+}
+
+/* Flying Mascot Micro-Animation styles */
+.wc-floating-mascot {
+    pointer-events: none;
+    animation: wc-floatUp 0.9s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+}
+
+@keyframes wc-floatUp {
+    0% {
+        transform: translate(-50%, 0) scale(0.3) rotate(0deg);
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+        transform: translate(-50%, -25px) scale(1.6) rotate(15deg);
+    }
+    100% {
+        transform: translate(-50%, -160px) scale(0.9) rotate(-30deg);
+        opacity: 0;
+    }
+}
+
+/* 2. Larger Mascots in Team Cards - Comfortable Layout */
+.wc-team-grid-comfortable .wc-team-card .wc-crest-has-img.wc-crest-md {
+    width: 82px;
+    height: 92px;
+    margin-right: 4px;
+}
+
+.wc-team-grid-comfortable .wc-team-hero {
+    gap: 14px;
+    margin-top: 12px;
+}
+
+.wc-team-grid-comfortable .wc-team-hero > div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* 3. Larger Mascots in Team Cards - Compact Layout */
+.wc-team-grid-compact .wc-team-card .wc-crest-has-img.wc-crest-md {
+    width: 70px;
+    height: 78px;
+}
+
+.wc-team-grid-compact .wc-team-hero {
+    gap: 10px;
+    margin-top: 8px;
+}
+
+/* 4. Larger Mascots in Team Cards - List Layout */
+.wc-team-grid-list .wc-team-card .wc-crest-has-img.wc-crest-md {
+    width: 74px;
+    height: 82px;
+}
+
+.wc-team-grid-list .wc-team-hero {
+    gap: 14px;
+}
+
+/* 5. Extremely Premium Large Mascots in Battle Board (Match Center) */
+.wc-battle-team .wc-crest-has-img.wc-crest-lg {
+    width: 114px;
+    height: 126px;
+    filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.45));
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.wc-battle-team {
+    grid-template-columns: auto 1fr;
+    gap: 4px 18px;
+    padding: 20px 18px;
+}
+
+.wc-battle-team:hover .wc-crest-has-img.wc-crest-lg {
+    transform: scale(1.1) rotate(2deg);
+}
+
+/* 6. Larger Mascots in Match Results Cards */
+.wc-result-team-card .wc-crest-has-img.wc-crest-md {
+    width: 78px;
+    height: 86px;
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
+}
+
+.wc-result-team-card {
+    gap: 4px 14px;
+    transition: border-color 0.25s, transform 0.25s;
+}
+
+.wc-result-team-card:hover {
+    transform: translateY(-2px);
+}
+
+.wc-result-team-card:hover .wc-crest-has-img.wc-crest-md .wc-crest-img {
+    transform: scale(1.08);
+}
+
+/* Responsive Scaling Adjustments for Mascot Balance */
+@media (max-width: 640px) {
+    .wc-battle-team .wc-crest-has-img.wc-crest-lg {
+        width: 88px;
+        height: 98px;
+    }
+    
+    .wc-modal-mascot-bg {
+        width: 210px;
+        height: 210px;
+        bottom: -10px;
+        right: -15px;
+        opacity: 0.07;
+    }
+}
+
+@media (max-width: 480px) {
+    .wc-team-grid-comfortable .wc-team-card .wc-crest-has-img.wc-crest-md {
+        width: 74px;
+        height: 82px;
+    }
+    
+    .wc-team-grid-compact .wc-team-card .wc-crest-has-img.wc-crest-md {
+        width: 62px;
+        height: 70px;
+    }
+    
+    .wc-result-team-card .wc-crest-has-img.wc-crest-md {
+        width: 66px;
+        height: 74px;
+    }
+}
+
+/* ==========================================================================
+   PREMIUM AAA GAMEFI REDESIGN - STAKE MODAL STYLING OVERRIDES (MINIMALIST REMODEL)
+   ========================================================================== */
+
+/* 1. Translucent Glassmorphic Backdrop, Narrower Compact Width & Top Neon Highlight */
+.wc-modal {
+    width: 92% !important;
+    max-width: 394px !important; /* Narrower and more compact panel width */
+    padding: 20px !important; /* Thinner padding for elegant composition */
+    background: linear-gradient(180deg, rgba(13, 20, 37, 0.9) 0%, rgba(6, 10, 20, 0.97) 100%) !important;
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 
+        0 30px 100px rgba(0, 0, 0, 0.85), 
+        0 0 50px var(--team-color-glow, rgba(16, 185, 129, 0.08)) !important;
+    border-radius: 24px !important;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+    overflow-x: hidden !important;
+}
+
+/* Balanced Close Button on Top-Right */
+.wc-modal-close {
+    position: absolute !important;
+    top: 18px !important;
+    right: 18px !important;
+    left: auto !important; /* Override left positions */
+    border-radius: 999px !important;
+    font-weight: 700;
+    transition: all 0.2s ease;
+    z-index: 10 !important;
+}
+
+.wc-modal-close:hover {
+    transform: rotate(90deg);
+}
+
+/* 2. Esport Typography and Borderless/Clean Minimalist Cards */
+.wc-modal-info {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin-bottom: 18px !important;
+}
+
+.wc-modal-info > div {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 12px !important;
+    padding: 10px 4px !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.wc-modal-info > div:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: var(--team-color, #10b981) !important; /* Glow border instead of left-border strip */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25), 0 0 10px var(--team-color-glow);
+}
+
+.wc-modal-info span {
+    font-size: 8.5px !important;
+    color: #64748b !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.8px !important;
+}
+
+.wc-modal-info strong {
+    font-size: 15px !important;
+    font-weight: 900 !important;
+    color: #ffffff !important;
+    letter-spacing: -0.2px;
+}
+
+/* 3. Stepper Timeline (Approve, Stake, Track) */
+.wc-stake-wizard {
+    gap: 8px !important;
+    margin-bottom: 18px !important;
+}
+
+.wc-stake-wizard > div {
+    position: relative;
+    padding: 10px 8px !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(148, 163, 184, 0.06) !important;
+    background: rgba(15, 23, 42, 0.45) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wc-stake-wizard span {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 10px !important;
+}
+
+.wc-stake-wizard strong {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+}
+
+.wc-stake-wizard small {
+    font-size: 9px !important;
+    color: #475569 !important;
+}
+
+/* Active Step Pulsing Animation */
+.wc-stake-wizard .active {
+    border-color: var(--team-color, #10b981) !important;
+    background: rgba(16, 185, 129, 0.04) !important;
+    box-shadow: 
+        0 0 12px var(--team-color-glow),
+        inset 0 0 10px rgba(16, 185, 129, 0.01) !important;
+    animation: wc-step-pulse 2s infinite ease-in-out;
+}
+
+.wc-stake-wizard .active span {
+    background: var(--team-color, #10b981) !important;
+    color: #070b14 !important;
+    box-shadow: 0 0 10px var(--team-color-glow-strong);
+}
+
+/* Done Step Styling */
+.wc-stake-wizard .done {
+    border-color: rgba(52, 211, 153, 0.18) !important;
+    background: rgba(16, 185, 129, 0.04) !important;
+}
+
+.wc-stake-wizard .done span {
+    background: rgba(52, 211, 153, 0.12) !important;
+    color: #34d399 !important;
+}
+
+@keyframes wc-step-pulse {
+    0%, 100% { border-color: var(--team-color, #10b981); box-shadow: 0 0 10px var(--team-color-glow); }
+    50% { border-color: var(--team-color-secondary, #f59e0b); box-shadow: 0 0 16px var(--team-color-glow-strong); }
+}
+
+/* 4. Glowing Action Button with Shine Sweep Effect */
+.wc-modal-action {
+    position: relative;
+    overflow: hidden; /* Essential for sweeping shine */
+    background: linear-gradient(135deg, var(--team-color, #10b981) 0%, var(--team-color-secondary, #059669) 100%) !important;
+    color: #070b14 !important;
+    font-weight: 900 !important;
+    letter-spacing: 0.5px;
+    border-radius: 9999px !important;
+    box-shadow: 0 6px 20px var(--team-color-glow-strong, rgba(16, 185, 129, 0.35)) !important;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.wc-modal-action:hover:not(:disabled) {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 10px 28px var(--team-color-glow-strong), 0 0 15px var(--team-color) !important;
+    color: #fff !important;
+}
+
+.wc-modal-action:disabled {
+    opacity: 0.35 !important;
+    background: rgba(148, 163, 184, 0.15) !important;
+    color: #64748b !important;
+    box-shadow: none !important;
+    cursor: not-allowed;
+}
+
+/* Shine Sweep Line Overlay */
+.wc-modal-action::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 35%;
+    height: 200%;
+    background: linear-gradient(
+        to right,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.46) 50%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: rotate(30deg);
+    animation: wc-shine-sweep 4s infinite ease-in-out;
+}
+
+@keyframes wc-shine-sweep {
+    0% { left: -60%; }
+    15%, 100% { left: 140%; }
+}
+
+/* 5. Warning & Tip Alert Enhancements (Clean Uniform Outlines) */
+.wc-modal-warning {
+    border: 1px solid rgba(245, 158, 11, 0.22) !important;
+    background: rgba(245, 158, 11, 0.04) !important;
+    border-radius: 12px !important;
+    padding: 11px 14px !important;
+    font-weight: 700;
+}
+
+.wc-modal-tip {
+    border: 1px solid var(--team-color-glow-strong, rgba(16, 185, 129, 0.22)) !important;
+    background: rgba(16, 185, 129, 0.03) !important;
+    border-radius: 12px !important;
+    padding: 11px 14px !important;
+    font-weight: 700;
+}
+
+/* 6. Tabs, Input Stepper Redesign */
+.wc-modal-tabs {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+.wc-modal-tabs button.active {
+    background: var(--team-color, #10b981) !important;
+    color: #070b14 !important;
+    box-shadow: 0 4px 12px var(--team-color-glow-strong) !important;
+    font-weight: 900 !important;
+}
+
+.wc-modal-input-group {
+    background: rgba(2, 6, 23, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px !important;
+    padding: 4px;
+}
+
+.wc-modal-input {
+    border: none !important;
+    background: transparent !important;
+}
+
+.wc-step-btn,
+.wc-max-btn {
+    border-radius: 8px !important;
+}
+
+/* 7. Centered Mascot Watermark with deep blur backdrop */
+.wc-modal-mascot-bg-wrap {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    border-radius: 24px;
+    z-index: 1;
+}
+
+.wc-modal-mascot-bg {
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) rotate(-4deg) !important; /* Centered layout */
+    width: 330px !important; /* Slightly larger image */
+    height: 330px !important;
+    object-fit: contain;
+    opacity: 0.22 !important; /* High fidelity opacity so it is clearly visible and not blurry */
+    pointer-events: auto !important;
+    filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.6));
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease !important;
+}
+
+.wc-modal:hover .wc-modal-mascot-bg {
+    transform: translate(-50%, -50%) scale(1.05) rotate(-2deg) !important;
+    opacity: 0.30 !important; /* Extremely rich hover state */
+}
+
+/* ==========================================================================
+   PREMIUM SIDEBAR UPGRADES: PORTFOLIO & OKX INSIGHTS PANELS
+   ========================================================================== */
+
+/* 1. Base Panels Layout Consistency */
+.wc-portfolio, .wc-okx-panel {
+    position: relative;
+    background: linear-gradient(180deg, rgba(17, 24, 39, 0.6) 0%, rgba(9, 15, 29, 0.85) 100%) !important;
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 20px !important;
+    padding: 20px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wc-portfolio:hover {
+    border-color: rgba(16, 185, 129, 0.15) !important;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35), 0 0 15px rgba(16, 185, 129, 0.03);
+}
+
+.wc-okx-panel:hover {
+    border-color: rgba(20, 184, 166, 0.18) !important;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35), 0 0 15px rgba(20, 184, 166, 0.05);
+}
+
+/* 2. Header and Typography */
+.wc-portfolio-head, .wc-okx-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    padding-bottom: 12px;
+    position: relative;
+}
+
+/* OKX cyber glow effect behind title */
+.wc-okx-head::before {
+    content: "";
+    position: absolute;
+    top: -20px;
+    left: -20px;
+    right: -20px;
+    height: 60px;
+    background: radial-gradient(circle at 50% 0%, rgba(20, 184, 166, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.wc-portfolio-head > div, .wc-okx-head > div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 1;
+}
+
+.wc-portfolio-head h3, .wc-okx-head h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    letter-spacing: -0.2px;
+}
+
+.wc-portfolio-head h3 svg {
+    color: #34d399; /* Green active tone */
+}
+
+.wc-okx-head h3 svg {
+    color: #14b8a6; /* OKX Cyan tone */
+}
+
+.wc-eyebrow {
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.2px !important;
+    color: #64748b !important;
+}
+
+/* Status Pill Badges */
+.wc-mini-status {
+    padding: 3px 10px !important;
+    border-radius: 999px !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px;
+    background: rgba(16, 185, 129, 0.1) !important;
+    color: #34d399 !important;
+    border: 1px solid rgba(16, 185, 129, 0.15);
+}
+
+.wc-okx-sync-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px !important;
+    border-radius: 999px !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    background: rgba(20, 184, 166, 0.08) !important;
+    color: #2dd4bf !important;
+    border: 1px solid rgba(20, 184, 166, 0.15);
+    z-index: 1;
+}
+
+/* Live indicators pulsing */
+.wc-okx-sync-dot, .wc-chain-live-dot {
     width: 6px;
     height: 6px;
+    border-radius: 50%;
+    background-color: #14b8a6;
+    box-shadow: 0 0 8px #14b8a6;
+    display: inline-block;
+    animation: wc-pulse-green 1.8s infinite ease-in-out;
 }
-html::-webkit-scrollbar-track,
-body::-webkit-scrollbar-track,
-.worldcup-theme-scroll ::-webkit-scrollbar-track {
-    background: #050a12;
+
+.wc-chain-live-dot {
+    background-color: #34d399;
+    box-shadow: 0 0 8px #34d399;
+    margin-left: 6px;
+    vertical-align: middle;
+    animation: wc-pulse-green 1.8s infinite ease-in-out;
 }
-html::-webkit-scrollbar-thumb,
-body::-webkit-scrollbar-thumb,
-.worldcup-theme-scroll ::-webkit-scrollbar-thumb {
-    background: #10b981;
+
+@keyframes wc-pulse-green {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+        box-shadow: 0 0 6px cubic-bezier(0.4, 0, 0.6, 1);
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.5;
+        box-shadow: 0 0 12px cubic-bezier(0.4, 0, 0.6, 1);
+    }
+}
+
+/* 3. Net Worth Hero Card */
+.wc-portfolio-networth {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-top: 2px solid rgba(52, 211, 153, 0.3) !important;
+    border-radius: 14px !important;
+    padding: 14px 16px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    position: relative;
+    overflow: hidden;
+}
+
+.wc-portfolio-networth::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 10% 10%, rgba(16, 185, 129, 0.04) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+.wc-networth-title {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    color: #64748b !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px;
+}
+
+.wc-networth-amount {
+    font-size: 22px !important;
+    font-weight: 900 !important;
+    color: #ffffff !important;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.wc-networth-amount small {
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    color: #34d399 !important; /* Emerald green asset highlights */
+    letter-spacing: 0;
+}
+
+/* 4. Metrics Grid */
+.wc-portfolio-metrics, .wc-okx-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+}
+
+.wc-portfolio-metrics > div, .wc-okx-grid > div:not(.wc-okx-news) {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wc-portfolio-metrics > div:hover, .wc-okx-grid > div:not(.wc-okx-news):hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    transform: translateY(-2px);
+}
+
+/* Specific styling for Claimable / Pending Rewards */
+.wc-portfolio-metrics > div:nth-child(4) {
+    border-color: rgba(52, 211, 153, 0.12) !important;
+    background: rgba(16, 185, 129, 0.02) !important;
+}
+.wc-portfolio-metrics > div:nth-child(4):hover {
+    border-color: rgba(52, 211, 153, 0.3) !important;
+    box-shadow: 0 0 10px rgba(52, 211, 153, 0.05);
+}
+
+.wc-portfolio-metrics span, .wc-okx-grid span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 8.5px !important;
+    font-weight: 800 !important;
+    color: #64748b !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px;
+}
+
+.wc-portfolio-metrics span svg, .wc-okx-grid span svg {
+    color: #475569;
+}
+
+.wc-portfolio-metrics strong, .wc-okx-grid strong {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    color: #f8fafc !important;
+    margin-top: 1px;
+}
+
+.wc-portfolio-metrics small, .wc-okx-grid small {
+    font-size: 9px !important;
+    font-weight: 600 !important;
+    color: #475569 !important;
+}
+
+/* 5. Custom OKX Grid Additions */
+.wc-price-trend-up {
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    color: #34d399 !important;
+    background: rgba(16, 185, 129, 0.12) !important;
+    padding: 1px 5px !important;
+    border-radius: 4px !important;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.wc-okx-news {
+    grid-column: 1 / -1 !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: all 0.2s ease;
+}
+
+.wc-okx-news:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.wc-news-hot-badge {
+    font-size: 8px !important;
+    font-weight: 1000 !important;
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #f97316, #ef4444) !important;
+    padding: 1px 6px !important;
+    border-radius: 999px !important;
+    margin-left: auto;
+    letter-spacing: 0.5px;
+    animation: wc-news-flash 1.5s infinite ease-in-out;
+}
+
+@keyframes wc-news-flash {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(0.95); }
+}
+
+.wc-okx-news strong {
+    font-size: 11.5px !important;
+    font-weight: 500 !important;
+    color: #cbd5e1 !important;
+    line-height: 1.4;
+}
+
+/* 6. Disabled state for OKX Insights */
+.wc-okx-disabled {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px !important;
+    background: rgba(15, 23, 42, 0.35) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+    border-radius: 12px !important;
+}
+
+.wc-okx-disabled svg {
+    color: #475569;
+    flex-shrink: 0;
+}
+
+.wc-okx-disabled span {
+    font-size: 11px !important;
+    color: #64748b !important;
+    line-height: 1.4;
+}
+
+/* 7. Premium Empty State with Glow Effects & Scroll CTA Button */
+.wc-portfolio-empty {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 24px 16px !important;
+    background: rgba(255, 255, 255, 0.01) !important;
+    border: 1px dashed rgba(255, 255, 255, 0.06) !important;
+    border-radius: 14px !important;
+    overflow: hidden;
+    gap: 4px;
+}
+
+.wc-portfolio-empty-glow {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 0;
+    animation: wc-empty-pulse 4s infinite ease-in-out;
+}
+
+@keyframes wc-empty-pulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+    50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+}
+
+.wc-portfolio-empty strong {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #cbd5e1 !important;
+    z-index: 1;
+}
+
+.wc-portfolio-empty span {
+    font-size: 11px !important;
+    color: #475569 !important;
+    z-index: 1;
+    margin-bottom: 8px !important;
+}
+
+.wc-portfolio-cta-btn {
+    position: relative;
+    z-index: 1;
+    min-height: 32px !important;
+    padding: 0 18px !important;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(20, 184, 166, 0.05) 100%) !important;
+    border: 1px solid rgba(52, 211, 153, 0.25) !important;
+    border-radius: 999px !important;
+    color: #34d399 !important;
+    font-family: inherit;
+    font-size: 11px !important;
+    font-weight: 900 !important;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.1);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wc-portfolio-cta-btn:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%) !important;
+    border-color: transparent !important;
+    color: #070b14 !important;
+    box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+}
+
+.wc-portfolio-cta-btn:active {
+    transform: translateY(0);
+}
+
+/* 8. Portfolio Staked Items List & Footnotes */
+.wc-portfolio-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px !important;
+}
+
+.wc-portfolio-item {
+    display: grid !important;
+    grid-template-columns: 24px minmax(0, 1fr) auto auto !important;
+    align-items: center;
+    gap: 12px !important;
+    padding: 8px 12px !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+    border-radius: 12px !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wc-portfolio-item:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: var(--team-color, rgba(16, 185, 129, 0.2)) !important;
+    transform: translateX(4px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.wc-portfolio-name {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #cbd5e1 !important;
+}
+
+.wc-portfolio-amount {
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+}
+
+.wc-portfolio-reward {
+    font-size: 9.5px !important;
+    font-weight: 900 !important;
+    color: #34d399 !important;
+    background: rgba(16, 185, 129, 0.1) !important;
+    padding: 1px 6px !important;
+    border-radius: 4px !important;
+}
+
+.wc-portfolio-hint {
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.04);
+}
+
+.wc-portfolio-hint span {
+    font-size: 10px !important;
+    color: #475569 !important;
+    line-height: 1.4;
+    display: block;
+}
+
+/* Widescreen Sidebar override */
+@media (min-width: 1025px) {
+    .wc-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        position: sticky;
+        top: 100px;
+        height: calc(100vh - 120px);
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+    
+    /* Elegant thin scrollbar for sidebar */
+    .wc-sidebar::-webkit-scrollbar {
+        width: 4px;
+    }
+    .wc-sidebar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .wc-sidebar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+    }
+    .wc-sidebar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+}
+
+/* 9. Premium UI Enhancements (Shimmer, Tooltips, Pulse) */
+
+/* Shimmer Skeleton Loader */
+.wc-shimmer {
+    position: relative;
+    overflow: hidden;
+    background-color: rgba(255, 255, 255, 0.03);
     border-radius: 4px;
+    color: transparent !important;
 }
-html::-webkit-scrollbar-thumb:hover,
-body::-webkit-scrollbar-thumb:hover,
-.worldcup-theme-scroll ::-webkit-scrollbar-thumb:hover {
-    background: #059669;
+
+.wc-shimmer::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.08),
+        transparent
+    );
+    animation: wc-shimmer-anim 1.5s infinite linear;
 }
-body.worldcup-theme-scroll {
-    scrollbar-width: thin;
-    scrollbar-color: #10b981 #050a12;
+
+@keyframes wc-shimmer-anim {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(50%); }
+}
+
+/* Shimmer variations for text sizes */
+.wc-shimmer-text {
+    height: 14px;
+    width: 60px;
+    display: inline-block;
+    vertical-align: middle;
+}
+.wc-shimmer-title {
+    height: 22px;
+    width: 100px;
+    display: inline-block;
+}
+.wc-shimmer-badge {
+    height: 12px;
+    width: 40px;
+    border-radius: 999px;
+    display: inline-block;
+}
+
+/* Glassmorphism Tooltip */
+.wc-tooltip-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: help;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.wc-tooltip-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    font-size: 8px;
+    font-weight: 900;
+    font-style: italic;
+    transition: all 0.2s ease;
+}
+
+.wc-tooltip-wrapper:hover .wc-tooltip-icon {
+    background: rgba(52, 211, 153, 0.2);
+    color: #34d399;
+}
+
+.wc-tooltip-content {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #f1f5f9;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    text-transform: none;
+    line-height: 1.5;
+}
+
+/* Tooltip triangle pointer */
+.wc-tooltip-content::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(255, 255, 255, 0.1) transparent transparent transparent;
+}
+
+.wc-tooltip-wrapper:hover .wc-tooltip-content {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Live Match Pulse Glow */
+.wc-pulse-live {
+    animation: wc-live-glow 2s infinite alternate;
+}
+
+@keyframes wc-live-glow {
+    0% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.2), inset 0 0 0 rgba(239, 68, 68, 0); border-color: rgba(255,255,255,0.05); }
+    100% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.5), inset 0 0 10px rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.4); }
+}
+
+/* 10. Sound Toggle Button */
+.wc-sound-toggle {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 999;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.wc-sound-toggle:hover {
+    transform: scale(1.1);
+    background: rgba(30, 41, 59, 0.95);
+    color: #f8fafc;
+}
+
+.wc-sound-toggle.active {
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.3);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+}
+
+.wc-sound-toggle:active {
+    transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+    .wc-sound-toggle {
+        bottom: 84px; /* Above the mobile nav bar */
+        right: 16px;
+        width: 40px;
+        height: 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .wc-page {
+        zoom: 0.88 !important;
+        padding: 8px !important;
+    }
+
+    /* 1. Modal scaling adjustments to prevent scrolling */
+    .wc-modal {
+        width: 95% !important;
+        max-width: 346px !important;
+        padding: 12px !important; /* Extremely thin padding to save space */
+        border-radius: 16px !important;
+        max-height: 96vh !important;
+        zoom: 0.88 !important;
+    }
+    
+    .wc-modal-header {
+        gap: 6px !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .wc-modal-header .wc-crest-md {
+        width: 32px !important;
+        height: 36px !important;
+    }
+    
+    .wc-modal-header h2 {
+        font-size: 15px !important;
+    }
+    
+    .wc-modal-close {
+        top: 10px !important;
+        right: 10px !important;
+        width: 26px !important;
+        height: 26px !important;
+    }
+    
+    .wc-modal-info {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important; /* 4 columns side-by-side to save massive vertical space */
+        gap: 4px !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .wc-modal-info > div {
+        padding: 6px 2px !important;
+        border-radius: 8px !important;
+        text-align: center !important;
+    }
+    
+    .wc-modal-info span {
+        font-size: 8px !important;
+        letter-spacing: 0px !important;
+    }
+    
+    .wc-modal-info strong {
+        font-size: 10px !important;
+    }
+
+    /* 2. Hide Stepper Steps Timeline completely on mobile to fit all info in one screen */
+    .wc-stake-wizard {
+        display: none !important;
+    }
+    
+    /* 3. Input Group, Balance & Tip scaling */
+    .wc-modal-tabs {
+        margin-bottom: 6px !important;
+    }
+    
+    .wc-modal-tabs button {
+        min-height: 26px !important;
+        font-size: 10px !important;
+    }
+    
+    .wc-modal-input-group {
+        min-height: 30px !important;
+        padding: 2px !important;
+        margin-bottom: 4px !important;
+    }
+    
+    .wc-modal-input {
+        font-size: 12px !important;
+        padding: 4px 8px !important;
+        height: 26px !important;
+    }
+    
+    .wc-step-btn {
+        width: 26px !important;
+        height: 26px !important;
+    }
+    
+    .wc-max-btn {
+        height: 26px !important;
+        padding: 0 8px !important;
+        font-size: 9px !important;
+    }
+    
+    .wc-modal-balance {
+        font-size: 9px !important;
+        margin-bottom: 6px !important;
+        padding: 2px 8px !important;
+    }
+    
+    .wc-amount-preview {
+        padding: 6px 8px !important;
+        margin-bottom: 6px !important;
+        gap: 3px !important;
+        font-size: 9px !important;
+    }
+    
+    .wc-modal-tip {
+        font-size: 9px !important;
+        padding: 4px 8px !important;
+        margin-bottom: 6px !important;
+    }
+    
+    .wc-modal-warning {
+        font-size: 9px !important;
+        padding: 6px 8px !important;
+        margin-bottom: 6px !important;
+    }
+
+    .wc-modal-action {
+        font-size: 12px !important;
+        min-height: 34px !important;
+        padding: 8px !important;
+    }
+    
+    .wc-modal-claim {
+        min-height: 34px !important;
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+        margin-bottom: 8px !important;
+    }
+    
+    /* 4. Restore watermark background mascot on mobile with balanced size and subtle opacity */
+    .wc-modal-mascot-bg-wrap {
+        display: block !important;
+        pointer-events: none !important;
+        z-index: 1 !important;
+    }
+    .wc-modal-mascot-bg {
+        width: 160px !important;
+        height: 160px !important;
+        opacity: 0.08 !important;
+        pointer-events: auto !important;
+        cursor: zoom-in !important;
+    }
+    .wc-modal-mascot-bg:hover,
+    .wc-modal-mascot-bg:active {
+        transform: translate(-50%, -50%) scale(1.15) rotate(2deg) !important;
+        opacity: 0.22 !important;
+    }
+    
+    /* 5. Team Card mobile optimizations to prevent cut-offs */
+    .wc-team-card {
+        padding: 10px !important;
+        min-height: auto !important;
+    }
+    
+    .wc-team-hero {
+        gap: 8px !important;
+    }
+    
+    .wc-team-hero .wc-crest-md {
+        width: 44px !important;
+        height: 48px !important;
+    }
+    
+    .wc-team-name {
+        font-size: 14px !important;
+    }
+    
+    .wc-team-code {
+        font-size: 10px !important;
+    }
+    
+    .wc-team-caption {
+        font-size: 9px !important;
+    }
+    
+    .wc-team-stats {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 4px !important;
+    }
+    
+    .wc-stat {
+        padding: 4px !important;
+        border-radius: 6px !important;
+    }
+    
+    .wc-stat-label {
+        font-size: 8px !important;
+    }
+    
+    .wc-stat-value {
+        font-size: 9px !important;
+    }
+    
+    .wc-card-footer {
+        font-size: 10px !important;
+    }
+    
+    .wc-position-chip {
+        padding: 2px 6px !important;
+        font-size: 9px !important;
+    }
+    
+    .wc-card-action {
+        padding: 4px 8px !important;
+        font-size: 10px !important;
+    }
 }
