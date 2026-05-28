@@ -79,3 +79,4 @@ export function useWCLang(): { lang: WCLang; setLang: (l: WCLang) => void; t: ty
 export function getWCT(lang: WCLang): typeof en {
     return translations[lang] || translations.en;
 }
+
