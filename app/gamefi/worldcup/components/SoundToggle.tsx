@@ -10,8 +10,8 @@ export default function SoundToggle() {
         <button 
             className={`wc-sound-toggle ${isMuted ? 'muted' : 'active'}`} 
             onClick={() => {
-                const nextMuted = toggleMute();
-                if (!nextMuted) {
+                toggleMute();
+                if (isMuted) {
                     setTimeout(() => playPop(), 50); // Play pop when unmuting
                 }
             }}
