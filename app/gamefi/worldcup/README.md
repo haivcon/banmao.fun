@@ -6,11 +6,11 @@ This directory contains the World Cup Yield Wars frontend module.
 When syncing updates from the standalone `WorldCupYieldWars_XLayer` project into the `banmao-fun-full` repository, make sure you copy **ALL** of the following folders to avoid runtime crashes or missing assets:
 
 1. **Frontend UI & Logic**
-   - Source: `WorldCupYieldWars_XLayer/frontend/worldcup` (DO NOT copy from `app/gamefi/worldcup` as it might be outdated)
+   - Source: `WorldCupYieldWars_XLayer/app/gamefi/worldcup`
    - Target: `banmao-fun-full/app/gamefi/worldcup`
    - Command: 
      ```powershell
-     Copy-Item -Path "WorldCupYieldWars_XLayer\frontend\worldcup\*" -Destination "banmao-fun-full\app\gamefi\worldcup" -Recurse -Force
+     Copy-Item -Path "WorldCupYieldWars_XLayer\app\gamefi\worldcup\*" -Destination "banmao-fun-full\app\gamefi\worldcup" -Recurse -Force
      ```
    - **CRITICAL:** After copying, you MUST immediately restore the mono-repo specific files so you don't break Vercel:
      ```powershell
