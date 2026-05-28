@@ -10,10 +10,10 @@ export default function SoundToggle() {
         <button 
             className={`wc-sound-toggle ${isMuted ? 'muted' : 'active'}`} 
             onClick={() => {
-                if (isMuted) {
+                const nextMuted = toggleMute();
+                if (!nextMuted) {
                     setTimeout(() => playPop(), 50); // Play pop when unmuting
                 }
-                toggleMute();
             }}
             title={isMuted ? "Enable Sound" : "Mute Sound"}
             aria-label="Toggle Sound"
