@@ -523,7 +523,6 @@ export default function WorldCupPage() {
                 <button className={view === 'grid' ? 'active' : ''} onClick={() => setView('grid')}><Grid3X3 size={15} strokeWidth={2.4} />{cleanLabel(t.teamGrid, 'Team Grid')}</button>
                 <button className={view === 'leaderboard' ? 'active' : ''} onClick={() => setView('leaderboard')}><ChartColumn size={15} strokeWidth={2.4} />{cleanLabel(t.leaderboard, 'Leaderboard')}</button>
                 <button className={view === 'fixtures' ? 'active' : ''} onClick={() => setView('fixtures')}><Timer size={15} strokeWidth={2.4} />{t.fixturesTab}</button>
-                <button className={view === 'groups' ? 'active' : ''} onClick={() => setView('groups')}><List size={15} strokeWidth={2.4} />{t.groupStage}</button>
                 <button className={view === 'bracket' ? 'active' : ''} onClick={() => setView('bracket')}><Trophy size={15} strokeWidth={2.4} />{t.knockoutBracket}</button>
                 <button className={view === 'recommended' ? 'active' : ''} onClick={() => setView('recommended')}><Sparkles size={15} strokeWidth={2.4} />{t.recommendedView}</button>
             </div>
@@ -563,7 +562,7 @@ export default function WorldCupPage() {
                             </div>
                         </div>
                     ) : view === 'fixtures' ? (
-                        <FixtureTimeline fixtures={fixtures} teams={wc.teamPools} lang={lang} t={t} />
+                        <FixtureTimeline fixtures={fixtures} teams={wc.teamPools} lang={lang} t={t} onTeamClick={setSelectedTeamId} />
                     ) : view === 'groups' ? (
                         <GroupStandings
                             teams={wc.teamPools}
@@ -602,6 +601,7 @@ export default function WorldCupPage() {
                             <KnockoutBracket
                                 state={bracketState}
                                 teams={wc.teamPools}
+                                onTeamClick={(teamId) => setSelectedTeamId(teamId)}
                                 labels={{
                                     knockoutBracket: t.knockoutBracket,
                                     knockoutBracketDesc: t.knockoutBracketDesc,
@@ -687,11 +687,13 @@ function FixtureTimeline({
     teams,
     lang,
     t,
+    onTeamClick
 }: {
     fixtures: WorldCupFixture[];
-    teams: Array<{ id: number; name: string; code: string; group: string }>;
+    teams: Array<{ id: number; name: string; code: string; group: string; color: string; colorSecondary: string }>;
     lang: WCLang;
     t: any;
+    onTeamClick?: (teamId: number) => void;
 }) {
     const settings = getFixtureDisplaySettings(lang);
     const teamByCode = new Map(teams.map(team => [team.code, team]));
@@ -701,7 +703,7 @@ function FixtureTimeline({
         const parts = formatFixtureKickoffParts(fixture.kickoffUtc, lang);
         const teamAName = teamA ? (t.countries?.[teamA.name] || teamA.name) : fixture.teamACode;
         const teamBName = teamB ? (t.countries?.[teamB.name] || teamB.name) : fixture.teamBCode;
-        return { fixture, parts, teamAName, teamBName };
+        return { fixture, parts, teamAName, teamBName, teamA, teamB };
     });
     const grouped = rows.reduce<Record<string, typeof rows>>((acc, row) => {
         acc[row.parts.date] ||= [];
@@ -733,7 +735,7 @@ function FixtureTimeline({
                         <span>{dayRows.length} {t.matches}</span>
                     </div>
                     <div className="wc-fixture-day-list">
-                        {dayRows.map(({ fixture, parts, teamAName, teamBName }) => (
+                        {dayRows.map(({ fixture, parts, teamAName, teamBName, teamA, teamB }) => (
                             <article key={fixture.matchNo} className="wc-fixture-row">
                                 <div className="wc-fixture-time">
                                     <strong>{parts.time}</strong>
@@ -741,7 +743,29 @@ function FixtureTimeline({
                                 </div>
                                 <div className="wc-fixture-match">
                                     <span>{t.group} {fixture.groupName} · {t.matchLabel} {fixture.matchNo}</span>
-                                    <strong>{teamAName} <em>vs</em> {teamBName}</strong>
+                                    <div className="wc-fixture-teams">
+                                        {teamA ? (
+                                            <span 
+                                                className={`wc-fixture-team-clickable ${onTeamClick ? 'is-clickable' : ''}`}
+                                                onClick={() => onTeamClick?.(teamA.id)}
+                                                title={teamAName}
+                                            >
+                                                <TeamCrest code={teamA.code} name={teamA.name} color={teamA.color} colorSecondary={teamA.colorSecondary} size="sm" />
+                                                <strong>{teamAName}</strong>
+                                            </span>
+                                        ) : <strong>{teamAName}</strong>}
+                                        <em>vs</em>
+                                        {teamB ? (
+                                            <span 
+                                                className={`wc-fixture-team-clickable ${onTeamClick ? 'is-clickable' : ''}`}
+                                                onClick={() => onTeamClick?.(teamB.id)}
+                                                title={teamBName}
+                                            >
+                                                <TeamCrest code={teamB.code} name={teamB.name} color={teamB.color} colorSecondary={teamB.colorSecondary} size="sm" />
+                                                <strong>{teamBName}</strong>
+                                            </span>
+                                        ) : <strong>{teamBName}</strong>}
+                                    </div>
                                 </div>
                                 <div className={`wc-fixture-status is-${fixture.status}`}>
                                     {fixture.status === "resolved" && fixture.scoreA !== null && fixture.scoreB !== null
