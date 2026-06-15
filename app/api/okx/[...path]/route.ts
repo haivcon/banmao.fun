@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
+import { okxFetch } from "../../../../lib/okx/okxClient";
 
 const OKX_BASE_URL = process.env.OKX_DEX_BASE_URL || "https://web3.okx.com";
 const TTL_MS = 20_000;
@@ -28,17 +28,6 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ path?: stri
         return NextResponse.json({ error: "OKX endpoint is not allowed" }, { status: 403 });
     }
 
-    const apiKey = process.env.OKX_API_KEY;
-    const secretKey = process.env.OKX_SECRET_KEY;
-    const passphrase = process.env.OKX_API_PASSPHRASE || process.env.OKX_PASSPHRASE;
-    const projectId = process.env.OKX_PROJECT_ID;
-    if (!apiKey || !secretKey || !passphrase) {
-        return NextResponse.json({
-            disabled: true,
-            reason: "OKX API credentials are not configured",
-        });
-    }
-
     const query = req.nextUrl.search || "";
     const requestPath = `${upstreamPath}${query}`;
     const cacheKey = requestPath;
@@ -47,19 +36,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ path?: stri
         return NextResponse.json(cached.body, { status: cached.status });
     }
 
-    const timestamp = new Date().toISOString();
-    const prehash = `${timestamp}GET${requestPath}`;
-    const signature = crypto.createHmac("sha256", secretKey).update(prehash).digest("base64");
-    const headers: HeadersInit = {
-        "OK-ACCESS-KEY": apiKey,
-        "OK-ACCESS-SIGN": signature,
-        "OK-ACCESS-TIMESTAMP": timestamp,
-        "OK-ACCESS-PASSPHRASE": passphrase,
-        "Content-Type": "application/json",
-    };
-    if (projectId) headers["OK-ACCESS-PROJECT"] = projectId;
-
-    const res = await fetch(`${OKX_BASE_URL}${requestPath}`, { method: "GET", headers, cache: "no-store" });
+    const res = await okxFetch("GET", requestPath, { cache: "no-store" });
     const text = await res.text();
     let body: unknown;
     try {

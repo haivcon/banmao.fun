@@ -3,7 +3,7 @@
 // Returns: top10HoldPercent, lpBurnedPercent, riskControlLevel, tokenTags, etc.
 
 import { NextResponse } from "next/server";
-import crypto from "crypto";
+import { okxFetch } from "../../../../lib/okx/okxClient";
 import { apiCache, CACHE_KEYS, CACHE_TTL } from "../../../lib/apiCache";
 
 const OKX_API_URL = "https://web3.okx.com/api/v6/dex/market/token/advanced-info";
@@ -36,45 +36,16 @@ interface AdvancedInfoResponse {
     cacheAge?: number;
 }
 
-// Generate OKX signature
-function generateSignature(
-    timestamp: string,
-    method: string,
-    requestPath: string,
-    queryString: string
-): string {
-    const secretKey = process.env.OKX_SECRET_KEY || "";
-    const prehash = timestamp + method.toUpperCase() + requestPath + queryString;
-    return crypto.createHmac("sha256", secretKey).update(prehash).digest("base64");
-}
-
 // Fetch from OKX API
 async function fetchFromOKX(): Promise<AdvancedInfoResponse> {
-    const timestamp = new Date().toISOString();
     const queryString = `?chainIndex=${TOKEN_CONFIG.chainIndex}&tokenContractAddress=${TOKEN_CONFIG.tokenContractAddress}`;
     const requestPath = "/api/v6/dex/market/token/advanced-info" + queryString;
-    const method = "GET";
 
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
     };
 
-    if (process.env.OKX_API_KEY && process.env.OKX_SECRET_KEY && process.env.OKX_PASSPHRASE) {
-        const signature = generateSignature(timestamp, method, requestPath, "");
-        headers["OK-ACCESS-KEY"] = process.env.OKX_API_KEY;
-        headers["OK-ACCESS-SIGN"] = signature;
-        headers["OK-ACCESS-PASSPHRASE"] = process.env.OKX_PASSPHRASE;
-        headers["OK-ACCESS-TIMESTAMP"] = timestamp;
-
-        if (process.env.OKX_PROJECT_ID) {
-            headers["OK-ACCESS-PROJECT"] = process.env.OKX_PROJECT_ID;
-        }
-    }
-
-    const response = await fetch(OKX_API_URL + queryString, {
-        method: "GET",
-        headers,
-    });
+    const response = await okxFetch("GET", requestPath, { headers });
 
     if (!response.ok) {
         throw new Error(`OKX API error: ${response.status}`);

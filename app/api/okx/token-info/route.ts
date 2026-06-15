@@ -1,14 +1,11 @@
+import { okxFetch } from "../../../../lib/okx/okxClient";
 // API route to fetch basic token info from OKX DEX API
 // GET /api/okx/token-info?chainIndex=196&tokenAddress=0x...
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { apiCache } from "../../../lib/apiCache";
 
-function generateSignature(timestamp: string, method: string, requestPath: string): string {
-    const secretKey = process.env.OKX_SECRET_KEY || "";
-    const prehash = timestamp + method.toUpperCase() + requestPath;
-    return crypto.createHmac("sha256", secretKey).update(prehash).digest("base64");
-}
+
 
 interface TokenInfoResponse {
     success: boolean;
@@ -31,17 +28,9 @@ async function fetchTokenInfo(chainIndex: string, tokenAddress: string): Promise
     const bodyStr = JSON.stringify({ chainIndex, tokenContractAddress: tokenAddress });
     const headers: Record<string, string> = { "Content-Type": "application/json" };
 
-    if (process.env.OKX_API_KEY && process.env.OKX_SECRET_KEY && process.env.OKX_PASSPHRASE) {
-        const prehash = timestamp + "POST" + requestPath + bodyStr;
-        const signature = crypto.createHmac("sha256", process.env.OKX_SECRET_KEY).update(prehash).digest("base64");
-        headers["OK-ACCESS-KEY"] = process.env.OKX_API_KEY;
-        headers["OK-ACCESS-SIGN"] = signature;
-        headers["OK-ACCESS-PASSPHRASE"] = process.env.OKX_PASSPHRASE;
-        headers["OK-ACCESS-TIMESTAMP"] = timestamp;
-        if (process.env.OKX_PROJECT_ID) headers["OK-ACCESS-PROJECT"] = process.env.OKX_PROJECT_ID;
-    }
+    
 
-    const response = await fetch(`https://web3.okx.com${requestPath}`, { method: "POST", headers, body: bodyStr, signal: AbortSignal.timeout(10000) });
+    const response = await okxFetch("POST", requestPath, {  headers, body: bodyStr, signal: AbortSignal.timeout(10000)  });
     const data = await response.json();
 
     if (data.code === "0" && data.data) {

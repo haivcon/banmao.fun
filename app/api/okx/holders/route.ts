@@ -1,3 +1,4 @@
+import { okxFetch } from "../../../../lib/okx/okxClient";
 // API route to fetch top token holders from OKX DEX API
 // GET /api/okx/holders
 // Uses server-side caching to respect OKX rate limits
@@ -26,16 +27,7 @@ interface HoldersResponse {
 }
 
 // Generate OKX signature
-function generateSignature(
-    timestamp: string,
-    method: string,
-    requestPath: string,
-    queryString: string
-): string {
-    const secretKey = process.env.OKX_SECRET_KEY || "";
-    const prehash = timestamp + method.toUpperCase() + requestPath + queryString;
-    return crypto.createHmac("sha256", secretKey).update(prehash).digest("base64");
-}
+
 
 // Fetch holders from OKX API
 async function fetchFromOKX(chainIndex: string, tokenAddr: string, tagFilter?: string): Promise<HoldersResponse> {
@@ -49,22 +41,11 @@ async function fetchFromOKX(chainIndex: string, tokenAddr: string, tagFilter?: s
         "Content-Type": "application/json",
     };
 
-    if (process.env.OKX_API_KEY && process.env.OKX_SECRET_KEY && process.env.OKX_PASSPHRASE) {
-        const signature = generateSignature(timestamp, method, requestPath, "");
-        headers["OK-ACCESS-KEY"] = process.env.OKX_API_KEY;
-        headers["OK-ACCESS-SIGN"] = signature;
-        headers["OK-ACCESS-PASSPHRASE"] = process.env.OKX_PASSPHRASE;
-        headers["OK-ACCESS-TIMESTAMP"] = timestamp;
+    
 
-        if (process.env.OKX_PROJECT_ID) {
-            headers["OK-ACCESS-PROJECT"] = process.env.OKX_PROJECT_ID;
-        }
-    }
-
-    const response = await fetch(OKX_API_URL + queryString, {
-        method: "GET",
+    const response = await okxFetch("GET", requestPath, { 
         headers,
-    });
+     });
 
     if (!response.ok) {
         throw new Error(`OKX API error: ${response.status}`);

@@ -1,3 +1,4 @@
+import { okxFetch } from "../../../../lib/okx/okxClient";
 // API route to fetch trending/hot tokens from OKX DEX API
 // GET /api/okx/hot-tokens?chainIndex=196
 import { NextRequest, NextResponse } from "next/server";
@@ -29,11 +30,7 @@ const POPULAR_SYMBOLS = new Set([
 // Simple in-memory cache
 const cache: Record<string, { data: any; timestamp: number }> = {};
 
-function generateSignature(timestamp: string, method: string, requestPath: string): string {
-    const secretKey = process.env.OKX_SECRET_KEY || "";
-    const prehash = timestamp + method.toUpperCase() + requestPath;
-    return crypto.createHmac("sha256", secretKey).update(prehash).digest("base64");
-}
+
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -57,16 +54,9 @@ export async function GET(req: NextRequest) {
 
         const headers: Record<string, string> = { "Content-Type": "application/json" };
 
-        if (process.env.OKX_API_KEY && process.env.OKX_SECRET_KEY && process.env.OKX_PASSPHRASE) {
-            const signature = generateSignature(timestamp, "GET", requestPath);
-            headers["OK-ACCESS-KEY"] = process.env.OKX_API_KEY;
-            headers["OK-ACCESS-SIGN"] = signature;
-            headers["OK-ACCESS-PASSPHRASE"] = process.env.OKX_PASSPHRASE;
-            headers["OK-ACCESS-TIMESTAMP"] = timestamp;
-            if (process.env.OKX_PROJECT_ID) headers["OK-ACCESS-PROJECT"] = process.env.OKX_PROJECT_ID;
-        }
+        
 
-        const response = await fetch(url, { method: "GET", headers, signal: AbortSignal.timeout(15000) });
+        const response = await okxFetch("GET", requestPath, {  headers, signal: AbortSignal.timeout(15000)  });
         const data = await response.json();
 
         if (data.code === "0" && data.data && Array.isArray(data.data) && data.data.length > 0) {

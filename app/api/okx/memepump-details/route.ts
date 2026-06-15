@@ -5,21 +5,11 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { apiCache } from "../../../lib/apiCache";
 
-function generateSignature(timestamp: string, method: string, requestPath: string): string {
-    const secretKey = process.env.OKX_SECRET_KEY || "";
-    const prehash = timestamp + method.toUpperCase() + requestPath;
-    return crypto.createHmac("sha256", secretKey).update(prehash).digest("base64");
-}
+
 
 function buildHeaders(timestamp: string, requestPath: string): Record<string, string> {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (process.env.OKX_API_KEY && process.env.OKX_SECRET_KEY && process.env.OKX_PASSPHRASE) {
-        headers["OK-ACCESS-KEY"] = process.env.OKX_API_KEY;
-        headers["OK-ACCESS-SIGN"] = generateSignature(timestamp, "GET", requestPath);
-        headers["OK-ACCESS-PASSPHRASE"] = process.env.OKX_PASSPHRASE;
-        headers["OK-ACCESS-TIMESTAMP"] = timestamp;
-        if (process.env.OKX_PROJECT_ID) headers["OK-ACCESS-PROJECT"] = process.env.OKX_PROJECT_ID;
-    }
+    
     return headers;
 }
 
