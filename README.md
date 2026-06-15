@@ -1,6 +1,17 @@
 # Banmao Fun - Social Hub & DeFi Platform
 
-## v0.6.0 - Backend Sync & Vercel Build Stability
+## v0.6.1 - OKX API Key Rotation & Stabilization
+
+This release introduces a centralized OKX API Key rotation system and refactors all DEX integrations to use it, preventing Web3 features from dropping out due to rate limits.
+
+### Upgrades & Fixes
+
+- **OKX API Key Rotation:** Added a centralized `okxClient` that automatically detects and cycles through backup keys (`OKX_API_KEY_1`, `_2`, etc.) when encountering HTTP 429 or 50011 errors.
+- **DEX Route Refactoring:** Rewrote 15 API routes (including balances, advanced-info, trades) to use `okxFetch` directly, removing heavily duplicated authentication and signing code.
+- **Backend Stability:** Added missing TypeScript imports and fixed Turbopack syntax issues encountered during AST replacements.
+
+<details>
+<summary><b>v0.6.0 - Backend Sync & Vercel Build Stability</b></summary>
 
 This release synchronizes the upgraded Smart Contracts from the standalone repository while fixing critical Vercel deployment blockers related to Next.js Turbopack and Wagmi type inference.
 
@@ -12,6 +23,8 @@ This release synchronizes the upgraded Smart Contracts from the standalone repos
   - Suppressed Wagmi's "excessively deep type instantiation" build crashes by applying `// @ts-ignore` boundaries around highly dynamic `useReadContracts` hooks in `useWorldCup.ts`.
 - **Repo Architecture Cleanup:** Removed standalone Hardhat artifacts, cache, and config from the monolithic Next.js repository to ensure a pristine Next.js build environment.
 - **Frontend Logic:** Integrated extended country code mappings for English team aliases in `worldCup2026Fixtures.ts`.
+
+</details>
 
 <details>
 <summary><b>v0.5.1 - World Cup 2026 Schedule and Bracket Sync</b></summary>

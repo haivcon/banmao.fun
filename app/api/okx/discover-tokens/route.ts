@@ -14,13 +14,7 @@ function sign(timestamp: string, method: string, path: string) {
 function getHeaders(path: string) {
     const ts = new Date().toISOString();
     const h: Record<string, string> = { "Content-Type": "application/json" };
-    if (process.env.OKX_API_KEY && process.env.OKX_SECRET_KEY && process.env.OKX_PASSPHRASE) {
-        h["OK-ACCESS-KEY"] = process.env.OKX_API_KEY!;
-        h["OK-ACCESS-SIGN"] = sign(ts, "GET", path);
-        h["OK-ACCESS-PASSPHRASE"] = process.env.OKX_PASSPHRASE!;
-        h["OK-ACCESS-TIMESTAMP"] = ts;
-        if (process.env.OKX_PROJECT_ID) h["OK-ACCESS-PROJECT"] = process.env.OKX_PROJECT_ID;
-    }
+    
     return h;
 }
 

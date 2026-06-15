@@ -1,14 +1,11 @@
+import { okxFetch } from "../../../../lib/okx/okxClient";
 // API route to fetch top traders for a token from OKX DEX API
 // GET /api/okx/top-traders?chainIndex=196&tokenAddress=0x...
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { apiCache, CACHE_TTL } from "../../../lib/apiCache";
 
-function generateSignature(timestamp: string, method: string, requestPath: string): string {
-    const secretKey = process.env.OKX_SECRET_KEY || "";
-    const prehash = timestamp + method.toUpperCase() + requestPath;
-    return crypto.createHmac("sha256", secretKey).update(prehash).digest("base64");
-}
+
 
 interface TopTrader {
     walletAddress: string;
@@ -32,16 +29,9 @@ async function fetchTopTraders(chainIndex: string, tokenAddress: string): Promis
     const requestPath = `/api/v6/dex/market/token/top-trader?chainIndex=${chainIndex}&tokenContractAddress=${tokenAddress}`;
     const headers: Record<string, string> = { "Content-Type": "application/json" };
 
-    if (process.env.OKX_API_KEY && process.env.OKX_SECRET_KEY && process.env.OKX_PASSPHRASE) {
-        const signature = generateSignature(timestamp, "GET", requestPath);
-        headers["OK-ACCESS-KEY"] = process.env.OKX_API_KEY;
-        headers["OK-ACCESS-SIGN"] = signature;
-        headers["OK-ACCESS-PASSPHRASE"] = process.env.OKX_PASSPHRASE;
-        headers["OK-ACCESS-TIMESTAMP"] = timestamp;
-        if (process.env.OKX_PROJECT_ID) headers["OK-ACCESS-PROJECT"] = process.env.OKX_PROJECT_ID;
-    }
+    
 
-    const response = await fetch(`https://web3.okx.com${requestPath}`, { method: "GET", headers, signal: AbortSignal.timeout(10000) });
+    const response = await okxFetch("GET", requestPath, {  headers, signal: AbortSignal.timeout(10000)  });
     const data = await response.json();
 
     if (data.code === "0" && data.data && Array.isArray(data.data)) {

@@ -106,3 +106,8 @@ artifacts/
 cache/
 typechain/
 typechain-types/
+
+# Temporary Scripts
+scripts/fix_*.js
+scripts/refactor_okx.js
+scripts/update_readme.js
