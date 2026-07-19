@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useAccount, useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -156,7 +157,13 @@ function TokenCard({ token }: { token: TokenInfo }) {
                 <div className="token-card-header">
                     <div className="token-avatar">
                         {token.imageUrl ? (
-                            <img src={token.imageUrl} alt={token.symbol} />
+                            <Image
+                                src={token.imageUrl}
+                                alt={token.symbol}
+                                width={56}
+                                height={56}
+                                unoptimized
+                            />
                         ) : (
                             token.symbol.charAt(0).toUpperCase()
                         )}
@@ -371,7 +378,14 @@ function CreateTokenForm({ onSuccess, onCancel }: { onSuccess: () => void, onCan
                             <label>{t("imageUrl")} / Upload</label>
                             {imageUrl ? (
                                 <div className="file-upload-area has-image">
-                                    <img src={imageUrl} alt="Preview" className="file-preview" />
+                                    <Image
+                                        src={imageUrl}
+                                        alt="Preview"
+                                        className="file-preview"
+                                        width={720}
+                                        height={120}
+                                        unoptimized
+                                    />
                                     <button 
                                         className="file-remove" 
                                         onClick={(e) => { e.stopPropagation(); setImageUrl(""); }}

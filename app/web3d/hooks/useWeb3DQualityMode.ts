@@ -71,14 +71,14 @@ function detectInitialQuality(reducedMotion: boolean, lowPower: boolean): Web3DQ
 }
 
 function readSavedPreference(): Web3DQualityPreference {
-    if (typeof window === "undefined") return "auto";
+    if (typeof window === "undefined") return "medium";
     const saved = window.localStorage.getItem(STORAGE_KEY);
-    return saved === "low" || saved === "medium" || saved === "high" ? saved : "auto";
+    return saved === "low" || saved === "medium" || saved === "high" || saved === "auto" ? saved : "medium";
 }
 
 export function useWeb3DQualityMode(): Web3DQualityState {
-    const [quality, setQuality] = useState<Web3DQualityMode>("low");
-    const [preference, setPreferenceState] = useState<Web3DQualityPreference>("auto");
+    const [quality, setQuality] = useState<Web3DQualityMode>("medium");
+    const [preference, setPreferenceState] = useState<Web3DQualityPreference>("medium");
     const [reducedMotion, setReducedMotion] = useState(false);
     const [isLowPowerDevice, setIsLowPowerDevice] = useState(true);
     const [webGLSupported, setWebGLSupported] = useState(false);
@@ -113,7 +113,7 @@ export function useWeb3DQualityMode(): Web3DQualityState {
     const setPreference = useCallback((nextPreference: Web3DQualityPreference) => {
         if (typeof window === "undefined") return;
 
-        const currentPref = window.localStorage.getItem(STORAGE_KEY) ?? "auto";
+        const currentPref = window.localStorage.getItem(STORAGE_KEY) ?? "medium";
         const nextPrefStr = nextPreference === "auto" ? "auto" : nextPreference;
 
         if (nextPrefStr === currentPref) return;
