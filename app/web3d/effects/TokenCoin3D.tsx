@@ -408,20 +408,7 @@ function ConfettiBurst({ colors }: { colors: string[] }) {
 function MilledEdge({ size, thickness, color, ridgeCount }: { size: number; thickness: number; color: string; ridgeCount: number }) {
     const meshRef = useRef<THREE.InstancedMesh>(null);
 
-    useMemo(() => {
-        if (!meshRef.current) return;
-        const dummy = new THREE.Object3D();
-        for (let i = 0; i < ridgeCount; i++) {
-            const angle = (i / ridgeCount) * Math.PI * 2;
-            dummy.position.set(Math.cos(angle) * size * 0.99, 0, Math.sin(angle) * size * 0.99);
-            dummy.rotation.set(0, -angle + Math.PI / 2, 0);
-            dummy.updateMatrix();
-            meshRef.current.setMatrixAt(i, dummy.matrix);
-        }
-        meshRef.current.instanceMatrix.needsUpdate = true;
-    }, [size, thickness, ridgeCount]);
-
-    // Need to set matrices after mount too
+    // Need to set matrices after mount and when geometry budget changes.
     useEffect(() => {
         if (!meshRef.current) return;
         const dummy = new THREE.Object3D();
@@ -433,7 +420,7 @@ function MilledEdge({ size, thickness, color, ridgeCount }: { size: number; thic
             meshRef.current!.setMatrixAt(i, dummy.matrix);
         }
         meshRef.current.instanceMatrix.needsUpdate = true;
-    }, [size, thickness, ridgeCount]);
+    }, [size, ridgeCount]);
 
     return (
         <instancedMesh ref={meshRef} args={[undefined, undefined, ridgeCount]}>

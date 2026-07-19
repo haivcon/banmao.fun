@@ -158,6 +158,9 @@ export const en: LandingTranslations = {
     defiAirdropName: "Airdrop",
     defiAirdropDesc: "Community tool to airdrop \$BANMAO to wallets that don't hold the token yet. Easier than sending one by one!",
     defiAirdropDetails: "A powerful community tool for \$BANMAO holders to distribute tokens to new wallets on XLayer in bulk. Scan for active wallets, exclude existing holders automatically, and send to hundreds of addresses in one session. Supports manual input, blockchain scanning, and CSV import with batch speeds up to x20.",
+    defiLaunchpadName: "Memecoin Launchpad",
+    defiLaunchpadDesc: "Create & trade memecoins with bonding curves. Auto-graduation to Uniswap V4.",
+    defiLaunchpadDetails: "Launch your own memecoin by paying a creation fee in $BANMAO. Tokens trade on an automated bonding curve — no liquidity pool needed. When the bonding curve reaches 500 OKB, liquidity auto-migrates to a Uniswap V4 pool with a custom Hook. 50% of creation fees are burned, 50% go to community treasury.",
     // Staking Infographic Bullets
     defiStakingIntro: "Maximize your returns by locking $BANMAO tokens. The longer you lock, the higher your reward multiplier.",
     defiStakingBullet1Title: "Lock Period",

@@ -162,6 +162,10 @@ export interface LandingTranslations {
     defiAirdropName: string;
     defiAirdropDesc: string;
     defiAirdropDetails: string;
+    // Launchpad
+    defiLaunchpadName: string;
+    defiLaunchpadDesc: string;
+    defiLaunchpadDetails: string;
     // DeFi Infographic Bullet Keys — Staking
     defiStakingIntro: string;
     defiStakingBullet1Title: string;

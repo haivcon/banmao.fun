@@ -157,6 +157,9 @@ export const ru: LandingTranslations = {
     defiAirdropName: "Аирдроп",
     defiAirdropDesc: "Раздать $BANMAO активным кошелькам XLayer",
     defiAirdropDetails: "Сканируйте XLayer для поиска активных кошельков и раздайте $BANMAO массово. Кошельки с $BANMAO автоматически исключаются.",
+    defiLaunchpadName: "Лаунчпад Мемкоинов",
+    defiLaunchpadDesc: "Создавайте и торгуйте мемкоинами с кривой связывания. Автоматический переход на Uniswap V4.",
+    defiLaunchpadDetails: "Запустите свой мемкоин, заплатив комиссию в $BANMAO. Токены торгуются на автоматической кривой связывания — пул ликвидности не нужен. При достижении 500 OKB ликвидность автоматически мигрирует в пул Uniswap V4. 50% комиссий сжигается, 50% идёт в казну сообщества.",
     // Staking Infographic Bullets
     defiStakingIntro: "Увеличьте прибыль, заблокировав токены $BANMAO. Чем дольше — тем выше множитель.",
     defiStakingBullet1Title: "Период блокировки",

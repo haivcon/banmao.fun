@@ -1,10 +1,13 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import React, { useRef, useState, useCallback, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Billboard, Html } from "@react-three/drei";
 import * as THREE from "three";
 import { useWeb3DTheme, useCustomCamera, createFocusTarget } from "../contexts";
+import { SoundManager } from "./SharedEffects";
 
 type MascotMood = "idle" | "happy" | "excited" | "waving" | "sleeping";
 
@@ -106,13 +109,13 @@ export function AnimatedMascot({
             setClickCount(prev => prev + 1);
             setMood("excited");
             // Play excited sound 🚀
-            import("./SharedEffects").then(m => m.SoundManager.playExcited());
+            SoundManager.playExcited();
             setTimeout(() => setMood("idle"), 2000);
         } else {
             // Single click - wave
             setMood("waving");
             // Play wave sound 👋
-            import("./SharedEffects").then(m => m.SoundManager.playWave());
+            SoundManager.playWave();
             setTimeout(() => setMood("idle"), 1500);
         }
 
@@ -120,7 +123,7 @@ export function AnimatedMascot({
         if (clickCount > 10) {
             setMood("sleeping");
             // Play sleepy sound 💤
-            import("./SharedEffects").then(m => m.SoundManager.playSleepy());
+            SoundManager.playSleepy();
             setTimeout(() => {
                 setMood("idle");
                 setClickCount(0);
@@ -134,7 +137,7 @@ export function AnimatedMascot({
         if (hovering && mood === "idle") {
             setMood("happy");
             // Play meow sound 😸
-            import("./SharedEffects").then(m => m.SoundManager.playMeow());
+            SoundManager.playMeow();
         } else if (!hovering && mood === "happy") {
             setMood("idle");
         }
@@ -218,19 +221,38 @@ export function AnimatedMascot({
 
             <Billboard>
                 <Html
-                    transform
                     distanceFactor={5}
                     center
-                    style={{ overflow: 'visible', background: 'transparent' }}
+                    className="animated-mascot-html"
+                    style={{
+                        overflow: "visible",
+                        background: "transparent",
+                        border: "0",
+                        borderRadius: 0,
+                        boxShadow: "none",
+                        outline: "none",
+                        padding: 0,
+                        margin: 0,
+                    }}
                     occlude={false}
                 >
                     <div
+                        className="animated-mascot-content"
                         style={{
                             position: "relative",
                             cursor: "pointer",
                             transition: "transform 0.3s ease",
                             transform: isHovered ? "scale(1.05)" : "scale(1)",
+                            transformOrigin: "center",
                             overflow: "visible",
+                            background: "transparent",
+                            border: "0",
+                            borderRadius: 0,
+                            boxShadow: "none",
+                            outline: "none",
+                            padding: 0,
+                            margin: 0,
+                            isolation: "isolate",
                             // Prevent text selection and tap highlight on mobile
                             userSelect: "none",
                             WebkitUserSelect: "none",
@@ -238,7 +260,6 @@ export function AnimatedMascot({
                             msUserSelect: "none",
                             WebkitTapHighlightColor: "transparent",
                             WebkitTouchCallout: "none",
-                            outline: "none",
                         }}
                         onMouseEnter={() => handleHover(true)}
                         onMouseLeave={() => handleHover(false)}
@@ -246,15 +267,21 @@ export function AnimatedMascot({
                     >
                         {/* Main mascot image */}
                         <img
+                            className="animated-mascot-image"
                             src={imageSrc}
                             alt="Banmao Mascot"
                             draggable={false}
                             style={{
+                                display: "block",
                                 width: `clamp(160px, 25vw, ${size}px)`,
                                 height: "auto",
-                                filter: `drop-shadow(0 0 ${80 * glowIntensity}px ${glowColor}${glowIntensity}) drop-shadow(0 0 ${40 * glowIntensity}px ${glowColor}${glowIntensity * 0.8})`,
+                                background: "transparent",
+                                border: "0",
+                                borderRadius: 0,
+                                boxShadow: "none",
+                                outline: "none",
+                                filter: "none",
                                 pointerEvents: "none",
-                                transition: "filter 0.3s ease",
                                 // Prevent selection highlight
                                 userSelect: "none",
                                 WebkitUserSelect: "none",

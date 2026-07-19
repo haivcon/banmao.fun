@@ -47,6 +47,7 @@ const nextConfig = {
   },
   // Turbopack (Next 16 default)
   turbopack: {
+    root: __dirname,
     resolveAlias: RESOLVE_ALIASES,
   },
   // Webpack fallback (in case build runs with --webpack)

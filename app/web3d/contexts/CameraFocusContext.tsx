@@ -279,7 +279,7 @@ export function CustomCameraController({ children }: { children: React.ReactNode
         } else {
             spherical.current.radius = 13;
         }
-    }, []);
+    }, [size.height, size.width]);
 
     // Main animation loop
     useFrame((_, rawDelta) => {

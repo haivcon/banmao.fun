@@ -157,6 +157,9 @@ export const vi: LandingTranslations = {
     defiAirdropName: "Airdrop",
     defiAirdropDesc: "Công cụ cộng đồng để airdrop \$BANMAO đến các ví chưa nắm giữ token. Tiện hơn gửi từng cái!",
     defiAirdropDetails: "Công cụ mạnh mẽ cho cộng đồng \$BANMAO phân phối token đến ví mới trên XLayer hàng loạt. Quét ví hoạt động, tự động loại ví đã có \$BANMAO, gửi đến hàng trăm địa chỉ trong một phiên. Hỗ trợ nhập thủ công, quét blockchain và nhập CSV với tốc độ lên đến x20.",
+    defiLaunchpadName: "Launchpad Memecoin",
+    defiLaunchpadDesc: "Tạo & giao dịch memecoin với đường cong giá. Tự động tốt nghiệp lên Uniswap V4.",
+    defiLaunchpadDetails: "Ra mắt memecoin của riêng bạn bằng cách trả phí tạo token bằng $BANMAO. Token được giao dịch trên đường cong bonding tự động — không cần pool thanh khoản. Khi đạt 500 OKB, thanh khoản tự động chuyển sang pool Uniswap V4 với Hook tùy chỉnh. 50% phí tạo token sẽ bị đốt, 50% vào quỹ cộng đồng.",
     // Staking Infographic Bullets
     defiStakingIntro: "Tối đa hóa lợi nhuận bằng cách khóa token $BANMAO. Khóa càng lâu, hệ số thưởng càng cao.",
     defiStakingBullet1Title: "Thời gian khóa",

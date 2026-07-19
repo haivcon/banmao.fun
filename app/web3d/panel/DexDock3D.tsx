@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { useDexWindow } from "../../contexts/DexWindowContext";
 import { useWeb3DTheme, useCustomCamera, createFocusTarget } from "../contexts";
 import { RoundedPlane } from "../components/RoundedPlane";
+import { SoundManager } from "../effects/SharedEffects";
 
 // ==================== PREMIUM EFFECTS ====================
 
@@ -230,7 +231,7 @@ export function DexDock3D({ translations = DEFAULT_TRANSLATIONS }: DexDock3DProp
         const dockY = isMobile ? 0 : 0.3;
         const focusTarget = createFocusTarget([dockX, dockY, 0], 4, 0.5);
         focusOn(focusTarget, 0.8);
-        import("../effects/SharedEffects").then(m => m.SoundManager.playClick());
+        SoundManager.playClick();
     }, [size.width, focusOn]);
 
     const isMobile = size.width < 768;
@@ -576,7 +577,7 @@ export function DexDock3D({ translations = DEFAULT_TRANSLATIONS }: DexDock3DProp
                                     onMouseUp={() => setClickedItem(null)}
                                     onClick={() => {
                                         restoreWindow(window.id);
-                                        import("../effects/SharedEffects").then(m => m.SoundManager.playClick());
+                                        SoundManager.playClick();
                                     }}
                                     title={`Open ${window.title}`}
                                 />

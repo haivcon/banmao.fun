@@ -8,7 +8,7 @@ import { useDexWindow } from "../../contexts/DexWindowContext";
 import { useWeb3DTheme, useCustomCamera, createFocusTarget } from "../contexts";
 import { useViewportScale, useHtmlScale } from "../hooks";
 import { RoundedPlane } from "../components/RoundedPlane";
-import { easeOutElastic } from "../effects/SharedEffects";
+import { SoundManager, easeOutElastic } from "../effects/SharedEffects";
 
 // Context to share window scale with children
 const WindowScaleContext = createContext<number>(1);
@@ -43,6 +43,12 @@ export function DexWindow3D({
     soundType = 'click', // Default to generic click
 }: DexWindow3DProps) {
     const groupRef = useRef<THREE.Group>(null);
+    const scaleWrapperRef = useRef<THREE.Group>(null);
+    const outerGlowMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
+    const innerGlowMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
+    const mainBgMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
+    const titleBarMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
+
     const { registerWindow, getWindowState, minimizeWindow, maximizeWindow, restoreWindow } = useDexWindow();
     const { primaryColor } = useWeb3DTheme();
     const viewportScale = useViewportScale();
@@ -53,31 +59,34 @@ export function DexWindow3D({
     const wasHovered = useRef(false);
 
     // Click handler to focus camera on this panel
-    const handlePanelClick = useCallback(() => {
+    const handlePanelClick = useCallback((e?: any) => {
+        if (e && e.stopPropagation) e.stopPropagation();
         const focusTarget = createFocusTarget(position, 6, 1);
         focusOn(focusTarget, 1.0);
         // Play panel-specific sound
-        import("../effects/SharedEffects").then(m => {
-            switch (soundType) {
-                case 'tokenStats': m.SoundManager.playTokenStats(); break;
-                case 'priceFeed': m.SoundManager.playPriceFeed(); break;
-                case 'settings': m.SoundManager.playSettings(); break;
-                case 'language': m.SoundManager.playLanguage(); break;
-                case 'install': m.SoundManager.playInstall(); break;
-                default: m.SoundManager.playClick();
-            }
-        });
+        switch (soundType) {
+            case 'tokenStats': SoundManager.playTokenStats(); break;
+            case 'priceFeed': SoundManager.playPriceFeed(); break;
+            case 'settings': SoundManager.playSettings(); break;
+            case 'language': SoundManager.playLanguage(); break;
+            case 'install': SoundManager.playInstall(); break;
+            default: SoundManager.playClick();
+        }
     }, [position, focusOn, soundType]);
 
-    // Animation states
-    const [currentScale, setCurrentScale] = useState(1);
-    const [targetScale, setTargetScale] = useState(1);
-    const [glowIntensity, setGlowIntensity] = useState(0);
-    const [rotation, setRotation] = useState(0);
-    const [isAnimating, setIsAnimating] = useState(false);
-    const [animationPhase, setAnimationPhase] = useState<'idle' | 'minimizing' | 'maximizing' | 'restoring'>('idle');
+    // Animation states as refs to prevent re-renders in useFrame
+    const currentScale = useRef(0); // Start at 0 for spawn animation
+    const targetScale = useRef(1);
+    const glowIntensity = useRef(0);
+    const rotation = useRef(0);
+    const isAnimating = useRef(false);
+    const animationPhase = useRef<'idle' | 'minimizing' | 'maximizing' | 'restoring'>('idle');
+    const isPanelHovered = useRef(false);
+
+    // UI React States (Only trigger renders on open/close/button-hover)
+    const windowState = getWindowState(id);
+    const [isMinimizedHidden, setIsMinimizedHidden] = useState(windowState === 'minimized');
     const [hoveredButton, setHoveredButton] = useState<string | null>(null);
-    const [isPanelHovered, setIsPanelHovered] = useState(false);
 
     // Spawn animation state
     const spawnProgress = useRef(0);
@@ -88,8 +97,6 @@ export function DexWindow3D({
     // Use theme color if useThemeColor is true, otherwise use provided titleColor or fallback
     const effectiveColor = useThemeColor ? primaryColor : (titleColor || "#22d3ee");
 
-    const windowState = getWindowState(id);
-
     // Register window on mount
     useEffect(() => {
         registerWindow(id, title, icon, position);
@@ -98,28 +105,29 @@ export function DexWindow3D({
     // Trigger animations based on window state changes
     useEffect(() => {
         if (windowState === 'minimized') {
-            setAnimationPhase('minimizing');
-            setTargetScale(0);
-            setGlowIntensity(1);
-            setIsAnimating(true);
+            animationPhase.current = 'minimizing';
+            targetScale.current = 0;
+            glowIntensity.current = 1;
+            isAnimating.current = true;
+            setIsMinimizedHidden(false); // Make sure it is visible so animation can run
         } else if (windowState === 'open') {
-            setAnimationPhase('restoring');
-            setTargetScale(1);
-            setGlowIntensity(0.8);
-            setIsAnimating(true);
+            animationPhase.current = 'restoring';
+            targetScale.current = 1;
+            glowIntensity.current = 0.8;
+            isAnimating.current = true;
+            setIsMinimizedHidden(false);
         } else if (windowState === 'maximized') {
-            // Note: Maximize zoom disabled because Html elements don't scale with 3D transforms
-            // User can zoom manually with mouse scroll for same effect
-            setAnimationPhase('maximizing');
-            setTargetScale(1); // Changed from 2.9 to 1 - Html elements don't scale
-            setGlowIntensity(1);
-            setIsAnimating(true);
+            animationPhase.current = 'maximizing';
+            targetScale.current = 1;
+            glowIntensity.current = 1;
+            isAnimating.current = true;
+            setIsMinimizedHidden(false);
         }
     }, [windowState]);
 
     // Smooth spring animation using useFrame
     useFrame((state, delta) => {
-        if (!groupRef.current) return;
+        if (!groupRef.current || !scaleWrapperRef.current) return;
         const time = state.clock.elapsedTime;
 
         // Spawn animation (easeOutElastic bounce in)
@@ -140,56 +148,80 @@ export function DexWindow3D({
 
         // Glow pulse animation
         glowPulsePhase.current = time * 2;
-        const pulseGlow = 0.15 + Math.sin(glowPulsePhase.current) * 0.1;
 
         // Spring interpolation for scale (smooth easing)
         const springStrength = 8;
         const dampening = 0.85;
-        const scaleDiff = targetScale - currentScale;
+        const scaleDiff = targetScale.current - currentScale.current;
 
         if (Math.abs(scaleDiff) > 0.001) {
-            const newScale = currentScale + scaleDiff * springStrength * delta;
-            setCurrentScale(newScale);
+            currentScale.current += scaleDiff * springStrength * delta;
 
             // Add slight bounce effect during animation
-            if (animationPhase === 'minimizing') {
+            if (animationPhase.current === 'minimizing') {
                 // Spin effect when minimizing
-                setRotation(prev => prev + delta * 8);
-            } else if (animationPhase === 'maximizing' || animationPhase === 'restoring') {
+                rotation.current += delta * 8;
+            } else if (animationPhase.current === 'maximizing' || animationPhase.current === 'restoring') {
                 // Subtle pulse during restore/maximize
-                setRotation(prev => prev * dampening);
+                rotation.current *= dampening;
             }
-        } else if (isAnimating) {
-            setCurrentScale(targetScale);
-            setIsAnimating(false);
-            setAnimationPhase('idle');
-            setRotation(0);
+        } else if (isAnimating.current) {
+            currentScale.current = targetScale.current;
+            isAnimating.current = false;
+            animationPhase.current = 'idle';
+            rotation.current = 0;
+            
+            if (targetScale.current === 0) {
+                // Re-render ONLY ONCE at the very end to remove from DOM
+                setIsMinimizedHidden(true);
+            }
         }
 
-        // Fade glow effect (from state changes) + pulse glow
-        if (glowIntensity > 0.01) {
-            setGlowIntensity(prev => prev * 0.92);
+        // Fade glow effect
+        if (glowIntensity.current > 0.01) {
+            glowIntensity.current *= 0.92;
         }
 
         // Floating animation (when not minimized)
         if (windowState !== 'minimized') {
-            const hoverLift = isPanelHovered ? 0.05 : 0;
+            const hoverLift = isPanelHovered.current ? 0.05 : 0;
             groupRef.current.position.y = position[1] + Math.sin(time * 0.5 + position[0]) * 0.1 + hoverLift;
         }
 
-        // Apply spawn scale
-        const finalScale = currentScale * spawnScale;
-        groupRef.current.scale.setScalar(finalScale);
+        // Apply scale & rotation DIRECTLY without triggering React State re-renders!
+        const finalScale = currentScale.current * spawnScale;
+        scaleWrapperRef.current.scale.setScalar(finalScale);
+        groupRef.current.rotation.set(0, rotation.current, 0);
+
+        // Update Materials directly
+        if (outerGlowMaterialRef.current) {
+            outerGlowMaterialRef.current.opacity = glowIntensity.current * 0.3;
+            outerGlowMaterialRef.current.visible = glowIntensity.current > 0.01;
+        }
+        
+        if (innerGlowMaterialRef.current) {
+            const pulseGlow = isPanelHovered.current ? 0.35 : 0.15 + Math.sin(Date.now() * 0.003) * 0.08;
+            innerGlowMaterialRef.current.color.set(isPanelHovered.current ? "#facc15" : effectiveColor);
+            innerGlowMaterialRef.current.opacity = pulseGlow;
+        }
+        
+        if (mainBgMaterialRef.current) {
+            mainBgMaterialRef.current.opacity = isPanelHovered.current ? 0.18 : 0.12;
+        }
+
+        if (titleBarMaterialRef.current) {
+            titleBarMaterialRef.current.opacity = isPanelHovered.current ? 0.35 : 0.25;
+        }
 
         // Hover sound trigger
-        if (isPanelHovered && !wasHovered.current) {
-            import("../effects/SharedEffects").then(m => m.SoundManager.playHover());
+        if (isPanelHovered.current && !wasHovered.current) {
+            SoundManager.playHover();
         }
-        wasHovered.current = isPanelHovered;
+        wasHovered.current = isPanelHovered.current;
     });
 
     // Don't render if minimized and animation complete
-    if (windowState === 'minimized' && currentScale < 0.01) {
+    if (isMinimizedHidden) {
         return null;
     }
 
@@ -202,38 +234,36 @@ export function DexWindow3D({
         <group
             ref={groupRef}
             position={position}
-            rotation={[0, rotation, 0]}
         >
             {/* Scale wrapper - applies to all content including Billboard */}
-            <group scale={[currentScale, currentScale, currentScale]}>
+            <group ref={scaleWrapperRef}>
                 <Billboard>
                     {/* Invisible hit area - catches all clicks for focus */}
                     <mesh
                         position={[0, 0, 0.1]}
                         onClick={handlePanelClick}
-                        onPointerEnter={() => setIsPanelHovered(true)}
-                        onPointerLeave={() => setIsPanelHovered(false)}
+                        onPointerEnter={() => { isPanelHovered.current = true; document.body.style.cursor = 'pointer'; }}
+                        onPointerLeave={() => { isPanelHovered.current = false; document.body.style.cursor = 'default'; }}
                     >
                         <planeGeometry args={[width + 0.3, height + titleBarHeight + 0.3]} />
                         <meshBasicMaterial transparent opacity={0} />
                     </mesh>
 
                     {/* Outer holographic glow */}
-                    {glowIntensity > 0.01 && (
-                        <RoundedPlane
-                            width={width + 0.2}
-                            height={height + titleBarHeight + 0.2}
-                            radius={cornerRadius + 0.05}
-                            position={[0, 0, -0.008]}
-                        >
-                            <meshBasicMaterial
-                                color="#00f2ff"
-                                transparent
-                                opacity={glowIntensity * 0.3}
-                                side={THREE.DoubleSide}
-                            />
-                        </RoundedPlane>
-                    )}
+                    <RoundedPlane
+                        width={width + 0.2}
+                        height={height + titleBarHeight + 0.2}
+                        radius={cornerRadius + 0.05}
+                        position={[0, 0, -0.008]}
+                    >
+                        <meshBasicMaterial
+                            ref={outerGlowMaterialRef}
+                            color="#00f2ff"
+                            transparent
+                            opacity={0} // Managed via useFrame
+                            side={THREE.DoubleSide}
+                        />
+                    </RoundedPlane>
 
                     {/* Pulsing border glow - always visible, stronger on hover */}
                     <RoundedPlane
@@ -243,9 +273,10 @@ export function DexWindow3D({
                         position={[0, 0, -0.004]}
                     >
                         <meshBasicMaterial
-                            color={isPanelHovered ? "#facc15" : effectiveColor}
+                            ref={innerGlowMaterialRef}
+                            color={effectiveColor}
                             transparent
-                            opacity={isPanelHovered ? 0.35 : 0.15 + Math.sin(Date.now() * 0.003) * 0.08}
+                            opacity={0.15} // Managed via useFrame
                             side={THREE.DoubleSide}
                         />
                     </RoundedPlane>
@@ -256,14 +287,15 @@ export function DexWindow3D({
                         height={height}
                         radius={cornerRadius}
                         position={[0, -titleBarHeight / 2, -0.001]}
-                        onPointerEnter={() => setIsPanelHovered(true)}
-                        onPointerLeave={() => setIsPanelHovered(false)}
+                        onPointerEnter={() => { isPanelHovered.current = true; }}
+                        onPointerLeave={() => { isPanelHovered.current = false; }}
                         onClick={handlePanelClick}
                     >
                         <meshBasicMaterial
+                            ref={mainBgMaterialRef}
                             color="#ffffff"
                             transparent
-                            opacity={isPanelHovered ? 0.18 : 0.12}
+                            opacity={0.12} // Managed via useFrame
                             side={THREE.DoubleSide}
                         />
                     </RoundedPlane>
@@ -291,9 +323,10 @@ export function DexWindow3D({
                         position={[0, height / 2, 0]}
                     >
                         <meshBasicMaterial
+                            ref={titleBarMaterialRef}
                             color={primaryColor}
                             transparent
-                            opacity={isPanelHovered ? 0.35 : 0.25}
+                            opacity={0.25} // Managed via useFrame
                             side={THREE.DoubleSide}
                         />
                     </RoundedPlane>
@@ -398,7 +431,7 @@ export function DexWindow3D({
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         minimizeWindow(id);
-                                        import("../effects/SharedEffects").then(m => m.SoundManager.playClose());
+                                        SoundManager.playClose();
                                     }}
                                     title="Close"
                                 >✕</button>
@@ -408,7 +441,7 @@ export function DexWindow3D({
 
                     {/* Content area - positioned below title bar, wrapped with scale context */}
                     <group position={[0, -titleBarHeight / 2, 0.01]}>
-                        <WindowScaleContext.Provider value={currentScale}>
+                        <WindowScaleContext.Provider value={1}>
                             {children}
                         </WindowScaleContext.Provider>
                     </group>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 
 export type WindowState = 'open' | 'minimized' | 'maximized';
 
@@ -77,19 +77,23 @@ export function DexWindowProvider({ children }: { children: React.ReactNode }) {
         return windows[id]?.state || 'open';
     }, [windows]);
 
-    const minimizedWindows = Object.values(windows).filter(w => w.state === 'minimized');
+    const minimizedWindows = useMemo(() => 
+        Object.values(windows).filter(w => w.state === 'minimized'), 
+    [windows]);
+
+    const contextValue = useMemo(() => ({
+        windows,
+        registerWindow,
+        minimizeWindow,
+        maximizeWindow,
+        restoreWindow,
+        closeWindow,
+        getWindowState,
+        minimizedWindows,
+    }), [windows, registerWindow, minimizeWindow, maximizeWindow, restoreWindow, closeWindow, getWindowState, minimizedWindows]);
 
     return (
-        <DexWindowContext.Provider value={{
-            windows,
-            registerWindow,
-            minimizeWindow,
-            maximizeWindow,
-            restoreWindow,
-            closeWindow,
-            getWindowState,
-            minimizedWindows,
-        }}>
+        <DexWindowContext.Provider value={contextValue}>
             {children}
         </DexWindowContext.Provider>
     );

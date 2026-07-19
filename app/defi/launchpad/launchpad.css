@@ -1,0 +1,932 @@
+/* ============================================================
+   BANMAO Memecoin Launchpad — Styles
+   Themeable (Light/Dark), glassmorphism, responsive
+   ============================================================ */
+
+/* ===== Theme Variables ===== */
+:root {
+  --lp-bg-base: #f8fafc;
+  --lp-bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+  --lp-bg-card: rgba(255, 255, 255, 0.7);
+  --lp-bg-card-hover: rgba(255, 255, 255, 0.9);
+  --lp-bg-blur: blur(20px);
+  --lp-border: rgba(0, 0, 0, 0.05);
+  --lp-border-hover: rgba(245, 158, 11, 0.3);
+  --lp-border-focus: rgba(245, 158, 11, 0.8);
+  
+  --lp-text-primary: #0f172a;
+  --lp-text-secondary: #475569;
+  --lp-text-tertiary: #94a3b8;
+  --lp-text-inverse: #ffffff;
+  
+  --lp-brand-primary: #f59e0b;
+  --lp-brand-secondary: #f97316;
+  --lp-brand-gradient: linear-gradient(135deg, #f59e0b, #f97316, #ef4444);
+  
+  --lp-success: #10b981;
+  --lp-danger: #ef4444;
+  --lp-warning: #f59e0b;
+  
+  --lp-input-bg: rgba(255, 255, 255, 0.5);
+  --lp-btn-bg: rgba(0, 0, 0, 0.05);
+  --lp-btn-hover: rgba(0, 0, 0, 0.1);
+  
+  --lp-shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  --lp-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+  --lp-shadow-glow: 0 0 15px rgba(245, 158, 11, 0.2);
+}
+
+[data-theme="dark"] {
+  --lp-bg-base: #0f172a;
+  --lp-bg-gradient: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 30%, #0d1117 60%, #0a1628 100%);
+  --lp-bg-card: rgba(30, 41, 59, 0.5);
+  --lp-bg-card-hover: rgba(30, 41, 59, 0.8);
+  --lp-border: rgba(255, 255, 255, 0.1);
+  --lp-border-hover: rgba(245, 158, 11, 0.3);
+  --lp-border-focus: rgba(245, 158, 11, 0.8);
+  
+  --lp-text-primary: #f8fafc;
+  --lp-text-secondary: #94a3b8;
+  --lp-text-tertiary: #64748b;
+  --lp-text-inverse: #0f172a;
+  
+  --lp-input-bg: rgba(15, 23, 42, 0.6);
+  --lp-btn-bg: rgba(255, 255, 255, 0.06);
+  --lp-btn-hover: rgba(255, 255, 255, 0.1);
+  
+  --lp-shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --lp-shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+  --lp-shadow-glow: 0 0 15px rgba(245, 158, 11, 0.3);
+}
+
+/* ===== Base Settings ===== */
+.launchpad-page {
+  min-height: 100vh;
+  background: var(--lp-bg-gradient);
+  color: var(--lp-text-primary);
+  position: relative;
+  overflow-x: hidden;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.launchpad-page::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at 20% 50%, rgba(245, 158, 11, 0.05) 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 80%, rgba(6, 182, 212, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== Global Components ===== */
+.glass-panel {
+  background: var(--lp-bg-card);
+  backdrop-filter: var(--lp-bg-blur);
+  -webkit-backdrop-filter: var(--lp-bg-blur);
+  border: 1px solid var(--lp-border);
+  border-radius: 16px;
+  transition: all 0.2s ease;
+}
+
+.glass-panel:hover {
+  border-color: var(--lp-border-hover);
+  box-shadow: var(--lp-shadow-glow);
+}
+
+/* ===== Header & Top Bar ===== */
+.launchpad-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: var(--lp-bg-card);
+  backdrop-filter: var(--lp-bg-blur);
+  border-bottom: 1px solid var(--lp-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: all 0.3s ease;
+}
+
+.launchpad-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.launchpad-title h1 {
+  font-size: 20px;
+  font-weight: 700;
+  background: var(--lp-brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--lp-btn-bg);
+  border: 1px solid var(--lp-border);
+  color: var(--lp-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.icon-button:hover {
+  background: var(--lp-btn-hover);
+  color: var(--lp-text-primary);
+  border-color: var(--lp-border-hover);
+}
+
+/* ===== Stats Bar ===== */
+.launchpad-stats-bar {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  position: relative;
+  z-index: 10;
+}
+.launchpad-stats-bar::-webkit-scrollbar { display: none; }
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  min-width: max-content;
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border);
+  border-radius: 12px;
+}
+
+/* ===== Modal Overlay ===== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 500px;
+  background: var(--lp-bg-base);
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  animation: modalPopIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  max-height: calc(90vh - 70px);
+}
+
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+.modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-body::-webkit-scrollbar-thumb {
+  background: var(--lp-border-focus);
+  border-radius: 3px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .modal-body {
+    padding: 16px;
+  }
+}
+
+/* ===== File Upload ===== */
+.file-upload-area {
+  border: 2px dashed var(--lp-border);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--lp-input-bg);
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.file-upload-area:hover {
+  border-color: var(--lp-brand-primary);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.file-upload-area.has-image {
+  padding: 0;
+  border-style: solid;
+}
+
+.file-preview {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+}
+
+.file-remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0,0,0,0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* ===== Form Elements ===== */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lp-text-primary);
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--lp-input-bg);
+  border: 1px solid var(--lp-border);
+  border-radius: 12px;
+  color: var(--lp-text-primary);
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--lp-border-focus);
+  box-shadow: var(--lp-shadow-glow);
+}
+
+.form-textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--lp-brand-primary);
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--lp-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--lp-text-primary);
+}
+
+/* ===== Main Layout ===== */
+.launchpad-content {
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 10;
+}
+
+@media (max-width: 1024px) {
+  .launchpad-content {
+      grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Search & Filters ===== */
+.search-filter-bar {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 16px;
+  color: var(--lp-text-tertiary);
+}
+
+.search-input {
+  width: 100%;
+  padding: 14px 16px 14px 48px;
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border);
+  border-radius: 12px;
+  color: var(--lp-text-primary);
+  font-size: 15px;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--lp-border-focus);
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.filter-group {
+  display: flex;
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.filter-btn {
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--lp-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-btn:hover {
+  color: var(--lp-text-primary);
+}
+
+.filter-btn.active {
+  background: var(--lp-btn-bg);
+  color: var(--lp-brand-primary);
+}
+
+/* ===== Token Grid ===== */
+.token-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+/* ===== Token Card ===== */
+.token-card {
+  padding: 20px;
+  background: var(--lp-bg-card);
+  backdrop-filter: var(--lp-bg-blur);
+  border: 1px solid var(--lp-border);
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.token-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--lp-border-hover);
+  box-shadow: var(--lp-shadow-md), var(--lp-shadow-glow);
+}
+
+.token-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.token-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(168, 85, 247, 0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: var(--lp-brand-primary);
+  overflow: hidden;
+  border: 1px solid var(--lp-border);
+}
+
+.token-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.token-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.token-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--lp-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.token-symbol {
+  font-size: 14px;
+  color: var(--lp-brand-primary);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.token-age {
+  font-size: 12px;
+  color: var(--lp-text-tertiary);
+  white-space: nowrap;
+}
+
+.token-card-desc {
+  font-size: 13px;
+  color: var(--lp-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 20px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.token-card-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 12px;
+  background: var(--lp-input-bg);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.token-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.token-stat-label {
+  font-size: 11px;
+  color: var(--lp-text-tertiary);
+  text-transform: uppercase;
+}
+
+.token-stat-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lp-text-primary);
+}
+
+.graduated-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 8px;
+  color: var(--lp-success);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.graduation-bar {
+  height: 6px;
+  background: var(--lp-btn-bg);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.graduation-fill {
+  height: 100%;
+  background: var(--lp-brand-gradient);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.graduation-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--lp-text-secondary);
+}
+
+.grad-pct {
+  color: var(--lp-brand-primary);
+  font-weight: 600;
+}
+
+/* ===== Right Sidebar & Buttons ===== */
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 16px;
+  background: var(--lp-brand-gradient);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  margin-bottom: 24px;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+}
+
+.recent-trades {
+  background: var(--lp-bg-card);
+  backdrop-filter: var(--lp-bg-blur);
+  border: 1px solid var(--lp-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.recent-trades-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--lp-border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--lp-text-primary);
+}
+
+.trade-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.trade-item {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--lp-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: background 0.2s;
+}
+
+.trade-item:hover {
+  background: var(--lp-btn-hover);
+}
+
+.trade-user {
+  font-size: 13px;
+  color: var(--lp-text-secondary);
+}
+
+.trade-action {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.action-buy { color: var(--lp-success); }
+.action-sell { color: var(--lp-danger); }
+
+.trade-amount {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lp-text-primary);
+  text-align: right;
+}
+
+.trade-time {
+  font-size: 11px;
+  color: var(--lp-text-tertiary);
+  margin-top: 4px;
+  text-align: right;
+}
+
+/* ===== Form Controls ===== */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--lp-text-secondary);
+  margin-bottom: 8px;
+}
+
+.form-input, .form-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--lp-input-bg);
+  border: 1px solid var(--lp-border);
+  border-radius: 12px;
+  color: var(--lp-text-primary);
+  font-size: 15px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.form-input:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--lp-border-focus);
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* ===== Detail Page Adjustments ===== */
+.token-detail-header {
+  padding: 32px 0;
+  margin-bottom: 32px;
+  border-bottom: 1px solid var(--lp-border);
+}
+
+.trade-panel {
+  background: var(--lp-bg-card);
+  backdrop-filter: var(--lp-bg-blur);
+  border: 1px solid var(--lp-border);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.trade-tabs {
+  display: flex;
+  background: var(--lp-input-bg);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 24px;
+}
+
+.trade-tab {
+  flex: 1;
+  padding: 12px;
+  text-align: center;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+  color: var(--lp-text-secondary);
+}
+
+.trade-tab.active-buy {
+  background: var(--lp-success);
+  color: white;
+}
+
+.trade-tab.active-sell {
+  background: var(--lp-danger);
+  color: white;
+}
+
+.trade-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-suffix {
+  position: absolute;
+  right: 16px;
+  font-weight: 600;
+  color: var(--lp-text-secondary);
+}
+
+.trade-output {
+  padding: 16px;
+  background: var(--lp-input-bg);
+  border-radius: 12px;
+  margin: 24px 0;
+}
+
+.trade-output-label {
+  font-size: 13px;
+  color: var(--lp-text-secondary);
+}
+
+.trade-output-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--lp-text-primary);
+  margin-top: 4px;
+}
+
+.trade-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.buy-btn {
+  background: var(--lp-success);
+}
+.buy-btn:hover { background: #059669; }
+
+.sell-btn {
+  background: var(--lp-danger);
+}
+.sell-btn:hover { background: #dc2626; }
+
+.trade-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ===== Dropdown Menu ===== */
+.dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 140px;
+  background: var(--lp-bg-card);
+  backdrop-filter: var(--lp-bg-blur);
+  -webkit-backdrop-filter: var(--lp-bg-blur);
+  border: 1px solid var(--lp-border);
+  border-radius: 12px;
+  box-shadow: var(--lp-shadow-md);
+  padding: 8px;
+  z-index: 200;
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dropdown-menu.open {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--lp-text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background: var(--lp-btn-hover);
+}
+
+.dropdown-item.active {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--lp-brand-primary);
+}
+
+/* ===== Responsive: Token Detail Page ===== */
+@media (max-width: 768px) {
+  .launchpad-header {
+    padding: 12px 16px;
+    gap: 8px;
+  }
+  .launchpad-title h1 {
+    font-size: 16px;
+  }
+  .header-actions {
+    gap: 8px;
+  }
+  .launchpad-content {
+    padding: 16px !important;
+  }
+  .trade-panel {
+    padding: 16px !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .token-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
