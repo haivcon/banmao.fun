@@ -1,0 +1,8 @@
+# Local-only removed games. Keep source locally; never upload to Vercel.
+/local-only/
+/app/gamefi/banmaominer/
+/app/gamefi/worldcup/
+/app/api/worldcup/
+/app/gamefi/admin/components/MinerTab.tsx
+/contracts/BanMaoMiner.sol
+/contracts/WorldCupYieldWars.sol

@@ -9,7 +9,6 @@ import { SNAKE_ABI } from '../banmaosnake/lib/abis';
 import { SNAKE_CONTRACT_ADDRESS } from '../banmaosnake/lib/constants';
 import { RPS_ABI } from '../banmaorps/lib/abis';
 import { RPS_ADDRESS } from '../banmaorps/lib/constants';
-import { BANMAO_MINER_ABI, BANMAO_MINER_ADDRESS } from '../banmaominer/lib/abis';
 import SharedProviders from '../../providers';
 import './admin.css';
 
@@ -18,7 +17,6 @@ import SnakeTab from './components/SnakeTab';
 import RpsTab from './components/RpsTab';
 import SlotsTab from './components/SlotsTab';
 import AdminsTab from './components/AdminsTab';
-import MinerTab from './components/MinerTab';
 import LogsTab from './components/LogsTab';
 import SystemTab from './components/SystemTab';
 import FomoTab from './components/FomoTab';
@@ -36,7 +34,7 @@ import { id } from './i18n/id';
 
 // Tab types
 // Tab types
-type TabId = 'overview' | 'snake' | 'rps' | 'slots' | 'miner' | 'fomo' | 'pk' | 'admins' | 'logs' | 'system';
+type TabId = 'overview' | 'snake' | 'rps' | 'slots' | 'fomo' | 'pk' | 'admins' | 'logs' | 'system';
 
 interface ClaimStats {
     claimsToday: number;
@@ -236,7 +234,6 @@ function AdminContent() {
         snake: true,
         rps: true,
         slots: true,
-        miner: true,
         fomo: true,
         pk: true
     });
@@ -249,7 +246,6 @@ function AdminContent() {
                 snake: backendConfig['GAME_SNAKE_ENABLED'] !== 'false',
                 rps: backendConfig['GAME_RPS_ENABLED'] !== 'false',
                 slots: backendConfig['GAME_SLOTS_ENABLED'] !== 'false',
-                miner: backendConfig['GAME_MINER_ENABLED'] !== 'false',
                 fomo: backendConfig['GAME_FOMO_ENABLED'] !== 'false',
                 pk: backendConfig['GAME_PK_ENABLED'] !== 'false'
             });
@@ -258,7 +254,7 @@ function AdminContent() {
 
     // Toggle game function
     // Toggle game function
-    const toggleGame = async (game: 'snake' | 'rps' | 'slots' | 'miner' | 'fomo' | 'pk', enabled: boolean) => {
+    const toggleGame = async (game: 'snake' | 'rps' | 'slots' | 'fomo' | 'pk', enabled: boolean) => {
         const key = `GAME_${game.toUpperCase()}_ENABLED`;
 
         // Optimistic update
@@ -374,13 +370,6 @@ function AdminContent() {
         functionName: 'signerAddress',
     });
 
-    const { data: minerOwner } = useReadContract({
-        address: BANMAO_MINER_ADDRESS,
-        abi: BANMAO_MINER_ABI,
-        functionName: 'owner',
-    });
-
-
 
     // Super admin addresses - works on ALL chains (mainnet + testnet)
     // Add your wallet address here to always have admin access
@@ -408,11 +397,10 @@ function AdminContent() {
 
         // Priority 2: Contract owners (only works if contracts are deployed on current chain)
         const isSnakeOwner = contractOwner?.toLowerCase() === normalizedAddress;
-        const isMinerOwner = minerOwner?.toLowerCase() === normalizedAddress;
 
-        setIsAdmin(isSnakeOwner || isMinerOwner);
+        setIsAdmin(isSnakeOwner);
         setLoading(false);
-    }, [address, contractOwner, minerOwner]);
+    }, [address, contractOwner]);
 
     useEffect(() => {
         checkAdminStatus();
@@ -427,8 +415,6 @@ function AdminContent() {
         { id: 'snake', icon: '🐍', label: t.tabs.snake },
         { id: 'rps', icon: '✊', label: t.tabs.rps },
         { id: 'slots', icon: '🎰', label: t.tabs.slots },
-        { id: 'miner', icon: '⛏️', label: t.tabs.miner || 'Miner' },
-        { id: 'miner', icon: '⛏️', label: t.tabs.miner || 'Miner' },
         { id: 'fomo', icon: '🔥', label: t.tabs.fomo || 'FOMO' },
         { id: 'pk', icon: '⚔️', label: t.tabs.pk || 'BanMaoPK' },
         { id: 'admins', icon: '👥', label: t.tabs.admins },
@@ -649,42 +635,6 @@ function AdminContent() {
                                     </div>
                                 </div>
 
-                                {/* Miner Card */}
-                                <div className="admin-section-card" style={{ marginTop: 0, border: gameToggles.miner ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(239,68,68,0.3)' }}>
-                                    <div className="admin-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <span className="admin-stat-icon" style={{ width: '40px', height: '40px', fontSize: '24px' }}>⛏️</span>
-                                            <h3 className="admin-section-title" style={{ margin: 0 }}>{t.tabs.miner || 'Miner'}</h3>
-                                        </div>
-                                        <span style={{ fontSize: '12px', padding: '4px 8px', borderRadius: '4px', background: gameToggles.miner ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)', color: gameToggles.miner ? '#22c55e' : '#ef4444' }}>
-                                            {gameToggles.miner ? '✅ ON' : '🚫 OFF'}
-                                        </span>
-                                    </div>
-                                    <div className="admin-card-info" style={{ marginBottom: '15px' }}>
-                                        <p style={{ color: '#94a3b8', margin: '5px 0' }}>Gold Miner Game</p>
-                                        <p style={{ color: gameToggles.miner ? '#22c55e' : '#ef4444', margin: '5px 0' }}>{gameToggles.miner ? t.overview.active : 'Disabled'}</p>
-                                    </div>
-                                    <div style={{ display: 'flex', gap: '10px' }}>
-                                        <button onClick={() => setActiveTab('miner')} className="admin-btn-primary" style={{ flex: 1 }}>
-                                            ⚙️ {lang === 'en' ? 'Settings' : 'Cài đặt'}
-                                        </button>
-                                        <button
-                                            onClick={() => toggleGame('miner', !gameToggles.miner)}
-                                            style={{
-                                                padding: '8px 16px',
-                                                borderRadius: '8px',
-                                                border: 'none',
-                                                fontWeight: 600,
-                                                cursor: 'pointer',
-                                                background: gameToggles.miner ? '#ef4444' : '#22c55e',
-                                                color: '#fff'
-                                            }}
-                                        >
-                                            {gameToggles.miner ? '🚫' : '✅'}
-                                        </button>
-                                    </div>
-                                </div>
-
                                 {/* PK Card */}
                                 <div className="admin-section-card" style={{ marginTop: 0, border: gameToggles.pk ? '1px solid rgba(34,197,94,0.3)' : '1px solid rgba(239,68,68,0.3)' }}>
                                     <div className="admin-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -765,19 +715,6 @@ function AdminContent() {
 
                     {/* Slots Tab */}
                     {activeTab === 'slots' && <SlotsTab t={t} isAdmin={isAdmin} />}
-
-                    {/* Miner Tab */}
-                    {
-                        activeTab === 'miner' && (
-                            <MinerTab
-                                backendConfig={backendConfig}
-                                saveBackendConfig={saveBackendConfig}
-                                t={t}
-                                isOwner={minerOwner?.toLowerCase() === address?.toLowerCase()}
-                                isAdmin={isAdmin}
-                            />
-                        )
-                    }
 
                     {/* Admins Tab */}
                     {

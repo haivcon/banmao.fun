@@ -578,17 +578,6 @@ export default function GameFiHubPage() {
             iconImage: "/games/slots/slots-icon.jpg",
         },
         {
-            id: "banmaominer",
-            nameKey: "gamefiMinerName" as keyof LandingTranslations,
-            descKey: "gamefiMinerDesc" as keyof LandingTranslations,
-            icon: "⛏️",
-            thumbnailIcon: "⛏️",
-            href: "/gamefi/banmaominer",
-            status: "live" as const,
-            detailsKey: "gamefiMinerDetails" as keyof LandingTranslations,
-            hidden: true,  // Hidden from GameFi page, accessible via direct link
-        },
-        {
             id: "banmaofomo",
             nameKey: "gamefiFomoName" as keyof LandingTranslations,
             descKey: "gamefiFomoDesc" as keyof LandingTranslations,
@@ -600,17 +589,6 @@ export default function GameFiHubPage() {
             detailsKey: "gamefiFomoDetails" as keyof LandingTranslations,
             videoPreview: "/games/fomo/fomo-preview.mp4",
             iconImage: "/games/fomo/fomo-icon.jpg",
-        },
-        {
-            id: "worldcup",
-            nameKey: "gamefiWorldCupName" as keyof LandingTranslations,
-            descKey: "gamefiWorldCupDesc" as keyof LandingTranslations,
-            icon: "⚽",
-            thumbnailIcon: "⚽",
-            href: "/gamefi/worldcup",
-            status: "live" as const,
-            contractAddress: "0x767c2194c665998F383c0dfd2B30d73736F18e1D",
-            detailsKey: "gamefiWorldCupDetails" as keyof LandingTranslations,
         },
     ];
 
@@ -669,7 +647,6 @@ export default function GameFiHubPage() {
             'banmaorps': 'GAME_RPS_ENABLED',
             'banmaosnake': 'GAME_SNAKE_ENABLED',
             'banmaoslots': 'GAME_SLOTS_ENABLED',
-            'banmaominer': 'GAME_MINER_ENABLED',
             'banmaofomo': 'GAME_FOMO_ENABLED',
         };
 

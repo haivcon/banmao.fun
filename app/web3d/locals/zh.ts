@@ -157,6 +157,9 @@ export const zh: LandingTranslations = {
     defiAirdropName: "空投",
     defiAirdropDesc: "向 XLayer 活跃钱包分发 $BANMAO",
     defiAirdropDetails: "扫描 XLayer 活跃钱包并批量空投 $BANMAO。已持有 $BANMAO 的钱包自动排除。",
+    defiLaunchpadName: "Memecoin 发射台",
+    defiLaunchpadDesc: "使用绑定曲线创建和交易 memecoin。自动毕业到 Uniswap V4。",
+    defiLaunchpadDetails: "支付 $BANMAO 作为创建费即可启动您自己的 memecoin。代币在自动绑定曲线上交易——无需流动性池。当达到 500 OKB 时，流动性自动迁移到带有自定义 Hook 的 Uniswap V4 池。50% 的创建费被销毁，50% 进入社区金库。",
     // Staking Infographic Bullets
     defiStakingIntro: "通过锁定 $BANMAO 代币最大化收益。锁定越久，奖励倍数越高。",
     defiStakingBullet1Title: "锁定期",

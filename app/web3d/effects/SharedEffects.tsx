@@ -40,6 +40,36 @@ export class SoundManager {
     // Loop tracking for continuous sounds
     private static drumLoopId: NodeJS.Timeout | null = null;
     private static metallicLoopId: NodeJS.Timeout | null = null;
+    private static vortexLoopId: NodeJS.Timeout | null = null;
+    private static touringLoopId: NodeJS.Timeout | null = null;
+    private static spinningLoopId: any = null;
+    private static formingLoopId: NodeJS.Timeout | null = null;
+
+    // Timeouts tracking per category
+    private static drumTimeouts: NodeJS.Timeout[] = [];
+    private static metallicTimeouts: NodeJS.Timeout[] = [];
+    private static vortexTimeouts: NodeJS.Timeout[] = [];
+    private static touringTimeouts: NodeJS.Timeout[] = [];
+    private static spinningTimeouts: NodeJS.Timeout[] = [];
+    private static formingTimeouts: NodeJS.Timeout[] = [];
+    private static generalTimeouts: NodeJS.Timeout[] = [];
+
+    // Helper to safely clear timeouts
+    private static clearTimeouts(list: NodeJS.Timeout[]) {
+        list.forEach(t => clearTimeout(t));
+        list.length = 0;
+    }
+
+    // Helper to safely schedule a timeout and track it
+    private static scheduleTimeout(list: NodeJS.Timeout[], fn: () => void, delay: number) {
+        const id = setTimeout(() => {
+            const index = list.indexOf(id);
+            if (index > -1) list.splice(index, 1);
+            fn();
+        }, delay);
+        list.push(id);
+        return id;
+    }
 
     // Check if sound is muted from localStorage
     private static isMuted(): boolean {
@@ -122,166 +152,182 @@ export class SoundManager {
     // UI Click sound - crisp tap
     static playClick() {
         this.playTone(800, 0.08, 'square', 0.04);
-        setTimeout(() => this.playTone(1200, 0.05, 'sine', 0.03), 20);
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(1200, 0.05, 'sine', 0.03), 20);
     }
 
     // Hover sound - playful bouncy arpeggio (more fun!)
     static playHover() {
         // Ascending happy notes
         this.playTone(523, 0.08, 'sine', 0.03);  // C5
-        setTimeout(() => this.playTone(659, 0.08, 'sine', 0.025), 40);  // E5
-        setTimeout(() => this.playTone(784, 0.1, 'sine', 0.02), 80);   // G5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(659, 0.08, 'sine', 0.025), 40);  // E5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(784, 0.1, 'sine', 0.02), 80);   // G5
     }
 
     // "Ban-Mao" syllable sounds - cute meow-like tones
     static playBanmao() {
+        this.clearTimeouts(this.generalTimeouts);
         // "Ban" - rising tone
         this.playTone(392, 0.12, 'sine', 0.06);     // G4
-        setTimeout(() => this.playTone(440, 0.1, 'sine', 0.05), 50); // A4
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(440, 0.1, 'sine', 0.05), 50); // A4
         // "Mao" - descending meow sound
-        setTimeout(() => this.playTone(659, 0.15, 'sine', 0.06), 180);  // E5
-        setTimeout(() => this.playTone(587, 0.12, 'sine', 0.05), 280);  // D5
-        setTimeout(() => this.playTone(523, 0.2, 'sine', 0.04), 380);   // C5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(659, 0.15, 'sine', 0.06), 180);  // E5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(587, 0.12, 'sine', 0.05), 280);  // D5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(523, 0.2, 'sine', 0.04), 380);   // C5
         // Sparkle finish
-        setTimeout(() => this.playTone(1047, 0.1, 'sine', 0.03), 500);  // C6
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(1047, 0.1, 'sine', 0.03), 500);  // C6
     }
 
     // "O-K-X" electronic beep sounds
     static playOKX() {
+        this.clearTimeouts(this.generalTimeouts);
         // "O" - round deep tone
         this.playTone(262, 0.15, 'sine', 0.06);  // C4
         // "K" - sharp click
-        setTimeout(() => this.playTone(880, 0.05, 'square', 0.04), 150);  // A5 short
-        setTimeout(() => this.playTone(440, 0.08, 'square', 0.03), 180);  // A4
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(880, 0.05, 'square', 0.04), 150);  // A5 short
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(440, 0.08, 'square', 0.03), 180);  // A4
         // "X" - crossing tones (two notes at once)
-        setTimeout(() => this.playTone(523, 0.12, 'sawtooth', 0.04), 280);  // C5
-        setTimeout(() => this.playTone(784, 0.15, 'sine', 0.03), 320);      // G5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(523, 0.12, 'sawtooth', 0.04), 280);  // C5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(784, 0.15, 'sine', 0.03), 320);      // G5
         // Tech finish
-        setTimeout(() => this.playTone(1047, 0.08, 'sine', 0.025), 420);    // C6
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(1047, 0.08, 'sine', 0.025), 420);    // C6
     }
 
     // "To-ken Stats" - data analysis beeps
     static playTokenStats() {
+        this.clearTimeouts(this.generalTimeouts);
         this.playTone(440, 0.1, 'sine', 0.05);     // "To" - A4
-        setTimeout(() => this.playTone(523, 0.08, 'sine', 0.045), 100);  // "ken" - C5
-        setTimeout(() => this.playTone(659, 0.12, 'sine', 0.05), 220);   // "Stats" - E5
-        setTimeout(() => this.playTone(784, 0.1, 'sine', 0.04), 320);    // sparkle - G5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(523, 0.08, 'sine', 0.045), 100);  // "ken" - C5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(659, 0.12, 'sine', 0.05), 220);   // "Stats" - E5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(784, 0.1, 'sine', 0.04), 320);    // sparkle - G5
     }
 
     // "Price Feed" - ticker/stock sounds
     static playPriceFeed() {
+        this.clearTimeouts(this.generalTimeouts);
         this.playTone(330, 0.12, 'sine', 0.05);    // "Price" - E4
-        setTimeout(() => this.playTone(392, 0.1, 'sine', 0.045), 120);   // mid - G4
-        setTimeout(() => this.playTone(523, 0.15, 'sine', 0.05), 250);   // "Feed" - C5
-        setTimeout(() => this.playTone(659, 0.08, 'sine', 0.035), 380);  // ding - E5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(392, 0.1, 'sine', 0.045), 120);   // mid - G4
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(523, 0.15, 'sine', 0.05), 250);   // "Feed" - C5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(659, 0.08, 'sine', 0.035), 380);  // ding - E5
     }
 
     // "Set-tings" - gear/mechanical clicks
     static playSettings() {
+        this.clearTimeouts(this.generalTimeouts);
         this.playTone(350, 0.08, 'square', 0.04);   // "Set" - click
-        setTimeout(() => this.playTone(440, 0.06, 'square', 0.035), 80);  // second click
-        setTimeout(() => this.playTone(550, 0.1, 'sine', 0.045), 160);    // "tings" - ring
-        setTimeout(() => this.playTone(660, 0.12, 'sine', 0.04), 260);    // finish
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(440, 0.06, 'square', 0.035), 80);  // second click
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(550, 0.1, 'sine', 0.045), 160);    // "tings" - ring
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(660, 0.12, 'sine', 0.04), 260);    // finish
     }
 
     // "Lan-guage" - global/world sound
     static playLanguage() {
+        this.clearTimeouts(this.generalTimeouts);
         this.playTone(392, 0.1, 'sine', 0.05);     // "Lan" - G4
-        setTimeout(() => this.playTone(440, 0.08, 'sine', 0.045), 100);  // "gu" - A4
-        setTimeout(() => this.playTone(523, 0.12, 'sine', 0.05), 200);   // "age" - C5
-        setTimeout(() => this.playTone(659, 0.15, 'sine', 0.04), 320);   // world chime - E5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(440, 0.08, 'sine', 0.045), 100);  // "gu" - A4
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(523, 0.12, 'sine', 0.05), 200);   // "age" - C5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(659, 0.15, 'sine', 0.04), 320);   // world chime - E5
     }
 
     // "In-stall" - download/install sound
     static playInstall() {
+        this.clearTimeouts(this.generalTimeouts);
         this.playTone(262, 0.15, 'sine', 0.05);    // "In" - C4 deep
-        setTimeout(() => this.playTone(330, 0.1, 'sine', 0.045), 150);   // mid - E4
-        setTimeout(() => this.playTone(440, 0.12, 'sine', 0.05), 280);   // "stall" - A4
-        setTimeout(() => this.playTone(523, 0.08, 'sine', 0.04), 400);   // complete - C5
-        setTimeout(() => this.playTone(784, 0.1, 'sine', 0.035), 480);   // success - G5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(330, 0.1, 'sine', 0.045), 150);   // mid - E4
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(440, 0.12, 'sine', 0.05), 280);   // "stall" - A4
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(523, 0.08, 'sine', 0.04), 400);   // complete - C5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(784, 0.1, 'sine', 0.035), 480);   // success - G5
     }
 
     // Mascot Expressions - "Meow!" happy sound
     static playMeow() {
+        this.clearTimeouts(this.generalTimeouts);
         // Happy meow - ascending cute sounds
         this.playTone(523, 0.1, 'sine', 0.06);      // C5
-        setTimeout(() => this.playTone(659, 0.12, 'sine', 0.05), 80);   // E5
-        setTimeout(() => this.playTone(784, 0.15, 'sine', 0.06), 180);  // G5
-        setTimeout(() => this.playTone(880, 0.08, 'sine', 0.04), 300);  // A5 sparkle
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(659, 0.12, 'sine', 0.05), 80);   // E5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(784, 0.15, 'sine', 0.06), 180);  // G5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(880, 0.08, 'sine', 0.04), 300);  // A5 sparkle
     }
 
     // Mascot "Excited!" BANMAO rocket sound
     static playExcited() {
+        this.clearTimeouts(this.generalTimeouts);
         // Excited rapid ascending
         this.playTone(262, 0.08, 'sine', 0.05);     // C4
-        setTimeout(() => this.playTone(330, 0.07, 'sine', 0.05), 60);   // E4
-        setTimeout(() => this.playTone(392, 0.07, 'sine', 0.05), 120);  // G4
-        setTimeout(() => this.playTone(523, 0.08, 'sine', 0.05), 180);  // C5
-        setTimeout(() => this.playTone(659, 0.1, 'sine', 0.05), 240);   // E5
-        setTimeout(() => this.playTone(784, 0.12, 'sine', 0.06), 300);  // G5
-        setTimeout(() => this.playTone(1047, 0.15, 'sine', 0.05), 380); // C6 🚀
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(330, 0.07, 'sine', 0.05), 60);   // E4
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(392, 0.07, 'sine', 0.05), 120);  // G4
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(523, 0.08, 'sine', 0.05), 180);  // C5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(659, 0.1, 'sine', 0.05), 240);   // E5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(784, 0.12, 'sine', 0.06), 300);  // G5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(1047, 0.15, 'sine', 0.05), 380); // C6 🚀
     }
 
     // Mascot "Wave" - friendly greeting
     static playWave() {
+        this.clearTimeouts(this.generalTimeouts);
         // Friendly wave sound
         this.playTone(440, 0.1, 'sine', 0.05);      // A4
-        setTimeout(() => this.playTone(523, 0.08, 'sine', 0.045), 100); // C5
-        setTimeout(() => this.playTone(440, 0.08, 'sine', 0.04), 200);  // A4
-        setTimeout(() => this.playTone(523, 0.12, 'sine', 0.05), 300);  // C5 👋
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(523, 0.08, 'sine', 0.045), 100); // C5
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(440, 0.08, 'sine', 0.04), 200);  // A4
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(523, 0.12, 'sine', 0.05), 300);  // C5 👋
     }
 
     // Mascot "Sleepy" - zzz drowsy sound
     static playSleepy() {
+        this.clearTimeouts(this.generalTimeouts);
         // Descending sleepy tones
         this.playTone(392, 0.2, 'sine', 0.04);      // G4 slow
-        setTimeout(() => this.playTone(330, 0.25, 'sine', 0.035), 250); // E4
-        setTimeout(() => this.playTone(262, 0.3, 'sine', 0.03), 500);   // C4 💤
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(330, 0.25, 'sine', 0.035), 250); // E4
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(262, 0.3, 'sine', 0.03), 500);   // C4 💤
     }
 
     // Success chime
     static playSuccess() {
+        this.clearTimeouts(this.generalTimeouts);
         this.playTone(523, 0.1, 'sine', 0.05);
-        setTimeout(() => this.playTone(659, 0.1, 'sine', 0.04), 80);
-        setTimeout(() => this.playTone(784, 0.15, 'sine', 0.03), 160);
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(659, 0.1, 'sine', 0.04), 80);
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(784, 0.15, 'sine', 0.03), 160);
     }
 
     // Error/warning sound
     static playError() {
+        this.clearTimeouts(this.generalTimeouts);
         this.playTone(200, 0.2, 'sawtooth', 0.04);
-        setTimeout(() => this.playTone(150, 0.25, 'sawtooth', 0.03), 100);
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(150, 0.25, 'sawtooth', 0.03), 100);
     }
 
     // Close panel sound - descending whoosh
     static playClose() {
+        this.clearTimeouts(this.generalTimeouts);
         this.playTone(523, 0.08, 'sine', 0.04);     // C5
-        setTimeout(() => this.playTone(392, 0.08, 'sine', 0.035), 50);  // G4
-        setTimeout(() => this.playTone(262, 0.12, 'sine', 0.03), 100);  // C4 soft close
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(392, 0.08, 'sine', 0.035), 50);  // G4
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(262, 0.12, 'sine', 0.03), 100);  // C4 soft close
     }
 
     // Wild drum dance beat - enthusiastic tribal drums for $banmao logo hover 🥁
     static playDrumDance() {
+        this.clearTimeouts(this.drumTimeouts);
         // Slower tribal drum pattern - rhythmic and groovy!
         this.playTone(80, 0.15, 'square', 0.12);       // Kick drum
-        setTimeout(() => this.playTone(150, 0.1, 'square', 0.15), 150);    // Tom
-        setTimeout(() => this.playTone(200, 0.08, 'square', 0.12), 280);   // High tom
-        setTimeout(() => this.playTone(80, 0.15, 'square', 0.12), 400);    // Kick
-        setTimeout(() => this.playTone(300, 0.08, 'sawtooth', 0.1), 520);  // Snare hit
-        setTimeout(() => this.playTone(150, 0.1, 'square', 0.12), 650);    // Tom
-        setTimeout(() => this.playTone(80, 0.2, 'square', 0.12), 800);     // Deep kick
-        setTimeout(() => this.playTone(350, 0.1, 'sawtooth', 0.12), 950);  // Crash
+        this.scheduleTimeout(this.drumTimeouts, () => this.playTone(150, 0.1, 'square', 0.15), 150);    // Tom
+        this.scheduleTimeout(this.drumTimeouts, () => this.playTone(200, 0.08, 'square', 0.12), 280);   // High tom
+        this.scheduleTimeout(this.drumTimeouts, () => this.playTone(80, 0.15, 'square', 0.12), 400);    // Kick
+        this.scheduleTimeout(this.drumTimeouts, () => this.playTone(300, 0.08, 'sawtooth', 0.1), 520);  // Snare hit
+        this.scheduleTimeout(this.drumTimeouts, () => this.playTone(150, 0.1, 'square', 0.12), 650);    // Tom
+        this.scheduleTimeout(this.drumTimeouts, () => this.playTone(80, 0.2, 'square', 0.12), 800);     // Deep kick
+        this.scheduleTimeout(this.drumTimeouts, () => this.playTone(350, 0.1, 'sawtooth', 0.12), 950);  // Crash
     }
 
     // Metallic industrial beat - hard metallic sounds for OKX logo hover ⚙️
     static playMetallic() {
+        this.clearTimeouts(this.metallicTimeouts);
         // Slower industrial metal clangs
         this.playTone(120, 0.2, 'sawtooth', 0.1);       // Deep metal clang
-        setTimeout(() => this.playTone(800, 0.08, 'square', 0.08), 180);   // High metallic ping
-        setTimeout(() => this.playTone(200, 0.15, 'sawtooth', 0.12), 320); // Metal grind
-        setTimeout(() => this.playTone(1200, 0.05, 'square', 0.06), 480);  // Spark
-        setTimeout(() => this.playTone(150, 0.2, 'sawtooth', 0.1), 620);   // Heavy clang
-        setTimeout(() => this.playTone(600, 0.1, 'square', 0.08), 780);    // Metallic ring
-        setTimeout(() => this.playTone(100, 0.25, 'sawtooth', 0.12), 920); // Deep bass hit
+        this.scheduleTimeout(this.metallicTimeouts, () => this.playTone(800, 0.08, 'square', 0.08), 180);   // High metallic ping
+        this.scheduleTimeout(this.metallicTimeouts, () => this.playTone(200, 0.15, 'sawtooth', 0.12), 320); // Metal grind
+        this.scheduleTimeout(this.metallicTimeouts, () => this.playTone(1200, 0.05, 'square', 0.06), 480);  // Spark
+        this.scheduleTimeout(this.metallicTimeouts, () => this.playTone(150, 0.2, 'sawtooth', 0.1), 620);   // Heavy clang
+        this.scheduleTimeout(this.metallicTimeouts, () => this.playTone(600, 0.1, 'square', 0.08), 780);    // Metallic ring
+        this.scheduleTimeout(this.metallicTimeouts, () => this.playTone(100, 0.25, 'sawtooth', 0.12), 920); // Deep bass hit
     }
 
     // ===================== CONTINUOUS LOOPING SOUNDS =====================
@@ -304,6 +350,7 @@ export class SoundManager {
             clearInterval(this.drumLoopId);
             this.drumLoopId = null;
         }
+        this.clearTimeouts(this.drumTimeouts);
     }
 
     // Start continuous metallic loop for OKX logo hover ⚙️
@@ -324,24 +371,24 @@ export class SoundManager {
             clearInterval(this.metallicLoopId);
             this.metallicLoopId = null;
         }
+        this.clearTimeouts(this.metallicTimeouts);
     }
 
     // ===================== BLACK HOLE VORTEX SOUND =====================
 
-    private static vortexLoopId: NodeJS.Timeout | null = null;
-
     // Single vortex/whoosh sound - deep rumbling like water swirling
     static playVortex() {
+        this.clearTimeouts(this.vortexTimeouts);
         // Deep bass rumble
         this.playTone(60, 0.4, 'sawtooth', 0.12);
         // Swirling mid tone
-        setTimeout(() => this.playTone(100, 0.35, 'triangle', 0.1), 100);
+        this.scheduleTimeout(this.vortexTimeouts, () => this.playTone(100, 0.35, 'triangle', 0.1), 100);
         // Higher swirl
-        setTimeout(() => this.playTone(150, 0.3, 'sawtooth', 0.08), 200);
+        this.scheduleTimeout(this.vortexTimeouts, () => this.playTone(150, 0.3, 'sawtooth', 0.08), 200);
         // Descending whoosh
-        setTimeout(() => this.playTone(80, 0.4, 'sawtooth', 0.1), 350);
+        this.scheduleTimeout(this.vortexTimeouts, () => this.playTone(80, 0.4, 'sawtooth', 0.1), 350);
         // Deep rumble finish
-        setTimeout(() => this.playTone(50, 0.5, 'triangle', 0.15), 500);
+        this.scheduleTimeout(this.vortexTimeouts, () => this.playTone(50, 0.5, 'triangle', 0.15), 500);
     }
 
     // Start continuous vortex loop for black hole hover 🌀
@@ -360,31 +407,34 @@ export class SoundManager {
             clearInterval(this.vortexLoopId);
             this.vortexLoopId = null;
         }
+        this.clearTimeouts(this.vortexTimeouts);
     }
 
     // Suction/implosion sound for when data is cleared
     static playSuction() {
+        this.clearTimeouts(this.vortexTimeouts);
         // Dramatic building rumble
         this.playTone(80, 0.2, 'sawtooth', 0.15);
-        setTimeout(() => this.playTone(100, 0.2, 'sawtooth', 0.15), 150);
-        setTimeout(() => this.playTone(130, 0.2, 'sawtooth', 0.12), 300);
-        setTimeout(() => this.playTone(180, 0.2, 'sawtooth', 0.1), 450);
+        this.scheduleTimeout(this.vortexTimeouts, () => this.playTone(100, 0.2, 'sawtooth', 0.15), 150);
+        this.scheduleTimeout(this.vortexTimeouts, () => this.playTone(130, 0.2, 'sawtooth', 0.12), 300);
+        this.scheduleTimeout(this.vortexTimeouts, () => this.playTone(180, 0.2, 'sawtooth', 0.1), 450);
         // Big bass drop
-        setTimeout(() => this.playTone(40, 0.6, 'square', 0.2), 600);
-        setTimeout(() => this.playTone(30, 0.8, 'sawtooth', 0.18), 700);
+        this.scheduleTimeout(this.vortexTimeouts, () => this.playTone(40, 0.6, 'square', 0.2), 600);
+        this.scheduleTimeout(this.vortexTimeouts, () => this.playTone(30, 0.8, 'sawtooth', 0.18), 700);
         // Final deep boom
-        setTimeout(() => this.playTone(25, 1.0, 'triangle', 0.15), 900);
+        this.scheduleTimeout(this.vortexTimeouts, () => this.playTone(25, 1.0, 'triangle', 0.15), 900);
     }
 
     // Pie chart segment hover - pitch varies by percentage (0-100)
     static playPieHover(percent: number) {
+        this.clearTimeouts(this.generalTimeouts);
         // Map percent (0-100) to frequency (300-1000 Hz)
         const baseFreq = 300;
         const maxFreq = 1000;
         const freq = baseFreq + (percent / 100) * (maxFreq - baseFreq);
         this.playTone(freq, 0.08, 'sine', 0.03);
         // Add a subtle harmonic
-        setTimeout(() => this.playTone(freq * 1.5, 0.06, 'sine', 0.02), 30);
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(freq * 1.5, 0.06, 'sine', 0.02), 30);
     }
 
     // Whoosh for transitions
@@ -413,22 +463,19 @@ export class SoundManager {
     // Pop sound for spawn
     static playPop() {
         this.playTone(300, 0.05, 'sine', 0.06);
-        setTimeout(() => this.playTone(500, 0.08, 'sine', 0.04), 15);
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(500, 0.08, 'sine', 0.04), 15);
     }
 
     // ===================== CUBE ANIMATION SOUNDS =====================
 
-    private static touringLoopId: NodeJS.Timeout | null = null;
-    private static spinningLoopId: NodeJS.Timeout | null = null;
-    private static formingLoopId: NodeJS.Timeout | null = null;
-
     // Touring sound - magical floating ambient (for 8s touring phase)
     static playTouringNote() {
+        this.clearTimeouts(this.touringTimeouts);
         // Gentle magical tones - like wind chimes
         const notes = [523, 659, 784, 880, 1047]; // C5, E5, G5, A5, C6
         const note = notes[Math.floor(Math.random() * notes.length)];
         this.playTone(note, 0.4, 'sine', 0.03);
-        setTimeout(() => this.playTone(note * 1.5, 0.3, 'sine', 0.02), 200);
+        this.scheduleTimeout(this.touringTimeouts, () => this.playTone(note * 1.5, 0.3, 'sine', 0.02), 200);
     }
 
     // Start touring ambient loop
@@ -447,14 +494,16 @@ export class SoundManager {
             clearInterval(this.touringLoopId);
             this.touringLoopId = null;
         }
+        this.clearTimeouts(this.touringTimeouts);
     }
 
     // Spinning sound - accelerating whoosh (for 6s spinning phase)
     static playSpinningNote() {
+        this.clearTimeouts(this.spinningTimeouts);
         // Whooshing circular tones
         this.playTone(150, 0.2, 'sawtooth', 0.06);
-        setTimeout(() => this.playTone(200, 0.15, 'sawtooth', 0.05), 100);
-        setTimeout(() => this.playTone(250, 0.15, 'sawtooth', 0.04), 180);
+        this.scheduleTimeout(this.spinningTimeouts, () => this.playTone(200, 0.15, 'sawtooth', 0.05), 100);
+        this.scheduleTimeout(this.spinningTimeouts, () => this.playTone(250, 0.15, 'sawtooth', 0.04), 180);
     }
 
     // Start spinning loop (accelerates over time)
@@ -476,14 +525,16 @@ export class SoundManager {
             clearTimeout(this.spinningLoopId);
             this.spinningLoopId = null;
         }
+        this.clearTimeouts(this.spinningTimeouts);
     }
 
     // Text forming sound - building/assembly (for 3s text formation)
     static playFormingNote() {
+        this.clearTimeouts(this.formingTimeouts);
         // Crystallizing/materializing sounds
         const freq = 300 + Math.random() * 400;
         this.playTone(freq, 0.15, 'sine', 0.04);
-        setTimeout(() => this.playTone(freq * 1.2, 0.1, 'triangle', 0.03), 50);
+        this.scheduleTimeout(this.formingTimeouts, () => this.playTone(freq * 1.2, 0.1, 'triangle', 0.03), 50);
     }
 
     // Start text forming loop
@@ -502,55 +553,59 @@ export class SoundManager {
             clearInterval(this.formingLoopId);
             this.formingLoopId = null;
         }
+        this.clearTimeouts(this.formingTimeouts);
     }
 
     // Text complete - celebration fanfare
     static playTextComplete() {
+        this.clearTimeouts(this.generalTimeouts);
         // Triumphant chord
         this.playTone(523, 0.3, 'sine', 0.05);  // C5
         this.playTone(659, 0.3, 'sine', 0.04);  // E5
         this.playTone(784, 0.3, 'sine', 0.04);  // G5
-        setTimeout(() => {
+        this.scheduleTimeout(this.generalTimeouts, () => {
             this.playTone(880, 0.25, 'sine', 0.04);  // A5
             this.playTone(1047, 0.4, 'sine', 0.05); // C6
         }, 200);
         // Sparkle finish
-        setTimeout(() => this.playTone(1319, 0.2, 'sine', 0.03), 400); // E6
-        setTimeout(() => this.playTone(1568, 0.15, 'sine', 0.025), 500); // G6
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(1319, 0.2, 'sine', 0.03), 400); // E6
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(1568, 0.15, 'sine', 0.025), 500); // G6
     }
 
     // Scatter explosion sound
     static playScatter() {
+        this.clearTimeouts(this.generalTimeouts);
         // Explosive scatter
         this.playTone(200, 0.2, 'sawtooth', 0.08);
         this.playTone(100, 0.3, 'square', 0.1);
-        setTimeout(() => {
+        this.scheduleTimeout(this.generalTimeouts, () => {
             this.playTone(400, 0.15, 'sawtooth', 0.05);
             this.playTone(600, 0.1, 'triangle', 0.04);
         }, 80);
-        setTimeout(() => this.playTone(800, 0.1, 'sine', 0.03), 150);
-        setTimeout(() => this.playTone(300, 0.2, 'sawtooth', 0.04), 220);
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(800, 0.1, 'sine', 0.03), 150);
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(300, 0.2, 'sawtooth', 0.04), 220);
     }
 
     // Moon arrival - epic crescendo for "WE GO MOON"
     static playMoonArrival() {
+        this.clearTimeouts(this.generalTimeouts);
         // Deep space bass
         this.playTone(60, 0.6, 'sawtooth', 0.12);
-        setTimeout(() => this.playTone(80, 0.5, 'sawtooth', 0.1), 200);
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(80, 0.5, 'sawtooth', 0.1), 200);
         // Rising tones
-        setTimeout(() => this.playTone(200, 0.4, 'sine', 0.08), 400);
-        setTimeout(() => this.playTone(400, 0.35, 'sine', 0.07), 600);
-        setTimeout(() => this.playTone(600, 0.3, 'sine', 0.06), 800);
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(200, 0.4, 'sine', 0.08), 400);
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(400, 0.35, 'sine', 0.07), 600);
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(600, 0.3, 'sine', 0.06), 800);
         // Triumphant arrival
-        setTimeout(() => {
+        this.scheduleTimeout(this.generalTimeouts, () => {
             this.playTone(784, 0.5, 'sine', 0.08);  // G5
             this.playTone(987, 0.5, 'sine', 0.07);  // B5
             this.playTone(1175, 0.5, 'sine', 0.06); // D6
         }, 1000);
         // Sparkle shower
-        setTimeout(() => this.playTone(1568, 0.3, 'sine', 0.04), 1300);
-        setTimeout(() => this.playTone(1976, 0.25, 'sine', 0.03), 1450);
-        setTimeout(() => this.playTone(2349, 0.2, 'sine', 0.025), 1600);
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(1568, 0.3, 'sine', 0.04), 1300);
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(1976, 0.25, 'sine', 0.03), 1450);
+        this.scheduleTimeout(this.generalTimeouts, () => this.playTone(2349, 0.2, 'sine', 0.025), 1600);
     }
 }
 
@@ -621,7 +676,8 @@ export function HoverGlow({ size, color, intensity, isHovered, shape = 'sphere',
         mat.opacity = currentIntensity.current;
 
         const targetScale = isHovered ? 1.15 : 1.05;
-        glowRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
+        const currentScale = glowRef.current.scale.x;
+        glowRef.current.scale.setScalar(currentScale + (targetScale - currentScale) * 0.1);
     });
 
     return (

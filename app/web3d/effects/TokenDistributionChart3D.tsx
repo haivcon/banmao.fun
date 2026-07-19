@@ -228,7 +228,7 @@ export function TokenDistributionChart3D({
     }, [position, focusOn]);
 
     // Color palette for top 20 holders (gradient from gold to purple)
-    const HOLDER_COLORS = [
+    const HOLDER_COLORS = useMemo(() => [
         { color: "#facc15", glow: "#eab308" }, // 1 - gold
         { color: "#fbbf24", glow: "#d97706" }, // 2
         { color: "#f59e0b", glow: "#b45309" }, // 3
@@ -249,7 +249,7 @@ export function TokenDistributionChart3D({
         { color: "#a3e635", glow: "#65a30d" }, // 18
         { color: "#84cc16", glow: "#4d7c0f" }, // 19
         { color: "#bef264", glow: "#84cc16" }, // 20
-    ];
+    ], []);
 
     const BLACK_HOLE = "0x8f00767450fd12fd1329b11b78be7340be2584ea";
 
@@ -395,7 +395,7 @@ export function TokenDistributionChart3D({
         });
 
         return result;
-    }, [stats, translations, holdersInfo, blackHoleAmount]);
+    }, [stats, translations, holdersInfo, blackHoleAmount, HOLDER_COLORS]);
 
     const formatNumber = (num: number): string => {
         return Math.round(num).toLocaleString();

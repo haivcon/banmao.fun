@@ -157,6 +157,9 @@ export const ko: LandingTranslations = {
     defiAirdropName: "에어드랍",
     defiAirdropDesc: "XLayer 활성 지갑에 $BANMAO 배포",
     defiAirdropDetails: "XLayer 활성 지갑을 스캔하고 $BANMAO를 대량 에어드랍합니다. 이미 보유한 지갑은 자동 제외.",
+    defiLaunchpadName: "밈코인 런치패드",
+    defiLaunchpadDesc: "본딩 커브로 밈코인을 생성하고 거래하세요. Uniswap V4로 자동 졸업.",
+    defiLaunchpadDetails: "$BANMAO로 생성 수수료를 지불하여 자신만의 밈코인을 런칭하세요. 토큰은 자동 본딩 커브에서 거래됩니다 — 유동성 풀이 필요 없습니다. 500 OKB에 도달하면 유동성이 커스텀 Hook이 있는 Uniswap V4 풀로 자동 마이그레이션됩니다. 생성 수수료의 50%는 소각되고 50%는 커뮤니티 금고로 갑니다.",
     // Staking Infographic Bullets
     defiStakingIntro: "$BANMAO 토큰을 잠궈 수익을 극대화하세요. 오래 잠글수록 보상 배수가 높아집니다.",
     defiStakingBullet1Title: "잠금 기간",

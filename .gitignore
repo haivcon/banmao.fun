@@ -1,6 +1,6 @@
-# Dependencies
+# Dependencies , don"t upload folder 1/ , don"t delete folder 1/ 
 node_modules
-
+1/
 # Next.js
 .next
 out
@@ -107,7 +107,22 @@ cache/
 typechain/
 typechain-types/
 
+# Foundry
+contracts/launchpad/lib/
+contracts/launchpad/out/
+contracts/launchpad/cache/
+contracts/launchpad/broadcast/
+
 # Temporary Scripts
 scripts/fix_*.js
 scripts/refactor_okx.js
 scripts/update_readme.js
+
+# Local-only removed games: keep source on this machine, never commit/deploy
+/local-only/
+/app/gamefi/banmaominer/
+/app/gamefi/worldcup/
+/app/api/worldcup/
+/app/gamefi/admin/components/MinerTab.tsx
+/contracts/BanMaoMiner.sol
+/contracts/WorldCupYieldWars.sol

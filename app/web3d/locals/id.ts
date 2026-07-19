@@ -157,6 +157,9 @@ export const id: LandingTranslations = {
     defiAirdropName: "Airdrop",
     defiAirdropDesc: "Distribusikan $BANMAO ke dompet aktif di XLayer",
     defiAirdropDetails: "Pindai XLayer untuk dompet aktif dan airdrop $BANMAO secara massal. Dompet yang sudah memiliki $BANMAO otomatis dikecualikan.",
+    defiLaunchpadName: "Launchpad Memecoin",
+    defiLaunchpadDesc: "Buat & perdagangkan memecoin dengan bonding curve. Otomatis lulus ke Uniswap V4.",
+    defiLaunchpadDetails: "Luncurkan memecoin Anda sendiri dengan membayar biaya pembuatan dalam $BANMAO. Token diperdagangkan di bonding curve otomatis — tidak perlu pool likuiditas. Saat mencapai 500 OKB, likuiditas otomatis bermigrasi ke pool Uniswap V4 dengan Hook kustom. 50% biaya dibakar, 50% masuk kas komunitas.",
     // Staking Infographic Bullets
     defiStakingIntro: "Maksimalkan keuntungan dengan mengunci token $BANMAO. Semakin lama dikunci, semakin tinggi pengganda.",
     defiStakingBullet1Title: "Periode Kunci",

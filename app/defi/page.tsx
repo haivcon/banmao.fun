@@ -15,7 +15,7 @@ import {
 } from "../web3d/locals";
 import { numberToWords, SupportLanguage } from "../web3d/locals/numberToWords";
 import { LanguageSelector } from "./LanguageSelector";
-import { SpotlightCard, StakingIcon, PoolIcon, FarmIcon, LendingIcon, BurnIcon, AirdropIcon, ServiceDetailModal, BulletItem } from "./components";
+import { SpotlightCard, StakingIcon, PoolIcon, FarmIcon, LendingIcon, BurnIcon, AirdropIcon, LaunchpadIcon, ServiceDetailModal, BulletItem } from "./components";
 
 // Community Wallet Address (receives donated tokens)
 const COMMUNITY_WALLET = "0x92809f2837f708163d375960063c8a3156fceacb";
@@ -101,6 +101,18 @@ const DEFI_SERVICES = [
         status: "live" as const,
         contractAddress: "0xf2d471711D24646b2C50E1F74a063caA7a6863a0",
         detailsKey: "defiAirdropDetails"
+    },
+    {
+        id: "launchpad",
+        nameKey: "defiLaunchpadName",
+        Icon: LaunchpadIcon,
+        descKey: "defiLaunchpadDesc",
+        href: "/defi/launchpad",
+        stats: { apy: "🚀", tvl: "—" },
+        color: "#f59e0b",
+        status: "live" as const,
+        contractAddress: undefined,
+        detailsKey: "defiLaunchpadDetails"
     },
     {
         id: "pools",
@@ -323,6 +335,17 @@ export default function DeFiPage() {
                 { icon: '🔍', title: t('defiAirdropBullet1Title'), desc: t('defiAirdropBullet1Desc') },
                 { icon: '📦', title: t('defiAirdropBullet2Title'), desc: t('defiAirdropBullet2Desc') },
                 { icon: '📥', title: t('defiAirdropBullet3Title'), desc: t('defiAirdropBullet3Desc') },
+            ]
+        };
+        if (serviceId === 'launchpad') return {
+            intro: 'Create and trade memecoins on the BANMAO Launchpad!',
+            outro: 'Powered by Uniswap V4 Hooks on XLayer.',
+            mascotSrc: '/defi/banmao_staking.png',
+            bullets: [
+                { icon: '🚀', title: 'Create Memecoin', desc: 'Anyone can launch a memecoin by paying 1M $BANMAO as creation fee.' },
+                { icon: '📈', title: 'Bonding Curve', desc: 'Token price automatically adjusts based on supply & demand. No LP needed.' },
+                { icon: '🎓', title: 'Auto-Graduation', desc: 'When reaching 500 OKB, liquidity auto-migrates to a Uniswap V4 pool.' },
+                { icon: '🔥', title: 'Fee Burn', desc: '50% of all creation fees are burned, 50% go to community treasury.' },
             ]
         };
         return null;

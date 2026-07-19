@@ -104,7 +104,6 @@ export function GameInfoModal({ game, t, onClose, onPlay }: GameInfoModalProps) 
                             banmaoslots: 'gamefiSlotsHowToPlay',
                             banmaosnake: 'gamefiSnakeHowToPlay',
                             banmaofomo: 'gamefiFomoHowToPlay',
-                            banmaominer: 'gamefiMinerHowToPlay',
                         } as Record<string, keyof LandingTranslations>)[game.id] || 'gamefiSnakeHowToPlay')}
                     </p>
                 </div>

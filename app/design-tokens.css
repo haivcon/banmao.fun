@@ -1,0 +1,374 @@
+/* ===================== BANMAO UNIFIED DESIGN TOKENS =====================
+   Rounded 2D design system inspired by the Impeccable token approach:
+   - Small interactive elements use pill / capsule geometry.
+   - Large containers use restrained rounded corners to avoid a toy-like look.
+   - Shared colors keep Web2D, GameFi, DeFi, Collection, and Landing aligned.
+======================================================================== */
+
+:root {
+  /* Brand anchors */
+  --bm-primary: #ec4899;
+  --bm-primary-rgb: 236, 72, 153;
+  --bm-primary-light: #f472b6;
+  --bm-primary-deep: #be185d;
+  --bm-primary-pale: rgba(244, 114, 182, 0.1);
+  --bm-primary-soft: rgba(236, 72, 153, 0.14);
+  --bm-primary-border: rgba(244, 114, 182, 0.22);
+  --bm-primary-glow: rgba(236, 72, 153, 0.32);
+
+  --bm-secondary: #a855f7;
+  --bm-secondary-rgb: 168, 85, 247;
+  --bm-secondary-light: #c084fc;
+  --bm-secondary-deep: #7e22ce;
+  --bm-secondary-pale: rgba(168, 85, 247, 0.1);
+  --bm-secondary-soft: rgba(168, 85, 247, 0.14);
+  --bm-secondary-border: rgba(168, 85, 247, 0.24);
+  --bm-secondary-glow: rgba(168, 85, 247, 0.3);
+
+  --bm-accent: #06b6d4;
+  --bm-accent-rgb: 6, 182, 212;
+  --bm-accent-light: #22d3ee;
+  --bm-accent-deep: #0e7490;
+  --bm-accent-pale: rgba(6, 182, 212, 0.1);
+  --bm-accent-soft: rgba(6, 182, 212, 0.14);
+  --bm-accent-border: rgba(34, 211, 238, 0.22);
+  --bm-accent-glow: rgba(6, 182, 212, 0.28);
+
+  /* Dark mineral surfaces */
+  --bm-surface-deep: #050510;
+  --bm-surface-base: #0a0a1a;
+  --bm-surface-raised: #111128;
+  --bm-surface-card: #151529;
+  --bm-surface-overlay: #1a1a2e;
+  --bm-surface-hover: rgba(255, 255, 255, 0.045);
+  --bm-surface-pressed: rgba(255, 255, 255, 0.075);
+
+  /* Light/paper surfaces for light-mode modules */
+  --bm-paper: #fbf7ff;
+  --bm-paper-deep: #f4ecfb;
+  --bm-paper-raised: #ffffff;
+  --bm-ink: #17111f;
+  --bm-ink-muted: rgba(23, 17, 31, 0.62);
+  --bm-ink-faint: rgba(23, 17, 31, 0.42);
+
+  /* Text tiers */
+  --bm-text: #ffffff;
+  --bm-text-strong: rgba(255, 255, 255, 0.94);
+  --bm-text-soft: rgba(255, 255, 255, 0.78);
+  --bm-text-muted: rgba(255, 255, 255, 0.58);
+  --bm-text-faint: rgba(255, 255, 255, 0.36);
+  --bm-text-disabled: rgba(255, 255, 255, 0.24);
+
+  /* Borders and rules */
+  --bm-border-subtle: rgba(255, 255, 255, 0.06);
+  --bm-border: rgba(255, 255, 255, 0.1);
+  --bm-border-strong: rgba(255, 255, 255, 0.16);
+  --bm-border-inverse: rgba(0, 0, 0, 0.1);
+  --bm-rule-brand: rgba(244, 114, 182, 0.22);
+
+  /* State colors */
+  --bm-success: #22c55e;
+  --bm-success-soft: rgba(34, 197, 94, 0.12);
+  --bm-success-border: rgba(34, 197, 94, 0.24);
+  --bm-warning: #f59e0b;
+  --bm-warning-soft: rgba(245, 158, 11, 0.12);
+  --bm-warning-border: rgba(245, 158, 11, 0.26);
+  --bm-error: #ef4444;
+  --bm-error-soft: rgba(239, 68, 68, 0.12);
+  --bm-error-border: rgba(239, 68, 68, 0.26);
+  --bm-info: #3b82f6;
+  --bm-info-soft: rgba(59, 130, 246, 0.12);
+  --bm-info-border: rgba(59, 130, 246, 0.26);
+
+  /* Gradients */
+  --bm-gradient-brand: linear-gradient(135deg, var(--bm-primary), var(--bm-secondary));
+  --bm-gradient-brand-wide: linear-gradient(135deg, var(--bm-primary), var(--bm-secondary), var(--bm-accent));
+  --bm-gradient-soft: linear-gradient(135deg, var(--bm-primary-soft), var(--bm-secondary-soft));
+  --bm-gradient-accent-soft: linear-gradient(135deg, var(--bm-accent-soft), var(--bm-secondary-soft));
+  --bm-gradient-surface: linear-gradient(180deg, var(--bm-surface-raised), var(--bm-surface-deep));
+
+  /* Rounded scale: small controls = capsule, big frames = restrained */
+  --bm-radius-none: 0;
+  --bm-radius-xs: 4px;
+  --bm-radius-sm: 6px;
+  --bm-radius-md: 10px;
+  --bm-radius-lg: 14px;
+  --bm-radius-xl: 18px;
+  --bm-radius-2xl: 24px;
+  --bm-radius-3xl: 28px;
+  --bm-radius-pill: 9999px;
+  --bm-radius-circle: 50%;
+
+  /* Semantic radius aliases */
+  --bm-radius-control: var(--bm-radius-pill);
+  --bm-radius-chip: var(--bm-radius-pill);
+  --bm-radius-button: var(--bm-radius-pill);
+  --bm-radius-input: var(--bm-radius-lg);
+  --bm-radius-card: var(--bm-radius-lg);
+  --bm-radius-panel: var(--bm-radius-xl);
+  --bm-radius-modal: var(--bm-radius-2xl);
+  --bm-radius-section: var(--bm-radius-2xl);
+
+  /* Shadows: subtle, brand only for important interaction */
+  --bm-shadow-sm: 0 8px 22px rgba(0, 0, 0, 0.18);
+  --bm-shadow-md: 0 18px 48px rgba(0, 0, 0, 0.28);
+  --bm-shadow-lg: 0 26px 80px rgba(0, 0, 0, 0.38);
+  --bm-shadow-brand: 0 18px 50px var(--bm-primary-glow);
+  --bm-shadow-accent: 0 18px 50px var(--bm-accent-glow);
+
+  /* Motion */
+  --bm-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --bm-transition-fast: 160ms var(--bm-ease);
+  --bm-transition: 240ms var(--bm-ease);
+  --bm-transition-slow: 420ms var(--bm-ease);
+
+  /* Legacy compatibility aliases for existing pages */
+  --col-pink: var(--bm-primary-light);
+  --col-purple: var(--bm-secondary);
+  --col-cyan: var(--bm-accent);
+  --col-bg: var(--bm-surface-base);
+  --card-bg: var(--bm-surface-card);
+  --bg-color: var(--bm-surface-base);
+  --text-color: var(--bm-text-strong);
+  --text-primary: var(--bm-text-strong);
+  --text-secondary: var(--bm-text-muted);
+  --border-color: var(--bm-border);
+  --hub-surface: var(--bm-surface-raised);
+  --hub-border: var(--bm-border);
+  --hub-text: var(--bm-text-strong);
+  --hub-text-muted: var(--bm-text-muted);
+  --hub-surface-light: var(--bm-paper-raised);
+  --hub-border-light: var(--bm-border-inverse);
+  --hub-text-light: var(--bm-ink);
+  --hub-text-muted-light: var(--bm-ink-muted);
+}
+
+/* Reusable utility classes for new/refactored surfaces */
+.bm-card {
+  background: var(--bm-surface-card);
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-card);
+}
+
+.bm-panel {
+  background: var(--bm-surface-raised);
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-panel);
+}
+
+.bm-pill,
+.bm-chip,
+.bm-badge {
+  border-radius: var(--bm-radius-pill);
+}
+
+.bm-brand-gradient {
+  background: var(--bm-gradient-brand);
+}
+
+.bm-text-gradient {
+  background: var(--bm-gradient-brand-wide);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ===================== CROSS-PAGE HARMONIZATION LAYER =====================
+   Non-destructive overrides that bring the existing Web2D, GameFi, DeFi,
+   Collection, and Landing CSS onto one visual system without rewriting every
+   legacy rule. Specific pages can still opt into finer tokens locally.
+======================================================================== */
+
+/* Web2D adopts the shared Banmao palette while keeping its composition. */
+.web2d-landing {
+  --web2d-bg: var(--bm-surface-base);
+  --web2d-bg-deep: var(--bm-surface-deep);
+  --web2d-surface: var(--bm-surface-raised);
+  --web2d-surface-strong: var(--bm-surface-card);
+  --web2d-surface-raised: var(--bm-surface-overlay);
+  --web2d-border: var(--bm-border);
+  --web2d-border-strong: var(--bm-primary-border);
+  --web2d-text: var(--bm-text-strong);
+  --web2d-body: var(--bm-text-soft);
+  --web2d-muted: var(--bm-text-muted);
+  --web2d-dim: var(--bm-text-faint);
+  --web2d-disabled: var(--bm-text-disabled);
+  --web2d-gold: var(--bm-primary-light);
+  --web2d-gold-pale: var(--bm-primary);
+  --web2d-gold-rich: var(--bm-primary);
+  --web2d-gold-deep: var(--bm-primary-deep);
+  --web2d-patina: var(--bm-accent-light);
+  --web2d-patina-pale: var(--bm-accent-light);
+  --web2d-patina-deep: var(--bm-accent-deep);
+  --web2d-warning: var(--bm-warning);
+  --web2d-radius-xs: var(--bm-radius-xs);
+  --web2d-radius-sm: var(--bm-radius-pill);
+  --web2d-radius-md: var(--bm-radius-lg);
+  --web2d-radius-lg: var(--bm-radius-xl);
+  --web2d-radius-xl: var(--bm-radius-2xl);
+  --web2d-radius-pill: var(--bm-radius-pill);
+  --web2d-shadow-panel: var(--bm-shadow-lg);
+  --web2d-shadow-cta: var(--bm-shadow-brand);
+}
+
+/* DeFi local vars are mapped to the same brand system. */
+.defi-layout,
+.defi-page,
+.defi-container {
+  --defi-bg: var(--bm-surface-base);
+  --defi-bg-card: var(--bm-surface-card);
+  --defi-primary: var(--bm-accent-light);
+  --defi-secondary: var(--bm-primary-light);
+  --defi-accent: var(--bm-secondary);
+  --defi-gold: var(--bm-warning);
+  --defi-text: var(--bm-text-strong);
+  --defi-text-muted: var(--bm-text-muted);
+  --defi-border: var(--bm-border);
+  --defi-radius-card: var(--bm-radius-card);
+  --defi-radius-panel: var(--bm-radius-panel);
+  --defi-radius-pill: var(--bm-radius-pill);
+}
+
+/* Collection / hub aliases for both dark and light modules. */
+.collection-page,
+.collection-hub,
+.hub-container,
+.col-dark,
+.col-light {
+  --hub-accent: var(--bm-primary);
+  --hub-accent-2: var(--bm-secondary);
+  --hub-accent-3: var(--bm-accent);
+  --hub-gradient: var(--bm-gradient-brand);
+  --hub-gradient-wide: var(--bm-gradient-brand-wide);
+  --hub-radius-card: var(--bm-radius-card);
+  --hub-radius-panel: var(--bm-radius-panel);
+  --hub-radius-modal: var(--bm-radius-modal);
+  --hub-radius-pill: var(--bm-radius-pill);
+}
+
+/* Capsule rule: small controls, filters, tabs, badges and nav items are pills. */
+button,
+[role="button"],
+.web2d-landing__language-trigger,
+.web2d-landing__language-option,
+.web2d-landing__eyebrow,
+.web2d-landing__cta,
+.web2d-landing__ghost,
+.web2d-landing__pill,
+.web2d-landing__metric,
+.hub-btn,
+.hub-ftab,
+.hub-ptab,
+.hub-toggle-btn,
+.hub-create-btn,
+.hub-bnav-item,
+.hub-action-tip,
+.hub-stat-pill,
+.hub-filter-chip,
+.hub-comment-submit,
+.hub-like-list-count,
+.theme-toggle-btn,
+.mint-confirm-btn,
+.badge-showcase-count,
+.badge-rarity,
+.checkin-streak,
+.checkin-btn,
+.quests-progress,
+.quests-tab,
+.hub-mob-btn,
+.analytics-period-btn,
+.analytics-engagement,
+.analytics-tips,
+.schedule-btn,
+.defi-nav-link,
+.defi-action-btn,
+.defi-filter,
+.defi-chip,
+.defi-badge,
+.stat-badge,
+.btn,
+.btn-primary,
+.btn-secondary {
+  border-radius: var(--bm-radius-pill);
+}
+
+/* Restrained rule: cards/panels/large content frames use moderate corners. */
+.web2d-landing__panel,
+.web2d-landing__card,
+.web2d-landing__feature,
+.web2d-landing__module,
+.web2d-landing__visual,
+.gamefi-card,
+.game-card,
+.stat-card,
+.defi-card,
+.defi-panel,
+.staking-panel,
+.hub-card,
+.hub-modal,
+.hub-upload-box,
+.hub-comment-item,
+.badge-item,
+.badge-skeleton,
+.checkin-card,
+.checkin-day,
+.quests-card,
+.quest-item,
+.quest-icon,
+.quest-skeleton,
+.shorts-container,
+.analytics-dashboard,
+.analytics-stat,
+.schedule-card,
+.hub-notifications-panel,
+.profile-card,
+.collection-card {
+  border-radius: var(--bm-radius-card);
+}
+
+/* Major overlays can be softer, but never pill-shaped. */
+.hub-modal,
+.defi-modal,
+.gamefi-modal,
+.web2d-landing__hero,
+.web2d-landing__section,
+.landing-panel,
+.landing-card {
+  border-radius: var(--bm-radius-modal);
+}
+
+/* Brand color normalization for frequently used legacy elements. */
+.hub-btn-primary,
+.hub-toggle-btn.active,
+.hub-ftab.active,
+.hub-bnav-item.active,
+.checkin-btn,
+.quest-progress-fill,
+.analytics-bar-fill,
+.defi-primary-gradient,
+.gamefi-primary-gradient {
+  background: var(--bm-gradient-brand);
+}
+
+.hub-gradient-text,
+.hub-logo-text,
+.badge-showcase-title svg,
+.checkin-title svg,
+.quests-title svg,
+.quest-reward,
+.reaction-active,
+.shorts-liked,
+.hub-bookmarked,
+.hub-action-count:hover,
+.hub-card-author:hover .hub-card-author-name {
+  color: var(--bm-primary) !important;
+}
+
+.hub-tip-input-wrapper:focus-within,
+.schedule-input:focus,
+.schedule-textarea:focus,
+.quests-tab.active,
+.theme-toggle-btn:hover {
+  border-color: var(--bm-secondary) !important;
+  box-shadow: 0 0 0 3px var(--bm-secondary-pale);
+}

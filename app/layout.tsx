@@ -1,5 +1,7 @@
 // app/layout.tsx
 import "./landing.css";
+import "./web2d/web2d.css";
+import "./design-tokens.css";
 import type { Metadata } from "next";
 import { Noto_Sans, Orbitron, Rajdhani, Share_Tech_Mono, Space_Mono } from "next/font/google";
 

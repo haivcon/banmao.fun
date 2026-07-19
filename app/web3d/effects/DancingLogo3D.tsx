@@ -103,7 +103,7 @@ export function DancingLogo3D({ position, scale = 1 }: DancingLogo3DProps) {
     });
 
     const handleClick = () => {
-        import("../effects/SharedEffects").then(m => m.SoundManager.playBanmao());
+        SoundManager.playBanmao();
     };
 
     return (
@@ -119,7 +119,12 @@ export function DancingLogo3D({ position, scale = 1 }: DancingLogo3DProps) {
                 onPointerOut={() => { setIsHovered(false); document.body.style.cursor = 'default'; }}
             >
                 <boxGeometry args={[4, 1, 0.5]} />
-                <meshBasicMaterial transparent opacity={0} />
+                <meshBasicMaterial
+                    transparent
+                    opacity={0}
+                    depthWrite={false}
+                    depthTest={false}
+                />
             </mesh>
 
             {/* Background glow aura */}
@@ -130,7 +135,21 @@ export function DancingLogo3D({ position, scale = 1 }: DancingLogo3DProps) {
 
             <Billboard>
                 {/* Main logo with individual dancing letters */}
-                <Html center position={[0, 0.15, 0]} style={{ pointerEvents: 'none' }}>
+                <Html
+                    center
+                    position={[0, 0.15, 0]}
+                    className="dancing-logo-html"
+                    style={{
+                        pointerEvents: 'none',
+                        background: 'transparent',
+                        border: '0',
+                        borderRadius: 0,
+                        boxShadow: 'none',
+                        outline: 'none',
+                        padding: 0,
+                        margin: 0,
+                    }}
+                >
                     <style>{`
                         @font-face {
                             font-family: 'Space Mono';
@@ -236,7 +255,15 @@ export function DancingLogo3D({ position, scale = 1 }: DancingLogo3DProps) {
                         className="banmao-logo-container"
                         style={{
                             transform: `scale(${isHovered ? htmlScale * 1.2 : htmlScale})`,
-                            transformOrigin: 'center'
+                            transformOrigin: 'center',
+                            background: 'transparent',
+                            border: '0',
+                            borderRadius: 0,
+                            boxShadow: 'none',
+                            outline: 'none',
+                            padding: 0,
+                            margin: 0,
+                            isolation: 'isolate'
                         }}
                     >
                         {/* Each character dancing individually */}
