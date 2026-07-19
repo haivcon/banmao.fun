@@ -1917,32 +1917,80 @@ html { scroll-behavior: smooth; }
 
 @media (max-width: 640px) {
   .web3d-controls-cluster {
-    top: auto;
-    right: auto;
-    bottom: max(2px, env(safe-area-inset-bottom));
-    left: max(2px, env(safe-area-inset-left));
-    align-items: flex-end;
-    width: auto;
-    max-width: calc(100vw - 4px);
-    gap: 3px;
+    top: auto !important;
+    right: auto !important;
+    bottom: max(4px, env(safe-area-inset-bottom)) !important;
+    left: 50% !important;
+    align-items: stretch;
+    justify-content: center;
+    width: min(188px, calc(100vw - 12px));
+    max-width: calc(100vw - 12px);
+    gap: 4px;
+    transform: translateX(-50%) !important;
   }
 
-  /* Performance is the first control at the absolute lower-left edge. */
+  .web3d-controls-cluster .web3d-view-toggle,
   .web3d-controls-cluster .web3d-quality-controls {
-    order: -1;
+    flex: 1 1 0;
+    width: 0;
+    min-width: 0;
+    max-width: none;
+    height: 28px;
+    min-height: 28px;
+    box-sizing: border-box;
+  }
+
+  .web3d-controls-cluster .web3d-quality-controls {
+    order: 0;
+  }
+
+  .web3d-controls-cluster .web3d-view-toggle {
+    display: flex;
+    align-items: stretch;
+    padding: 2px;
+    border-radius: 8px;
+  }
+
+  .web3d-controls-cluster .web3d-view-toggle .web3d-mode-switch {
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    width: 100%;
+    height: 100%;
+  }
+
+  .web3d-controls-cluster .web3d-view-toggle .web3d-mode-switch button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    gap: 2px;
+    padding: 2px 3px;
+    border-radius: 6px;
+    font-size: 7px;
+  }
+
+  .web3d-controls-cluster .web3d-view-toggle .web3d-mode-button__icon,
+  .web3d-controls-cluster .web3d-view-toggle .web3d-mode-button__icon svg {
+    width: 11px;
+    height: 11px;
   }
 
   .web3d-controls-cluster .web3d-quality-trigger {
-    grid-template-columns: 13px minmax(0, 1fr) 8px;
+    grid-template-columns: 11px minmax(0, 1fr) 7px;
     gap: 2px;
-    width: 74px;
-    min-height: 26px;
-    padding: 2px 4px;
-    border-radius: 7px;
+    width: 100%;
+    min-width: 0;
+    height: 28px;
+    min-height: 28px;
+    padding: 3px 5px;
+    border-radius: 8px;
+    box-sizing: border-box;
   }
 
   .web3d-controls-cluster .web3d-quality-trigger small {
-    display: none;
+    display: block;
+    font-size: 6px;
   }
 
   .web3d-controls-cluster .web3d-quality-trigger strong {
@@ -1960,8 +2008,8 @@ html { scroll-behavior: smooth; }
   }
 
   .web3d-controls-cluster .web3d-quality-meter {
-    width: 13px;
-    height: 9px;
+    width: 11px;
+    height: 8px;
     gap: 1px;
   }
 
@@ -1986,8 +2034,11 @@ html { scroll-behavior: smooth; }
   }
 
   .web3d-controls-cluster .web3d-quality-popover {
-    right: auto;
-    left: 0;
-    bottom: calc(100% + 4px);
+    top: auto;
+    right: 0;
+    bottom: calc(100% + 6px);
+    left: auto;
+    width: min(224px, calc(100vw - 16px));
+    max-width: calc(100vw - 16px);
   }
 }
