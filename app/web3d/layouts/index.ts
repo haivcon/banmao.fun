@@ -91,7 +91,7 @@ export const PC_LAYOUT: SceneLayout = {
     // Size multipliers
     panelScale: 1,
     buttonScale: 1,
-    mascotScale: 180,
+    mascotScale: 400,
     particleCount: 150,
     orbCount: 12,
 };
@@ -137,7 +137,7 @@ export const LAPTOP_LAYOUT: SceneLayout = {
     // Size multipliers - slightly scaled down
     panelScale: 0.88,
     buttonScale: 0.92,
-    mascotScale: 155,
+    mascotScale: 360,
     particleCount: 120,
     orbCount: 10,
 };
@@ -186,7 +186,7 @@ export const MOBILE_PORTRAIT_LAYOUT: SceneLayout = {
     // === SIZE: LARGER on mobile (was 0.7, now 0.9) ===
     panelScale: 0.9,          // 90% of PC size - BIGGER!
     buttonScale: 0.95,        // 95% of PC size
-    mascotScale: 120,         // Larger mascot
+    mascotScale: 220,         // Enlarged to offset transparent padding in the GIF
     particleCount: 80,
     orbCount: 6,
 };
@@ -232,7 +232,7 @@ export const MOBILE_LANDSCAPE_LAYOUT: SceneLayout = {
     // Size multipliers
     panelScale: 0.8,
     buttonScale: 0.9,
-    mascotScale: 130,
+    mascotScale: 240,
     particleCount: 80,
     orbCount: 8,
 };

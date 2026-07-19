@@ -1872,65 +1872,9 @@ html { scroll-behavior: smooth; }
   mix-blend-mode: normal;
 }
 
-/* ===================== COMPACT FPS BADGE ===================== */
-.web3d-fps-badge {
-  position: relative;
-  z-index: 1002;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  width: 52px;
-  min-height: 30px;
-  padding: 0 6px;
-  border: 1px solid rgba(74, 222, 128, 0.28);
-  border-radius: 8px;
-  background: rgba(7, 12, 24, 0.88);
-  color: #bbf7d0;
-  font-family: "Space Mono", monospace;
-  font-size: 8px;
-  line-height: 1;
-  white-space: nowrap;
-  pointer-events: none;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-.web3d-fps-badge span {
-  color: rgba(187, 247, 208, 0.62);
-  font-size: 7px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.web3d-fps-badge strong {
-  color: #bbf7d0;
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-@media (max-width: 640px) {
-  .web3d-controls-cluster .web3d-fps-badge {
-    width: 42px;
-    min-height: 30px;
-    padding: 0 4px;
-    gap: 3px;
-    border-radius: 7px;
-  }
-
-  .web3d-controls-cluster .web3d-fps-badge span {
-    font-size: 6px;
-  }
-
-  .web3d-controls-cluster .web3d-fps-badge strong {
-    font-size: 8px;
-  }
-}
-
 /* ===================== DESKTOP WEB3D CONTROL CLUSTER ===================== */
-/* Keep mode, FPS and quality controls together instead of letting fixed
-   children drift to separate corners. */
+/* Keep the mode switch at the upper-right. The performance selector is
+   independently anchored at the upper-left on desktop. */
 .web3d-controls-cluster {
   position: fixed;
   top: max(13px, env(safe-area-inset-top));
@@ -1951,6 +1895,24 @@ html { scroll-behavior: smooth; }
   left: auto !important;
   transform: none !important;
   pointer-events: auto;
+}
+
+@media (min-width: 641px) {
+  .web3d-controls-cluster .web3d-quality-controls {
+    position: fixed !important;
+    top: max(13px, env(safe-area-inset-top)) !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: max(14px, env(safe-area-inset-left)) !important;
+    transform: none !important;
+  }
+
+  .web3d-controls-cluster .web3d-quality-popover {
+    top: calc(100% + 7px);
+    right: auto;
+    bottom: auto;
+    left: 0;
+  }
 }
 
 @media (max-width: 640px) {

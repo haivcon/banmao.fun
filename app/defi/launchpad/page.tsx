@@ -466,14 +466,28 @@ export default function LaunchpadPage() {
         query: { enabled: IS_LAUNCHPAD_CONFIGURED },
     });
 
-    const { data: statistics, refetch: refetchStatistics } = useReadContracts({
-        contracts: ["activeTokenCount", "graduatedTokenCount", "totalCurveVolume"].map((functionName) => ({
-            address: LAUNCHPAD_ADDRESS,
+    const statisticsContracts = [
+        {
+            address: LAUNCHPAD_ADDRESS as `0x${string}`,
             abi: LAUNCHPAD_ABI,
-            functionName: functionName as "activeTokenCount" | "graduatedTokenCount" | "totalCurveVolume",
-        })),
+            functionName: "activeTokenCount",
+        },
+        {
+            address: LAUNCHPAD_ADDRESS as `0x${string}`,
+            abi: LAUNCHPAD_ABI,
+            functionName: "graduatedTokenCount",
+        },
+        {
+            address: LAUNCHPAD_ADDRESS as `0x${string}`,
+            abi: LAUNCHPAD_ABI,
+            functionName: "totalCurveVolume",
+        },
+    ] as const;
+
+    const { data: statistics, refetch: refetchStatistics } = useReadContracts({
+        contracts: statisticsContracts,
         query: { enabled: IS_LAUNCHPAD_CONFIGURED },
-    });
+    } as any);
 
     // Build multicall contracts array for fetching all token infos
     const tokenInfoContracts = useMemo(() => {
@@ -490,7 +504,7 @@ export default function LaunchpadPage() {
     const { data: tokenInfoResults, isLoading: loading } = useReadContracts({
         contracts: tokenInfoContracts,
         query: { enabled: tokenInfoContracts.length > 0 },
-    });
+    } as any);
 
     // Parse multicall results into TokenInfo[]
     const tokens: TokenInfo[] = useMemo(() => {
