@@ -44,6 +44,7 @@
     "app/api-reference/**/*",
     "api_docs/**/*",
     "1/api_docs/**/*",
-    "1/impeccable-main/**/*"
+    "1/impeccable-main/**/*",
+    "local-only/**/*"
   ]
 }

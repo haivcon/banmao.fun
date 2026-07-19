@@ -273,7 +273,7 @@ export function AnimatedMascot({
                             draggable={false}
                             style={{
                                 display: "block",
-                                width: `clamp(160px, 25vw, ${size}px)`,
+                                width: `min(${size}px, 58vw)`,
                                 height: "auto",
                                 background: "transparent",
                                 border: "0",

@@ -570,47 +570,6 @@ function Web3DQualityControls({
     );
 }
 
-function Web3DFpsBadge({ active = true }: { active?: boolean }) {
-    const [fps, setFps] = useState(0);
-
-    useEffect(() => {
-        if (!active) {
-            setFps(0);
-            return;
-        }
-
-        let frameCount = 0;
-        let lastTime = performance.now();
-        let frameId = 0;
-
-        const tick = (now: number) => {
-            frameCount += 1;
-
-            if (now - lastTime >= 1000) {
-                setFps(Math.round((frameCount * 1000) / (now - lastTime)));
-                frameCount = 0;
-                lastTime = now;
-            }
-
-            if (!document.hidden) {
-                frameId = requestAnimationFrame(tick);
-            }
-        };
-
-        frameId = requestAnimationFrame(tick);
-        return () => cancelAnimationFrame(frameId);
-    }, [active]);
-
-    if (!active) return null;
-
-    return (
-        <div className="web3d-fps-badge" aria-label={`FPS ${fps}`}>
-            <span>FPS</span>
-            <strong>{fps}</strong>
-        </div>
-    );
-}
-
 /* ===================== 3D ENVIRONMENT ===================== */
 
 function SpaceBackground({ qualityConfig }: { qualityConfig: Web3DQualityConfig }) {
@@ -2663,7 +2622,6 @@ export default function BanmaoWebsite() {
                             reason={modeUnavailableReason}
                             lang={lang}
                         />
-                        <Web3DFpsBadge active={activeViewMode === "3d" && pageVisible} />
                         {activeViewMode === "3d" && (
                             <Web3DQualityControls
                                 quality={quality}
