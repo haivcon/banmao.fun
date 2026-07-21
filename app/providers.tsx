@@ -1,193 +1,101 @@
-// app/providers.tsx
-// Shared providers for wallet connections across all pages
 "use client";
 
-// Polyfill localStorage for SSR to prevent RainbowKit errors
-import "./gamefi/banmaorps/lib/serverStoragePolyfill";
-
-import { ReactNode, useEffect, useMemo, useRef } from "react";
-import { WagmiProvider, createConfig, http, fallback, useAccount, useSwitchChain } from "wagmi";
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useRef,
+} from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
-    RainbowKitProvider,
-    darkTheme,
-    connectorsForWallets,
-} from "@rainbow-me/rainbowkit";
+  WagmiProvider,
+  useAccount,
+  useSwitchChain,
+} from "wagmi";
+import { WalletConnectionProvider } from "./components/wallet/WalletConnection";
 import {
-    okxWallet,
-    metaMaskWallet,
-    walletConnectWallet,
-    rainbowWallet,
-    rabbyWallet,
-    trustWallet,
-    bitgetWallet,
-    coinbaseWallet,
-    injectedWallet, // For OKX in-app browser detection
-} from "@rainbow-me/rainbowkit/wallets";
-import type { Chain } from "viem";
-import "@rainbow-me/rainbowkit/styles.css";
+  XLAYER_CHAIN_ID,
+  walletConfig,
+} from "./lib/walletConfig";
 
-// ==== ENV ====
-const WC_PROJECT_ID =
-    process.env.NEXT_PUBLIC_WC_PROJECT_ID || "df8d376695ef6244fbb2accd6a85f00a";
+const SharedProvidersBoundary = createContext(false);
 
-// X Layer RPC endpoints (with fallback for rate limiting)
-const RPC_PRIMARY = process.env.NEXT_PUBLIC_RPC_URL || "https://rpc.xlayer.tech";
-const RPC_BACKUP = "/api/rpc";
+let queryClient: QueryClient | null = null;
 
-// Target chain ID constant
-const XLAYER_CHAIN_ID = 196;
+function getQueryClient(): QueryClient {
+  if (!queryClient) {
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          staleTime: 30_000,
+          gcTime: 5 * 60_000,
+          refetchOnWindowFocus: false,
+          refetchOnReconnect: false,
+          retry: 1,
+        },
+      },
+    });
+  }
 
-// ==== XLayer Mainnet Chain (ID: 196) ====
-const xlayer: Chain = {
-    id: XLAYER_CHAIN_ID,
-    name: "XLayer",
-    nativeCurrency: { name: "OKB", symbol: "OKB", decimals: 18 },
-    rpcUrls: {
-        default: { http: [RPC_PRIMARY, RPC_BACKUP] },
-        public: { http: [RPC_PRIMARY, RPC_BACKUP] },
-    },
-    blockExplorers: {
-        default: { name: "OKLink", url: "https://web3.okx.com/explorer/x-layer" },
-    },
-};
-
-
-
-// ==== Connectors (lazy initialization to prevent duplicate WalletConnect Core) ====
-let _connectors: ReturnType<typeof connectorsForWallets> | null = null;
-function getConnectors() {
-    if (!_connectors) {
-        _connectors = connectorsForWallets(
-            [
-                {
-                    groupName: "Recommended",
-                    wallets: [injectedWallet, okxWallet, metaMaskWallet, walletConnectWallet],
-                },
-                {
-                    groupName: "More wallets",
-                    wallets: [rainbowWallet, rabbyWallet, trustWallet, bitgetWallet, coinbaseWallet],
-                },
-            ],
-            {
-                appName: "BANMAO Games",
-                projectId: WC_PROJECT_ID,
-            }
-        );
-    }
-    return _connectors;
+  return queryClient;
 }
 
-// ==== wagmi config (singleton to prevent duplicate initialization) ====
-let _config: ReturnType<typeof createConfig> | null = null;
-function getWagmiConfig() {
-    if (!_config) {
-        _config = createConfig({
-            chains: [xlayer],
-            connectors: getConnectors(),
-            transports: {
-                // Mainnet with fallback - Direct RPC first, proxy only as last resort
-                [xlayer.id]: fallback([
-                    http(RPC_PRIMARY, { batch: true, retryCount: 2 }),
-                    http(RPC_BACKUP, { batch: true, retryCount: 1 }),
-                ]),
-
-            },
-            ssr: true,
-            // Enable for OKX Wallet in-app browser auto-detection
-            multiInjectedProviderDiscovery: true,
-        });
-    }
-    return _config;
-}
-
-// ==== QueryClient (singleton to avoid HMR issues) ====
-let _queryClient: QueryClient | null = null;
-function getQueryClient() {
-    if (!_queryClient) {
-        _queryClient = new QueryClient({
-            defaultOptions: {
-                queries: {
-                    staleTime: 30_000,
-                    gcTime: 5 * 60_000,
-                    refetchOnWindowFocus: false,
-                    refetchOnReconnect: false,
-                    retry: 1,
-                },
-            },
-        });
-    }
-    return _queryClient;
-}
-
-// ==== Auto-switch to XLayer when wallet connects on wrong chain ====
-// Uses useAccount().chainId (wallet's actual chain) instead of useChainId()
-// which only returns the config default and never reflects the wallet state.
 function AutoChainSwitch({ children }: { children: ReactNode }) {
-    const { isConnected, chainId: walletChainId } = useAccount();
-    const { switchChain } = useSwitchChain();
-    const hasSwitched = useRef(false);
+  const { chainId, isConnected } = useAccount();
+  const { switchChain } = useSwitchChain();
+  const attemptedChainId = useRef<number | undefined>(undefined);
 
-    useEffect(() => {
-        // Reset the flag when disconnected
-        if (!isConnected) {
-            hasSwitched.current = false;
-            return;
-        }
+  useEffect(() => {
+    if (!isConnected) {
+      attemptedChainId.current = undefined;
+      return;
+    }
 
-        // Only auto-switch if wallet is on wrong chain
-        // walletChainId is undefined briefly during connection — wait until it resolves
-        if (!walletChainId || walletChainId === XLAYER_CHAIN_ID) return;
+    if (!chainId || chainId === XLAYER_CHAIN_ID) {
+      attemptedChainId.current = undefined;
+      return;
+    }
 
-        // Prevent retry loops if user rejects
-        if (hasSwitched.current) return;
-        hasSwitched.current = true;
+    if (attemptedChainId.current === chainId) return;
+    attemptedChainId.current = chainId;
 
-        // Small delay to let the connection fully establish before requesting chain switch
-        const timer = setTimeout(() => {
-            try {
-                switchChain(
-                    { chainId: XLAYER_CHAIN_ID },
-                    {
-                        onError: () => {
-                            // User rejected or wallet doesn't support auto-switch — allow manual retry
-                            hasSwitched.current = false;
-                        },
-                    }
-                );
-            } catch {
-                // Sync error fallback
-                hasSwitched.current = false;
-            }
-        }, 300);
+    const timer = window.setTimeout(() => {
+      switchChain(
+        { chainId: XLAYER_CHAIN_ID },
+        {
+          onError: () => {
+            // Do not loop after a rejected request. The shared wallet button
+            // exposes a manual network switch action.
+          },
+        },
+      );
+    }, 300);
 
-        return () => clearTimeout(timer);
-    }, [isConnected, walletChainId, switchChain]);
+    return () => window.clearTimeout(timer);
+  }, [chainId, isConnected, switchChain]);
 
-    return <>{children}</>;
+  return <>{children}</>;
 }
 
-export default function SharedProviders({ children }: { children: ReactNode }) {
-    const theme = useMemo(
-        () =>
-            darkTheme({
-                accentColor: "#a855f7", // Purple for admin theme
-                accentColorForeground: "#fff",
-                borderRadius: "medium",
-                overlayBlur: "small",
-            }),
-        []
-    );
+export default function SharedProviders({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const alreadyProvided = useContext(SharedProvidersBoundary);
 
-    return (
-        <WagmiProvider config={getWagmiConfig()}>
-            <QueryClientProvider client={getQueryClient()}>
-                <RainbowKitProvider theme={theme} modalSize="compact" initialChain={xlayer}>
-                    <AutoChainSwitch>
-                        {children}
-                    </AutoChainSwitch>
-                </RainbowKitProvider>
-            </QueryClientProvider>
-        </WagmiProvider>
-    );
+  if (alreadyProvided) return <>{children}</>;
+
+  return (
+    <SharedProvidersBoundary.Provider value>
+      <WagmiProvider config={walletConfig}>
+        <QueryClientProvider client={getQueryClient()}>
+          <WalletConnectionProvider>
+            <AutoChainSwitch>{children}</AutoChainSwitch>
+          </WalletConnectionProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
+    </SharedProvidersBoundary.Provider>
+  );
 }

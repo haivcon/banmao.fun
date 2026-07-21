@@ -6,7 +6,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ConnectButton } from "../../../components/wallet/WalletConnection";
 import { LocaleStrings, LangKey, langs, flags, langNames } from "../lib/i18n";
 import { SoundToggle, SettingsButton } from "./GameSettings";
 import { ThemeToggle } from "./ThemeProvider";

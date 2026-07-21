@@ -14,7 +14,7 @@ import { registerServiceWorker, initInstallPrompt } from "./lib/registerSW";
 import PWAInstallBanner from "./components/PWAInstallBanner";
 import { GameCard, GameInfoModal, type GameInfo, WalletBalanceWidget } from "./components";
 import { BrowserNotice } from "./components/BrowserNotice";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ConnectButton } from "../components/wallet/WalletConnection";
 import F1RacingBackground from "./components/F1RacingBackground";
 import { getGameVisitStats, type GameVisitStats } from "../../lib/gameVisitTracker";
 

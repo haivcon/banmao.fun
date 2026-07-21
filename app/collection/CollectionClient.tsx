@@ -7,7 +7,7 @@ import "./hub-redesign.css";
 import { T, Lang, LANG_LIST } from "./i18n";
 import { translateName, reverseTranslate, translateFolder, detectBrowserLang } from "./i18n/nameDict";
 import { saveBgImage, getBgImage, deleteBgImage, entryToUrl } from "./bgStore";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ConnectButton } from "../components/wallet/WalletConnection";
 import { useAccount } from "wagmi";
 
 import CollectionStats from "./components/CollectionStats";

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAccount, useReadContract } from "wagmi";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ConnectButton } from "../../../components/wallet/WalletConnection";
 import { Toaster } from "react-hot-toast";
 import SharedProviders from "../../../providers";
 import SnakeTab from "../../admin/components/SnakeTab";

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ConnectButton } from "../../../components/wallet/WalletConnection";
 
 interface HeaderProps {
   connectLabel: string;

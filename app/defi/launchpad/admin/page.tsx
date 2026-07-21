@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ConnectButton } from "../../../components/wallet/WalletConnection";
 import { formatEther, parseEther } from "viem";
 import {
     ArrowLeft, Shield, Wallet, Settings, Loader2, CheckCircle2, AlertTriangle,

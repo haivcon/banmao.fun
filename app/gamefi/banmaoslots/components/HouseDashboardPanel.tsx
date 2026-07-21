@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { ConnectButton } from '../../../components/wallet/WalletConnection';
 import { useHouseDashboard } from '../hooks/useHouseDashboard';
 import { PoolManagementCard } from './PoolManagementCard';
 import { formatTokenAmount } from '../lib/abis';

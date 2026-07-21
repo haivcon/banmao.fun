@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance } from "wagmi";
 import { parseUnits } from "viem";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ConnectButton } from "../../components/wallet/WalletConnection";
 import { BurnLanguageSelector } from "./BurnLanguageSelector";
 import { translations, Language, LANGUAGES } from "./i18n";
 import { AnimatedNumbers } from "./AnimatedNumbers";

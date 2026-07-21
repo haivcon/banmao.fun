@@ -10,7 +10,7 @@ import { formatUnits } from "viem";
 import { motion, AnimatePresence } from "framer-motion";
 
 import CountUp from "react-countup";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { useConnectModal } from "../../../components/wallet/WalletConnection";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance } from "wagmi";
 import AnimatedFrameSprite from "./AnimatedFrameSprite";
 

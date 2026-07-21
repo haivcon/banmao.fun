@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAccount, useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ConnectButton } from "../../components/wallet/WalletConnection";
 import { parseEther, formatEther } from "viem";
 import { Rocket, GraduationCap, Flame, BarChart3, Search, Activity, Sun, Moon, Globe, ArrowLeft, Loader2, CheckCircle2, AlertTriangle, UploadCloud, X } from "lucide-react";
 import "./launchpad.css";

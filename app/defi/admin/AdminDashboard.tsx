@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { ConnectButton } from '../../components/wallet/WalletConnection';
 import { formatEther, parseEther } from 'viem';
 import SharedProviders from '../../providers';
 import { STAKING_CONTRACT_ADDRESS, STAKING_ABI, BANMAO_TOKEN_ADDRESS, ERC20_ABI, LOCK_OPTIONS_INFO } from '../staking/contracts';

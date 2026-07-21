@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useAccount, useBalance, useReadContract } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { ConnectButton } from '../components/wallet/WalletConnection';
 import { formatEther } from 'viem';
 import "./defi.css";
 import {
