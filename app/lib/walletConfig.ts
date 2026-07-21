@@ -1,9 +1,8 @@
 "use client";
 
 import { createConfig, fallback, http } from "wagmi";
-import { injected } from "wagmi/connectors";
+import { injected, walletConnect } from "wagmi/connectors";
 import type { Chain } from "viem";
-import { banmaoWalletConnect } from "./walletConnectConnector";
 
 export const XLAYER_CHAIN_ID = 196;
 export const XLAYER_CHAIN_ID_HEX = "0xc4";
@@ -43,21 +42,32 @@ export const xLayer: Chain = {
   },
 };
 
+const OKX_WALLET_EXPLORER_ID =
+  "971e689d0a5be527bac79629b4ee9b925e82208e5168b733496a09c0faed0709";
+
 const connectors = [
   injected({
     shimDisconnect: true,
   }),
   ...(WALLETCONNECT_PROJECT_ID
     ? [
-        banmaoWalletConnect({
+        walletConnect({
           projectId: WALLETCONNECT_PROJECT_ID,
           showQrModal: true,
+          customStoragePrefix: "banmao-walletconnect-v2",
           metadata: {
             name: "BANMAO",
             description:
               "BANMAO GameFi, DeFi and NFT ecosystem on X Layer",
             url: "https://banmao.fun",
             icons: ["https://banmao.fun/branding/banmao_logo.png"],
+            redirect: {
+              universal: "https://banmao.fun",
+            },
+          },
+          qrModalOptions: {
+            enableExplorer: true,
+            explorerRecommendedWalletIds: [OKX_WALLET_EXPLORER_ID],
           },
         }),
       ]

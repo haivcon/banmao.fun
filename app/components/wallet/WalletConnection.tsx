@@ -218,7 +218,7 @@ function WalletModal() {
                       <strong>{connector.name}</strong>
                       <small>
                         {isWalletConnect
-                          ? "Scan a QR code with a mobile wallet"
+                          ? "Open a wallet app on mobile or scan a QR code"
                           : "Use a wallet installed in this browser"}
                       </small>
                     </span>
