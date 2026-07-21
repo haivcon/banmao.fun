@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ConnectButton } from "../../components/wallet/WalletConnection";
 import { translations, Language, LANGUAGES } from "./i18n";
 import dynamic from "next/dynamic";
 import "./airdrop.css";

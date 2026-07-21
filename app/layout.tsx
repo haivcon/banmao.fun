@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 import { Noto_Sans, Orbitron, Rajdhani, Share_Tech_Mono, Space_Mono } from "next/font/google";
 
 import Script from "next/script";
+import SharedProviders from "./providers";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://banmao.fun"),
@@ -172,7 +173,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className={spaceMono.className}>{children}</body>
+      <body className={spaceMono.className}>
+        <SharedProviders>{children}</SharedProviders>
+      </body>
     </html>
   );
 }

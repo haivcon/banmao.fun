@@ -17,7 +17,7 @@ import CreateChallengePanel from "./components/CreateChallengePanel";
 import ProfilePanel from "./components/ProfilePanel";
 import MatchRoomPanel from "./components/MatchRoomPanel";
 import "./globals.css";
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { ConnectButton } from '../../components/wallet/WalletConnection';
 
 export default function PKDashboard() {
     return (

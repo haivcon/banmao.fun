@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { ConnectButton } from '../../components/wallet/WalletConnection';
 import { formatUnits } from 'viem';
 import { SNAKE_ABI, ERC20_ABI } from './lib/abis';
 import { SNAKE_CONTRACT_ADDRESS, BANMAO_TOKEN_ADDRESS, SNAKE_SIGN_ENDPOINT } from './lib/constants';

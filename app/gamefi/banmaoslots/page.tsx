@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Link from 'next/link';
 import { useAccount, useReadContract, useWriteContract, usePublicClient, useWatchContractEvent, useBalance } from 'wagmi';
 import { decodeEventLog, formatEther } from 'viem';
-import { useConnectModal, ConnectButton } from '@rainbow-me/rainbowkit';
+import { useConnectModal, ConnectButton } from '../../components/wallet/WalletConnection';
 import { Toaster } from 'react-hot-toast';
 import { slotsToast } from './lib/toastUtils';
 import './globals.css';

@@ -10,7 +10,7 @@ import { formatUnits, parseUnits } from "viem";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance } from "wagmi";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { useConnectModal } from "../../../components/wallet/WalletConnection";
 import AnimatedSprite from "./AnimatedSprite";
 
 import { LocaleStrings } from "../lib/i18n/types";
