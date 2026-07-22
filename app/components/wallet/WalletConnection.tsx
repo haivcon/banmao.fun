@@ -17,7 +17,6 @@ import {
   useSwitchChain,
 } from "wagmi";
 import { formatEther } from "viem";
-import QRCode from "qrcode";
 import {
   WALLETCONNECT_PROJECT_ID,
   XLAYER_CHAIN_ID,
@@ -31,19 +30,13 @@ import {
 } from "./i18n";
 import "./wallet.css";
 
-type WalletModalView =
-  | "connect"
-  | "walletconnect"
-  | "account"
-  | "chain"
-  | null;
+type WalletModalView = "connect" | "account" | "chain" | null;
 
 interface WalletModalContextValue {
   modal: WalletModalView;
   language: WalletLanguage;
   t: WalletTranslations;
   openConnectModal: () => void;
-  openWalletConnectModal: () => void;
   openAccountModal: () => void;
   openChainModal: () => void;
   closeModal: () => void;
@@ -59,9 +52,7 @@ type WalletErrorKey =
   | "unableConnect"
   | "unableSwitchNetwork"
   | "unableDisconnect"
-  | "unableCopyAddress"
-  | "unableCopyLink"
-  | "unableGenerateQr";
+  | "unableCopyAddress";
 
 type WalletErrorOperation = "connect" | "switch" | "disconnect";
 
@@ -146,14 +137,7 @@ function walletConnectorName(
 
 function WalletModal() {
   const context = useWalletModalContext();
-  const {
-    modal,
-    language,
-    t,
-    closeModal,
-    openConnectModal,
-    openWalletConnectModal,
-  } = context;
+  const { modal, language, t, closeModal, openConnectModal } = context;
   const { address, connector: activeConnector } = useAccount();
   const {
     connectors,
@@ -169,16 +153,12 @@ function WalletModal() {
   } = useSwitchChain();
   const [localError, setLocalError] = useState<WalletErrorKey | null>(null);
   const [copied, setCopied] = useState(false);
-  const [connectionLinkCopied, setConnectionLinkCopied] = useState(false);
   const [pendingConnectorUid, setPendingConnectorUid] = useState("");
-  const [walletConnectUri, setWalletConnectUri] = useState("");
-  const [walletConnectQr, setWalletConnectQr] = useState("");
 
   useEffect(() => {
     if (!modal) {
       setLocalError(null);
       setCopied(false);
-      setConnectionLinkCopied(false);
       return;
     }
 
@@ -189,70 +169,24 @@ function WalletModal() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [closeModal, modal]);
 
-  useEffect(() => {
-    if (!walletConnectUri) {
-      setWalletConnectQr("");
-      return;
-    }
-
-    let active = true;
-    QRCode.toDataURL(walletConnectUri, {
-      errorCorrectionLevel: "M",
-      margin: 2,
-      width: 360,
-      color: {
-        dark: "#09090b",
-        light: "#ffffff",
-      },
-    })
-      .then((dataUrl) => {
-        if (active) setWalletConnectQr(dataUrl);
-      })
-      .catch(() => {
-        if (active) setLocalError("unableGenerateQr");
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [walletConnectUri]);
-
   if (!modal) return null;
 
   const connect = async (connector: (typeof connectors)[number]) => {
-    const isWalletConnect =
+    const opensExternalModal =
       connector.id.toLowerCase() === "walletconnect";
 
     setLocalError(null);
     setPendingConnectorUid(connector.uid);
 
-    const onConnectorMessage = (message: {
-      type: string;
-      data?: unknown;
-    }) => {
-      if (message.type === "display_uri" && typeof message.data === "string") {
-        setWalletConnectUri(message.data);
-      }
-    };
-
-    if (isWalletConnect) {
-      setWalletConnectUri("");
-      setWalletConnectQr("");
-      setConnectionLinkCopied(false);
-      connector.emitter.on("message", onConnectorMessage);
-      openWalletConnectModal();
-    }
+    if (opensExternalModal) closeModal();
 
     try {
       await connectAsync({ connector, chainId: XLAYER_CHAIN_ID });
-      closeModal();
+      if (!opensExternalModal) closeModal();
     } catch (error) {
-      if (isWalletConnect) openConnectModal();
+      if (opensExternalModal) openConnectModal();
       setLocalError(walletErrorKey(error, "connect"));
     } finally {
-      if (isWalletConnect) {
-        connector.emitter.off("message", onConnectorMessage);
-      }
       setPendingConnectorUid("");
     }
   };
@@ -287,16 +221,6 @@ function WalletModal() {
     }
   };
 
-  const copyConnectionLink = async () => {
-    if (!walletConnectUri) return;
-    try {
-      await navigator.clipboard.writeText(walletConnectUri);
-      setConnectionLinkCopied(true);
-    } catch {
-      setLocalError("unableCopyLink");
-    }
-  };
-
   const errorKey =
     localError ||
     (connectError ? walletErrorKey(connectError, "connect") : null) ||
@@ -324,11 +248,9 @@ function WalletModal() {
             <h2 id="banmao-wallet-title">
               {modal === "connect"
                 ? t.connectTitle
-                : modal === "walletconnect"
-                  ? t.walletConnectTitle
-                  : modal === "chain"
-                    ? t.selectNetworkTitle
-                    : t.walletTitle}
+                : modal === "chain"
+                  ? t.selectNetworkTitle
+                  : t.walletTitle}
             </h2>
           </div>
           <button
@@ -389,46 +311,6 @@ function WalletModal() {
                 {t.walletConnectUnavailable}
               </p>
             )}
-          </div>
-        )}
-
-        {modal === "walletconnect" && (
-          <div className="banmao-wallet-modal__content banmao-wallet-qr">
-            <div className="banmao-wallet-qr__canvas">
-              {walletConnectQr ? (
-                // The data URL is generated locally from WalletConnect's URI.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  alt={t.qrCodeAriaLabel}
-                  height={360}
-                  src={walletConnectQr}
-                  width={360}
-                />
-              ) : (
-                <span
-                  aria-label={t.scanQrCode}
-                  className="banmao-wallet-qr__loader"
-                  role="status"
-                />
-              )}
-            </div>
-            <p className="banmao-wallet-qr__instruction">{t.scanQrCode}</p>
-            <div className="banmao-wallet-qr__actions">
-              <a
-                aria-disabled={!walletConnectUri}
-                className={!walletConnectUri ? "is-disabled" : ""}
-                href={walletConnectUri || undefined}
-              >
-                {t.openWalletApp}
-              </a>
-              <button
-                disabled={!walletConnectUri}
-                onClick={() => void copyConnectionLink()}
-                type="button"
-              >
-                {connectionLinkCopied ? t.copied : t.copyConnectionLink}
-              </button>
-            </div>
           </div>
         )}
 
@@ -530,7 +412,6 @@ export function WalletConnectionProvider({
       language,
       t,
       openConnectModal: () => setModal("connect"),
-      openWalletConnectModal: () => setModal("walletconnect"),
       openAccountModal: () => setModal("account"),
       openChainModal: () => setModal("chain"),
       closeModal: () => setModal(null),
