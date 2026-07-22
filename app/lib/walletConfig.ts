@@ -53,7 +53,9 @@ const connectors = [
     ? [
         walletConnect({
           projectId: WALLETCONNECT_PROJECT_ID,
-          showQrModal: true,
+          // BANMAO renders its own localized QR dialog from the connector's
+          // display_uri event instead of using Reown's English-only modal.
+          showQrModal: false,
           customStoragePrefix: "banmao-walletconnect-v2",
           metadata: {
             name: "BANMAO",

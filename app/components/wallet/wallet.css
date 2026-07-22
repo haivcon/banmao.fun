@@ -211,6 +211,95 @@
   line-height: 1.5;
 }
 
+.banmao-wallet-qr {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+}
+
+.banmao-wallet-qr__canvas {
+  display: grid;
+  width: min(100%, 280px);
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  padding: 10px;
+  border: 1px solid rgba(192, 132, 252, 0.25);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.3);
+}
+
+.banmao-wallet-qr__canvas img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+}
+
+.banmao-wallet-qr__loader {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(109, 40, 217, 0.2);
+  border-top-color: #7c3aed;
+  border-radius: 50%;
+  animation: banmao-wallet-spin 800ms linear infinite;
+}
+
+.banmao-wallet-qr__instruction {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.banmao-wallet-qr__actions {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.banmao-wallet-qr__actions a,
+.banmao-wallet-qr__actions button {
+  display: grid;
+  min-height: 42px;
+  place-items: center;
+  padding: 9px 12px;
+  color: #e9d5ff;
+  text-align: center;
+  text-decoration: none;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: 12px;
+  background: rgba(168, 85, 247, 0.1);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 150ms ease;
+}
+
+.banmao-wallet-qr__actions a:not(.is-disabled):hover,
+.banmao-wallet-qr__actions button:not(:disabled):hover {
+  border-color: rgba(192, 132, 252, 0.65);
+  background: rgba(168, 85, 247, 0.18);
+}
+
+.banmao-wallet-qr__actions .is-disabled,
+.banmao-wallet-qr__actions button:disabled {
+  pointer-events: none;
+  cursor: wait;
+  opacity: 0.45;
+}
+
+@keyframes banmao-wallet-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .banmao-wallet-network,
 .banmao-wallet-account {
   display: flex;
@@ -464,6 +553,14 @@
     margin-inline: 18px;
   }
 
+  .banmao-wallet-qr__canvas {
+    width: min(100%, 260px);
+  }
+
+  .banmao-wallet-qr__actions {
+    grid-template-columns: 1fr;
+  }
+
   .banmao-wallet-button__balance {
     display: none;
   }
@@ -473,5 +570,9 @@
   .banmao-wallet-modal *,
   .banmao-wallet-button {
     transition: none !important;
+  }
+
+  .banmao-wallet-qr__loader {
+    animation: none;
   }
 }
