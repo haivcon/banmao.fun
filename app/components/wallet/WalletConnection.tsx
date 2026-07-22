@@ -17,19 +17,33 @@ import {
   useSwitchChain,
 } from "wagmi";
 import { formatEther } from "viem";
+import QRCode from "qrcode";
 import {
   WALLETCONNECT_PROJECT_ID,
   XLAYER_CHAIN_ID,
   xLayer,
   xLayerExplorerAddressUrl,
 } from "../../lib/walletConfig";
+import {
+  type WalletLanguage,
+  type WalletTranslations,
+  useWalletTranslations,
+} from "./i18n";
 import "./wallet.css";
 
-type WalletModalView = "connect" | "account" | "chain" | null;
+type WalletModalView =
+  | "connect"
+  | "walletconnect"
+  | "account"
+  | "chain"
+  | null;
 
 interface WalletModalContextValue {
   modal: WalletModalView;
+  language: WalletLanguage;
+  t: WalletTranslations;
   openConnectModal: () => void;
+  openWalletConnectModal: () => void;
   openAccountModal: () => void;
   openChainModal: () => void;
   closeModal: () => void;
@@ -37,22 +51,80 @@ interface WalletModalContextValue {
 
 const WalletModalContext = createContext<WalletModalContextValue | null>(null);
 
-function walletErrorMessage(error: unknown): string {
+type WalletErrorKey =
+  | "connectionRejected"
+  | "requestPending"
+  | "walletNotFound"
+  | "requestTimedOut"
+  | "unableConnect"
+  | "unableSwitchNetwork"
+  | "unableDisconnect"
+  | "unableCopyAddress"
+  | "unableCopyLink"
+  | "unableGenerateQr";
+
+type WalletErrorOperation = "connect" | "switch" | "disconnect";
+
+function walletErrorKey(
+  error: unknown,
+  operation: WalletErrorOperation = "connect",
+): WalletErrorKey {
   const candidate = error as {
     code?: number;
     message?: string;
     details?: string;
     shortMessage?: string;
-    cause?: { code?: number };
+    cause?: { code?: number; message?: string };
   };
   const code = Number(candidate?.code ?? candidate?.cause?.code);
-  if (code === 4001) return "Connection request was rejected.";
-  return (
-    candidate?.shortMessage ||
-    candidate?.details ||
-    candidate?.message ||
-    "Unable to connect the wallet."
-  );
+  const message = [
+    candidate?.shortMessage,
+    candidate?.details,
+    candidate?.message,
+    candidate?.cause?.message,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (
+    code === 4001 ||
+    code === 5000 ||
+    message.includes("user rejected") ||
+    message.includes("user denied") ||
+    message.includes("rejected the request")
+  ) {
+    return "connectionRejected";
+  }
+
+  if (
+    code === -32002 ||
+    message.includes("already pending") ||
+    message.includes("request already")
+  ) {
+    return "requestPending";
+  }
+
+  if (
+    message.includes("timeout") ||
+    message.includes("timed out") ||
+    message.includes("expired")
+  ) {
+    return "requestTimedOut";
+  }
+
+  if (
+    message.includes("connector not found") ||
+    message.includes("provider not found") ||
+    message.includes("no provider") ||
+    message.includes("not installed")
+  ) {
+    return "walletNotFound";
+  }
+
+  if (operation === "switch") return "unableSwitchNetwork";
+  if (operation === "disconnect") return "unableDisconnect";
+  return "unableConnect";
 }
 
 function shortAddress(address?: string): string {
@@ -60,9 +132,28 @@ function shortAddress(address?: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
 
+function walletConnectorName(
+  connector: { id: string; name: string } | undefined,
+  t: WalletTranslations,
+): string {
+  if (!connector) return t.connectedWallet;
+
+  const connectorId = connector.id.toLowerCase();
+  if (connectorId === "walletconnect") return "WalletConnect";
+  if (connectorId === "injected") return t.browserWallet;
+  return connector.name;
+}
+
 function WalletModal() {
   const context = useWalletModalContext();
-  const { modal, closeModal, openConnectModal } = context;
+  const {
+    modal,
+    language,
+    t,
+    closeModal,
+    openConnectModal,
+    openWalletConnectModal,
+  } = context;
   const { address, connector: activeConnector } = useAccount();
   const {
     connectors,
@@ -76,14 +167,18 @@ function WalletModal() {
     error: switchError,
     isPending: isSwitching,
   } = useSwitchChain();
-  const [localError, setLocalError] = useState("");
+  const [localError, setLocalError] = useState<WalletErrorKey | null>(null);
   const [copied, setCopied] = useState(false);
+  const [connectionLinkCopied, setConnectionLinkCopied] = useState(false);
   const [pendingConnectorUid, setPendingConnectorUid] = useState("");
+  const [walletConnectUri, setWalletConnectUri] = useState("");
+  const [walletConnectQr, setWalletConnectQr] = useState("");
 
   useEffect(() => {
     if (!modal) {
-      setLocalError("");
+      setLocalError(null);
       setCopied(false);
+      setConnectionLinkCopied(false);
       return;
     }
 
@@ -94,45 +189,91 @@ function WalletModal() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [closeModal, modal]);
 
+  useEffect(() => {
+    if (!walletConnectUri) {
+      setWalletConnectQr("");
+      return;
+    }
+
+    let active = true;
+    QRCode.toDataURL(walletConnectUri, {
+      errorCorrectionLevel: "M",
+      margin: 2,
+      width: 360,
+      color: {
+        dark: "#09090b",
+        light: "#ffffff",
+      },
+    })
+      .then((dataUrl) => {
+        if (active) setWalletConnectQr(dataUrl);
+      })
+      .catch(() => {
+        if (active) setLocalError("unableGenerateQr");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [walletConnectUri]);
+
   if (!modal) return null;
 
   const connect = async (connector: (typeof connectors)[number]) => {
-    const opensExternalModal =
+    const isWalletConnect =
       connector.id.toLowerCase() === "walletconnect";
 
-    setLocalError("");
+    setLocalError(null);
     setPendingConnectorUid(connector.uid);
 
-    if (opensExternalModal) closeModal();
+    const onConnectorMessage = (message: {
+      type: string;
+      data?: unknown;
+    }) => {
+      if (message.type === "display_uri" && typeof message.data === "string") {
+        setWalletConnectUri(message.data);
+      }
+    };
+
+    if (isWalletConnect) {
+      setWalletConnectUri("");
+      setWalletConnectQr("");
+      setConnectionLinkCopied(false);
+      connector.emitter.on("message", onConnectorMessage);
+      openWalletConnectModal();
+    }
 
     try {
       await connectAsync({ connector, chainId: XLAYER_CHAIN_ID });
-      if (!opensExternalModal) closeModal();
+      closeModal();
     } catch (error) {
-      if (opensExternalModal) openConnectModal();
-      setLocalError(walletErrorMessage(error));
+      if (isWalletConnect) openConnectModal();
+      setLocalError(walletErrorKey(error, "connect"));
     } finally {
+      if (isWalletConnect) {
+        connector.emitter.off("message", onConnectorMessage);
+      }
       setPendingConnectorUid("");
     }
   };
 
   const switchNetwork = async () => {
-    setLocalError("");
+    setLocalError(null);
     try {
       await switchChainAsync({ chainId: XLAYER_CHAIN_ID });
       closeModal();
     } catch (error) {
-      setLocalError(walletErrorMessage(error));
+      setLocalError(walletErrorKey(error, "switch"));
     }
   };
 
   const disconnect = async () => {
-    setLocalError("");
+    setLocalError(null);
     try {
       await disconnectAsync();
       closeModal();
     } catch (error) {
-      setLocalError(walletErrorMessage(error));
+      setLocalError(walletErrorKey(error, "disconnect"));
     }
   };
 
@@ -142,14 +283,25 @@ function WalletModal() {
       await navigator.clipboard.writeText(address);
       setCopied(true);
     } catch {
-      setLocalError("Unable to copy the wallet address.");
+      setLocalError("unableCopyAddress");
     }
   };
 
-  const error =
+  const copyConnectionLink = async () => {
+    if (!walletConnectUri) return;
+    try {
+      await navigator.clipboard.writeText(walletConnectUri);
+      setConnectionLinkCopied(true);
+    } catch {
+      setLocalError("unableCopyLink");
+    }
+  };
+
+  const errorKey =
     localError ||
-    (connectError ? walletErrorMessage(connectError) : "") ||
-    (switchError ? walletErrorMessage(switchError) : "");
+    (connectError ? walletErrorKey(connectError, "connect") : null) ||
+    (switchError ? walletErrorKey(switchError, "switch") : null);
+  const error = errorKey ? t[errorKey] : "";
 
   return (
     <div
@@ -163,6 +315,7 @@ function WalletModal() {
         aria-labelledby="banmao-wallet-title"
         aria-modal="true"
         className="banmao-wallet-modal"
+        lang={language}
         role="dialog"
       >
         <header className="banmao-wallet-modal__header">
@@ -170,14 +323,16 @@ function WalletModal() {
             <span className="banmao-wallet-modal__eyebrow">BANMAO · X LAYER</span>
             <h2 id="banmao-wallet-title">
               {modal === "connect"
-                ? "Connect wallet"
-                : modal === "chain"
-                  ? "Select network"
-                  : "Wallet"}
+                ? t.connectTitle
+                : modal === "walletconnect"
+                  ? t.walletConnectTitle
+                  : modal === "chain"
+                    ? t.selectNetworkTitle
+                    : t.walletTitle}
             </h2>
           </div>
           <button
-            aria-label="Close wallet dialog"
+            aria-label={t.closeWalletDialog}
             className="banmao-wallet-modal__close"
             onClick={closeModal}
             type="button"
@@ -189,13 +344,13 @@ function WalletModal() {
         {modal === "connect" && (
           <div className="banmao-wallet-modal__content">
             <p className="banmao-wallet-modal__description">
-              Connect once and use the same session across GameFi, DeFi and
-              Collection.
+              {t.connectDescription}
             </p>
             <div className="banmao-wallet-options">
               {connectors.map((connector) => {
-                const isWalletConnect =
-                  connector.id.toLowerCase() === "walletconnect";
+                const connectorId = connector.id.toLowerCase();
+                const isWalletConnect = connectorId === "walletconnect";
+                const connectorName = walletConnectorName(connector, t);
                 const pending =
                   isConnecting && pendingConnectorUid === connector.uid;
                 return (
@@ -215,11 +370,11 @@ function WalletModal() {
                       {isWalletConnect ? "W" : "◆"}
                     </span>
                     <span className="banmao-wallet-option__copy">
-                      <strong>{connector.name}</strong>
+                      <strong>{connectorName}</strong>
                       <small>
                         {isWalletConnect
-                          ? "Open a wallet app on mobile or scan a QR code"
-                          : "Use a wallet installed in this browser"}
+                          ? t.walletConnectDescription
+                          : t.browserWalletDescription}
                       </small>
                     </span>
                     <span aria-hidden="true" className="banmao-wallet-option__arrow">
@@ -231,11 +386,49 @@ function WalletModal() {
             </div>
             {!WALLETCONNECT_PROJECT_ID && (
               <p className="banmao-wallet-modal__notice">
-                WalletConnect QR is unavailable because
-                NEXT_PUBLIC_WC_PROJECT_ID is not configured. Browser wallets
-                remain available.
+                {t.walletConnectUnavailable}
               </p>
             )}
+          </div>
+        )}
+
+        {modal === "walletconnect" && (
+          <div className="banmao-wallet-modal__content banmao-wallet-qr">
+            <div className="banmao-wallet-qr__canvas">
+              {walletConnectQr ? (
+                // The data URL is generated locally from WalletConnect's URI.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  alt={t.qrCodeAriaLabel}
+                  height={360}
+                  src={walletConnectQr}
+                  width={360}
+                />
+              ) : (
+                <span
+                  aria-label={t.scanQrCode}
+                  className="banmao-wallet-qr__loader"
+                  role="status"
+                />
+              )}
+            </div>
+            <p className="banmao-wallet-qr__instruction">{t.scanQrCode}</p>
+            <div className="banmao-wallet-qr__actions">
+              <a
+                aria-disabled={!walletConnectUri}
+                className={!walletConnectUri ? "is-disabled" : ""}
+                href={walletConnectUri || undefined}
+              >
+                {t.openWalletApp}
+              </a>
+              <button
+                disabled={!walletConnectUri}
+                onClick={() => void copyConnectionLink()}
+                type="button"
+              >
+                {connectionLinkCopied ? t.copied : t.copyConnectionLink}
+              </button>
+            </div>
           </div>
         )}
 
@@ -245,9 +438,11 @@ function WalletModal() {
               <span className="banmao-wallet-network__icon">X</span>
               <span>
                 <strong>{xLayer.name}</strong>
-                <small>Chain ID {XLAYER_CHAIN_ID} · OKB</small>
+                <small>
+                  {t.chainId} {XLAYER_CHAIN_ID} · OKB
+                </small>
               </span>
-              <span className="banmao-wallet-network__status">Required</span>
+              <span className="banmao-wallet-network__status">{t.required}</span>
             </div>
             <button
               className="banmao-wallet-primary"
@@ -255,7 +450,7 @@ function WalletModal() {
               onClick={() => void switchNetwork()}
               type="button"
             >
-              {isSwitching ? "Switching…" : "Switch to X Layer"}
+              {isSwitching ? t.switching : t.switchToXLayer}
             </button>
           </div>
         )}
@@ -268,13 +463,13 @@ function WalletModal() {
               </span>
               <span>
                 <strong>{shortAddress(address)}</strong>
-                <small>{activeConnector?.name || "Connected wallet"}</small>
+                <small>{walletConnectorName(activeConnector, t)}</small>
               </span>
-              <span className="banmao-wallet-account__live">Connected</span>
+              <span className="banmao-wallet-account__live">{t.connected}</span>
             </div>
             <div className="banmao-wallet-account__actions">
               <button onClick={() => void copyAddress()} type="button">
-                {copied ? "Copied" : "Copy address"}
+                {copied ? t.copied : t.copyAddress}
               </button>
               {address && (
                 <a
@@ -282,7 +477,7 @@ function WalletModal() {
                   rel="noreferrer"
                   target="_blank"
                 >
-                  Explorer ↗
+                  {t.explorer} ↗
                 </a>
               )}
             </div>
@@ -292,7 +487,7 @@ function WalletModal() {
               onClick={() => void disconnect()}
               type="button"
             >
-              {isDisconnecting ? "Disconnecting…" : "Disconnect wallet"}
+              {isDisconnecting ? t.disconnecting : t.disconnectWallet}
             </button>
           </div>
         )}
@@ -304,8 +499,7 @@ function WalletModal() {
         )}
 
         <footer className="banmao-wallet-modal__footer">
-          By connecting, you allow this site to request wallet signatures. A
-          transaction is never sent without your confirmation.
+          {t.securityNotice}
         </footer>
       </section>
     </div>
@@ -328,16 +522,20 @@ export function WalletConnectionProvider({
   children: ReactNode;
 }) {
   const [modal, setModal] = useState<WalletModalView>(null);
+  const { language, t } = useWalletTranslations();
 
   const value = useMemo<WalletModalContextValue>(
     () => ({
       modal,
+      language,
+      t,
       openConnectModal: () => setModal("connect"),
+      openWalletConnectModal: () => setModal("walletconnect"),
       openAccountModal: () => setModal("account"),
       openChainModal: () => setModal("chain"),
       closeModal: () => setModal(null),
     }),
-    [modal],
+    [language, modal, t],
   );
 
   return (
@@ -408,12 +606,13 @@ function WalletConnectButtonBase({
   accountStatus = "address",
   chainStatus = "full",
   className = "",
-  label = "Connect Wallet",
+  label,
   showBalance = true,
   style,
 }: WalletConnectButtonProps) {
   const { address, chain, chainId, isConnected, isReconnecting, status } =
     useAccount();
+  const { language, t } = useWalletModalContext();
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
   useEffect(() => {
@@ -453,7 +652,7 @@ function WalletConnectButtonBase({
         <span aria-hidden="true" className="banmao-wallet-button__mark">
           ◈
         </span>
-        <span>{label}</span>
+        <span>{label ?? t.connectWallet}</span>
       </button>
     );
   }
@@ -466,13 +665,13 @@ function WalletConnectButtonBase({
         style={style}
         type="button"
       >
-        Wrong network
+        {t.wrongNetwork}
       </button>
     );
   }
 
   const displayBalance = balance
-    ? `${Number(formatEther(balance.value)).toLocaleString(undefined, {
+    ? `${Number(formatEther(balance.value)).toLocaleString(language, {
         maximumFractionDigits: 4,
       })} ${balance.symbol}`
     : undefined;
@@ -484,7 +683,7 @@ function WalletConnectButtonBase({
   ) {
     return (
       <button
-        aria-label={`Wallet ${shortAddress(address)}`}
+        aria-label={`${t.walletAriaLabel} ${shortAddress(address)}`}
         className={`banmao-wallet-button is-avatar ${className}`.trim()}
         onClick={openAccountModal}
         style={style}
@@ -545,6 +744,7 @@ function WalletConnectButtonCustom({
   children: (props: WalletRenderProps) => ReactNode;
 }) {
   const { address, chain, chainId, isConnected, status } = useAccount();
+  const { language, t } = useWalletModalContext();
   const { data: balance } = useBalance({
     address,
     chainId: XLAYER_CHAIN_ID,
@@ -560,7 +760,7 @@ function WalletConnectButtonCustom({
           address,
           displayName: shortAddress(address),
           displayBalance: balance
-            ? `${Number(formatEther(balance.value)).toLocaleString(undefined, {
+            ? `${Number(formatEther(balance.value)).toLocaleString(language, {
                 maximumFractionDigits: 4,
               })} ${balance.symbol}`
             : undefined,
@@ -573,7 +773,11 @@ function WalletConnectButtonCustom({
           id: chainId,
           iconBackground: "#111827",
           iconUrl: undefined,
-          name: chain?.name || (chainId === XLAYER_CHAIN_ID ? xLayer.name : `Chain ${chainId}`),
+          name:
+            chain?.name ||
+            (chainId === XLAYER_CHAIN_ID
+              ? xLayer.name
+              : `${t.chainFallback} ${chainId}`),
           unsupported: chainId !== XLAYER_CHAIN_ID,
         }
       : undefined;
