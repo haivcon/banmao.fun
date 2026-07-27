@@ -1563,34 +1563,51 @@ export function useStakingTranslations() {
     const [lang, setLang] = useState<Language>('en');
 
     useEffect(() => {
-        setLang(getStoredLanguage());
-
-        // Listen for language changes
-        const handleStorageChange = () => {
-            setLang(getStoredLanguage());
+        const updateLanguage = (nextLanguage: Language) => {
+            setLang((currentLanguage) =>
+                currentLanguage === nextLanguage ? currentLanguage : nextLanguage
+            );
         };
-        window.addEventListener('storage', handleStorageChange);
 
-        // Check periodically for language change (for same-tab changes)
-        const interval = setInterval(() => {
-            const current = getStoredLanguage();
-            if (current !== lang) setLang(current);
-        }, 1000);
+        const handleStorageChange = () => {
+            updateLanguage(getStoredLanguage());
+        };
+
+        const handleLanguageChange = (event: Event) => {
+            const nextLanguage = (event as CustomEvent<Language>).detail;
+            if (nextLanguage && Object.prototype.hasOwnProperty.call(translations, nextLanguage)) {
+                updateLanguage(nextLanguage);
+            }
+        };
+
+        updateLanguage(getStoredLanguage());
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('banmao:language-change', handleLanguageChange);
 
         return () => {
             window.removeEventListener('storage', handleStorageChange);
-            clearInterval(interval);
+            window.removeEventListener('banmao:language-change', handleLanguageChange);
         };
-    }, [lang]);
+    }, []);
 
     const t = useCallback((key: keyof StakingTranslations): string => {
         return translations[lang][key] || translations.en[key] || key;
     }, [lang]);
 
-    const setLanguage = (l: Language) => {
-        setLang(l);
-        if (typeof window !== 'undefined') localStorage.setItem('banmao_language', l);
-    };
+    const setLanguage = useCallback((nextLanguage: Language) => {
+        setLang((currentLanguage) =>
+            currentLanguage === nextLanguage ? currentLanguage : nextLanguage
+        );
+
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('banmao_language', nextLanguage);
+            window.dispatchEvent(
+                new CustomEvent<Language>('banmao:language-change', {
+                    detail: nextLanguage,
+                })
+            );
+        }
+    }, []);
 
     return { t, lang, setLanguage };
 }

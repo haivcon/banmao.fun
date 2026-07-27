@@ -59,6 +59,8 @@ const MOBILE_TABS: Web2DTabKey[] = [
     "token",
 ];
 
+const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
+
 function isExternalHref(href: string) {
     return href.startsWith("http");
 }
@@ -161,7 +163,12 @@ export function Web2DLanding({
     const copy = web2dFallbackCopies[currentLang] ?? web2dFallbackCopies.en;
     const activeLanguage = getLanguage(currentLang);
     const cards = useMemo(
-        () => copy.cards[activeTab] ?? copy.cards.overview,
+        () =>
+            (copy.cards[activeTab] ?? copy.cards.overview).filter(
+                (card) =>
+                    IS_DEVELOPMENT ||
+                    !card.href.startsWith("/defi/launchpad"),
+            ),
         [activeTab, copy],
     );
 

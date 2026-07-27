@@ -5,6 +5,10 @@ import { v2 as cloudinary } from "cloudinary";
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 
 export async function POST(request: NextRequest) {
+    if (process.env.NODE_ENV !== "development") {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
     try {
         const formData = await request.formData();
         const file = formData.get("file");

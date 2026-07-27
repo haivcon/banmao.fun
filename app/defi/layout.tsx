@@ -1,18 +1,20 @@
 import type { Metadata, Viewport } from "next";
 import DeFiLayoutClient from "./DeFiLayoutClient";
 
-// Force desktop-like viewport on mobile for consistent dApp experience
+// Use one native responsive viewport across every DeFi route. Individual
+// modules adapt through CSS breakpoints, so navigating between tabs never
+// changes the browser zoom level or the coordinate system used by portals.
 export const viewport: Viewport = {
-    width: 700,
-    initialScale: 0.5,
+    width: "device-width",
+    initialScale: 1,
     userScalable: true,
+    themeColor: "#05070d",
 };
 
 export const metadata: Metadata = {
     title: "DeFi Hub | BANMAO",
     description: "Explore DeFi services on BANMAO ecosystem. Staking, pools, and more on XLayer.",
     keywords: ["BANMAO", "DeFi", "Staking", "Token Lock", "XLayer", "Web3"],
-    themeColor: "#00d4ff",
 
     openGraph: {
         title: "DeFi Hub | BANMAO",

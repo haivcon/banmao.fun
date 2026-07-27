@@ -11,14 +11,28 @@ const REMOVED_GAME_PATHS = [
     "/api/worldcup",
 ] as const;
 
-function isRemovedGamePath(pathname: string): boolean {
-    return REMOVED_GAME_PATHS.some(
+const DEVELOPMENT_ONLY_PATHS = [
+    "/defi/launchpad",
+    "/api/launchpad",
+] as const;
+
+function matchesPath(pathname: string, paths: readonly string[]): boolean {
+    return paths.some(
         (path) => pathname === path || pathname.startsWith(`${path}/`),
     );
 }
 
+function shouldReturnNotFound(pathname: string): boolean {
+    if (matchesPath(pathname, REMOVED_GAME_PATHS)) return true;
+
+    return (
+        process.env.NODE_ENV !== "development" &&
+        matchesPath(pathname, DEVELOPMENT_ONLY_PATHS)
+    );
+}
+
 export function proxy(request: NextRequest) {
-    if (!isRemovedGamePath(request.nextUrl.pathname)) {
+    if (!shouldReturnNotFound(request.nextUrl.pathname)) {
         return NextResponse.next();
     }
 
@@ -41,5 +55,7 @@ export const config = {
         "/worldcup/:path*",
         "/api/banmaominer/:path*",
         "/api/worldcup/:path*",
+        "/defi/launchpad/:path*",
+        "/api/launchpad/:path*",
     ],
 };

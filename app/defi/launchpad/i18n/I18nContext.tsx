@@ -38,6 +38,17 @@ export function I18nProvider({ children }: { children: ReactNode }) {
             setLanguageState(browserLang);
         }
         setMounted(true);
+
+        const syncLanguage = (event: Event) => {
+            const requested = (event as CustomEvent<string>).detail;
+            const supported: Language = ["en", "vi", "zh", "ko", "ja"].includes(requested)
+                ? requested as Language
+                : "en";
+            setLanguageState(supported);
+            localStorage.setItem("launchpad-lang", supported);
+        };
+        window.addEventListener("banmao:language-change", syncLanguage);
+        return () => window.removeEventListener("banmao:language-change", syncLanguage);
     }, []);
 
     const setLanguage = (lang: Language) => {

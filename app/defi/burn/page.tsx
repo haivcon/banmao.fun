@@ -1,13 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import Image from "next/image";
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useBalance } from "wagmi";
 import { parseUnits } from "viem";
 import { ConnectButton } from "../../components/wallet/WalletConnection";
-import { BurnLanguageSelector } from "./BurnLanguageSelector";
 import { translations, Language, LANGUAGES } from "./i18n";
 import { AnimatedNumbers } from "./AnimatedNumbers";
 import { useSound } from "./hooks/useSound";
@@ -161,74 +160,6 @@ export default function BurnPage() {
         }
     };
 
-    // When tx confirmed, auto-verify donation
-    useEffect(() => {
-        const autoVerifyDonation = async (hash: string) => {
-            try {
-                setSubmitting(true);
-                const res = await fetch("/api/burn-contributors", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ txHash: hash }),
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    setMessage({
-                        type: "success",
-                        text: `🎉 Successfully recorded donation of ${data.burnedAmountFormatted} $BANMAO!`,
-                    });
-                    fetchLeaderboard();
-                    // Trigger celebration modal with confetti and sound
-                    setSuccessDonationAmount(data.burnedAmountFormatted);
-                    setShowDonationSuccess(true);
-                    triggerConfetti();
-                    playSuccess();
-                } else {
-                    // If verification fails immediately, try again after a short delay
-                    // (transaction might not be indexed yet)
-                    setTimeout(async () => {
-                        const retryRes = await fetch("/api/burn-contributors", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ txHash: hash }),
-                        });
-                        const retryData = await retryRes.json();
-                        if (retryData.success) {
-                            setMessage({
-                                type: "success",
-                                text: `🎉 Successfully recorded donation of ${retryData.burnedAmountFormatted} $BANMAO!`,
-                            });
-                            fetchLeaderboard();
-                            // Trigger celebration modal with confetti and sound
-                            setSuccessDonationAmount(retryData.burnedAmountFormatted);
-                            setShowDonationSuccess(true);
-                            triggerConfetti();
-                            playSuccess();
-                        } else {
-                            setMessage({ type: "error", text: retryData.error || t("msgVerifyPending") });
-                            setTxHash(hash); // Set hash for manual verify
-                        }
-                    }, 5000);
-                }
-            } catch (err) {
-                console.error("Auto verify error:", err);
-                setMessage({ type: "error", text: t("msgAutoVerifyFailed") });
-                setTxHash(hash);
-            } finally {
-                setSubmitting(false);
-            }
-        };
-
-        if (isTxConfirmed && sendTxHash) {
-            setDonationAmount("");
-            setIsSending(false);
-            setMessage({ type: "success", text: `✅ ${t("msgTxConfirmed")}` });
-            autoVerifyDonation(sendTxHash);
-        }
-    }, [isTxConfirmed, sendTxHash]);
-
-
     // Profile editing states
     const [donorProfile, setDonorProfile] = useState<{
         name: string;
@@ -244,7 +175,10 @@ export default function BurnPage() {
     const [profileEditTelegram, setProfileEditTelegram] = useState("");
     const [profileEditTwitter, setProfileEditTwitter] = useState("");
 
-    const t = (key: string) => translations[lang]?.[key] || translations.en[key] || key;
+    const t = useCallback(
+        (key: string) => translations[lang]?.[key] || translations.en[key] || key,
+        [lang],
+    );
 
     // Bento detail modal state (must be after t function because bentoCellData uses t)
     type BentoCellType = "donated" | "burned" | "contributors" | "burn" | "games" | "airdrops" | "dev" | null;
@@ -286,8 +220,6 @@ export default function BurnPage() {
 
     // Burn History Modal Component - shows ONLY dead wallet burn transactions
     const BurnHistoryModal = () => {
-        if (!showBurnHistoryModal) return null;
-
         // State for burn history from dedicated API (dead wallet only)
         const [burnTxs, setBurnTxs] = React.useState<Array<{
             txHash: string;
@@ -301,6 +233,8 @@ export default function BurnPage() {
 
         // Fetch burn history from dedicated API (dead wallet only)
         React.useEffect(() => {
+            if (!showBurnHistoryModal) return;
+
             const fetchBurnHistory = async () => {
                 setLoadingBurnHistory(true);
                 try {
@@ -317,6 +251,8 @@ export default function BurnPage() {
             };
             fetchBurnHistory();
         }, []);
+
+        if (!showBurnHistoryModal) return null;
 
         const handleVerifyTx = async (e: React.FormEvent) => {
             e.preventDefault();
@@ -570,6 +506,15 @@ export default function BurnPage() {
                 setLang(browserLang);
             }
         }
+
+        const syncLanguage = (event: Event) => {
+            const nextLanguage = (event as CustomEvent<Language>).detail;
+            if (LANGUAGES.some(language => language.code === nextLanguage)) {
+                setLang(nextLanguage);
+            }
+        };
+        window.addEventListener("banmao:language-change", syncLanguage);
+        return () => window.removeEventListener("banmao:language-change", syncLanguage);
     }, []);
 
     // Fetch leaderboard
@@ -595,6 +540,78 @@ export default function BurnPage() {
             setLoading(false);
         }
     }, []);
+
+    // When a direct transfer is confirmed, verify and record the donation.
+    useEffect(() => {
+        const autoVerifyDonation = async (hash: string) => {
+            try {
+                setSubmitting(true);
+                const res = await fetch("/api/burn-contributors", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ txHash: hash }),
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    setMessage({
+                        type: "success",
+                        text: `🎉 Successfully recorded donation of ${data.burnedAmountFormatted} $BANMAO!`,
+                    });
+                    fetchLeaderboard();
+                    setSuccessDonationAmount(data.burnedAmountFormatted);
+                    setShowDonationSuccess(true);
+                    triggerConfetti();
+                    playSuccess();
+                    return;
+                }
+
+                // The transaction may not have been indexed yet; retry once.
+                setTimeout(async () => {
+                    const retryRes = await fetch("/api/burn-contributors", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ txHash: hash }),
+                    });
+                    const retryData = await retryRes.json();
+                    if (retryData.success) {
+                        setMessage({
+                            type: "success",
+                            text: `🎉 Successfully recorded donation of ${retryData.burnedAmountFormatted} $BANMAO!`,
+                        });
+                        fetchLeaderboard();
+                        setSuccessDonationAmount(retryData.burnedAmountFormatted);
+                        setShowDonationSuccess(true);
+                        triggerConfetti();
+                        playSuccess();
+                    } else {
+                        setMessage({ type: "error", text: retryData.error || t("msgVerifyPending") });
+                        setTxHash(hash);
+                    }
+                }, 5000);
+            } catch (err) {
+                console.error("Auto verify error:", err);
+                setMessage({ type: "error", text: t("msgAutoVerifyFailed") });
+                setTxHash(hash);
+            } finally {
+                setSubmitting(false);
+            }
+        };
+
+        if (isTxConfirmed && sendTxHash) {
+            setDonationAmount("");
+            setIsSending(false);
+            setMessage({ type: "success", text: `✅ ${t("msgTxConfirmed")}` });
+            autoVerifyDonation(sendTxHash);
+        }
+    }, [
+        fetchLeaderboard,
+        isTxConfirmed,
+        playSuccess,
+        sendTxHash,
+        t,
+        triggerConfetti,
+    ]);
 
     useEffect(() => {
         fetchLeaderboard();
@@ -718,48 +735,119 @@ export default function BurnPage() {
 
         // Define tour steps with element selectors
         type TourPosition = "top" | "bottom" | "left" | "right";
-        const steps: Array<{ selector: string; title: string; desc: string; position: TourPosition }> = [
+        const steps = useMemo<Array<{ selector: string; title: string; desc: string; position: TourPosition }>>(() => [
             { selector: ".burn-bento-stat", title: t("tourStep1Title"), desc: t("tourStep1Desc"), position: "bottom" },
             { selector: ".burn-wallet-box", title: t("tourStep2Title"), desc: t("tourStep2Desc"), position: "bottom" },
             { selector: ".burn-transfer-section", title: t("tourStep3Title"), desc: t("tourStep3Desc"), position: "left" },
             { selector: ".burn-form-section", title: t("tourStep4Title"), desc: t("tourStep4Desc"), position: "left" },
             { selector: ".burn-leaderboard-section", title: t("tourStep5Title"), desc: t("tourStep5Desc"), position: "top" },
-        ];
+        ], [t]);
 
-        // Find and highlight target element
+        // Reveal first, then measure after layout has settled. Hidden or stale
+        // nodes are never accepted as tour targets.
         useEffect(() => {
             const currentStep = steps[step];
             if (!currentStep) return;
 
-            const updatePosition = () => {
-                const element = document.querySelector(currentStep.selector);
-                if (element) {
+            let cancelled = false;
+            let frame = 0;
+            let retryTimer: ReturnType<typeof setTimeout> | undefined;
+            let attempts = 0;
+            let observedTarget: HTMLElement | null = null;
+
+            const getVisibleTarget = () => {
+                const candidates = Array.from(document.querySelectorAll(currentStep.selector));
+                return candidates.find((element) => {
                     const rect = element.getBoundingClientRect();
-                    setTargetRect(rect);
-                    element.scrollIntoView({ behavior: "smooth", block: "center" });
-                } else {
-                    setTargetRect(null);
-                }
+                    const style = window.getComputedStyle(element);
+                    return element.isConnected &&
+                        rect.width > 0 &&
+                        rect.height > 0 &&
+                        style.display !== "none" &&
+                        style.visibility !== "hidden";
+                }) as HTMLElement | undefined;
             };
 
-            updatePosition();
-            const timer = setTimeout(updatePosition, 300);
+            const measure = () => {
+                if (cancelled) return;
+                const element = getVisibleTarget();
+                if (element) {
+                    if (observedTarget !== element) {
+                        if (observedTarget) resizeObserver.unobserve(observedTarget);
+                        observedTarget = element;
+                        resizeObserver.observe(element);
+                    }
+                    setTargetRect(element.getBoundingClientRect());
+                    return;
+                }
+                if (observedTarget) {
+                    resizeObserver.unobserve(observedTarget);
+                    observedTarget = null;
+                }
+                setTargetRect(null);
+                if (attempts++ < 20) retryTimer = setTimeout(revealAndMeasure, 80);
+            };
+
+            const revealAndMeasure = () => {
+                if (cancelled) return;
+                const element = getVisibleTarget();
+                if (!element) {
+                    setTargetRect(null);
+                    if (attempts++ < 20) retryTimer = setTimeout(revealAndMeasure, 80);
+                    return;
+                }
+
+                const targetPosition = window.getComputedStyle(element).position;
+                if (targetPosition !== "fixed" && targetPosition !== "sticky") {
+                    element.scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
+                }
+                frame = requestAnimationFrame(() => {
+                    frame = requestAnimationFrame(measure);
+                });
+            };
+
+            const updatePosition = () => {
+                cancelAnimationFrame(frame);
+                frame = requestAnimationFrame(measure);
+            };
+
+            const resizeObserver = new ResizeObserver(updatePosition);
+            const mutationObserver = new MutationObserver(() => {
+                cancelAnimationFrame(frame);
+                frame = requestAnimationFrame(revealAndMeasure);
+            });
+
+            setTargetRect(null);
+            frame = requestAnimationFrame(revealAndMeasure);
+            const pageRoot = document.querySelector(".burn-page");
+            if (pageRoot) {
+                mutationObserver.observe(pageRoot, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true,
+                    attributeFilter: ["class"],
+                });
+            }
             window.addEventListener("resize", updatePosition);
-            window.addEventListener("scroll", updatePosition);
+            window.addEventListener("scroll", updatePosition, { passive: true });
 
             return () => {
-                clearTimeout(timer);
+                cancelled = true;
+                cancelAnimationFrame(frame);
+                if (retryTimer) clearTimeout(retryTimer);
+                resizeObserver.disconnect();
+                mutationObserver.disconnect();
                 window.removeEventListener("resize", updatePosition);
                 window.removeEventListener("scroll", updatePosition);
             };
-        }, [step]);
+        }, [step, steps]);
 
         // Get tooltip position based on target and step position - keeps within viewport
         const getTooltipStyle = (): React.CSSProperties => {
             const tooltipWidth = 340;
-            const tooltipHeight = 220; // Approximate height
-            const padding = 16;
             const safeMargin = 10; // Margin from screen edges
+            const tooltipHeight = Math.min(360, window.innerHeight - safeMargin * 2);
+            const padding = 16;
 
             // If no target, center in viewport
             if (!targetRect) {
@@ -826,7 +914,9 @@ export default function BurnPage() {
             // Build style object
             const style: React.CSSProperties = {
                 maxWidth: `calc(100vw - ${safeMargin * 2}px)`,
-                width: Math.min(tooltipWidth, vw - safeMargin * 2)
+                width: Math.min(tooltipWidth, vw - safeMargin * 2),
+                maxHeight: `calc(100dvh - ${safeMargin * 2}px)`,
+                overflowY: "auto"
             };
 
             if (top !== undefined) style.top = top;
@@ -1627,11 +1717,6 @@ export default function BurnPage() {
                         >
                             {soundEnabled ? "🔊" : "🔇"}
                         </button>
-                        <BurnLanguageSelector currentLang={lang} onChangeLang={setLang} />
-                        <ConnectButton showBalance={false} chainStatus="icon" accountStatus="avatar" />
-                        <Link href="/defi" className="burn-back-btn">
-                            {t("backToDeFi")}
-                        </Link>
                     </div>
                 </header>
 
@@ -2248,7 +2333,15 @@ function ContributorModal({
             setDonorProfile(null);
             setIsEditingProfile(false);
         };
-    }, [contributor.address]);
+    }, [
+        contributor.address,
+        setDonorProfile,
+        setIsEditingProfile,
+        setProfileEditAvatar,
+        setProfileEditName,
+        setProfileEditTelegram,
+        setProfileEditTwitter,
+    ]);
 
     // Save profile
     const handleSaveProfile = async () => {

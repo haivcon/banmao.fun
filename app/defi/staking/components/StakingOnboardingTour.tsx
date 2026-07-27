@@ -22,7 +22,7 @@ interface StakingOnboardingTourProps {
 function buildTourSteps(t: (key: keyof StakingTranslations) => string): TourStep[] {
     return [
         {
-            targetSelector: '[data-tour="wallet-connect"]',
+            targetSelector: '[data-tour="defi-wallet-connect"]',
             title: t('tourConnectTitle'),
             description: t('tourConnectDesc'),
             position: 'bottom',
@@ -156,31 +156,40 @@ export default function StakingOnboardingTour({ isOpen, onClose, onOpenPanel }: 
     const steps = useMemo(() => buildTourSteps(t), [t]);
     const currentStepData = steps[currentStep];
 
-    // Find and highlight target element
+    // Measure only visible, connected targets. Scrolling is handled separately
+    // so the spotlight never receives coordinates from before the viewport move.
     const updateTargetPosition = useCallback(() => {
-        if (!currentStepData) return;
+        if (!currentStepData) return false;
 
-        const target = document.querySelector(currentStepData.targetSelector);
-        if (target) {
-            const rect = target.getBoundingClientRect();
-            const prevRect = prevRectRef.current;
+        const candidates = Array.from(document.querySelectorAll(currentStepData.targetSelector));
+        const target = candidates.find((candidate) => {
+            const rect = candidate.getBoundingClientRect();
+            const style = window.getComputedStyle(candidate);
+            return candidate.isConnected &&
+                rect.width > 0 &&
+                rect.height > 0 &&
+                style.display !== 'none' &&
+                style.visibility !== 'hidden';
+        });
 
-            if (!prevRect ||
-                Math.abs(prevRect.left - rect.left) > 1 ||
-                Math.abs(prevRect.top - rect.top) > 1 ||
-                Math.abs(prevRect.width - rect.width) > 1 ||
-                Math.abs(prevRect.height - rect.height) > 1) {
-                prevRectRef.current = rect;
-                setTargetRect(rect);
-            }
-
-            if (!prevRect) {
-                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        } else {
+        if (!target) {
             prevRectRef.current = null;
             setTargetRect(null);
+            return false;
         }
+
+        const rect = target.getBoundingClientRect();
+        const prevRect = prevRectRef.current;
+
+        if (!prevRect ||
+            Math.abs(prevRect.left - rect.left) > 1 ||
+            Math.abs(prevRect.top - rect.top) > 1 ||
+            Math.abs(prevRect.width - rect.width) > 1 ||
+            Math.abs(prevRect.height - rect.height) > 1) {
+            prevRectRef.current = rect;
+            setTargetRect(rect);
+        }
+        return true;
     }, [currentStepData]);
 
     // Reset step only when tour opens
@@ -192,25 +201,79 @@ export default function StakingOnboardingTour({ isOpen, onClose, onOpenPanel }: 
 
     // NOTE: Removed auto-open panel logic - tour only guides, doesn't auto-click
 
-    // Update position when step changes
+    // Wait for panel transitions/React commits, reveal the target without an
+    // animated race, then measure on the following frame.
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen || !currentStepData) return;
+
+        let cancelled = false;
+        let frame = 0;
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        let attempts = 0;
+        let activeHeaderTarget: HTMLElement | null = null;
+
+        const findVisibleTarget = () => {
+            const candidates = Array.from(document.querySelectorAll(currentStepData.targetSelector));
+            return candidates.find((candidate) => {
+                const rect = candidate.getBoundingClientRect();
+                const style = window.getComputedStyle(candidate);
+                return candidate.isConnected &&
+                    rect.width > 0 &&
+                    rect.height > 0 &&
+                    style.display !== 'none' &&
+                    style.visibility !== 'hidden';
+            }) as HTMLElement | undefined;
+        };
+
+        const revealAndMeasure = () => {
+            if (cancelled) return;
+            const target = findVisibleTarget();
+            if (!target) {
+                setTargetRect(null);
+                if (attempts++ < 20) timer = setTimeout(revealAndMeasure, 80);
+                return;
+            }
+
+            if (currentStep === 0) {
+                activeHeaderTarget = target;
+                target.classList.add('staking-tour-header-target-active');
+            }
+
+            const targetPosition = window.getComputedStyle(target).position;
+            if (targetPosition !== 'fixed' && targetPosition !== 'sticky') {
+                target.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+            }
+            frame = requestAnimationFrame(() => {
+                frame = requestAnimationFrame(() => updateTargetPosition());
+            });
+        };
+
+        const scheduleMeasure = () => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(() => updateTargetPosition());
+        };
 
         prevRectRef.current = null;
-        updateTargetPosition();
+        setTargetRect(null);
+        frame = requestAnimationFrame(revealAndMeasure);
 
-        const retries = [100, 300, 500];
-        const timeouts = retries.map(delay => setTimeout(updateTargetPosition, delay));
+        const resizeObserver = new ResizeObserver(scheduleMeasure);
+        const observedTargets = Array.from(document.querySelectorAll(currentStepData.targetSelector));
+        observedTargets.forEach((target) => resizeObserver.observe(target));
 
-        window.addEventListener('resize', updateTargetPosition);
-        window.addEventListener('scroll', updateTargetPosition);
+        window.addEventListener('resize', scheduleMeasure);
+        window.addEventListener('scroll', scheduleMeasure, { passive: true });
 
         return () => {
-            timeouts.forEach(clearTimeout);
-            window.removeEventListener('resize', updateTargetPosition);
-            window.removeEventListener('scroll', updateTargetPosition);
+            cancelled = true;
+            cancelAnimationFrame(frame);
+            if (timer) clearTimeout(timer);
+            resizeObserver.disconnect();
+            activeHeaderTarget?.classList.remove('staking-tour-header-target-active');
+            window.removeEventListener('resize', scheduleMeasure);
+            window.removeEventListener('scroll', scheduleMeasure);
         };
-    }, [currentStep, isOpen, updateTargetPosition]);
+    }, [currentStep, currentStepData, isOpen, updateTargetPosition]);
 
     const handleNext = () => {
         if (currentStep < steps.length - 1) {
@@ -290,55 +353,82 @@ export default function StakingOnboardingTour({ isOpen, onClose, onOpenPanel }: 
 
     // Tooltip position
     const getTooltipStyle = (): React.CSSProperties => {
-        if (isMobile) {
-            return {
-                bottom: 100,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                maxWidth: '90vw'
-            };
-        }
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const safeMargin = 12;
+        const tooltipWidth = Math.min(340, viewportWidth - safeMargin * 2);
+        const estimatedTooltipHeight = Math.min(360, viewportHeight - safeMargin * 2);
 
         if (!targetRect) {
             return {
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)'
+                top: Math.max(safeMargin, (viewportHeight - estimatedTooltipHeight) / 2),
+                left: Math.max(safeMargin, (viewportWidth - tooltipWidth) / 2),
+                transform: 'none'
             };
         }
 
-        // Larger padding for panels to avoid overlap with spotlight border
+        // Larger padding for panels to avoid overlap with spotlight border.
         const isPanelStep = currentStepData.targetSelector.includes('leaderboard') ||
             currentStepData.targetSelector.includes('supporter');
-        const padding = isPanelStep ? 50 : 30;
+        const padding = isPanelStep ? 50 : 24;
+        const centeredLeft = targetRect.left + targetRect.width / 2 - tooltipWidth / 2;
+        const centeredTop = targetRect.top + targetRect.height / 2 - estimatedTooltipHeight / 2;
+        const clampLeft = (value: number) =>
+            Math.max(safeMargin, Math.min(value, viewportWidth - tooltipWidth - safeMargin));
+        const clampTop = (value: number) =>
+            Math.max(safeMargin, Math.min(value, viewportHeight - estimatedTooltipHeight - safeMargin));
 
         switch (currentStepData.position) {
-            case 'top':
+            case 'top': {
+                const preferredTop = targetRect.top - estimatedTooltipHeight - padding;
+                const fallbackTop = targetRect.bottom + padding;
                 return {
-                    bottom: window.innerHeight - targetRect.top + padding,
-                    left: targetRect.left + targetRect.width / 2,
-                    transform: 'translateX(-50%)'
+                    top: clampTop(preferredTop >= safeMargin ? preferredTop : fallbackTop),
+                    left: clampLeft(centeredLeft),
+                    transform: 'none'
                 };
-            case 'bottom':
+            }
+            case 'bottom': {
+                const preferredTop = targetRect.bottom + padding;
+                const fallbackTop = targetRect.top - estimatedTooltipHeight - padding;
                 return {
-                    top: targetRect.bottom + padding,
-                    left: targetRect.left + targetRect.width / 2,
-                    transform: 'translateX(-50%)'
+                    top: clampTop(
+                        preferredTop + estimatedTooltipHeight <= viewportHeight - safeMargin
+                            ? preferredTop
+                            : fallbackTop
+                    ),
+                    left: clampLeft(centeredLeft),
+                    transform: 'none'
                 };
-            case 'left':
+            }
+            case 'left': {
+                const preferredLeft = targetRect.left - tooltipWidth - padding;
+                const fallbackLeft = targetRect.right + padding;
                 return {
-                    top: targetRect.top + targetRect.height / 2,
-                    right: window.innerWidth - targetRect.left + padding,
-                    transform: 'translateY(-50%)'
+                    top: clampTop(centeredTop),
+                    left: clampLeft(preferredLeft >= safeMargin ? preferredLeft : fallbackLeft),
+                    transform: 'none'
                 };
-            case 'right':
+            }
+            case 'right': {
+                const preferredLeft = targetRect.right + padding;
+                const fallbackLeft = targetRect.left - tooltipWidth - padding;
                 return {
-                    top: targetRect.top + targetRect.height / 2,
-                    left: targetRect.right + padding,
-                    transform: 'translateY(-50%)'
+                    top: clampTop(centeredTop),
+                    left: clampLeft(
+                        preferredLeft + tooltipWidth <= viewportWidth - safeMargin
+                            ? preferredLeft
+                            : fallbackLeft
+                    ),
+                    transform: 'none'
                 };
+            }
             default:
-                return {};
+                return {
+                    top: clampTop(centeredTop),
+                    left: clampLeft(centeredLeft),
+                    transform: 'none'
+                };
         }
     };
 
@@ -413,6 +503,28 @@ export default function StakingOnboardingTour({ isOpen, onClose, onOpenPanel }: 
                     50% { opacity: 1; transform: scale(1.05); }
                     100% { opacity: 0.5; transform: scale(1); }
                 }
+                @keyframes staking-header-target-pulse {
+                    0%, 100% {
+                        outline-color: rgba(168, 85, 247, 0.95);
+                        box-shadow:
+                            0 0 0 5px rgba(168, 85, 247, 0.45),
+                            0 0 24px rgba(168, 85, 247, 0.75);
+                    }
+                    50% {
+                        outline-color: rgba(196, 125, 255, 1);
+                        box-shadow:
+                            0 0 0 9px rgba(168, 85, 247, 0.28),
+                            0 0 38px rgba(168, 85, 247, 0.95);
+                    }
+                }
+                .staking-tour-header-target-active {
+                    position: relative !important;
+                    z-index: 1 !important;
+                    border-radius: 9999px;
+                    outline: 3px solid rgba(168, 85, 247, 0.95);
+                    outline-offset: 5px;
+                    animation: staking-header-target-pulse 1.8s ease-in-out infinite;
+                }
             `}</style>
 
             <div style={{
@@ -478,7 +590,7 @@ export default function StakingOnboardingTour({ isOpen, onClose, onOpenPanel }: 
                 </svg>
 
                 {/* Spotlight border */}
-                {targetRect && (() => {
+                {targetRect && currentStep !== 0 && (() => {
                     // Orbs and energy sphere are always circular
                     // Panels are rectangular on mobile, circular on desktop
                     const isOrbOrSphere = currentStepData.targetSelector.includes('energy-sphere') ||
@@ -616,6 +728,7 @@ export default function StakingOnboardingTour({ isOpen, onClose, onOpenPanel }: 
                                 ...(isMobile ? mobileStyle : getTooltipStyle()),
                                 width: isMobile ? 'auto' : 340,
                                 maxWidth: isMobile ? 'calc(100vw - 20px)' : 340,
+                                boxSizing: 'border-box',
                                 overflowY: isMobile ? 'auto' : 'visible',
                                 background: 'linear-gradient(145deg, rgba(35, 25, 60, 0.98) 0%, rgba(20, 12, 45, 0.98) 100%)',
                                 backdropFilter: 'blur(24px)',
