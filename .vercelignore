@@ -6,3 +6,7 @@
 /app/gamefi/admin/components/MinerTab.tsx
 /contracts/BanMaoMiner.sol
 /contracts/WorldCupYieldWars.sol
+
+# Local-only DeFi Launchpad. Available with `npm run dev`; never upload to Vercel.
+/app/defi/launchpad/
+/app/api/launchpad/

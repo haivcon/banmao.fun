@@ -9,7 +9,7 @@ import "./staking.css";
 import "./responsive-layout.css";
 import "./sphere-effects.css";
 import "./mobile.css";
-import { useStakingTranslations, Language } from "./i18n";
+import { useStakingTranslations } from "./i18n";
 
 import { useStaking } from "./useStaking";
 import { useSound } from "./hooks/useSound";

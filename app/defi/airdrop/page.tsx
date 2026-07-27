@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ConnectButton } from "../../components/wallet/WalletConnection";
 import { translations, Language, LANGUAGES } from "./i18n";
 import dynamic from "next/dynamic";
 import "./airdrop.css";
@@ -36,7 +35,7 @@ function AirdropTourModal({ t, theme, onClose, onDismissForever }: { t: (key: st
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
-    const steps: TourStep[] = [
+    const steps = useMemo<TourStep[]>(() => [
         { selector: ".airdrop-panel-header-v2", title: t("tourAirdropStep1Title"), desc: t("tourAirdropStep1Desc"), position: "bottom" },
         { selector: ".airdrop-data-tabs", title: t("tourAirdropStep2Title"), desc: t("tourAirdropStep2Desc"), position: "bottom" },
         { selector: ".airdrop-tab[data-tab='manual']", title: t("tourManualTitle"), desc: t("tourManualDesc"), position: "bottom" },
@@ -47,51 +46,120 @@ function AirdropTourModal({ t, theme, onClose, onDismissForever }: { t: (key: st
         { selector: ".airdrop-balance-gas-row", title: t("tourAirdropStep6Title"), desc: t("tourAirdropStep6Desc"), position: "top" },
         { selector: ".airdrop-speed-mode", title: t("tourSpeedTitle"), desc: t("tourSpeedDesc"), position: "top" },
         { selector: ".airdrop-execute-btn", title: t("tourAirdropStep7Title"), desc: t("tourAirdropStep7Desc"), position: "top" },
-    ];
+    ], [t]);
 
     useEffect(() => {
         const currentStep = steps[step];
         if (!currentStep) return;
 
-        // Some steps require switching to "manual" tab to make elements visible
-        if (step === 2 || step === 5 || step === 6 || step === 7 || step === 8 || step === 9) {
-            const manualBtn = document.querySelector<HTMLElement>(".airdrop-tab[data-tab='manual']");
-            const activeTab = document.querySelector(".airdrop-tab.active");
-            if (manualBtn && activeTab && !activeTab.matches("[data-tab='manual']")) {
-                manualBtn.click();
-            }
-        }
+        let cancelled = false;
+        let frame = 0;
+        let retryTimer: ReturnType<typeof setTimeout> | undefined;
+        let attempts = 0;
+        let observedTarget: HTMLElement | null = null;
 
-        const updatePosition = () => {
-            const element = document.querySelector(currentStep.selector);
-            if (element) {
-                const rect = element.getBoundingClientRect();
-                setTargetRect(rect);
-                element.scrollIntoView({ behavior: "smooth", block: "center" });
-            } else {
-                setTargetRect(null);
-            }
+        const isVisibleTarget = (element: Element): element is HTMLElement => {
+            const rect = element.getBoundingClientRect();
+            const style = window.getComputedStyle(element);
+            return rect.width > 0 && rect.height > 0 && style.display !== "none" && style.visibility !== "hidden";
         };
 
-        // Small delay to allow tab switch DOM updates
-        const initTimer = setTimeout(updatePosition, 150);
-        const retryTimer = setTimeout(updatePosition, 400);
+        const findVisibleTarget = () =>
+            Array.from(document.querySelectorAll(currentStep.selector))
+                .find(isVisibleTarget) as HTMLElement | undefined;
+
+        const measure = () => {
+            if (cancelled) return;
+            const element = findVisibleTarget();
+            if (element) {
+                if (observedTarget !== element) {
+                    if (observedTarget) resizeObserver.unobserve(observedTarget);
+                    observedTarget = element;
+                    resizeObserver.observe(element);
+                }
+                setTargetRect(element.getBoundingClientRect());
+                return;
+            }
+
+            if (observedTarget) {
+                resizeObserver.unobserve(observedTarget);
+                observedTarget = null;
+            }
+            setTargetRect(null);
+            if (attempts++ < 20) retryTimer = setTimeout(findAndReveal, 80);
+        };
+
+        const findAndReveal = () => {
+            if (cancelled) return;
+
+            // Switch modes first, then wait for React to commit the newly visible controls.
+            if ([2, 5, 6, 7, 8, 9].includes(step)) {
+                const manualBtn = document.querySelector<HTMLElement>(".airdrop-tab[data-tab='manual']");
+                const activeTab = document.querySelector(".airdrop-tab.active");
+                if (manualBtn && activeTab && !activeTab.matches("[data-tab='manual']")) {
+                    manualBtn.click();
+                    retryTimer = setTimeout(findAndReveal, 80);
+                    return;
+                }
+            }
+
+            const element = findVisibleTarget();
+            if (!element) {
+                setTargetRect(null);
+                if (attempts++ < 20) retryTimer = setTimeout(findAndReveal, 80);
+                return;
+            }
+
+            const targetPosition = window.getComputedStyle(element).position;
+            if (targetPosition !== "fixed" && targetPosition !== "sticky") {
+                element.scrollIntoView({ behavior: "auto", block: "center", inline: "nearest" });
+            }
+            frame = requestAnimationFrame(() => {
+                frame = requestAnimationFrame(measure);
+            });
+        };
+
+        const updatePosition = () => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(measure);
+        };
+
+        const resizeObserver = new ResizeObserver(updatePosition);
+        const mutationObserver = new MutationObserver(() => {
+            cancelAnimationFrame(frame);
+            frame = requestAnimationFrame(findAndReveal);
+        });
+
+        setTargetRect(null);
+        frame = requestAnimationFrame(findAndReveal);
+        const pageRoot = document.querySelector(".defi-airdrop-page");
+        if (pageRoot) {
+            mutationObserver.observe(pageRoot, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ["class", "data-tab"],
+            });
+        }
         window.addEventListener("resize", updatePosition);
-        window.addEventListener("scroll", updatePosition);
+        window.addEventListener("scroll", updatePosition, { passive: true });
 
         return () => {
-            clearTimeout(initTimer);
-            clearTimeout(retryTimer);
+            cancelled = true;
+            cancelAnimationFrame(frame);
+            if (retryTimer) clearTimeout(retryTimer);
+            resizeObserver.disconnect();
+            mutationObserver.disconnect();
             window.removeEventListener("resize", updatePosition);
             window.removeEventListener("scroll", updatePosition);
         };
-    }, [step]);
+    }, [step, steps]);
 
     const getTooltipStyle = (): React.CSSProperties => {
         const tooltipWidth = 340;
-        const tooltipHeight = 220;
-        const padding = 16;
         const safeMargin = 10;
+        const tooltipHeight = Math.min(360, window.innerHeight - safeMargin * 2);
+        const padding = 16;
 
         if (!targetRect) {
             return { top: "50%", left: "50%", transform: "translate(-50%, -50%)", maxWidth: `calc(100vw - ${safeMargin * 2}px)` };
@@ -115,7 +183,12 @@ function AirdropTourModal({ t, theme, onClose, onDismissForever }: { t: (key: st
         if (top !== undefined) top = Math.max(safeMargin, Math.min(top, vh - tooltipHeight - safeMargin));
         if (bottom !== undefined) bottom = Math.max(safeMargin, Math.min(bottom, vh - tooltipHeight - safeMargin));
 
-        const style: React.CSSProperties = { maxWidth: `calc(100vw - ${safeMargin * 2}px)`, width: Math.min(tooltipWidth, vw - safeMargin * 2) };
+        const style: React.CSSProperties = {
+            maxWidth: `calc(100vw - ${safeMargin * 2}px)`,
+            width: Math.min(tooltipWidth, vw - safeMargin * 2),
+            maxHeight: `calc(100dvh - ${safeMargin * 2}px)`,
+            overflowY: "auto",
+        };
         if (top !== undefined) style.top = top;
         if (left !== undefined) style.left = left;
         if (right !== undefined) style.right = right;
@@ -266,7 +339,6 @@ export default function AirdropPage() {
     const [lang, setLang] = useState<Language>("en");
     const [showTour, setShowTour] = useState(false);
     const [theme, setTheme] = useState<"dark" | "light">("dark");
-    const [showLangMenu, setShowLangMenu] = useState(false);
     const [footerStats, setFooterStats] = useState<any>(null);
     const [footerCopied, setFooterCopied] = useState<string | null>(null);
 
@@ -301,14 +373,42 @@ export default function AirdropPage() {
         // Theme: default dark, only override if user explicitly saved
         const savedTheme = localStorage.getItem("banmao_theme") as "dark" | "light";
         if (savedTheme) setTheme(savedTheme);
+
+        const syncLanguage = (event: Event) => {
+            const nextLanguage = (event as CustomEvent<Language>).detail;
+            if (LANGUAGES.some(language => language.code === nextLanguage)) {
+                setLang(nextLanguage);
+            }
+        };
+        window.addEventListener("banmao:language-change", syncLanguage);
+        return () => window.removeEventListener("banmao:language-change", syncLanguage);
     }, []);
 
-    // Show tour on every visit, unless user opted out
+    // Open only after the first target has been committed and is measurable.
     useEffect(() => {
         const dismissed = localStorage.getItem("banmao_airdrop_tour_dismissed");
-        if (!dismissed) {
-            setTimeout(() => setShowTour(true), 800);
-        }
+        if (dismissed) return;
+
+        let cancelled = false;
+        let attempts = 0;
+        let timer: ReturnType<typeof setTimeout>;
+
+        const waitForFirstTarget = () => {
+            if (cancelled) return;
+            const target = document.querySelector(".airdrop-panel-header-v2");
+            const rect = target?.getBoundingClientRect();
+            if (target && rect && rect.width > 0 && rect.height > 0) {
+                setShowTour(true);
+                return;
+            }
+            if (attempts++ < 20) timer = setTimeout(waitForFirstTarget, 100);
+        };
+
+        timer = setTimeout(waitForFirstTarget, 300);
+        return () => {
+            cancelled = true;
+            clearTimeout(timer);
+        };
     }, []);
 
     // Apply theme
@@ -319,12 +419,6 @@ export default function AirdropPage() {
     const t = useCallback((key: string) =>
         (translations[lang] as any)?.[key] || (translations.en as any)?.[key] || key
     , [lang]);
-
-    const changeLang = (code: Language) => {
-        setLang(code);
-        localStorage.setItem("banmao_language", code);
-        setShowLangMenu(false);
-    };
 
     const toggleTheme = () => {
         const next = theme === "dark" ? "light" : "dark";
@@ -360,14 +454,11 @@ export default function AirdropPage() {
 
     return (
         <div className={`defi-airdrop-page ${theme}`}>
-            {/* Header */}
+            {/* Page tools — global navigation, language and wallet live in the DeFi shell. */}
             <header className="defi-airdrop-header">
                 <div className="defi-airdrop-nav">
-                    <Link href="/defi" className="defi-airdrop-back" aria-label={t("backToDeFi") || "Back to DeFi Hub"}>
-                        ← {t("backToDeFi") || "DeFi Hub"}
-                    </Link>
                     <div className="defi-airdrop-brand">
-                        <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                             <path d="M12 2C7.03 2 3 6.03 3 11h18c0-4.97-4.03-9-9-9z" />
                             <path d="M3 11l9 11 9-11" />
                             <line x1="12" y1="22" x2="12" y2="15" />
@@ -378,46 +469,12 @@ export default function AirdropPage() {
                     </div>
                 </div>
                 <div className="defi-airdrop-actions">
-                    {/* Help Button */}
-                    <button className="defi-airdrop-help-btn" onClick={() => setShowTour(true)} title={t("guideHelpBtn")} aria-label={t("guideHelpBtn") || "Help & Guide"}>
+                    <button type="button" className="defi-airdrop-help-btn" onClick={() => setShowTour(true)} title={t("guideHelpBtn")} aria-label={t("guideHelpBtn") || "Help & Guide"}>
                         ?
                     </button>
-                    {/* Theme Toggle */}
-                    <button className="defi-airdrop-theme-btn" onClick={toggleTheme} title={theme === "dark" ? "Light mode" : "Dark mode"} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
+                    <button type="button" className="defi-airdrop-theme-btn" onClick={toggleTheme} title={theme === "dark" ? "Light mode" : "Dark mode"} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
                         {theme === "dark" ? "☀️" : "🌙"}
                     </button>
-                    {/* Language Dropdown */}
-                    <div className="defi-lang-dropdown">
-                        <button className="defi-lang-trigger" onClick={() => setShowLangMenu(!showLangMenu)} title={LANGUAGES.find(l => l.code === lang)?.name}>
-                            <span className="lang-flag">{LANGUAGES.find(l => l.code === lang)?.flag}</span>
-                            <span className="lang-code">{lang.toUpperCase()}</span>
-                            <span className="lang-arrow">{showLangMenu ? "▲" : "▼"}</span>
-                        </button>
-                        {showLangMenu && (
-                            <>
-                                <div className="defi-lang-backdrop" onClick={() => setShowLangMenu(false)} />
-                                <div className="defi-lang-menu">
-                                    {LANGUAGES.map(l => (
-                                        <button
-                                            key={l.code}
-                                            className={`defi-lang-option ${lang === l.code ? "active" : ""}`}
-                                            onClick={() => changeLang(l.code as Language)}
-                                        >
-                                            <span className="lang-flag">{l.flag}</span>
-                                            <span className="lang-name">{l.name}</span>
-                                            <span className="lang-code">{l.code.toUpperCase()}</span>
-                                            {lang === l.code && <span className="lang-check">✓</span>}
-                                        </button>
-                                    ))}
-                                </div>
-                            </>
-                        )}
-                    </div>
-                    <ConnectButton
-                        showBalance={false}
-                        chainStatus="icon"
-                        accountStatus={{ smallScreen: "avatar", largeScreen: "full" }}
-                    />
                 </div>
             </header>
 
@@ -517,7 +574,7 @@ export default function AirdropPage() {
                         <div className="airdrop-footer-links">
                             <a href="https://web3.okx.com/explorer/x-layer" target="_blank" rel="noopener noreferrer">XLayer Explorer</a>
                             <span className="airdrop-footer-dot">·</span>
-                            <a href="/" rel="noopener noreferrer">Banmao.Fun</a>
+                            <Link href="/">Banmao.Fun</Link>
                         </div>
                     </div>
                 </div>

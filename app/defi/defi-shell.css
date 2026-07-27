@@ -1,0 +1,638 @@
+/* BANMAO DeFi application shell
+   Shared navigation and Web3 status for all public /defi routes. */
+
+:root {
+  --defi-shell-bg: #05070d;
+  --defi-shell-surface: rgba(10, 14, 24, 0.92);
+  --defi-shell-surface-strong: #0d1220;
+  --defi-shell-border: rgba(148, 163, 184, 0.16);
+  --defi-shell-border-active: rgba(34, 211, 238, 0.48);
+  --defi-shell-text: #f8fafc;
+  --defi-shell-muted: #94a3b8;
+  --defi-shell-primary: #22d3ee;
+  --defi-shell-primary-strong: #06b6d4;
+  --defi-shell-danger: #fb7185;
+  --defi-shell-success: #34d399;
+  --defi-shell-radius: 14px;
+  --defi-shell-header-height: 68px;
+  --defi-context-header-height: 52px;
+  --defi-context-gap: 16px;
+  --defi-sticky-safe-top: calc(var(--defi-shell-header-height) + var(--defi-context-header-height) + var(--defi-context-gap));
+  --defi-shell-content-width: 1180px;
+}
+
+html:has(.defi-app-shell),
+html:has(.defi-app-shell) body {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100% !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+.defi-app-shell {
+  min-height: 100dvh;
+  background: var(--defi-shell-bg);
+  color: var(--defi-shell-text);
+  /* Do not create an isolated stacking context here. Several guided tours
+     render into document.body through a portal; shell chrome must be able to
+     stack above those overlays. */
+  isolation: auto;
+}
+
+.defi-app-shell__header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  /* Keep the global navigation above module tours and full-screen overlays.
+     Guided tours in legacy modules use z-index values up to 999005. */
+  z-index: 1000020;
+  height: var(--defi-shell-header-height);
+  border-bottom: 1px solid var(--defi-shell-border);
+  background: rgba(5, 7, 13, 0.9);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.defi-app-shell__header-inner {
+  width: min(100% - 32px, var(--defi-shell-content-width));
+  height: 100%;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 24px;
+}
+
+.defi-app-shell__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: max-content;
+  color: var(--defi-shell-text);
+  text-decoration: none;
+}
+
+.defi-app-shell__brand-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  border-radius: 12px;
+  background:
+    linear-gradient(145deg, rgba(34, 211, 238, 0.16), rgba(168, 85, 247, 0.12)),
+    #0b101c;
+}
+
+.defi-app-shell__brand-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.defi-app-shell__brand-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+}
+
+.defi-app-shell__brand-copy strong {
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+
+.defi-app-shell__brand-copy small {
+  margin-top: 4px;
+  color: var(--defi-shell-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.defi-app-shell__nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.defi-app-shell__nav-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 13px;
+  border-radius: 10px;
+  color: var(--defi-shell-muted);
+  font-size: 13px;
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    color 180ms ease,
+    background-color 180ms ease;
+}
+
+.defi-app-shell__nav-link:hover {
+  color: var(--defi-shell-text);
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.defi-app-shell__nav-link[aria-current="page"] {
+  color: #cffafe;
+  background: rgba(34, 211, 238, 0.11);
+}
+
+.defi-app-shell__nav-status {
+  margin-left: 6px;
+  padding: 2px 5px;
+  border: 1px solid rgba(245, 158, 11, 0.34);
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.defi-app-shell__nav-link[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  bottom: -14px;
+  left: 12px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--defi-shell-primary);
+}
+
+.defi-app-shell__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: max-content;
+}
+
+.defi-network-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 11px;
+  border: 1px solid var(--defi-shell-border);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.72);
+  color: var(--defi-shell-muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+button.defi-network-status {
+  cursor: pointer;
+}
+
+.defi-network-status__dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--defi-shell-muted);
+}
+
+.defi-network-status--ready {
+  color: #a7f3d0;
+}
+
+.defi-network-status--ready .defi-network-status__dot {
+  background: var(--defi-shell-success);
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.12);
+}
+
+.defi-network-status--wrong {
+  border-color: rgba(251, 113, 133, 0.38);
+  color: #fecdd3;
+  background: rgba(127, 29, 29, 0.18);
+}
+
+.defi-network-status--wrong .defi-network-status__dot {
+  background: var(--defi-shell-danger);
+}
+
+.defi-network-status--wrong:hover {
+  border-color: rgba(251, 113, 133, 0.7);
+  background: rgba(127, 29, 29, 0.3);
+}
+
+.defi-app-shell .defi-lang-btn {
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+  padding: 0 10px;
+  border: 1px solid var(--defi-shell-border);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.72);
+  box-shadow: none;
+  color: var(--defi-shell-text);
+}
+
+.defi-app-shell .defi-lang-btn:hover {
+  border-color: var(--defi-shell-border-active);
+  background: rgba(34, 211, 238, 0.08);
+  box-shadow: none;
+  transform: none;
+}
+
+/* The language menu is rendered in a portal, so it needs shell-level styles. */
+body > .defi-lang-dropdown {
+  width: min(240px, calc(100vw - 24px));
+  overflow: hidden;
+  padding: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 16px;
+  background: rgba(8, 12, 22, 0.98);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.48);
+  color: var(--defi-shell-text);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
+body > .defi-lang-dropdown .defi-lang-dropdown__header {
+  padding: 8px 10px 10px;
+  color: var(--defi-shell-muted);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+body > .defi-lang-dropdown .defi-lang-option {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #cbd5e1;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+body > .defi-lang-dropdown .defi-lang-option:hover,
+body > .defi-lang-dropdown .defi-lang-option.active {
+  background: rgba(34, 211, 238, 0.1);
+  color: #ecfeff;
+}
+
+body > .defi-lang-dropdown .defi-lang-name {
+  flex: 1;
+}
+
+body > .defi-lang-dropdown .defi-lang-check {
+  color: var(--defi-shell-primary);
+  font-weight: 900;
+}
+
+.defi-app-shell__content {
+  min-width: 0;
+  min-height: 100dvh;
+  padding-top: var(--defi-shell-header-height);
+  box-sizing: border-box;
+}
+
+/* Public modules used to render their own global controls. Keep local tools
+   and balances, but remove duplicated wallet/language/back navigation. */
+.defi-app-shell .staking-page .header-controls-bottom > [data-tour="wallet-connect"],
+.defi-app-shell .staking-page .header-controls-bottom > .defi-lang-selector,
+.defi-app-shell .staking-page .header-controls-bottom > .back-button-inline {
+  display: none !important;
+}
+
+/* Contextual product bars share one predictable geometry. The shell owns the
+   global-header offset; product pages must not add a second top spacer. */
+.defi-app-shell :is(.burn-header, .defi-airdrop-header, .launchpad-header) {
+  position: sticky !important;
+  /* Sticky offsets do not add layout space: this keeps the contextual bar
+     directly under the fixed shell while scrolling without creating a gap. */
+  top: var(--defi-shell-header-height) !important;
+  /* Module tours intentionally shade page content, but must never obscure
+     the contextual product header directly below the global navigation. */
+  z-index: 1000010 !important;
+  width: 100%;
+  min-height: var(--defi-context-header-height);
+  height: var(--defi-context-header-height);
+  padding: 6px 20px !important;
+  flex-wrap: nowrap !important;
+  box-sizing: border-box;
+}
+
+.defi-app-shell :is(.burn-header, .defi-airdrop-header, .launchpad-header) + main,
+.defi-app-shell .defi-airdrop-main {
+  scroll-margin-top: var(--defi-sticky-safe-top);
+}
+
+/* All guided-tour targets stop below both navigation bars. */
+.defi-app-shell :is(
+  .burn-page,
+  .defi-airdrop-page,
+  .launchpad-page,
+  .staking-page
+) :where(
+  .burn-bento-stat,
+  .burn-wallet-box,
+  .burn-transfer-section,
+  .burn-form-section,
+  .burn-leaderboard-section,
+  .airdrop-panel-header-v2,
+  .airdrop-data-tabs,
+  .airdrop-tab,
+  .airdrop-token-selector,
+  .airdrop-amount-section,
+  .airdrop-balance-gas-row,
+  .airdrop-speed-mode,
+  .airdrop-execute-btn,
+  [data-tour]
+) {
+  scroll-margin-top: var(--defi-sticky-safe-top);
+  scroll-margin-bottom: 24px;
+}
+
+.defi-app-shell .staking-page .header-controls-bottom {
+  top: calc(var(--defi-shell-header-height) + 8px) !important;
+  bottom: auto !important;
+  /* The staking tour uses z-index 999000+. Keep this local status/header
+     capsule readable and available while the rest of the page is shaded. */
+  z-index: 1000010 !important;
+  max-width: calc(100vw - 24px);
+  min-height: 44px;
+  padding: 6px 12px;
+  box-sizing: border-box;
+}
+
+/* Expanded staking panels must fit in the usable viewport below the shell.
+   Internal content scrolls instead of extending behind navigation. */
+.defi-app-shell .staking-page .expanded-panel-overlay {
+  top: var(--defi-shell-header-height) !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 12px !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  box-sizing: border-box;
+  overscroll-behavior: contain;
+}
+
+.defi-app-shell .staking-page .expanded-panel-overlay .circular-panel-expanded {
+  width: min(100%, 680px) !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+}
+
+.defi-app-shell .staking-page .circular-panel-expanded .circular-panel-content {
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+
+/* The local Staking status capsule sits directly below the shell. Hide it
+   while an expanded panel is active so it cannot cover the panel header. */
+.defi-app-shell .staking-page:has(.expanded-panel-overlay) .header-controls-bottom {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.defi-app-shell__bottom-nav {
+  display: none;
+}
+
+.defi-shell-skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 2147483647;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fff;
+  color: #020617;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  transform: translateY(-150%);
+  transition: transform 160ms ease;
+}
+
+.defi-shell-skip-link:focus {
+  transform: translateY(0);
+}
+
+.defi-app-shell :where(a, button, [tabindex="0"]):focus-visible {
+  outline: 2px solid var(--defi-shell-primary) !important;
+  outline-offset: 3px;
+}
+
+@media (max-width: 1040px) {
+  .defi-app-shell__header-inner {
+    gap: 14px;
+  }
+
+  .defi-app-shell__nav-link {
+    padding-inline: 9px;
+    font-size: 12px;
+  }
+
+  .defi-app-shell__brand-copy small {
+    display: none;
+  }
+}
+
+@media (max-width: 960px) {
+  :root {
+    --defi-shell-header-height: 60px;
+    --defi-context-header-height: 48px;
+    --defi-context-gap: 12px;
+  }
+
+  .defi-app-shell {
+    padding-bottom: calc(70px + env(safe-area-inset-bottom));
+  }
+
+  .defi-app-shell__header-inner {
+    width: min(100% - 20px, var(--defi-shell-content-width));
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+
+  .defi-app-shell__header {
+    height: var(--defi-shell-header-height);
+  }
+
+  .defi-app-shell__brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    font-size: 17px;
+  }
+
+  .defi-app-shell__brand-copy strong {
+    font-size: 13px;
+  }
+
+  .defi-app-shell__nav {
+    display: none;
+  }
+
+  .defi-app-shell__actions {
+    gap: 6px;
+  }
+
+  .defi-network-status {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .defi-network-status__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .defi-app-shell :is(.burn-header, .defi-airdrop-header, .launchpad-header) {
+    padding-inline: 12px !important;
+  }
+
+  .defi-app-shell .staking-page .header-controls-bottom {
+    top: calc(var(--defi-shell-header-height) + 6px) !important;
+    bottom: auto !important;
+    max-width: calc(100vw - 12px);
+  }
+
+  .defi-app-shell .staking-page .expanded-panel-overlay {
+    bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+    padding: 8px !important;
+  }
+
+  .defi-app-shell .staking-page .expanded-panel-overlay .circular-panel-expanded {
+    width: min(calc(100vw - 16px), 480px) !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+  }
+
+  .defi-app-shell__bottom-nav {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1300;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    min-height: calc(64px + env(safe-area-inset-bottom));
+    padding: 6px 6px env(safe-area-inset-bottom);
+    border-top: 1px solid var(--defi-shell-border);
+    background: rgba(5, 7, 13, 0.96);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
+
+  .defi-app-shell__bottom-link {
+    position: relative;
+    display: flex;
+    min-width: 0;
+    min-height: 52px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-radius: 10px;
+    color: var(--defi-shell-muted);
+    font-size: 10px;
+    font-weight: 700;
+    text-decoration: none;
+    transition:
+      color 160ms ease,
+      background-color 160ms ease;
+  }
+
+  .defi-app-shell__bottom-link svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .defi-app-shell__bottom-link[aria-current="page"] {
+    color: #cffafe;
+    background: rgba(34, 211, 238, 0.1);
+  }
+
+  .defi-app-shell__bottom-status {
+    position: absolute;
+    top: 4px;
+    right: 5px;
+    padding: 1px 3px;
+    border-radius: 4px;
+    background: rgba(245, 158, 11, 0.18);
+    color: #fbbf24;
+    font-size: 7px;
+    font-weight: 900;
+    line-height: 1.2;
+  }
+}
+
+@media (max-width: 520px) {
+  .defi-app-shell__brand-copy {
+    display: none;
+  }
+
+  .defi-app-shell__header-inner {
+    grid-template-columns: minmax(36px, 1fr) auto;
+  }
+
+  .defi-app-shell__bottom-link {
+    font-size: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .defi-app-shell *,
+  .defi-app-shell *::before,
+  .defi-app-shell *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -49,7 +49,7 @@ const connectors = [
   injected({
     shimDisconnect: true,
   }),
-  ...(WALLETCONNECT_PROJECT_ID
+  ...(typeof window !== "undefined" && WALLETCONNECT_PROJECT_ID
     ? [
         walletConnect({
           projectId: WALLETCONNECT_PROJECT_ID,

@@ -1244,51 +1244,211 @@
 
 }
 
-/* ===================== RAINBOWKIT MODAL - SIZING FIX ===================== */
-/* Fix modal centering and scale on small screens */
+/* ===================== RAINBOWKIT MODAL - MOBILE CONSTRAINTS ===================== */
+/* Do not style every role="dialog": Staking contains its own dialogs and broad
+   selectors changed their positioning and scale. RainbowKit already owns its
+   full-screen overlay; only constrain its dialog to the visual viewport. */
 @media (max-width: 500px) {
-
-    /* Force modal overlay to be full screen with flex centering */
-    [aria-modal="true"],
-    [role="dialog"] {
-        position: fixed !important;
-        inset: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        height: 100dvh !important;
-        /* iOS Safari fix */
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 0 !important;
-        margin: 0 !important;
+    [data-rk] [role="dialog"],
+    [data-rk] [aria-modal="true"] {
+        max-width: 100vw !important;
+        max-height: 100dvh !important;
+        overflow: auto !important;
+        overscroll-behavior: contain;
     }
 
-    /* Scale down the modal container — target RainbowKit specifically */
-    [data-rk] [role="dialog"]>*,
-    [data-rk] [aria-modal="true"]>*,
-    [data-rk] [aria-modal="true"]>div,
-    [data-rk] [aria-modal="true"]>div>div,
-    /* Fallback for direct aria-modal (in case data-rk isn't present) */
-    [role="dialog"]>* {
-        position: relative !important;
-        left: auto !important;
-        right: auto !important;
-        top: auto !important;
-        bottom: auto !important;
-        height: fit-content !important;
-        max-height: 85vh !important;
-        max-height: 85dvh !important;
-        transform: scale(0.75) !important;
-        transform-origin: center center !important;
-        overflow-y: auto !important;
-        margin: 0 !important;
+    [data-rk] [role="dialog"] > *,
+    [data-rk] [aria-modal="true"] > * {
+        width: min(100%, calc(100vw - 24px)) !important;
+        max-width: calc(100vw - 24px) !important;
+        max-height: calc(100dvh - 24px) !important;
+        margin-inline: auto !important;
+        overflow: auto !important;
     }
 }
 
 /* ===================== REDUCED MOTION — ACCESSIBILITY & PERFORMANCE ===================== */
 /* Disable non-essential animations for users who prefer reduced motion */
 /* Also helps performance on low-end mobile devices */
+/* ===================== FINAL MOBILE GEOMETRY NORMALIZATION ===================== */
+/* These rules intentionally come last. They provide one native-scale geometry
+   for the Staking page and keep every expanded panel inside the visual viewport. */
+@media (max-width: 768px) {
+    .staking-page {
+        min-width: 0 !important;
+        padding: 0 0 calc(84px + env(safe-area-inset-bottom)) !important;
+        overflow-x: clip !important;
+    }
+
+    /* Size the centerpiece directly instead of scaling an already-sized box.
+       This keeps hit testing, fixed overlays and guided-tour coordinates aligned. */
+    .staking-page .energy-sphere-container {
+        width: 100% !important;
+        transform: none !important;
+        transform-origin: center !important;
+    }
+
+    .staking-page .energy-sphere-wrapper {
+        width: clamp(220px, 72vw, 280px) !important;
+        height: clamp(220px, 72vw, 280px) !important;
+    }
+
+    .staking-page .sphere-core-stats {
+        transform: none !important;
+        width: 82% !important;
+        height: 82% !important;
+        padding: clamp(8px, 3vw, 18px) !important;
+    }
+
+    .staking-page .header-controls-bottom {
+        width: max-content !important;
+        max-width: calc(100vw - 16px) !important;
+        transform: translateX(-50%) !important;
+    }
+
+    /* The global DeFi shell supplies the top header and bottom navigation.
+       Reserve both safe areas and let only the panel body scroll. */
+    .staking-page .expanded-panel-overlay {
+        position: fixed !important;
+        top: var(--defi-shell-header-height, 60px) !important;
+        right: 0 !important;
+        bottom: calc(64px + env(safe-area-inset-bottom)) !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        padding: 8px !important;
+        align-items: stretch !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+        overscroll-behavior: contain;
+        background: rgba(0, 0, 0, 0.88) !important;
+    }
+
+    .staking-page .expanded-panel-overlay .circular-panel-component.circular-panel-expanded {
+        position: relative !important;
+        inset: auto !important;
+        width: min(100%, 480px) !important;
+        max-width: 480px !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        max-height: 100% !important;
+        margin: 0 auto !important;
+        transform: none !important;
+        border-radius: clamp(16px, 5vw, 22px) !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    .staking-page .circular-panel-expanded .circular-panel-header {
+        position: relative !important;
+        inset: auto !important;
+        min-height: 48px !important;
+        padding: 12px 52px 12px 16px !important;
+        flex: 0 0 auto !important;
+    }
+
+    .staking-page .circular-panel-expanded .circular-panel-title {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+
+    .staking-page .circular-panel-expanded .circular-panel-content,
+    .staking-page .circular-panel-expanded .stats-expanded-content {
+        position: relative !important;
+        inset: auto !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        flex: 1 1 auto !important;
+        padding: 12px !important;
+        transform: none !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        justify-content: flex-start !important;
+    }
+
+    .staking-page .circular-panel-expanded .circular-panel-content > * {
+        min-width: 0 !important;
+    }
+
+    /* Keep the close control permanently visible without covering form fields. */
+    .staking-page .circular-panel-expanded .circular-panel-close {
+        position: relative !important;
+        inset: auto !important;
+        width: calc(100% - 24px) !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        margin: 8px 12px 12px !important;
+        padding: 10px 18px !important;
+        flex: 0 0 auto !important;
+        transform: none !important;
+    }
+
+    /* Detail dialogs opened from the sidebars use the same safe viewport rules. */
+    .staking-page :is(.staker-detail-modal, .donate-detail-modal) {
+        padding:
+            calc(var(--defi-shell-header-height, 60px) + 8px)
+            12px
+            calc(72px + env(safe-area-inset-bottom)) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: auto !important;
+        overscroll-behavior: contain;
+    }
+
+    .staking-page :is(.staker-detail-content, .donate-detail-content) {
+        width: min(100%, 480px) !important;
+        max-width: 480px !important;
+        max-height: 100% !important;
+        min-width: 0 !important;
+        margin: auto !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+    }
+
+    .staking-page :is(
+        .stake-info-grid,
+        .lock-grid,
+        .stats-grid-extended,
+        .stats-grid-personal
+    ) {
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .staking-page .expanded-panel-overlay {
+        padding: 4px !important;
+    }
+
+    .staking-page .expanded-panel-overlay .circular-panel-component.circular-panel-expanded {
+        border-width: 1px !important;
+        border-radius: 14px !important;
+    }
+
+    .staking-page .circular-panel-expanded .circular-panel-content {
+        padding: 10px !important;
+    }
+
+    .staking-page .circular-panel-expanded :is(
+        .stats-grid-extended,
+        .stats-grid-personal,
+        .stake-info-grid,
+        .lock-grid
+    ) {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
 
     /* Disable all transitions and animations globally */

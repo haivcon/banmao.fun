@@ -1,1904 +1,1327 @@
-/* ===================== DEFI HUB PAGE STYLES ===================== */
+/* BANMAO DeFi overview
+   A restrained dark-fintech surface with playful BANMAO accents. */
 
-/* ===== SCROLL FIX =====
-   landing.css sets html,body { position: fixed; overflow: hidden } for the 3D homepage.
-   We MUST undo that here so the DeFi page can scroll normally.
-   :has(.defi-page) scopes it only when this page is active. */
-html:has(.defi-page),
-html:has(.defi-page) body {
-    position: relative !important;
-    overflow: visible !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    height: auto !important;
-    max-height: none !important;
-    min-height: 100vh !important;
-    -webkit-overflow-scrolling: touch;
+.defi-overview {
+  --overview-max-width: 1180px;
+  --overview-surface: rgba(11, 16, 29, 0.82);
+  --overview-surface-raised: rgba(15, 23, 42, 0.92);
+  --overview-border: rgba(148, 163, 184, 0.15);
+  --overview-border-strong: rgba(148, 163, 184, 0.26);
+  --overview-text: #f8fafc;
+  --overview-muted: #94a3b8;
+  --overview-subtle: #64748b;
+  --overview-primary: #22d3ee;
+  --overview-primary-strong: #06b6d4;
+  --overview-success: #34d399;
+  --overview-danger: #fb7185;
+  --overview-warning: #fbbf24;
+  position: relative;
+  min-height: 100%;
+  overflow: hidden;
+  padding: 42px 20px 32px;
+  background:
+    radial-gradient(circle at 12% -8%, rgba(34, 211, 238, 0.11), transparent 34%),
+    radial-gradient(circle at 91% 18%, rgba(168, 85, 247, 0.09), transparent 31%),
+    #05070d;
+  color: var(--overview-text);
+  font-family: var(--font-sans), "Noto Sans", sans-serif;
 }
 
-/* Base Variables */
-:root {
-    --defi-primary: #00f2fe;
-    --defi-secondary: #4facfe;
-    --defi-accent: #a855f7;
-    --defi-gold: #facc15;
-    --defi-success: #34d399;
-    --defi-warning: #fb923c;
-    --defi-error: #ef4444;
-    --defi-bg-dark: #030308;
-    --defi-bg-card: rgba(15, 15, 25, 0.6);
-    --defi-border: rgba(255, 255, 255, 0.05);
-    --defi-glow: 0 0 20px rgba(79, 172, 254, 0.3);
-    --transition-smooth: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+.defi-overview::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 62%);
 }
 
-/* Main container */
-.defi-page {
-    min-height: 100vh;
-    min-height: 100dvh;
-    background-color: var(--defi-bg-dark);
-    /* Soft ambient background */
-    background-image: 
-        radial-gradient(ellipse at 10% 10%, rgba(79, 172, 254, 0.1) 0%, transparent 50%),
-        radial-gradient(ellipse at 90% 90%, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
-    color: #fff;
-    font-family: 'Outfit', 'Plus Jakarta Sans', 'Inter', sans-serif;
-    padding: 1rem;
-    position: relative;
-    overflow-x: hidden;
-    overflow-y: auto;
-    width: 100%;
-    max-width: 100vw;
-    box-sizing: border-box;
-    z-index: 1;
+.defi-overview > * {
+  position: relative;
+  z-index: 1;
 }
 
-/* Deep glass blob behind everything */
-.defi-page::before {
-    content: '';
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 100vw;
-    height: 100vh;
-    background: radial-gradient(circle at 30% 70%, rgba(0, 242, 254, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 70% 30%, rgba(168, 85, 247, 0.08) 0%, transparent 50%);
-    filter: blur(80px);
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    z-index: -1;
+.defi-overview__container {
+  width: min(100%, var(--overview-max-width));
+  margin-inline: auto;
 }
 
-/* ... (Keep scrollbar styles) ... */
-
-/* TITLE STYLING - Glitch effect removed for device compatibility */
-.glitch-text {
-    position: relative;
-    display: inline-block;
-    /* Static gradient text styling instead of glitch animation */
-    background: linear-gradient(135deg, #00d4ff 0%, #a855f7 50%, #00d4ff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+.defi-overview__hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(310px, 0.8fr);
+  gap: 28px;
+  align-items: stretch;
+  margin-bottom: 24px;
 }
 
-/* ===================== HEADER ===================== */
-.defi-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.5rem;
-    margin-bottom: 2rem;
-    position: relative;
-    z-index: 10;
+.defi-overview__hero-copy,
+.defi-wallet-card,
+.defi-metrics,
+.defi-product-card,
+.defi-trust-panel,
+.defi-upcoming {
+  border: 1px solid var(--overview-border);
+  background: var(--overview-surface);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.22);
 }
 
-.defi-title {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+.defi-overview__hero-copy {
+  position: relative;
+  min-height: 310px;
+  overflow: hidden;
+  padding: clamp(28px, 4vw, 52px);
+  border-radius: 24px;
+  background:
+    linear-gradient(125deg, rgba(34, 211, 238, 0.08), transparent 48%),
+    var(--overview-surface);
 }
 
-.defi-title h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    /* Removed solid gradient to allow glitch text shadow to show */
-    color: #fff;
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 2px;
+.defi-overview__hero-mascot {
+  position: absolute;
+  top: -20px;
+  right: -30px;
+  width: min(50%, 360px);
+  height: 120%;
+  pointer-events: none;
+  opacity: 0.24;
+  mask-image: radial-gradient(ellipse at center, black 40%, transparent 70%);
 }
 
-.defi-title .logo-emoji {
-    font-size: 2.5rem;
-    animation: pulse-glow 2s ease-in-out infinite;
+.defi-overview__hero-mascot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 20%;
 }
 
-@keyframes pulse-glow {
-
-    0%,
-    100% {
-        filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.5));
-    }
-
-    50% {
-        filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.8));
-    }
+.defi-overview__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  margin-bottom: 20px;
+  padding: 0 11px;
+  border: 1px solid rgba(34, 211, 238, 0.24);
+  border-radius: 999px;
+  background: rgba(34, 211, 238, 0.08);
+  color: #a5f3fc;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-/* ===================== BALANCE PILLS ===================== */
-.balance-pill {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    height: 38px;
-    padding: 0 14px;
-    background: linear-gradient(135deg, rgba(0, 20, 40, 0.8) 0%, rgba(0, 40, 60, 0.9) 100%);
-    border-radius: 9999px;
-    border: 1.5px solid rgba(0, 245, 255, 0.5);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 0 12px rgba(0, 245, 255, 0.4), 0 0 25px rgba(0, 245, 255, 0.2);
+.defi-overview__eyebrow-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--overview-success);
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.11);
 }
 
-.balance-pill:hover {
-    background: linear-gradient(135deg, rgba(0, 40, 80, 0.9) 0%, rgba(0, 60, 100, 1) 100%);
-    transform: translateY(-2px) scale(1.05);
+.defi-overview__title {
+  max-width: 760px;
+  margin: 0;
+  font-size: clamp(34px, 4.6vw, 60px);
+  font-weight: 820;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  text-wrap: balance;
 }
 
-.balance-icon {
-    font-size: 14px;
-    filter: drop-shadow(0 0 6px var(--defi-primary));
+.defi-overview__title-accent {
+  color: #a5f3fc;
 }
 
-.balance-info-compact {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+.defi-overview__subtitle {
+  max-width: 650px;
+  margin: 20px 0 0;
+  color: #bac5d5;
+  font-size: clamp(14px, 1.5vw, 17px);
+  line-height: 1.6;
+  text-wrap: pretty;
 }
 
-.balance-label {
-    font-size: 9px;
-    color: var(--defi-primary);
-    font-weight: 700;
-    letter-spacing: 0.5px;
+.defi-overview__hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 30px;
 }
 
-.balance-value {
-    font-size: 13px;
-    font-weight: 700;
-    font-family: 'Space Mono', monospace;
-    color: rgba(255, 255, 255, 0.95);
+.defi-button {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
 }
 
-/* ===================== BACK BUTTON ===================== */
-.back-button {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--defi-border);
-    border-radius: 9999px;
-    color: var(--defi-primary);
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-decoration: none;
+.defi-button:hover {
+  transform: translateY(-2px);
 }
 
-.back-button:hover {
-    background: rgba(0, 212, 255, 0.1);
-    border-color: var(--defi-primary);
-    box-shadow: var(--defi-glow);
-    transform: translateX(-4px);
+.defi-button--primary {
+  border-color: rgba(103, 232, 249, 0.52);
+  background: linear-gradient(135deg, #22d3ee, #0891b2);
+  color: #021014;
+  box-shadow: 0 10px 28px rgba(6, 182, 212, 0.19);
 }
 
-/* ===================== TOP BOARD (INLINE HERO & STATS) ===================== */
-.defi-top-board {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 2rem;
-    margin: 0 auto 3rem;
-    max-width: 1100px;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 0 1rem;
-    position: relative;
-    z-index: 10;
+.defi-button--primary:hover {
+  box-shadow: 0 14px 34px rgba(6, 182, 212, 0.29);
 }
 
-.defi-hero-inline {
-    flex: 1;
-    min-width: 280px;
+.defi-button--secondary {
+  border-color: var(--overview-border-strong);
+  background: rgba(15, 23, 42, 0.75);
+  color: var(--overview-text);
 }
 
-.defi-hero-inline p {
-    color: rgba(255, 255, 255, 0.6);
-    margin: 0;
-    font-size: 1.05rem;
+.defi-button--secondary:hover {
+  border-color: rgba(34, 211, 238, 0.38);
+  background: rgba(34, 211, 238, 0.08);
 }
 
-/* Shimmer Sweep Animation */
-.shimmer-text {
-    font-size: 2.5rem;
-    font-weight: 800;
-    margin: 0 0 0.5rem;
-    background: linear-gradient(
-        90deg,
-        var(--defi-primary) 0%,
-        var(--defi-secondary) 50%,
-        var(--defi-primary) 100%
-    );
-    background-size: 200% auto;
-    color: transparent;
-    -webkit-background-clip: text;
-    background-clip: text;
-    animation: shimmerSweep 3s linear infinite;
-    filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.3));
-    letter-spacing: -1px;
+.defi-wallet-card {
+  display: flex;
+  min-height: 310px;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 26px;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(168, 85, 247, 0.13), transparent 38%),
+    var(--overview-surface);
 }
 
-@keyframes shimmerSweep {
-    to { background-position: 200% center; }
+.defi-wallet-card__header,
+.defi-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
 }
 
-.defi-stats-inline {
-    display: grid;
+.defi-wallet-card__title,
+.defi-section-heading h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 780;
+  letter-spacing: -0.02em;
+}
+
+.defi-wallet-card__header p,
+.defi-section-heading p {
+  margin: 6px 0 0;
+  color: var(--overview-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.defi-wallet-card__status-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.defi-wallet-card__status {
+  display: inline-flex;
+  min-height: 27px;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.08);
+  color: #a7f3d0;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.defi-wallet-card__status::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--overview-success);
+  box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.2);
+}
+
+.defi-wallet-card__empty {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  padding-block: 20px 10px;
+  text-align: center;
+}
+
+.defi-wallet-card__empty-icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  margin: 0 auto 14px;
+  border: 1px solid rgba(34, 211, 238, 0.18);
+  border-radius: 18px;
+  background: rgba(34, 211, 238, 0.06);
+  color: var(--overview-primary);
+}
+
+.defi-wallet-card__empty strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 15px;
+}
+
+.defi-wallet-card__empty p {
+  max-width: 300px;
+  margin: 0 auto 18px;
+  color: var(--overview-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.defi-wallet-card__balances {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-block: 18px;
+}
+
+.defi-balance-tile {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--overview-border);
+  border-radius: 14px;
+  background: rgba(2, 6, 23, 0.42);
+}
+
+.defi-balance-tile span {
+  display: block;
+  color: var(--overview-muted);
+  font-size: 10px;
+  font-weight: 720;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.defi-balance-tile strong {
+  display: block;
+  overflow: hidden;
+  margin-top: 8px;
+  color: var(--overview-text);
+  font-family: var(--font-space-mono), monospace;
+  font-size: 17px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.defi-wallet-card__address {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--overview-border);
+  color: var(--overview-muted);
+  font-size: 12px;
+}
+
+.defi-wallet-card__address code {
+  color: #cbd5e1;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 14px;
+}
+
+.defi-metrics {
+  margin-bottom: 44px;
+  padding: 24px;
+  border-radius: 20px;
+}
+
+.defi-metrics__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.defi-metrics__header h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 780;
+}
+
+.defi-metrics__controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.defi-metrics__freshness {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--overview-subtle);
+  font-size: 11px;
+}
+
+.defi-metrics__refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--overview-muted);
+  cursor: pointer;
+  transition: all 160ms ease;
+}
+
+.defi-metrics__refresh:hover:not(:disabled) {
+  background: rgba(148, 163, 184, 0.1);
+  color: var(--overview-text);
+}
+
+.defi-metrics__refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.defi-metrics__refresh svg {
+  width: 14px;
+  height: 14px;
+}
+
+.defi-metrics[aria-busy="true"] .defi-metrics__refresh svg {
+  animation: defi-spin 1s linear infinite;
+}
+
+@keyframes defi-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.defi-metrics__freshness-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--overview-success);
+}
+
+.defi-metrics__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.defi-metric {
+  position: relative;
+  min-width: 0;
+  padding: 8px 22px;
+}
+
+.defi-metric:first-child {
+  padding-left: 0;
+}
+
+.defi-metric:last-child {
+  padding-right: 0;
+}
+
+.defi-metric + .defi-metric {
+  border-left: 1px solid var(--overview-border);
+}
+
+.defi-metric__label-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.defi-metric__label {
+  color: var(--overview-muted);
+  font-size: 10px;
+  font-weight: 740;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.defi-metric-info {
+  position: relative;
+  display: inline-flex;
+}
+
+.defi-info-button {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--overview-border);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.7);
+  color: var(--overview-muted);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.defi-info-button:hover,
+.defi-info-button[aria-expanded="true"] {
+  border-color: rgba(34, 211, 238, 0.42);
+  background: rgba(34, 211, 238, 0.09);
+  color: #a5f3fc;
+}
+
+.defi-metric-info__popover {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  z-index: 100;
+  width: 220px;
+  padding: 10px 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.96);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  color: var(--overview-text);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: center;
+  text-transform: none;
+  letter-spacing: 0;
+  transform: translateX(-50%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  animation: defi-fade-in 150ms ease-out forwards;
+}
+
+.defi-metric-info__popover::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: rgba(148, 163, 184, 0.2) transparent transparent transparent;
+}
+
+@keyframes defi-fade-in {
+  from { opacity: 0; transform: translate(-50%, 4px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.defi-metric__value {
+  display: block;
+  overflow: hidden;
+  margin-top: 9px;
+  color: var(--overview-text);
+  font-family: var(--font-space-mono), monospace;
+  font-size: clamp(19px, 2.2vw, 27px);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.defi-metric__unit {
+  margin-left: 6px;
+  color: var(--overview-subtle);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.defi-metric__error {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 7px;
+  color: #fecdd3;
+  font-size: 11px;
+}
+
+.defi-metric__retry {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #67e8f9;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.defi-skeleton {
+  display: block;
+  overflow: hidden;
+  border-radius: 7px;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.defi-skeleton::after {
+  content: "";
+  display: block;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(226, 232, 240, 0.12), transparent);
+  animation: defi-skeleton-sweep 1.35s ease-in-out infinite;
+}
+
+.defi-skeleton--metric {
+  width: min(100%, 150px);
+  height: 29px;
+  margin-top: 9px;
+}
+
+.defi-skeleton--balance {
+  width: 105px;
+  height: 20px;
+  margin-top: 8px;
+}
+
+@keyframes defi-skeleton-sweep {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(260%);
+  }
+}
+
+.defi-section {
+  margin-bottom: 48px;
+  scroll-margin-top: 90px;
+}
+
+.defi-section-heading {
+  align-items: flex-end;
+  margin-bottom: 18px;
+}
+
+.defi-section-heading h2 {
+  font-size: clamp(21px, 2.6vw, 28px);
+}
+
+.defi-section-heading p {
+  max-width: 600px;
+  font-size: 13px;
+}
+
+.defi-section-heading__count {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid rgba(52, 211, 153, 0.23);
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.07);
+  color: #a7f3d0;
+  font-size: 10px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.defi-products-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.defi-product-card {
+  --product-color: #22d3ee;
+  position: relative;
+  display: flex;
+  min-height: 280px;
+  overflow: hidden;
+  flex-direction: column;
+  padding: 24px;
+  border-radius: 20px;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.defi-product-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--product-color) 40%, transparent);
+  background: rgba(15, 23, 42, 0.9);
+  box-shadow:
+    0 22px 58px rgba(0, 0, 0, 0.3),
+    0 0 0 1px color-mix(in srgb, var(--product-color) 9%, transparent);
+}
+
+.defi-product-card__illustration {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 46%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.16;
+  mask-image: linear-gradient(90deg, transparent, black 45%);
+}
+
+.defi-product-card__illustration img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.defi-product-card__top,
+.defi-product-card__footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.defi-product-card__identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+
+.defi-product-card__icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--product-color) 26%, transparent);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--product-color) 9%, transparent);
+  color: var(--product-color);
+}
+
+.defi-product-card__icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.defi-product-card__name {
+  overflow: hidden;
+  margin: 0;
+  color: var(--overview-text);
+  font-size: 20px;
+  font-weight: 790;
+  letter-spacing: -0.03em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.defi-live-badge {
+  display: inline-flex;
+  min-height: 26px;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 0 9px;
+  border: 1px solid rgba(52, 211, 153, 0.2);
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.07);
+  color: #a7f3d0;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.defi-live-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--overview-success);
+}
+
+.defi-live-badge--development {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.1);
+  color: #fcd34d;
+}
+
+.defi-live-badge--development::before {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.defi-product-card__description {
+  position: relative;
+  z-index: 1;
+  max-width: 74%;
+  margin: 22px 0 20px;
+  color: #b5c0d0;
+  font-size: 13px;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.defi-product-card__stats {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 28px;
+  margin-top: auto;
+  margin-bottom: 19px;
+}
+
+.defi-product-stat span {
+  display: block;
+  color: var(--overview-subtle);
+  font-size: 9px;
+  font-weight: 760;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.defi-product-stat strong {
+  display: block;
+  max-width: 160px;
+  overflow: hidden;
+  margin-top: 6px;
+  color: var(--overview-text);
+  font-family: var(--font-space-mono), monospace;
+  font-size: 15px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.defi-product-card__footer {
+  padding-top: 18px;
+  border-top: 1px solid var(--overview-border);
+}
+
+.defi-product-card__cta {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 15px;
+  border: 1px solid color-mix(in srgb, var(--product-color) 33%, transparent);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--product-color) 9%, rgba(15, 23, 42, 0.9));
+  color: var(--overview-text);
+  font-size: 12px;
+  font-weight: 760;
+  text-decoration: none;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.defi-product-card__cta:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--product-color) 70%, transparent);
+  background: color-mix(in srgb, var(--product-color) 17%, rgba(15, 23, 42, 0.9));
+  color: #fff;
+}
+
+.defi-product-card__cta--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: rgba(15, 23, 42, 0.4);
+  border-color: rgba(148, 163, 184, 0.1);
+  color: var(--overview-muted);
+}
+
+.defi-upcoming {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 19px 22px;
+  border-radius: 17px;
+}
+
+.defi-upcoming__copy h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 760;
+}
+
+.defi-upcoming__copy p {
+  margin: 5px 0 0;
+  color: var(--overview-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.defi-upcoming__items {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.defi-upcoming__item {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 7px;
+  padding: 0 11px;
+  border: 1px solid var(--overview-border);
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.34);
+  color: var(--overview-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.defi-upcoming__item svg {
+  width: 14px;
+  height: 14px;
+}
+
+.defi-trust-panel {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.15fr);
+  gap: 28px;
+  padding: 26px;
+  border-radius: 20px;
+}
+
+.defi-trust-panel__intro h2 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 790;
+  letter-spacing: -0.03em;
+}
+
+.defi-trust-panel__intro p {
+  margin: 10px 0 0;
+  color: var(--overview-muted);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.defi-trust-panel__status {
+  display: inline-flex;
+  min-height: 29px;
+  align-items: center;
+  gap: 7px;
+  margin-top: 18px;
+  padding: 0 10px;
+  border: 1px solid rgba(52, 211, 153, 0.21);
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.07);
+  color: #a7f3d0;
+  font-size: 10px;
+  font-weight: 740;
+}
+
+.defi-trust-panel__status svg {
+  width: 14px;
+  height: 14px;
+}
+
+.defi-contract-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.defi-contract-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 49px;
+  padding: 9px 12px;
+  border: 1px solid var(--overview-border);
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.32);
+}
+
+.defi-contract-row dt {
+  color: var(--overview-muted);
+  font-size: 10px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.defi-contract-row dd {
+  min-width: 0;
+  margin: 0;
+}
+
+.defi-contract-row code {
+  display: block;
+  overflow: hidden;
+  color: #cbd5e1;
+  font-family: var(--font-space-mono), monospace;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.defi-contract-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.defi-contract-copy,
+.defi-contract-row a {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--overview-border);
+  border-radius: 9px;
+  background: rgba(15, 23, 42, 0.5);
+  color: var(--overview-muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.defi-contract-copy:hover,
+.defi-contract-row a:hover {
+  border-color: rgba(34, 211, 238, 0.4);
+  background: rgba(34, 211, 238, 0.08);
+  color: #a5f3fc;
+}
+
+.defi-contract-copy svg,
+.defi-contract-row a svg {
+  width: 16px;
+  height: 16px;
+}
+
+.defi-contract-copy svg.lucide-check {
+  color: var(--overview-success);
+}
+
+.defi-overview__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px 0 4px;
+  border-top: 1px solid var(--overview-border);
+  color: var(--overview-subtle);
+  font-size: 11px;
+}
+
+.defi-overview__footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.defi-overview__footer a {
+  color: var(--overview-muted);
+  text-decoration: none;
+}
+
+.defi-overview__footer a:hover {
+  color: #a5f3fc;
+}
+
+.defi-overview-state {
+  display: grid;
+  min-height: calc(100dvh - 128px);
+  place-items: center;
+  padding: 30px;
+  background: #05070d;
+  color: var(--overview-text, #f8fafc);
+  text-align: center;
+}
+
+.defi-overview-state__card {
+  width: min(100%, 470px);
+  padding: 34px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 22px;
+  background: rgba(11, 16, 29, 0.9);
+}
+
+.defi-overview-state__icon {
+  font-size: 44px;
+}
+
+.defi-overview-state h1 {
+  margin: 16px 0 8px;
+  font-size: 24px;
+}
+
+.defi-overview-state p {
+  margin: 0 0 20px;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+@media (max-width: 900px) {
+  .defi-overview {
+    padding-top: 26px;
+  }
+
+  .defi-overview__hero {
+    grid-template-columns: 1fr;
+  }
+
+  .defi-overview__hero-mascot {
+    opacity: 0.12;
+  }
+
+  .defi-overview__hero-copy,
+  .defi-wallet-card {
+    min-height: auto;
+  }
+
+  .defi-metrics__grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    flex: 2;
-    min-width: 300px;
-}
-
-@media (max-width: 850px) {
-    .defi-stats-inline {
-        flex: 1 1 100%;
-        min-width: 0;
-    }
-    .defi-hero-inline {
-        flex: 1 1 100%;
-        min-width: 0;
-    }
-}
-
-@media (max-width: 500px) {
-    .defi-stats-inline {
-        grid-template-columns: 1fr;
-        gap: 0.8rem;
-    }
-}
-
-/* ===================== PILL WIDGET (TOP BOARD & QUICK STATS) ===================== */
-.pill-widget {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 9999px;
-    padding: 0.6rem 1.2rem;
-    transition: var(--transition-smooth);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    animation: pillGlow 3s ease-in-out infinite alternate;
-}
-
-@keyframes pillGlow {
-    0% {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
-        border-color: rgba(255, 255, 255, 0.08);
-    }
-    100% {
-        box-shadow: 0 4px 18px rgba(0, 242, 254, 0.15), inset 0 0 0 1px rgba(0, 242, 254, 0.08);
-        border-color: rgba(0, 242, 254, 0.2);
-    }
-}
-
-.pill-widget:hover {
-    animation: none;
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(0, 242, 254, 0.4);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 242, 254, 0.3);
-}
-
-/* ===================== SHIMMER TEXT ===================== */
-.shimmer-text {
-    background: linear-gradient(
-        90deg,
-        #00f2fe 0%,
-        #4facfe 25%,
-        #ffffff 50%,
-        #4facfe 75%,
-        #00f2fe 100%
-    );
-    background-size: 200% auto;
-    color: #fff;
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: textShine 4s linear infinite;
-    display: inline-block;
-}
-
-@keyframes textShine {
-    to {
-        background-position: 200% center;
-    }
-}
-
-/* ===================== PREMIUM TOOLTIP ===================== */
-.has-tooltip {
-    position: relative;
-    cursor: help;
-}
-
-.has-tooltip:focus {
-    outline: none;
-}
-
-.premium-tooltip {
-    position: absolute;
-    bottom: calc(100% + 12px);
-    left: 50%;
-    transform: translateX(-50%) translateY(10px);
-    background: rgba(15, 23, 42, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: rgba(255, 255, 255, 0.9);
-    padding: 0.6rem 0.8rem;
-    border-radius: 8px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    width: max-content;
-    max-width: 220px;
-    text-align: center;
-    line-height: 1.5;
-    white-space: normal;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 50;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 212, 255, 0.1);
-    pointer-events: none;
-    font-family: 'Outfit', 'Inter', sans-serif;
-    letter-spacing: 0.2px;
-}
-
-.premium-tooltip::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border-width: 6px;
-    border-style: solid;
-    border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
-}
-
-.has-tooltip:hover .premium-tooltip,
-.has-tooltip:focus .premium-tooltip,
-.has-tooltip:active .premium-tooltip {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0);
-}
-
-.stat-icon-mini {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.stat-content {
-    display: flex;
-    flex-direction: column;
-}
-
-.defi-stat-item__label {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.5);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.defi-stat-item__value {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #fff;
-    font-family: 'Space Mono', monospace;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.currency-label {
-    font-size: 0.65em;
-    color: rgba(255, 255, 255, 0.5);
-    font-family: 'Outfit', 'Inter', sans-serif;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    text-transform: lowercase;
-}
-
-
-/* ===================== QUICK STATS ===================== */
-.defi-stats {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    flex-wrap: nowrap;
-    position: relative;
-    z-index: 10;
-}
-
-.stat-card {
-    background: rgba(10, 10, 30, 0.6);
-    border: 1px solid rgba(0, 212, 255, 0.2);
-    border-radius: 9999px;
-    padding: 0.75rem 1.5rem;
-    min-width: 160px;
-    max-width: 220px;
-    text-align: center;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-    /* Fixed height to prevent growing */
-    height: 75px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    overflow: hidden;
-    /* Glow Pulse Animation */
-    animation: cardGlowPulse 4s ease-in-out infinite;
-}
-
-/* Glow Pulse Keyframes */
-@keyframes cardGlowPulse {
-
-    0%,
-    100% {
-        box-shadow: 0 0 10px rgba(0, 212, 255, 0.1), 0 0 20px rgba(0, 212, 255, 0.05);
-    }
-
-    50% {
-        box-shadow: 0 0 20px rgba(0, 212, 255, 0.25), 0 0 40px rgba(168, 85, 247, 0.15);
-    }
-}
-
-.stat-card:hover {
-    border-color: var(--defi-primary);
-    box-shadow: 0 0 30px rgba(0, 212, 255, 0.4);
-    transform: translateY(-2px);
-    animation: none;
-    /* Stop pulse on hover for active glow */
-}
-
-.stat-card .stat-label {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.5);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.25rem;
-    /* Text truncation for long labels */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.stat-card .stat-value {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--defi-primary);
-    /* Prevent wrapping */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.stat-card .stat-value.highlight {
-    color: var(--defi-gold);
-}
-
-/* ===================== SERVICES GRID (BENTO) ===================== */
-.defi-services-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-gap: 2rem;
-    width: 100%;
-    max-width: 1100px;
-    box-sizing: border-box;
-    margin: 0 auto 4rem auto;
-    position: relative;
-    z-index: 10;
-    padding: 0 1rem;
-}
-
-/* Featured Bento Card (Spans 2 columns) */
-.card-bento-featured {
-    grid-column: span 2;
-    background: linear-gradient(135deg, rgba(40, 25, 60, 0.5) 0%, rgba(15, 15, 25, 0.6) 100%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-.card-bento-featured .service-header {
-    font-size: 1.5rem;
-}
-
-/* Mobile check: ensure cards fit on small screens */
-@media (max-width: 800px) {
-    .defi-services-grid {
-        grid-template-columns: 1fr !important;
-        grid-gap: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    .card-bento-featured {
-        grid-column: span 1;
-    }
-}
-
-.defi-service-card {
-    background: var(--defi-bg-card);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid var(--defi-border);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 1.5rem;
-    text-decoration: none;
-    color: inherit;
-    transition: var(--transition-smooth);
-    position: relative;
-    overflow: hidden;
-    margin-bottom: 0;
-    z-index: 1;
-    isolation: isolate;
-    display: flex;
-    flex-direction: column;
-    animation: cardIdleFloat 6s ease-in-out infinite alternate;
-}
-
-@keyframes cardIdleFloat {
-    0% {
-        transform: translateY(0);
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    }
-    100% {
-        transform: translateY(-6px);
-        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 0 20px color-mix(in srgb, var(--service-color) 15%, transparent);
-    }
-}
-
-/* Removed auto-animation serviceCardGlow to reduce noise */
-
-/* Staggered animation delay for visual interest */
-.defi-service-card:nth-child(1) {
-    animation-delay: 0s;
-}
-
-.defi-service-card:nth-child(2) {
-    animation-delay: 1.5s;
-}
-
-.defi-service-card:nth-child(3) {
-    animation-delay: 3s;
-}
-
-.defi-service-card:nth-child(4) {
-    animation-delay: 4.5s;
-}
-
-.defi-service-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--service-color), transparent);
-    opacity: 0.3;
-    transition: var(--transition-smooth);
-}
-
-.defi-service-card:hover {
-    animation: none;
-    transform: translateY(-4px) scale(1.01);
-    border-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 40px color-mix(in srgb, var(--service-color) 20%, transparent);
-    z-index: 10;
-}
-
-.defi-service-card:hover::before {
-    opacity: 1;
-    height: 2px;
-    box-shadow: 0 0 20px var(--service-color);
-}
-
-.defi-service-card.coming-soon {
-    opacity: 0.8;
-    /* Increased opacity for readability */
-    cursor: default;
-    border-color: rgba(255, 255, 255, 0.15);
-    /* More visible neutral border */
-}
-
-.defi-service-card.coming-soon:hover {
-    transform: translateY(-4px);
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-.service-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-    /* Fixed height for consistent layout across languages */
-    min-height: 70px;
-    flex-wrap: nowrap;
-}
-
-.service-icon-wrapper {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.3s ease;
-}
-
-.service-icon-wrapper svg {
-    width: 2.5rem;
-    height: 2.5rem;
-    filter: drop-shadow(0 0 12px currentColor);
-}
-
-.defi-service-card:hover .service-icon-wrapper {
-    transform: scale(1.1) rotate(5deg);
-}
-
-.service-name {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #fff;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    /* Better text contrast */
-    flex: 1;
-    min-width: 0;
-    word-break: keep-all;
-    overflow-wrap: break-word;
-    line-height: 1.2;
-}
-
-.coming-badge,
-.live-badge {
-    margin-left: auto;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-    /* Prevent shrinking */
-    flex-shrink: 0;
-    white-space: nowrap;
-}
-
-.coming-badge {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.live-badge {
-    background: linear-gradient(135deg, var(--defi-success) 0%, #22c55e 100%);
-    color: #000;
-    animation: pulse-badge 2s ease-in-out infinite;
-    border: 1px solid #fff;
-    /* Crisp white border for badge */
-}
-
-@keyframes pulse-badge {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6);
-    }
-
-    50% {
-        box-shadow: 0 0 0 8px rgba(74, 222, 128, 0);
-    }
-}
-
-.service-description {
-    font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.8);
-    /* Brighter text */
-    line-height: 1.5;
-    margin: 0 0 1.25rem;
-    /* Fixed height for consistent layout across languages */
-    min-height: 55px;
-}
-
-.service-stats {
-    display: flex;
-    gap: 1.5rem;
-    margin-bottom: 1rem;
-    padding: 1rem;
-    background: rgba(0, 0, 0, 0.4);
-    /* Darker contrast background */
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    /* Subtle inner border */
-    border-radius: 16px;
-    position: relative;
-    overflow: hidden;
-}
-
-.sparkline-bg {
-    position: absolute;
-    bottom: -5px;
-    left: 0;
-    width: 100%;
-    height: 60%;
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0.8;
-}
-
-.sparkline-bg svg {
-    width: 100%;
-    height: 100%;
-}
-
-.service-stat {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    z-index: 1;
-}
-
-.service-stat .stat-label {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.6);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.service-stat .stat-value {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--defi-primary);
-    text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
-}
-
-.service-cta {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.8rem 1.5rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    border-radius: 9999px;
-    color: #fff;
-    font-weight: 600;
-    font-size: 0.95rem;
-    letter-spacing: 0.5px;
-    transition: var(--transition-smooth);
-    margin-top: auto;
-    text-decoration: none;
-    position: relative;
-    overflow: hidden;
-}
-
-.service-cta::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s ease;
-}
-
-.service-cta:hover {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--service-color) 40%, transparent) 0%, color-mix(in srgb, var(--service-color) 10%, transparent) 100%);
-    border-color: var(--service-color);
-    box-shadow: 0 4px 20px color-mix(in srgb, var(--service-color) 40%, transparent);
-    transform: translateY(-2px);
-}
-
-.service-cta:hover::before {
-    left: 100%;
-}
-
-/* ===================== STATS GRID ===================== */
-.defi-stats {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 1rem;
-    margin-top: 0.5rem;
-    margin-bottom: 3rem;
-    position: relative;
-    z-index: 10;
-}
-
-.stat-card {
-    flex: 1 1 200px;
-    max-width: 280px;
-    min-width: 180px;
-    background: var(--defi-bg-card);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--defi-border);
-    border-radius: 9999px;
-    padding: 1.5rem 2rem;
-    text-align: center;
-    transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-    border-color: var(--defi-primary);
-    box-shadow: var(--defi-glow);
-    transform: translateY(-4px);
-}
+  }
 
-.stat-card .stat-label {
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.6);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 0.5rem;
-}
-
-.stat-card .stat-value {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: var(--defi-primary);
-}
-
-.stat-card .stat-value.highlight {
-    background: linear-gradient(135deg, var(--defi-gold) 0%, var(--defi-warning) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-/* ===================== LANGUAGE SELECTOR ===================== */
-.lang-selector {
-    position: relative;
-}
-
-.lang-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--defi-border);
-    border-radius: 9999px;
-    color: #fff;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.lang-btn:hover {
-    background: rgba(0, 212, 255, 0.1);
-    border-color: var(--defi-primary);
-}
-
-.lang-flag {
-    font-size: 1.2rem;
-}
-
-.lang-arrow {
-    font-size: 0.6rem;
-    color: rgba(255, 255, 255, 0.5);
-}
-
-.lang-dropdown {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 0.5rem;
-    background: var(--defi-bg-card);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--defi-border);
-    border-radius: 16px;
-    padding: 0.5rem;
-    min-width: 160px;
-    z-index: 100;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-}
-
-.lang-option {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background: transparent;
-    border: none;
-    border-radius: 12px;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: left;
-}
-
-.lang-option:hover {
-    background: rgba(0, 212, 255, 0.15);
-    color: #fff;
-}
-
-.lang-option.active {
-    background: linear-gradient(135deg, var(--defi-primary) 0%, var(--defi-secondary) 100%);
-    color: #fff;
-}
-
-.lang-name {
-    font-weight: 500;
-}
-
-/* ===================== DEFI LANGUAGE SELECTOR (Portal-based) ===================== */
-.defi-lang-selector {
-    position: relative;
-}
-
-.defi-lang-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.8rem;
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(12px);
-    border: 2px solid rgba(34, 211, 238, 0.4);
-    border-radius: 50px;
-    color: #22d3ee;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 15px rgba(34, 211, 238, 0.15);
-}
-
-.defi-lang-btn:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(34, 211, 238, 0.7);
-    box-shadow: 0 0 25px rgba(34, 211, 238, 0.3);
-    transform: translateY(-2px);
-}
-
-.defi-lang-btn .defi-lang-flag {
-    font-size: 1.1rem;
-}
-
-.defi-lang-btn .defi-lang-arrow {
-    font-size: 0.6rem;
-    opacity: 0.7;
-}
-
-/* Dropdown - rendered via Portal to body */
-.defi-lang-dropdown {
-    background: rgba(10, 15, 30, 0.98);
-    backdrop-filter: blur(24px);
-    border: 2px solid rgba(34, 211, 238, 0.5);
-    border-radius: 16px;
-    padding: 0.5rem;
-    min-width: 200px;
-    max-height: 400px;
-    overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9),
-        0 0 40px rgba(34, 211, 238, 0.2);
-    animation: defiDropdownSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes defiDropdownSlide {
-    from {
-        opacity: 0;
-        transform: translateY(-10px) scale(0.95);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.defi-lang-dropdown__header {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.4);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    padding: 0.5rem 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    margin-bottom: 0.25rem;
-}
-
-.defi-lang-option {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    width: 100%;
-    padding: 0.75rem 1rem;
-    background: transparent;
-    border: none;
-    border-radius: 10px;
-    color: #94a3b8;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: left;
-}
-
-.defi-lang-option:hover {
-    background: rgba(34, 211, 238, 0.15);
-    color: #22d3ee;
-}
-
-.defi-lang-option.active {
-    background: linear-gradient(135deg, rgba(34, 211, 238, 0.2) 0%, rgba(168, 85, 247, 0.15) 100%);
-    color: #22d3ee;
-    font-weight: 600;
-}
-
-.defi-lang-option .defi-lang-flag {
-    font-size: 1.2rem;
-}
-
-.defi-lang-option .defi-lang-name {
-    flex: 1;
-}
-
-.defi-lang-option .defi-lang-check {
-    color: #22d3ee;
-    font-weight: bold;
-}
-
-/* Custom scrollbar for dropdown */
-.defi-lang-dropdown::-webkit-scrollbar {
-    width: 6px;
-}
-
-.defi-lang-dropdown::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 3px;
-}
-
-.defi-lang-dropdown::-webkit-scrollbar-thumb {
-    background: rgba(34, 211, 238, 0.5);
-    border-radius: 3px;
-}
-
-/* ===================== SCANLINES EFFECT ===================== */
-.defi-page .scanlines::after {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: repeating-linear-gradient(0deg,
-            transparent,
-            transparent 2px,
-            rgba(0, 0, 0, 0.1) 2px,
-            rgba(0, 0, 0, 0.1) 4px);
-    pointer-events: none;
-    z-index: 1000;
-}
-
-/* ===================== RESPONSIVE ===================== */
-
-/* Tablet */
-@media (max-width: 1024px) {
-    .defi-services-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-/* Mobile */
-@media (max-width: 768px) {
+  .defi-metric {
+    padding: 16px;
+  }
 
-    /* Force scroll on mobile */
-    html,
-    body {
-        overflow-y: auto !important;
-        overflow-x: hidden !important;
-        position: relative !important;
-        height: auto !important;
-        min-height: 100vh !important;
-        -webkit-overflow-scrolling: touch;
-    }
+  .defi-metric:first-child {
+    padding-left: 16px;
+  }
 
-    .defi-page {
-        padding: 0.75rem;
-        padding-bottom: 100px;
-        overflow-y: visible !important;
-    }
+  .defi-metric:last-child {
+    padding-right: 16px;
+  }
 
-    .defi-header {
-        flex-direction: column;
-        gap: 0.75rem;
-        padding: 0.75rem;
-    }
+  .defi-metric:nth-child(3) {
+    border-left: 0;
+  }
 
-    /* Ensure inner header controls wrap on small screens */
-    .defi-header>div {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
+  .defi-metric:nth-child(n + 3) {
+    border-top: 1px solid var(--overview-border);
+  }
 
-    .defi-title {
-        text-align: center;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .defi-title h1 {
-        font-size: 1.5rem;
-    }
-
-    .defi-title .logo-emoji {
-        font-size: 2rem;
-    }
-
-    .defi-hero h2, .shimmer-text {
-        font-size: 1.8rem;
-    }
-
-    .defi-hero p {
-        font-size: 0.9rem;
-    }
-
-    .defi-services-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-
-    .defi-service-card {
-        padding: 1.25rem;
-    }
-
-    .service-emoji {
-        font-size: 2rem;
-    }
-
-    .service-name {
-        font-size: 1.25rem;
-    }
-
-    .balance-pill {
-        height: 32px;
-        padding: 0 10px;
-    }
-
-    .balance-value {
-        font-size: 11px;
-    }
-
-    .balance-label {
-        font-size: 8px;
-    }
-
-    .back-button {
-        padding: 0.6rem 1rem;
-        font-size: 0.85rem;
-    }
-
-    .defi-stats {
-        flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .stat-card {
-        max-width: 100%;
-        flex: 1 1 100%;
-        padding: 1rem 1.5rem;
-    }
-}
-
-/* Small mobile */
-@media (max-width: 480px) {
-    .defi-page {
-        padding: 0.5rem;
-        padding-bottom: 120px;
-    }
-
-    .defi-header {
-        padding: 0.5rem;
-        gap: 0.5rem;
-    }
-
-    .defi-title h1 {
-        font-size: 1.25rem;
-        letter-spacing: 1px;
-    }
-
-    .defi-hero {
-        margin-bottom: 1.5rem;
-    }
-
-    .defi-hero h2, .shimmer-text {
-        font-size: 1.5rem;
-    }
-
-    .defi-service-card {
-        padding: 1rem;
-        border-radius: 16px;
-    }
-
-    .service-stats {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .stat-card {
-        border-radius: 20px;
-        padding: 0.75rem 1rem;
-    }
-
-    .stat-card .stat-value {
-        font-size: 1.25rem;
-    }
-}
-
-/* ===================== HERO ANIMATIONS ===================== */
-.defi-hero {
-    position: relative;
-    padding: 2rem 0;
-}
-
-.defi-hero::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 600px;
-    height: 300px;
-    background: radial-gradient(ellipse at center, rgba(168, 85, 247, 0.15), transparent 70%);
-    filter: blur(60px);
-    z-index: -1;
-    animation: hero-pulse 8s ease-in-out infinite;
-    pointer-events: none;
-}
-
-@keyframes hero-pulse {
-
-    0%,
-    100% {
-        opacity: 0.5;
-        transform: translate(-50%, -50%) scale(0.9);
-    }
-
-    50% {
-        opacity: 0.8;
-        transform: translate(-50%, -50%) scale(1.1);
-    }
-}
-
-.defi-hero h2 {
-    font-size: 3.5rem;
-    font-weight: 800;
-    margin: 0 0 1rem;
-    background: linear-gradient(135deg, white 0%, var(--defi-primary) 50%, var(--defi-secondary) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    filter: drop-shadow(0 0 30px rgba(0, 212, 255, 0.3));
-    letter-spacing: -1px;
-}
-
-/* ===================== PREMIUM STATS GRID ===================== */
-.stat-card {
-    background: rgba(10, 15, 30, 0.6);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-    position: relative;
-    overflow: hidden;
-}
-
-.stat-card::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--defi-primary), transparent);
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.stat-card:hover::after {
-    opacity: 1;
-}
-
-.stat-card .stat-value {
-    font-size: 2.2rem;
-    font-family: 'Space Mono', monospace;
-    letter-spacing: -1px;
-    text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-}
-
-/* ===================== BUTTON SHIMMER & INTERACTION ===================== */
-.service-cta {
-    position: relative;
-    overflow: hidden;
-    z-index: 10;
-    margin-top: auto; /* Push to bottom of flex container */
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-}
-
-.service-cta:hover {
-    transform: translateY(-2px) scale(1.05);
-    box-shadow: 0 8px 25px color-mix(in srgb, var(--service-color) 50%, transparent);
-    filter: brightness(1.1);
-}
-
-.service-cta:active {
-    transform: translateY(0) scale(0.98);
-}
-
-.service-cta::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    transition: left 0.5s;
-    z-index: -1;
+  .defi-trust-panel {
+    grid-template-columns: 1fr;
+  }
 }
 
-.service-cta:hover::before {
-    left: 100%;
-    transition: left 0.6s ease-in-out;
-}
-
-
-/* ===================== BADGES GLOW ===================== */
-.live-badge {
-    box-shadow: 0 0 10px rgba(74, 222, 128, 0.4);
-    border: 1px solid rgba(74, 222, 128, 0.5);
-}
-
-/* ===================== CUSTOM SCROLLBAR ===================== */
-html:has(.defi-page)::-webkit-scrollbar,
-html:has(.defi-page) body::-webkit-scrollbar,
-.defi-page::-webkit-scrollbar {
-    width: 6px;
-}
-
-html:has(.defi-page)::-webkit-scrollbar-track,
-html:has(.defi-page) body::-webkit-scrollbar-track,
-.defi-page::-webkit-scrollbar-track {
-    background: transparent;
-}
+@media (max-width: 680px) {
+  .defi-overview {
+    padding: 18px 12px 28px;
+  }
 
-html:has(.defi-page)::-webkit-scrollbar-thumb,
-html:has(.defi-page) body::-webkit-scrollbar-thumb,
-.defi-page::-webkit-scrollbar-thumb {
-    background: rgba(0, 212, 255, 0.3);
-    border-radius: 10px;
-}
-
-html:has(.defi-page)::-webkit-scrollbar-thumb:hover,
-html:has(.defi-page) body::-webkit-scrollbar-thumb:hover,
-.defi-page::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 212, 255, 0.55);
-}
-
-html:has(.defi-page),
-html:has(.defi-page) body,
-.defi-page {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(0, 212, 255, 0.3) transparent;
-}
-
-/* ===================== FLOATING STATS BADGES ===================== */
+  .defi-overview__hero {
+    gap: 12px;
+  }
 
-.defi-stat-item {
-    flex: 0 1 auto;
-    min-width: 120px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 0.75rem 1.25rem;
-    background: rgba(10, 15, 30, 0.6);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.defi-stat-item:hover {
-    background: rgba(15, 20, 40, 0.8);
-    transform: translateY(-5px);
-    box-shadow: 0 15px 35px rgba(0, 212, 255, 0.15), inset 0 0 0 1px rgba(0, 212, 255, 0.3);
-    border-color: transparent;
-}
+  .defi-overview__hero-copy,
+  .defi-wallet-card {
+    padding: 21px;
+    border-radius: 18px;
+  }
 
-.defi-stat-item:not(:last-child)::after {
+  .defi-overview__hero-mascot {
     display: none;
+  }
+
+  .defi-overview__title {
+    font-size: clamp(34px, 11vw, 48px);
+    line-height: 1.03;
+  }
+
+  .defi-overview__subtitle {
+    margin-top: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .defi-overview__hero-actions {
+    margin-top: 22px;
+  }
+
+  .defi-button {
+    flex: 1 1 150px;
+  }
+
+  .defi-metrics {
+    margin-bottom: 34px;
+    padding: 16px;
+    border-radius: 17px;
+  }
+
+  .defi-metrics__header {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-bottom: 10px;
+  }
+
+  .defi-metrics__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .defi-metric {
+    padding: 13px 10px;
+  }
+
+  .defi-metric:first-child {
+    padding-left: 10px;
+  }
+
+  .defi-metric:last-child {
+    padding-right: 10px;
+  }
+
+  .defi-metric__value {
+    font-size: 18px;
+  }
+
+  .defi-metric__unit {
+    display: block;
+    margin: 4px 0 0;
+  }
+
+  .defi-section {
+    margin-bottom: 36px;
+  }
+
+  .defi-section-heading {
+    align-items: flex-start;
+  }
+
+  .defi-section-heading__count {
+    display: none;
+  }
+
+  .defi-products-grid {
+    grid-template-columns: 1fr;
+    gap: 11px;
+  }
+
+  .defi-product-card {
+    min-height: 260px;
+    padding: 19px;
+    border-radius: 17px;
+  }
+
+  .defi-product-card__name {
+    font-size: 18px;
+  }
+
+  .defi-product-card__description {
+    max-width: 82%;
+  }
+
+  .defi-product-card__illustration {
+    width: 55%;
+    opacity: 0.11;
+  }
+
+  .defi-product-card:hover {
+    transform: none;
+  }
+
+  .defi-upcoming {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .defi-upcoming__items {
+    justify-content: flex-start;
+  }
+
+  .defi-trust-panel {
+    padding: 20px;
+  }
+
+  .defi-contract-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .defi-contract-row dt {
+    grid-column: 1 / -1;
+  }
+
+  .defi-overview__footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
-.defi-stat-item__label {
-    font-size: 0.65rem;
-    color: rgba(255, 255, 255, 0.6);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-    font-weight: 600;
-}
+@media (max-width: 390px) {
+  .defi-wallet-card__balances {
+    grid-template-columns: 1fr;
+  }
 
-.defi-stat-item__value {
-    font-size: 1.25rem;
-    font-weight: 800;
-    font-family: 'Space Mono', monospace;
-    color: #fff;
-    text-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
-    transition: transform 0.3s;
-}
-
-.defi-stat-item:hover .defi-stat-item__value {
-    transform: scale(1.05);
-}
-
-.defi-stat-item__value.flash-up {
-    animation: statFlashUp 1s ease-out;
-}
-
-.defi-stat-item__value.flash-down {
-    animation: statFlashDown 1s ease-out;
-}
-
-@keyframes statFlashUp {
-    0% { color: #4ade80; transform: scale(1.15); }
-    100% { color: var(--defi-primary); transform: scale(1); }
-}
-
-@keyframes statFlashDown {
-    0% { color: #ef4444; transform: scale(0.9); }
-    100% { color: var(--defi-primary); transform: scale(1); }
-}
-
-/* Mobile stats bar flex fixed */
-@media (max-width: 768px) {
-    .defi-stats-bar, .defi-stats-inline {
-        flex-wrap: wrap;
-        border-radius: 12px;
-        margin: 0 0 1.5rem 0;
-        gap: 0.5rem;
-        justify-content: center;
-    }
-    .defi-stat-item {
-        flex: 0 1 auto;
-        min-width: 0; /* Override any min-width that causes overflow */
-        padding: 0.5rem 0.75rem;
-    }
-    .defi-stat-item__value {
-        font-size: 1.1rem;
-    }
-    .defi-stat-item__label {
-        font-size: 0.6rem;
-    }
-    .defi-service-card {
-        padding: 1rem;
-        border-radius: 16px;
-    }
-}
-
-/* ===================== NOTIFICATION BANNER ===================== */
-.defi-notification {
-    display: flex;
-    align-items: center;
+  .defi-live-badge {
+    min-width: 26px;
+    padding: 0;
     justify-content: center;
-    gap: 10px;
-    padding: 0.6rem 1.5rem;
-    margin: 0 auto 2rem;
-    max-width: 800px;
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
-    border: 1px solid rgba(168, 85, 247, 0.3);
-    border-radius: 12px;
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.85);
-    position: relative;
-    z-index: 10;
-    overflow: hidden;
-    animation: notifSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    font-size: 0;
+  }
+
+  .defi-product-card__description {
+    max-width: 100%;
+  }
+
+  .defi-product-card__illustration {
+    display: none;
+  }
 }
 
-.defi-notification::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 200%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent 40%, rgba(255, 255, 255, 0.05) 50%, transparent 60%);
-    animation: notifShimmer 4s ease-in-out infinite;
+@media (prefers-reduced-motion: reduce) {
+  .defi-overview *,
+  .defi-overview *::before,
+  .defi-overview *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .defi-skeleton::after {
+    display: none;
+  }
 }
-
-@keyframes notifSlideIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes notifShimmer {
-    0% { left: -100%; }
-    100% { left: 100%; }
-}
-
-.defi-notification__icon {
-    font-size: 1.2rem;
-    flex-shrink: 0;
-    animation: notifBounce 2s ease-in-out infinite;
-}
-
-@keyframes notifBounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-3px); }
-}
-
-.defi-notification__text {
-    flex: 1;
-    text-align: center;
-}
-
-.defi-notification__text strong {
-    color: var(--defi-primary);
-}
-
-.defi-notification__close {
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.4);
-    cursor: pointer;
-    font-size: 1rem;
-    padding: 4px;
-    transition: color 0.2s;
-    flex-shrink: 0;
-}
-
-.defi-notification__close:hover {
-    color: #fff;
-}
-
-/* ===================== SECTION DIVIDER ===================== */
-.defi-section-title {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 0 1rem 1.5rem;
-    position: relative;
-    z-index: 10;
-}
-
-.defi-section-title__icon {
-    font-size: 1.5rem;
-}
-
-.defi-section-title__text {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 0.5px;
-}
-
-.defi-section-title__badge {
-    font-size: 0.65rem;
-    padding: 3px 10px;
-    border-radius: 9999px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.defi-section-title__badge--live {
-    background: linear-gradient(135deg, var(--defi-success), #22c55e);
-    color: #000;
-}
-
-.defi-section-title__badge--soon {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.defi-section-title__line {
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, rgba(0, 212, 255, 0.3), transparent);
-}
-
-/* ===================== ENHANCED CARD HOVER ===================== */
-/* Tilt on hover */
-.defi-service-card {
-    transform-style: preserve-3d;
-}
-
-.defi-service-card:hover {
-    animation: none;
-    border-color: var(--service-color);
-    transform: translateY(-8px) perspective(800px) rotateX(2deg);
-    box-shadow:
-        0 20px 40px rgba(0, 0, 0, 0.6),
-        0 0 30px color-mix(in srgb, var(--service-color) 40%, transparent),
-        inset 0 0 30px rgba(0, 212, 255, 0.05);
-}
-
-/* CTA button ripple */
-.service-cta {
-    position: relative;
-    overflow: hidden;
-}
-
-.service-cta::after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    background: radial-gradient(circle, rgba(255,255,255,0.3) 10%, transparent 10.01%);
-    background-repeat: no-repeat;
-    background-position: 50%;
-    transform: scale(10);
-    opacity: 0;
-    transition: transform 0.5s, opacity 0.5s;
-}
-
-.service-cta:active::after {
-    transform: scale(0);
-    opacity: 1;
-    transition: 0s;
-}
-
-/* ===================== FOOTER ===================== */
-.defi-footer {
-    text-align: center;
-    padding: 3rem 1rem 2rem;
-    color: rgba(255, 255, 255, 0.3);
-    font-size: 0.8rem;
-    position: relative;
-    z-index: 10;
-    margin-top: 3rem;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 24px 24px 0 0;
-    border-top: 1px solid rgba(0, 212, 255, 0.1);
-    backdrop-filter: blur(10px);
-}
-
-.defi-footer__links {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    flex-wrap: wrap; /* allow wrapping on mobile */
-}
-
-.footer-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.6rem 1.25rem;
-    background: rgba(10, 15, 30, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 9999px;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-decoration: none;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    animation: footerPillGlow 4s ease-in-out infinite alternate;
-}
-
-.footer-pill:nth-child(1) { animation-delay: 0s; }
-.footer-pill:nth-child(2) { animation-delay: 1s; }
-.footer-pill:nth-child(3) { animation-delay: 2s; }
-.footer-pill:nth-child(4) { animation-delay: 3s; }
-
-@keyframes footerPillGlow {
-    0% {
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        border-color: rgba(255, 255, 255, 0.1);
-    }
-    100% {
-        box-shadow: 0 6px 20px rgba(0, 212, 255, 0.15), inset 0 0 8px rgba(0, 212, 255, 0.05);
-        border-color: rgba(0, 212, 255, 0.3);
-    }
-}
-
-.footer-pill svg {
-    color: rgba(255, 255, 255, 0.5);
-    transition: all 0.3s ease;
-}
-
-/* Hover effects */
-.footer-pill:hover {
-    animation: none;
-    color: #fff;
-    background: rgba(0, 212, 255, 0.1);
-    border-color: rgba(0, 212, 255, 0.4);
-    transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.2), inset 0 0 10px rgba(0, 212, 255, 0.1);
-}
-
-.footer-pill:hover svg {
-    color: var(--defi-primary);
-    transform: scale(1.1) rotate(5deg);
-}
-
-/* Active / Click effects */
-.footer-pill:active {
-    transform: translateY(1px) scale(0.95);
-    box-shadow: 0 2px 5px rgba(0, 212, 255, 0.3);
-    background: rgba(0, 212, 255, 0.2);
-    transition: all 0.1s ease;
-}
-
-.defi-footer__divider {
-    width: 200px;
-    height: 1px;
-    margin: 0 auto 1.5rem;
-    background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.3), transparent);
-    animation: dividerPulse 3s ease-in-out infinite alternate;
-}
-
-@keyframes dividerPulse {
-    0% { opacity: 0.3; width: 150px; }
-    100% { opacity: 1; width: 250px; }
-}
-
-.defi-footer > p:first-of-type {
-    background: linear-gradient(90deg, #94a3b8 0%, #e2e8f0 50%, #94a3b8 100%);
-    background-size: 200% auto;
-    color: transparent;
-    -webkit-background-clip: text;
-    background-clip: text;
-    animation: textShine 4s linear infinite;
-}
-
-.defi-footer__partners {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.4);
-    margin-top: 1.5rem;
-}
-
-.defi-footer__partner {
-    padding: 4px 10px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-    color: rgba(255, 255, 255, 0.6);
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.defi-footer__partner:hover {
-    color: #fff;
-    background: rgba(0, 212, 255, 0.15);
-    text-shadow: 0 0 15px rgba(0, 212, 255, 0.8);
-    box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
-    transform: translateY(-2px);
-}
-
-.defi-footer__copyright {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.3);
-    margin: 0;
-    transition: all 0.3s ease;
-}
-
-.defi-footer__copyright:hover {
-    color: rgba(255, 255, 255, 0.7);
-}
-
-/* ===================== COMING SOON STRIP ===================== */
-.coming-soon-strip {
-    display: flex;
-    gap: 1.5rem;
-    overflow-x: auto;
-    padding: 1rem;
-    margin: 0 auto 4rem;
-    width: 100%;
-    max-width: 1100px;
-    box-sizing: border-box;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,0.1) transparent;
-}
-
-@media (min-width: 900px) {
-    .coming-soon-strip {
-        justify-content: center;
-    }
-}
-
-.coming-soon-strip::-webkit-scrollbar {
-    height: 6px;
-}
-
-.coming-soon-strip::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-}
-
-.coming-soon-strip .defi-service-card {
-    min-width: 280px;
-    flex: 0 0 280px;
-    height: auto;
-    opacity: 0.6;
-    transform: none !important; /* Disable 3D tilt */
-}
-
-.coming-soon-strip .defi-service-card:hover {
-    opacity: 1;
-    transform: translateY(-4px) !important;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.1);
-}
-
-/* ═══ Card Mascot Background ═══ */
-.card-mascot-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0.15;
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    overflow: hidden;
-    border-radius: 20px; /* Match card border radius */
-}
-
-.card-mascot-img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover;
-    object-position: center right; /* Keeps the mascot nicely positioned on the right */
-    filter: drop-shadow(0 0 8px rgba(255,255,255,0.1));
-}
-
-.defi-service-card:hover .card-mascot-bg {
-    opacity: 0.3;
-    transform: scale(1.05) translateY(-4px);
-}
-
-/* Ensure card content stays above mascot */
-.defi-service-card .service-header,
-.defi-service-card .service-description,
-.defi-service-card .service-stats,
-.defi-service-card .service-cta {
-    position: relative;
-    z-index: 1;
-}

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useAccount, useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { ConnectButton } from "../../components/wallet/WalletConnection";
 import { parseEther, formatEther } from "viem";
-import { Rocket, GraduationCap, Flame, BarChart3, Search, Activity, Sun, Moon, Globe, ArrowLeft, Loader2, CheckCircle2, AlertTriangle, UploadCloud, X } from "lucide-react";
+import { Rocket, GraduationCap, Flame, BarChart3, Search, Activity, Sun, Moon, Globe, Loader2, CheckCircle2, AlertTriangle, UploadCloud, X } from "lucide-react";
 import "./launchpad.css";
 import { useTranslation } from "./i18n/I18nContext";
 import { useTheme } from "./theme/ThemeContext";
@@ -67,77 +67,30 @@ const getGradPercent = (realOkb: bigint): number => {
     return Math.min(pct, 100);
 };
 
-// ============ Header Components ============
+// ============ Page Header ============
+// Global navigation, language, network and wallet controls are provided by
+// DeFiLayoutClient. This header only identifies the current tool.
 function TopNav() {
-    const { t, language, setLanguage } = useTranslation();
+    const { t } = useTranslation();
     const { theme, toggleTheme } = useTheme();
-    const [langMenuOpen, setLangMenuOpen] = useState(false);
-
-    const languages = [
-        { code: "en", label: "English" },
-        { code: "vi", label: "Tiếng Việt" },
-        { code: "zh", label: "中文" },
-        { code: "ko", label: "한국어" },
-        { code: "ja", label: "日本語" },
-    ] as const;
-
-    // Close dropdown on click outside
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            if (langMenuOpen && !(e.target as Element).closest('.lang-dropdown')) {
-                setLangMenuOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [langMenuOpen]);
 
     return (
         <header className="launchpad-header">
             <Link href="/defi/launchpad" className="launchpad-title">
-                <Rocket size={24} className="text-orange-500" />
+                <Rocket size={24} className="text-orange-500" aria-hidden="true" />
                 <h1>{t("launchpadTitle")}</h1>
             </Link>
-            
+
             <div className="header-actions">
-                <div className="dropdown-container lang-dropdown">
-                    <button 
-                        className="icon-button"
-                        onClick={() => setLangMenuOpen(!langMenuOpen)}
-                        title="Switch language"
-                    >
-                        <Globe size={18} />
-                        <span style={{ fontSize: '12px', marginLeft: '4px', fontWeight: 600 }}>
-                            {language.toUpperCase()}
-                        </span>
-                    </button>
-                    
-                    <div className={`dropdown-menu ${langMenuOpen ? 'open' : ''}`}>
-                        {languages.map((lang) => (
-                            <button
-                                key={lang.code}
-                                className={`dropdown-item ${language === lang.code ? 'active' : ''}`}
-                                onClick={() => {
-                                    setLanguage(lang.code);
-                                    setLangMenuOpen(false);
-                                }}
-                            >
-                                <span>{lang.label}</span>
-                                {language === lang.code && <CheckCircle2 size={16} />}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                
-                <button className="icon-button" onClick={toggleTheme}>
+                <button
+                    type="button"
+                    className="icon-button"
+                    onClick={toggleTheme}
+                    title={theme === "light" ? "Use dark theme" : "Use light theme"}
+                    aria-label={theme === "light" ? "Use dark theme" : "Use light theme"}
+                >
                     {theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
                 </button>
-
-                <ConnectButton showBalance={false} chainStatus="icon" accountStatus="avatar" />
-                
-                <Link href="/defi" className="icon-button" title="Back to DeFi Hub">
-                    <ArrowLeft size={18} />
-                </Link>
             </div>
         </header>
     );
