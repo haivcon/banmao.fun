@@ -86,12 +86,8 @@ ehthumbs.db
 /1/
 /api_docs/
 
-# Temporary maintenance scripts
-/scripts/fix_*.js
-/scripts/generate-*.js
-/scripts/test-verify.js
-/scripts/refactor_okx.js
-/scripts/update_readme.js
+# Local-only scripts
+/scripts/
 
 # Local-only removed games: keep source on this machine, never commit/deploy
 /local-only/

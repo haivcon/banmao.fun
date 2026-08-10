@@ -19,12 +19,7 @@ npm run check
 npm run dev
 ```
 
-BanmaoBox contract tests require a local JSON-RPC EVM at `127.0.0.1:8545` (for example Anvil):
-
-```bash
-anvil
-npm run test:banmaobox
-```
+BanmaoBox deployment and integration-test scripts are local-only and are not distributed in this repository. Coordinate with a maintainer before changing generated contract artifacts or deployment records.
 
 ## Pull requests
 
