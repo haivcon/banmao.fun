@@ -45,6 +45,9 @@
     "wagmi": "^2.19.2",
     "zustand": "^5.0.11"
   },
+  "overrides": {
+    "protobufjs": "7.6.5"
+  },
   "devDependencies": {
     "@openzeppelin/contracts": "^5.4.0",
     "@tailwindcss/postcss": "^4",
