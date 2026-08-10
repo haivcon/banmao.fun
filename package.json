@@ -6,7 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "check": "npm run generate:banmaobox && npm run typecheck && npm run lint && npm test -- --runInBand --passWithNoTests",
+    "generate:banmaobox": "node scripts/generate-banmaobox-abis.cjs",
+    "test:banmaobox": "node scripts/test-banmao-box.cjs",
+    "deploy:banmaobox:xlayer-testnet": "node scripts/deploy-banmaobox.cjs"
   },
   "dependencies": {
     "@imgly/background-removal": "^1.7.0",
@@ -43,6 +49,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
     "@tailwindcss/postcss": "^4",
     "@types/dotenv": "^6.1.1",
     "@types/jest": "^30.0.0",
@@ -60,6 +67,7 @@
     "javascript-obfuscator": "^4.1.1",
     "jest": "^30.2.0",
     "sharp": "^0.34.5",
+    "solc": "^0.8.30",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.6",
     "typescript": "^5",

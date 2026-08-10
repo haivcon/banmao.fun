@@ -36,9 +36,10 @@ interface WalletModalContextValue {
   modal: WalletModalView;
   language: WalletLanguage;
   t: WalletTranslations;
-  openConnectModal: () => void;
+  targetChainId: number;
+  openConnectModal: (targetChainId?: number | object) => void;
   openAccountModal: () => void;
-  openChainModal: () => void;
+  openChainModal: (targetChainId?: number | object) => void;
   closeModal: () => void;
 }
 
@@ -137,7 +138,14 @@ function walletConnectorName(
 
 function WalletModal() {
   const context = useWalletModalContext();
-  const { modal, language, t, closeModal, openConnectModal } = context;
+  const {
+    modal,
+    language,
+    t,
+    targetChainId,
+    closeModal,
+    openConnectModal,
+  } = context;
   const { address, connector: activeConnector } = useAccount();
   const {
     connectors,
@@ -181,7 +189,7 @@ function WalletModal() {
     if (opensExternalModal) closeModal();
 
     try {
-      await connectAsync({ connector, chainId: XLAYER_CHAIN_ID });
+      await connectAsync({ connector, chainId: targetChainId });
       if (!opensExternalModal) closeModal();
     } catch (error) {
       if (opensExternalModal) openConnectModal();
@@ -194,7 +202,7 @@ function WalletModal() {
   const switchNetwork = async () => {
     setLocalError(null);
     try {
-      await switchChainAsync({ chainId: XLAYER_CHAIN_ID });
+      await switchChainAsync({ chainId: targetChainId });
       closeModal();
     } catch (error) {
       setLocalError(walletErrorKey(error, "switch"));
@@ -404,6 +412,7 @@ export function WalletConnectionProvider({
   children: ReactNode;
 }) {
   const [modal, setModal] = useState<WalletModalView>(null);
+  const [targetChainId, setTargetChainId] = useState(XLAYER_CHAIN_ID);
   const { language, t } = useWalletTranslations();
 
   const value = useMemo<WalletModalContextValue>(
@@ -411,12 +420,23 @@ export function WalletConnectionProvider({
       modal,
       language,
       t,
-      openConnectModal: () => setModal("connect"),
+      targetChainId,
+      openConnectModal: (chainId = XLAYER_CHAIN_ID) => {
+        setTargetChainId(
+          typeof chainId === "number" ? chainId : XLAYER_CHAIN_ID,
+        );
+        setModal("connect");
+      },
       openAccountModal: () => setModal("account"),
-      openChainModal: () => setModal("chain"),
+      openChainModal: (chainId = XLAYER_CHAIN_ID) => {
+        setTargetChainId(
+          typeof chainId === "number" ? chainId : XLAYER_CHAIN_ID,
+        );
+        setModal("chain");
+      },
       closeModal: () => setModal(null),
     }),
-    [language, modal, t],
+    [language, modal, t, targetChainId],
   );
 
   return (
@@ -458,6 +478,8 @@ export interface WalletConnectButtonProps {
   label?: string;
   showBalance?: boolean;
   style?: CSSProperties;
+  targetChainId?: number;
+  supportedChainIds?: readonly number[];
 }
 
 interface WalletRenderAccount {
@@ -490,6 +512,8 @@ function WalletConnectButtonBase({
   label,
   showBalance = true,
   style,
+  targetChainId = XLAYER_CHAIN_ID,
+  supportedChainIds = [XLAYER_CHAIN_ID],
 }: WalletConnectButtonProps) {
   const { address, chain, chainId, isConnected, isReconnecting, status } =
     useAccount();
@@ -513,20 +537,22 @@ function WalletConnectButtonBase({
 
   const { data: balance } = useBalance({
     address,
-    chainId: XLAYER_CHAIN_ID,
+    chainId: targetChainId,
     query: { enabled: Boolean(address && isConnected) },
   });
   const { openAccountModal, openChainModal, openConnectModal } =
     useWalletModal();
 
   const mounted = status !== "reconnecting" || !isReconnecting;
-  const unsupported = Boolean(chainId && chainId !== XLAYER_CHAIN_ID);
+  const unsupported = Boolean(
+    chainId && !supportedChainIds.includes(chainId),
+  );
 
   if (!mounted || !isConnected || !address) {
     return (
       <button
         className={`banmao-wallet-button ${className}`.trim()}
-        onClick={openConnectModal}
+        onClick={() => openConnectModal(targetChainId)}
         style={style}
         type="button"
       >
@@ -542,7 +568,7 @@ function WalletConnectButtonBase({
     return (
       <button
         className={`banmao-wallet-button is-warning ${className}`.trim()}
-        onClick={openChainModal}
+        onClick={() => openChainModal(targetChainId)}
         style={style}
         type="button"
       >

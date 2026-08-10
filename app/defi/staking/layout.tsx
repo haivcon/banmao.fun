@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import StakingLayoutClient from "./StakingLayoutClient";
 
-// Match the shared DeFi viewport exactly so entering or leaving Staking never
-// changes the browser zoom level. Mobile sizing is handled by responsive CSS.
+// Match the shared DeFi density exactly so entering or leaving Staking never
+// changes zoom. Small phones get a roughly 1000px-wide workspace at 0.375.
 export const viewport: Viewport = {
     width: "device-width",
-    initialScale: 1,
+    initialScale: 0.375,
+    minimumScale: 0.375,
     userScalable: true,
     themeColor: "#00d4ff",
 };

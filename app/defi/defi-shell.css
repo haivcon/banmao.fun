@@ -472,7 +472,7 @@ body > .defi-lang-dropdown .defi-lang-check {
   }
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1200px) {
   :root {
     --defi-shell-header-height: 60px;
     --defi-context-header-height: 48px;
@@ -546,7 +546,7 @@ body > .defi-lang-dropdown .defi-lang-check {
   }
 
   .defi-app-shell .staking-page .expanded-panel-overlay .circular-panel-expanded {
-    width: min(calc(100vw - 16px), 480px) !important;
+    width: min(calc(100vw - 16px), 720px) !important;
     height: 100% !important;
     min-height: 0 !important;
     max-height: 100% !important;

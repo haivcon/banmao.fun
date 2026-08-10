@@ -15,7 +15,10 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Toaster } from "react-hot-toast";
 import { useAccount, useSwitchChain } from "wagmi";
 import { ConnectButton } from "../components/wallet/WalletConnection";
-import { XLAYER_CHAIN_ID } from "../lib/walletConfig";
+import {
+  XLAYER_CHAIN_ID,
+  XLAYER_TESTNET_CHAIN_ID,
+} from "../lib/walletConfig";
 import {
   getBrowserLanguage,
   type Language,
@@ -165,10 +168,19 @@ function isAdminRoute(pathname: string) {
   );
 }
 
-function NetworkStatus({ copy }: { copy: (typeof SHELL_COPY)[Language] }) {
+function NetworkStatus({
+  copy,
+  allowTestnet,
+}: {
+  copy: (typeof SHELL_COPY)[Language];
+  allowTestnet: boolean;
+}) {
   const { chainId, isConnected } = useAccount();
   const { switchChain, isPending } = useSwitchChain();
-  const wrongNetwork = isConnected && chainId !== XLAYER_CHAIN_ID;
+  const supportedChain =
+    chainId === XLAYER_CHAIN_ID ||
+    (allowTestnet && chainId === XLAYER_TESTNET_CHAIN_ID);
+  const wrongNetwork = isConnected && !supportedChain;
 
   if (wrongNetwork) {
     return (
@@ -309,7 +321,10 @@ function PublicDeFiShell({
           </nav>
 
           <div className="defi-app-shell__actions">
-            <NetworkStatus copy={copy} />
+            <NetworkStatus
+              copy={copy}
+              allowTestnet={pathname.startsWith("/defi/box")}
+            />
             <LanguageSelector
               currentLang={lang}
               onChangeLang={handleLanguageChange}
@@ -322,6 +337,11 @@ function PublicDeFiShell({
                 showBalance={false}
                 chainStatus="icon"
                 accountStatus="avatar"
+                supportedChainIds={
+                  pathname.startsWith("/defi/box")
+                    ? [XLAYER_CHAIN_ID, XLAYER_TESTNET_CHAIN_ID]
+                    : [XLAYER_CHAIN_ID]
+                }
               />
             </span>
           </div>
