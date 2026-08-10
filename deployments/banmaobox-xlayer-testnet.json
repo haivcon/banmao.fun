@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "status": "deployed",
+  "network": "X Layer Testnet",
+  "chainId": 1952,
+  "rpcUrl": "https://testrpc.xlayer.tech/terigon",
+  "explorerUrl": "https://www.okx.com/web3/explorer/xlayer-test",
+  "deployedAt": "2026-08-10T04:05:34.000Z",
+  "compiler": "0.8.30+commit.73712a01.Emscripten.clang",
+  "optimizerRuns": 200,
+  "evmVersion": "shanghai",
+  "deployer": "0x98c79DE58F08bc51f529959375DB99D30aBFcE8f",
+  "contracts": {
+    "mockBanmao": "0xE5077fD79a28B888aF33365640FDE144cf9789e3",
+    "renderer": "0x70D7dA67f1098700DDcD64F902B189feB8831AD2",
+    "factory": "0xf915fC3f8e9deAcB51371Cf5896F729416fBd2Cb",
+    "box": "0xF223c6D685fCD1c1bD1aa80e9FC501AbaE92fC69"
+  },
+  "transactions": {
+    "mockBanmao": "0xc0ab3c863363708ff23a85695dd67469c7175de9e62ae1d9b63d1c1b4687e8c4",
+    "renderer": "0xbb024fe9d61e038f77ebb1e60121e9676fb46db96dd41536461c8d02ec0a2682",
+    "factory": "0x638c1a67653c67a509053828a2dbdb0bfe62ef20b8481b91b59fada6260bb4f7",
+    "createTokenBox": "0x5dd4f0718fe7da248931c838c3d100213cf3dc91ca98e721e75d698717915fd5"
+  },
+  "tokenMetadata": {
+    "symbol": "BANMAO",
+    "decimals": 18
+  }
+}

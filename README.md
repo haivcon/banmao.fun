@@ -77,10 +77,35 @@ Restart the dev server after changing `NEXT_PUBLIC_*` values.
 
 ## Run
 
+Use Node.js 20 and npm. `package-lock.json` is the canonical lockfile.
+
 ```bash
-npm install
+npm ci
+npm run check
 npm run dev
 ```
+
+## BanmaoBox
+
+BanmaoBox uses a permissionless, immutable Factory → per-ERC20 Box → Renderer design. The application currently provides a BANMAO-focused, direct-RPC interface; no backend holds keys or mediates redemption.
+
+- X Layer Testnet (`1952`) deployment details are versioned in `deployments/banmaobox-xlayer-testnet.json`.
+- X Layer Mainnet (`196`) is explicitly marked not deployed and remains read-only.
+- Frontend environment variables are optional, per-chain local overrides only.
+- The frontend validates bytecode and Factory/Box/token/renderer invariants before enabling writes.
+- Contract ABIs are generated from Solidity with `npm run generate:banmaobox`.
+
+Run the BanmaoBox contract integration suite against a local JSON-RPC EVM (for example Anvil on port 8545):
+
+```bash
+npm run test:banmaobox
+```
+
+See `contracts/README.md`, `CONTRIBUTING.md`, and `SECURITY.md` before changing contracts or deployments.
+
+## License
+
+An open-source license has not been selected yet. Until a `LICENSE` file is added, the repository is source-available for review but no permission to copy, modify, or redistribute is granted.
 
 World Cup routes:
 

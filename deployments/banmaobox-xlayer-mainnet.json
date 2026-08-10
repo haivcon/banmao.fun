@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "network": "X Layer Mainnet",
+  "chainId": 196,
+  "rpcUrl": "https://rpc.xlayer.tech",
+  "explorerUrl": "https://www.okx.com/web3/explorer/xlayer",
+  "status": "not-deployed",
+  "contracts": {
+    "token": "0x16d91d1615fc55b76d5f92365bd60c069b46ef78",
+    "renderer": null,
+    "factory": null,
+    "box": null
+  },
+  "tokenMetadata": {
+    "symbol": "BANMAO",
+    "decimals": 18
+  }
+}
