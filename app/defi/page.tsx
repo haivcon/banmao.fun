@@ -7,6 +7,7 @@ import {
   Check,
   Copy,
   ExternalLink,
+  Gift,
   Info,
   RefreshCw,
   ShieldCheck,
@@ -49,6 +50,7 @@ import {
   StakingIcon,
   type BulletItem,
 } from "./components";
+import { BANMAO_BOX_CONTRACT_ADDRESS } from "./box/contracts";
 import { MetricInfoPopover } from "./components/MetricInfoPopover";
 import "./defi.css";
 
@@ -70,13 +72,72 @@ const DEVELOPMENT_COPY: Record<Language, string> = {
   id: "Dalam pengembangan",
 };
 
+const BOX_IS_LIVE = Boolean(BANMAO_BOX_CONTRACT_ADDRESS);
+const LIVE_PRODUCT_COUNT = BOX_IS_LIVE ? 4 : 3;
+const DEVELOPMENT_PRODUCT_COUNT =
+  (BOX_IS_LIVE ? 0 : 1) + (IS_DEVELOPMENT ? 1 : 0);
+
 const PRODUCT_COUNT_COPY: Record<Language, string> = {
-  en: IS_DEVELOPMENT ? "3 live · 1 in development" : "3 apps live",
-  vi: IS_DEVELOPMENT ? "3 hoạt động · 1 đang triển khai" : "3 ứng dụng",
-  zh: IS_DEVELOPMENT ? "3 个在线 · 1 个开发中" : "3 个应用在线",
-  ko: IS_DEVELOPMENT ? "3개 라이브 · 1개 개발 중" : "3개 앱 라이브",
-  ru: IS_DEVELOPMENT ? "3 работают · 1 в разработке" : "3 приложения",
-  id: IS_DEVELOPMENT ? "3 aktif · 1 dikembangkan" : "3 aplikasi aktif",
+  en: DEVELOPMENT_PRODUCT_COUNT
+    ? `${LIVE_PRODUCT_COUNT} live · ${DEVELOPMENT_PRODUCT_COUNT} in development`
+    : `${LIVE_PRODUCT_COUNT} apps live`,
+  vi: DEVELOPMENT_PRODUCT_COUNT
+    ? `${LIVE_PRODUCT_COUNT} hoạt động · ${DEVELOPMENT_PRODUCT_COUNT} đang triển khai`
+    : `${LIVE_PRODUCT_COUNT} ứng dụng`,
+  zh: DEVELOPMENT_PRODUCT_COUNT
+    ? `${LIVE_PRODUCT_COUNT} 个在线 · ${DEVELOPMENT_PRODUCT_COUNT} 个开发中`
+    : `${LIVE_PRODUCT_COUNT} 个应用在线`,
+  ko: DEVELOPMENT_PRODUCT_COUNT
+    ? `${LIVE_PRODUCT_COUNT}개 라이브 · ${DEVELOPMENT_PRODUCT_COUNT}개 개발 중`
+    : `${LIVE_PRODUCT_COUNT}개 앱 라이브`,
+  ru: DEVELOPMENT_PRODUCT_COUNT
+    ? `${LIVE_PRODUCT_COUNT} работают · ${DEVELOPMENT_PRODUCT_COUNT} в разработке`
+    : `${LIVE_PRODUCT_COUNT} приложения`,
+  id: DEVELOPMENT_PRODUCT_COUNT
+    ? `${LIVE_PRODUCT_COUNT} aktif · ${DEVELOPMENT_PRODUCT_COUNT} dikembangkan`
+    : `${LIVE_PRODUCT_COUNT} aplikasi aktif`,
+};
+
+const BOX_PRODUCT_COPY: Record<
+  Language,
+  { name: string; description: string; details: string }
+> = {
+  en: {
+    name: "BanmaoBox",
+    description: "Lock BANMAO in a transferable, time-locked NFT gift.",
+    details:
+      "Pack BANMAO into an ERC-721 gift box and choose its opening date. The NFT can be gifted or traded while locked. After the unlock time, its current owner opens the box, receives all underlying BANMAO, and the NFT is burned.",
+  },
+  vi: {
+    name: "BanmaoBox",
+    description: "Khóa BANMAO trong món quà NFT có thể chuyển nhượng.",
+    details:
+      "Gói BANMAO vào một hộp quà ERC-721 và chọn ngày mở. NFT có thể được tặng hoặc giao dịch trong thời gian khóa. Sau thời hạn, chủ sở hữu hiện tại mở box, nhận toàn bộ BANMAO và NFT được đốt.",
+  },
+  zh: {
+    name: "BanmaoBox",
+    description: "将 BANMAO 锁入可转让的定时 NFT 礼盒。",
+    details:
+      "将 BANMAO 封装进 ERC-721 礼盒并选择开启日期。锁定期间 NFT 仍可赠送或交易。到期后，当前持有人开启礼盒、领取全部 BANMAO，NFT 随后销毁。",
+  },
+  ko: {
+    name: "BanmaoBox",
+    description: "BANMAO를 전송 가능한 타임락 NFT 선물에 담으세요.",
+    details:
+      "BANMAO를 ERC-721 선물 박스에 담고 개봉일을 선택합니다. 잠긴 동안에도 NFT를 선물하거나 거래할 수 있습니다. 만료 후 현재 소유자가 박스를 열어 BANMAO 전량을 받고 NFT는 소각됩니다.",
+  },
+  ru: {
+    name: "BanmaoBox",
+    description: "Заблокируйте BANMAO в передаваемом NFT-подарке.",
+    details:
+      "Упакуйте BANMAO в подарочный ERC-721 и выберите дату открытия. Во время блокировки NFT можно дарить или продавать. После срока текущий владелец получает все BANMAO, а NFT сжигается.",
+  },
+  id: {
+    name: "BanmaoBox",
+    description: "Kunci BANMAO dalam hadiah NFT yang dapat ditransfer.",
+    details:
+      "Bungkus BANMAO dalam hadiah ERC-721 dan pilih tanggal buka. NFT tetap dapat dihadiahkan atau diperdagangkan selama terkunci. Setelah waktunya, pemilik menerima seluruh BANMAO dan NFT dibakar.",
+  },
 };
 
 const ERC20_ABI = [
@@ -578,10 +639,14 @@ type AirdropStats = {
 };
 
 type ProductConfig = {
-  id: "staking" | "airdrop" | "burn" | "launchpad";
-  nameKey: TranslationKey;
-  descriptionKey: TranslationKey;
-  detailsKey: TranslationKey;
+  id: "staking" | "airdrop" | "burn" | "box" | "launchpad";
+  nameKey?: TranslationKey;
+  descriptionKey?: TranslationKey;
+  detailsKey?: TranslationKey;
+  localizedCopy?: Record<
+    Language,
+    { name: string; description: string; details: string }
+  >;
   href: string;
   color: string;
   Icon: ComponentType<{ className?: string }>;
@@ -635,6 +700,15 @@ const PRODUCTS: ProductConfig[] = [
     Icon: BurnIcon,
     contractAddress: COMMUNITY_WALLET,
     illustration: "/defi/banmao_burn.png",
+  },
+  {
+    id: "box",
+    localizedCopy: BOX_PRODUCT_COPY,
+    href: "/defi/box",
+    color: "#ffd85a",
+    Icon: Gift,
+    contractAddress: BANMAO_BOX_CONTRACT_ADDRESS,
+    status: BOX_IS_LIVE ? "live" : "coming",
   },
   ...(IS_DEVELOPMENT
     ? [
@@ -991,6 +1065,10 @@ export default function DeFiPage() {
         { label: copy.burnedLabel, value: burnedDisplay },
         { label: copy.poweredBy, value: "X Layer" },
       ],
+      box: [
+        { label: "NFT", value: "ERC-721" },
+        { label: "Network", value: "X Layer" },
+      ],
       launchpad: [
         { label: copy.launchedLabel, value: "Permissionless" },
         { label: "AMM", value: "Uniswap V4" },
@@ -1101,11 +1179,23 @@ export default function DeFiPage() {
           ? t("defiAirdropOutro")
           : undefined;
 
+  const getProductName = (product: ProductConfig) =>
+    product.localizedCopy?.[lang].name ??
+    (product.nameKey ? t(product.nameKey) : product.id);
+
+  const getProductDescription = (product: ProductConfig) =>
+    product.localizedCopy?.[lang].description ??
+    (product.descriptionKey ? t(product.descriptionKey) : "");
+
+  const getProductDetails = (product: ProductConfig) =>
+    product.localizedCopy?.[lang].details ??
+    (product.detailsKey ? t(product.detailsKey) : "");
+
   const openProductInfo = (product: ProductConfig) => {
     setSelectedService({
       id: product.id,
-      name: t(product.nameKey),
-      desc: t(product.detailsKey),
+      name: getProductName(product),
+      desc: getProductDetails(product),
       contractAddress: product.contractAddress,
       stats: productStats[product.id],
       color: product.color,
@@ -1416,8 +1506,11 @@ export default function DeFiPage() {
                       <span className="defi-product-card__icon">
                         <Icon />
                       </span>
-                      <h3 className="defi-product-card__name" title={t(product.nameKey)}>
-                        {t(product.nameKey)}
+                      <h3
+                        className="defi-product-card__name"
+                        title={getProductName(product)}
+                      >
+                        {getProductName(product)}
                       </h3>
                     </div>
                     <span
@@ -1434,7 +1527,7 @@ export default function DeFiPage() {
                   </div>
 
                   <p className="defi-product-card__description">
-                    {t(product.descriptionKey)}
+                    {getProductDescription(product)}
                   </p>
 
                   <div className="defi-product-card__stats">
@@ -1472,8 +1565,8 @@ export default function DeFiPage() {
                       type="button"
                       className="defi-info-button"
                       onClick={() => openProductInfo(product)}
-                      aria-label={`${copy.learnMore}: ${t(product.nameKey)}`}
-                      title={`${copy.learnMore}: ${t(product.nameKey)}`}
+                      aria-label={`${copy.learnMore}: ${getProductName(product)}`}
+                      title={`${copy.learnMore}: ${getProductName(product)}`}
                     >
                       <Info size={14} aria-hidden="true" />
                     </button>
