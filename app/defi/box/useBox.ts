@@ -352,9 +352,12 @@ export function useBox(
           token: Address;
           amount: bigint;
         }[];
+        const primaryAsset = assets.find(
+          (asset) => asset.token.toLowerCase() === tokenAddress.toLowerCase(),
+        );
         return {
           tokenId,
-          amount: details[0],
+          amount: primaryAsset?.amount ?? 0n,
           creator: details[1],
           createdAt: details[2],
           unlockTime: details[3],
@@ -373,7 +376,14 @@ export function useBox(
     } finally {
       setBoxesLoading(false);
     }
-  }, [address, boxAddress, isDeploymentValidated, ownedBoxCount, publicClient]);
+  }, [
+    address,
+    boxAddress,
+    isDeploymentValidated,
+    ownedBoxCount,
+    publicClient,
+    tokenAddress,
+  ]);
 
   useEffect(() => {
     void loadBoxDetails();
@@ -746,9 +756,12 @@ export function useBox(
           args: [tokenId],
         } as never) as Promise<readonly BoxAsset[]>,
       ]);
+      const primaryAsset = assets.find(
+        (asset) => asset.token.toLowerCase() === tokenAddress.toLowerCase(),
+      );
       return {
         tokenId,
-        amount: details[0],
+        amount: primaryAsset?.amount ?? 0n,
         creator: details[1],
         createdAt: details[2],
         unlockTime: details[3],
@@ -758,7 +771,13 @@ export function useBox(
         assets: assets.map((asset) => ({ ...asset })),
       };
     },
-    [boxAddress, deploymentError, isDeploymentValidated, publicClient],
+    [
+      boxAddress,
+      deploymentError,
+      isDeploymentValidated,
+      publicClient,
+      tokenAddress,
+    ],
   );
 
   const refreshMetadata = useCallback(

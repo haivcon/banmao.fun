@@ -50,6 +50,7 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
 
     uint256 private _nextTokenId;
     uint256 public totalTokensLocked;
+    mapping(address token => uint256 amount) public totalLockedByToken;
 
     struct BoxInfo {
         uint256 amount;
@@ -95,7 +96,15 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
         uint256 indexed tokenId,
         address indexed token,
         address indexed owner,
-        uint256 amount
+        uint256 amount,
+        uint256 amountReceived
+    );
+    event BoxAssetReleaseFailed(
+        uint256 indexed tokenId,
+        address indexed token,
+        address indexed owner,
+        uint256 amount,
+        bytes reason
     );
 
     error ZeroAddress();
@@ -113,6 +122,8 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
     error InvalidAssetCount();
     error PrimaryTokenRequired();
     error DuplicateToken(address token);
+    error OnlySelf();
+    error NoAssetReleased();
 
     constructor(
         address tokenAddress,
@@ -201,6 +212,7 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
             if (tokenAddress == address(0)) revert ZeroAddress();
             if (tokenAddress.code.length == 0) revert InvalidToken();
             if (amount == 0) revert ZeroAmount();
+            _validateTokenMetadata(tokenAddress);
             for (uint256 j; j < i; ++j) {
                 if (tokens[j] == tokenAddress) revert DuplicateToken(tokenAddress);
             }
@@ -209,6 +221,7 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
             _boxAssets[tokenId].push(
                 BoxAsset({token: tokenAddress, amount: amount})
             );
+            totalLockedByToken[tokenAddress] += amount;
             emit BoxAssetLocked(tokenId, tokenAddress, amount);
         }
 
@@ -232,10 +245,11 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
     }
 
     /**
-     * @notice Opens an unlocked box and pays its current NFT owner.
+     * @notice Releases every currently transferable asset from an unlocked box.
      * @param tokenId ID of the box to open.
-     * @dev The owner, token-approved account, or approved-for-all operator may
-     *      submit this transaction. The underlying always goes to `currentOwner`.
+     * @dev Failed assets remain in the live NFT and can be retried later. Successful
+     *      assets are never rolled back because another token is paused, blacklistable,
+     *      fee-charging, or otherwise incompatible. The NFT burns only when empty.
      */
     function openBox(uint256 tokenId) external nonReentrant {
         address currentOwner = ownerOf(tokenId);
@@ -243,31 +257,68 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
             revert NotOwnerOrApproved();
         }
 
-        BoxInfo memory box = boxDetails[tokenId];
+        BoxInfo storage box = boxDetails[tokenId];
         if (block.timestamp < uint256(box.unlockTime)) {
             revert BoxStillLocked(box.unlockTime);
         }
 
-        uint256 amountToClaim = box.amount;
-        BoxAsset[] memory assets = _boxAssets[tokenId];
-
-        // Effects first. A failed payout reverts the burn and every storage edit.
-        delete boxDetails[tokenId];
-        delete _boxAssets[tokenId];
-        totalTokensLocked -= amountToClaim;
-        emit BoxOpened(tokenId, currentOwner, amountToClaim);
-        _burn(tokenId);
-
-        for (uint256 i; i < assets.length; ++i) {
-            BoxAsset memory asset = assets[i];
-            _pushExact(IERC20(asset.token), currentOwner, asset.amount);
-            emit BoxAssetReleased(
-                tokenId,
-                asset.token,
-                currentOwner,
-                asset.amount
-            );
+        uint256 released;
+        uint256 i;
+        while (i < _boxAssets[tokenId].length) {
+            BoxAsset memory asset = _boxAssets[tokenId][i];
+            try this.releaseAsset(asset.token, currentOwner, asset.amount) returns (
+                uint256 amountReceived
+            ) {
+                totalLockedByToken[asset.token] -= asset.amount;
+                if (asset.token == address(underlyingToken)) {
+                    totalTokensLocked -= asset.amount;
+                }
+                uint256 last = _boxAssets[tokenId].length - 1;
+                if (i != last) _boxAssets[tokenId][i] = _boxAssets[tokenId][last];
+                _boxAssets[tokenId].pop();
+                emit BoxAssetReleased(
+                    tokenId,
+                    asset.token,
+                    currentOwner,
+                    asset.amount,
+                    amountReceived
+                );
+                unchecked {
+                    ++released;
+                }
+            } catch (bytes memory reason) {
+                emit BoxAssetReleaseFailed(
+                    tokenId,
+                    asset.token,
+                    currentOwner,
+                    asset.amount,
+                    reason
+                );
+                unchecked {
+                    ++i;
+                }
+            }
         }
+
+        if (released == 0) revert NoAssetReleased();
+        if (_boxAssets[tokenId].length == 0) {
+            uint256 primaryAmount = box.amount;
+            delete boxDetails[tokenId];
+            emit BoxOpened(tokenId, currentOwner, primaryAmount);
+            _burn(tokenId);
+        } else {
+            emit MetadataUpdate(tokenId);
+        }
+    }
+
+    /** @dev Isolated payout target. It may only be reached through `openBox`. */
+    function releaseAsset(
+        address token,
+        address to,
+        uint256 amount
+    ) external returns (uint256 amountReceived) {
+        if (msg.sender != address(this)) revert OnlySelf();
+        return _pushAvailable(IERC20(token), to, amount);
     }
 
     /**
@@ -292,7 +343,7 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
 
         BoxInfo memory box = boxDetails[tokenId];
         return
-            box.amount != 0 &&
+            _boxAssets[tokenId].length != 0 &&
             block.timestamp >= uint256(box.unlockTime);
     }
 
@@ -433,6 +484,7 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
             unlockTime: uint64(unlockTimestamp)
         });
         totalTokensLocked += amount;
+        totalLockedByToken[address(underlyingToken)] += amount;
     }
 
     function _pullExact(IERC20 token, uint256 amount) internal {
@@ -444,7 +496,11 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
         }
     }
 
-    function _pushExact(IERC20 token, address to, uint256 amount) internal {
+    function _pushAvailable(
+        IERC20 token,
+        address to,
+        uint256 amount
+    ) internal returns (uint256 amountReceived) {
         uint256 contractBalanceBefore = token.balanceOf(address(this));
         uint256 ownerBalanceBefore = token.balanceOf(to);
         token.safeTransfer(to, amount);
@@ -453,20 +509,41 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
         if (
             contractBalanceAfter > contractBalanceBefore ||
             contractBalanceBefore - contractBalanceAfter != amount ||
-            ownerBalanceAfter < ownerBalanceBefore ||
-            ownerBalanceAfter - ownerBalanceBefore != amount
+            ownerBalanceAfter < ownerBalanceBefore
         ) revert UnsupportedTokenBehavior();
+        return ownerBalanceAfter - ownerBalanceBefore;
+    }
+
+    function _validateTokenMetadata(address tokenAddress) internal view {
+        try IERC20Metadata(tokenAddress).decimals() returns (uint8 decimals) {
+            if (decimals > MAX_SUPPORTED_TOKEN_DECIMALS) {
+                revert UnsupportedTokenDecimals(decimals);
+            }
+        } catch (bytes memory reason) {
+            if (reason.length == 0) revert InvalidToken();
+            assembly ("memory-safe") {
+                revert(add(reason, 0x20), mload(reason))
+            }
+        }
     }
 
     function _renderData(
         uint256 tokenId
     ) internal view returns (BanmaoBoxRenderData memory) {
         BoxInfo memory box = boxDetails[tokenId];
+        uint256 primaryAmount;
+        BoxAsset[] storage assets = _boxAssets[tokenId];
+        for (uint256 i; i < assets.length; ++i) {
+            if (assets[i].token == address(underlyingToken)) {
+                primaryAmount = assets[i].amount;
+                break;
+            }
+        }
         return
             BanmaoBoxRenderData({
                 token: address(underlyingToken),
                 creator: box.creator,
-                amount: box.amount,
+                amount: primaryAmount,
                 timestamps: (uint128(box.createdAt) << 64) |
                     uint128(box.unlockTime),
                 tokenDecimals: tokenDecimals,

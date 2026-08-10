@@ -9,10 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "check": "npm run generate:banmaobox && npm run typecheck && npm run lint && npm test -- --runInBand --passWithNoTests",
-    "generate:banmaobox": "node scripts/generate-banmaobox-abis.cjs",
-    "test:banmaobox": "node scripts/test-banmao-box.cjs",
-    "deploy:banmaobox:xlayer-testnet": "node scripts/deploy-banmaobox.cjs"
+    "check": "npm run typecheck && npm run lint && npm test -- --runInBand --passWithNoTests"
   },
   "dependencies": {
     "@imgly/background-removal": "^1.7.0",

@@ -810,7 +810,7 @@ export default function BanmaoBoxPage() {
                   </div>
                 ))}
                 <p className="box-token-warning">
-                  All assets release atomically. A paused, blacklisted, rebasing or upgraded token can permanently prevent opening. Use only trusted fixed-balance ERC-20s.
+                  Assets are released independently. A paused, blacklisted, rebasing or upgraded token may remain in the NFT and require a later retry, but it will not block other transferable assets. Use only trusted fixed-balance ERC-20s.
                 </p>
               </div>
             ) : null}

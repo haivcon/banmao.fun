@@ -19,16 +19,16 @@ A permissionless system for transferable, time-locked ERC-20 gift boxes:
 - Collections are full, non-proxy deployments permanently bound to one **primary** token and one renderer. The factory has no owner, upgrade, withdrawal, pause, or custody capability.
 - A creator may call `createBox(recipient, amount, lockDurationSec)` for a primary-token-only NFT, or `createMultiTokenBox(recipient, tokens, amounts, lockDurationSec)` for a basket of 2–5 distinct ERC-20s.
 - Every basket's first asset must be the collection's primary token. This preserves canonical discovery and primary-token accounting while allowing up to four additional assets.
-- Deposits and releases are exact-balance checked independently for every asset. The collection mints one transferable ERC-721 (`BMAO-BOX`) and exposes its contents through `getBoxAssets(tokenId)`.
-- After `unlockTime`, the owner or an approved ERC-721 operator may call `openBox(tokenId)`, but every asset is paid atomically to the current NFT owner.
-- Opening burns the NFT and deletes its `boxDetails`; historical data remains available through `BoxOpened` events.
+- Deposits are exact-balance checked independently for every asset. Releases require the collection balance to decrease by the recorded amount, while `BoxAssetReleased.amountReceived` records the owner's net receipt for fee-charging tokens. The collection exposes remaining contents through `getBoxAssets(tokenId)`.
+- After `unlockTime`, the owner or an approved ERC-721 operator may call `openBox(tokenId)`. Every transferable asset is paid to the current NFT owner; an asset that fails remains in the live NFT and can be retried without rolling back successful releases.
+- The NFT burns and its `boxDetails` are deleted only after the final remaining asset is released; historical data remains available through `BoxOpened` and per-asset events.
 - Metadata includes the snapshotted token symbol, underlying token contract address, creator wallet, and UTC start/unlock dates. The creator is permanently captured from `msg.sender` at mint and does not change when the NFT is transferred. Symbol display is sanitized and never controls custody.
 - There is no admin withdrawal, early unlock, renderer update, or collection upgrade path.
-- Deposits reject transfer discrepancies. Payout requires both the collection's balance to decrease and the owner's balance to increase by the exact recorded amount. Fee-on-transfer payouts therefore revert atomically and leave the box intact.
+- Deposits reject transfer discrepancies. Payout requires the collection's balance to decrease by the exact recorded amount; the owner's net increase may be lower for an outbound fee token and is emitted as `amountReceived`.
 
 Security and integration assumptions:
 
-- Rebasing, blacklistable, pausable, fee-changing, or upgradeable ERC-20s can change behavior after deposit and permanently prevent opening. In a basket, one failing asset prevents release of every asset because opening is intentionally atomic. BanmaoBox cannot bypass token-level rules, and intentionally has no privileged rescue path.
+- Rebasing, blacklistable, pausable, fee-changing, or upgradeable ERC-20s can change behavior after deposit. A failing asset remains claimable for later retries, while unrelated assets are released independently. BanmaoBox cannot bypass token-level rules and intentionally has no privileged rescue path.
 - `decimals()` must succeed and return at most 69. `symbol()` is optional for display: invalid, unsafe, or overlong values fall back to `TOKEN`.
 - `ERC721Enumerable` enables bounded `getBoxesByOwner(owner, offset, limit)` reads but adds storage gas to mint, transfer, and burn.
 - The renderer is immutable and must advertise `IBanmaoBoxRenderer` through ERC-165. Renderer or storage-layout changes require deploying a new renderer, factory, and token collection; existing deployed NFTs cannot be upgraded in place.
@@ -44,21 +44,11 @@ Deployment order:
 5. Call `createTokenBox(tokenAddress)` for each desired token, or let any community member do so permissionlessly.
 6. Read `boxForToken(tokenAddress)` and verify all source and addresses on X Layer Explorer.
 
-X Layer testnet deployment (chain ID `1952`):
-
-```powershell
-Copy-Item .env.deploy.example .env.deploy.local
-# Add a dedicated testnet wallet private key to .env.deploy.local, fund it with testnet OKB, then:
-npm run deploy:banmaobox:xlayer-testnet
-```
-
-The script deploys `MockBanmao`, the renderer, and the factory, then creates the
-canonical MockBanmao collection through the factory. It validates all address
-links and writes transaction hashes to
-`deployments/banmaobox-xlayer-testnet.json`. If an interrupted run already
-created the mock token, set `EXISTING_MOCK_BANMAO_ADDRESS` (and optionally
-`EXISTING_MOCK_BANMAO_TX_HASH`) to resume without deploying it again. Never
-commit private keys.
+X Layer testnet deployment tooling is maintained locally and is not distributed
+in this repository. Deployment records remain versioned in
+`deployments/banmaobox-xlayer-testnet.json`. Use a dedicated testnet wallet,
+independently verify all address links and transaction hashes, and never commit
+private keys.
 
 ```text
 BANMAO: 0x16d91d1615fc55b76d5f92365bd60c069b46ef78

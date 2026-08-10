@@ -35,13 +35,8 @@ BanmaoBox is a permissionless, immutable Factory → per-ERC-20 Box → Renderer
 - X Layer Mainnet (chain ID `196`) is marked as not deployed and remains read-only.
 - Per-chain `NEXT_PUBLIC_BANMAO_*` values are optional local overrides, not cross-chain fallbacks.
 - The frontend verifies bytecode and Factory, Box, token, and renderer invariants before enabling writes.
-- Generate contract ABIs with `npm run generate:banmaobox`.
-
-To run the contract integration suite, start Anvil or another compatible JSON-RPC EVM at `127.0.0.1:8545`, then run:
-
-```bash
-npm run test:banmaobox
-```
+- Generated contract ABIs are versioned in `app/defi/box/generated/abis.ts`.
+- Deployment and integration-test scripts are maintained locally and are not distributed in this repository.
 
 Read [`contracts/README.md`](contracts/README.md), [`CONTRIBUTING.md`](CONTRIBUTING.md), and [`SECURITY.md`](SECURITY.md) before changing contracts or deployments.
 
