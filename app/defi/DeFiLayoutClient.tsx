@@ -164,7 +164,9 @@ function isAdminRoute(pathname: string) {
     pathname === "/defi/admin" ||
     pathname.startsWith("/defi/admin/") ||
     pathname === "/defi/launchpad/admin" ||
-    pathname.startsWith("/defi/launchpad/admin/")
+    pathname.startsWith("/defi/launchpad/admin/") ||
+    pathname === "/defi/box/admin" ||
+    pathname.startsWith("/defi/box/admin/")
   );
 }
 

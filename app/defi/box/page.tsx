@@ -8,6 +8,8 @@ import {
   CheckCircle2,
   Clock3,
   Gift,
+  Eye,
+  ExternalLink,
   LoaderCircle,
   LockKeyhole,
   Network,
@@ -19,12 +21,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type FormEvent,
-} from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useSwitchChain } from "wagmi";
 import {
   formatUnits,
@@ -37,8 +34,10 @@ import { ConnectButton } from "../../components/wallet/WalletConnection";
 import { LanguageSelector } from "../LanguageSelector";
 import {
   getBoxChainConfig,
+  type BasketInput,
   type BoxChainId,
   type BoxEntry,
+  type InspectedBox,
 } from "./contracts";
 import {
   XLAYER_CHAIN_ID,
@@ -55,6 +54,15 @@ import "./box.css";
 
 const DAY_SECONDS = 86_400n;
 const DURATION_OPTIONS = [7, 30, 90, 180, 365] as const;
+const BOXES_PER_PAGE = 6;
+
+function getTier(amount: bigint, decimals: number): string {
+  const unit = 10n ** BigInt(decimals);
+  if (amount >= 100_000_000n * unit) return "LEGENDARY";
+  if (amount >= 10_000_000n * unit) return "GOLD";
+  if (amount >= 1_000_000n * unit) return "DELUXE";
+  return "CLASSIC";
+}
 
 function formatDate(timestamp: bigint, language: BoxLanguage): string {
   return new Intl.DateTimeFormat(language, {
@@ -68,10 +76,7 @@ function getRemaining(
   nowMs: number,
   copy: BoxCopy,
 ): string {
-  const remaining = Math.max(
-    0,
-    Number(unlockTime) - Math.floor(nowMs / 1000),
-  );
+  const remaining = Math.max(0, Number(unlockTime) - Math.floor(nowMs / 1000));
 
   if (remaining === 0) return copy.ready;
 
@@ -114,6 +119,8 @@ function BoxCard({
   busy,
   onOpen,
   onTransfer,
+  onRefreshMetadata,
+  tokenSymbol,
 }: {
   entry: BoxEntry;
   copy: BoxCopy;
@@ -123,10 +130,11 @@ function BoxCard({
   busy: boolean;
   onOpen: (tokenId: bigint) => void;
   onTransfer: (entry: BoxEntry) => void;
+  onRefreshMetadata: (tokenId: bigint) => void;
+  tokenSymbol: string;
 }) {
   const ready =
-    entry.canOpen ||
-    Number(entry.unlockTime) <= Math.floor(now / 1000);
+    entry.canOpen || Number(entry.unlockTime) <= Math.floor(now / 1000);
 
   return (
     <article className={`box-item ${ready ? "box-item--ready" : ""}`}>
@@ -146,14 +154,23 @@ function BoxCard({
         <div className="box-item__heading">
           <span>
             {copy.boxNumber} #{entry.tokenId.toString()}
+            <em
+              className={`box-tier box-tier--${getTier(entry.amount, decimals).toLowerCase()}`}
+            >
+              {getTier(entry.amount, decimals)}
+            </em>
           </span>
           <strong>
-            {formatBanmao(entry.amount, decimals)}{" "}
-            <small>BANMAO</small>
+            {formatBanmao(entry.amount, decimals)} <small>{tokenSymbol}</small>
           </strong>
+          {entry.assets.length > 1 ? <small>{entry.assets.length} assets in basket</small> : null}
         </div>
 
         <dl className="box-item__details">
+          <div>
+            <dt>{copy.createdAt}</dt>
+            <dd>{formatDate(entry.createdAt, language)}</dd>
+          </div>
           <div>
             <dt>{copy.unlocksAt}</dt>
             <dd>{formatDate(entry.unlockTime, language)}</dd>
@@ -173,11 +190,7 @@ function BoxCard({
             disabled={!ready || busy}
             onClick={() => onOpen(entry.tokenId)}
           >
-            {busy ? (
-              <LoaderCircle className="box-spin" />
-            ) : (
-              <PackageOpen />
-            )}
+            {busy ? <LoaderCircle className="box-spin" /> : <PackageOpen />}
             {copy.open}
           </button>
           <button
@@ -189,6 +202,18 @@ function BoxCard({
             <Send />
             {copy.transfer}
           </button>
+          {ready ? (
+            <button
+              type="button"
+              className="box-button box-button--ghost"
+              disabled={busy}
+              onClick={() => onRefreshMetadata(entry.tokenId)}
+              title={copy.refreshMetadata}
+            >
+              <RefreshCw />
+              {copy.refreshMetadata}
+            </button>
+          ) : null}
         </div>
       </div>
     </article>
@@ -197,20 +222,33 @@ function BoxCard({
 
 export default function BanmaoBoxPage() {
   const [language, setLanguage] = useState<BoxLanguage>("en");
-  const [selectedChainId, setSelectedChainId] =
-    useState<BoxChainId>(XLAYER_TESTNET_CHAIN_ID);
+  const [selectedChainId, setSelectedChainId] = useState<BoxChainId>(
+    XLAYER_TESTNET_CHAIN_ID,
+  );
   const [networkError, setNetworkError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [amount, setAmount] = useState("");
+  const [activeBoxAddress, setActiveBoxAddress] = useState<Address>();
+  const [activeTokenAddress, setActiveTokenAddress] = useState<Address>();
+  const [collectionToken, setCollectionToken] = useState("");
+  const [collectionError, setCollectionError] = useState<string | null>(null);
+  const [multiMode, setMultiMode] = useState(false);
+  const [extraAssets, setExtraAssets] = useState<
+    (BasketInput & { symbol: string; balance: bigint })[]
+  >([]);
+  const [newAssetToken, setNewAssetToken] = useState("");
   const [recipient, setRecipient] = useState("");
   const [selectedDays, setSelectedDays] = useState<number | "custom">(30);
   const [customDays, setCustomDays] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
-  const [transferEntry, setTransferEntry] = useState<BoxEntry | null>(
-    null,
-  );
+  const [transferEntry, setTransferEntry] = useState<BoxEntry | null>(null);
   const [transferRecipient, setTransferRecipient] = useState("");
   const [transferError, setTransferError] = useState<string | null>(null);
+  const [boxPage, setBoxPage] = useState(0);
+  const [inspectId, setInspectId] = useState("");
+  const [inspectedBox, setInspectedBox] = useState<InspectedBox | null>(null);
+  const [inspectError, setInspectError] = useState<string | null>(null);
+  const [inspectLoading, setInspectLoading] = useState(false);
 
   const { switchChainAsync, isPending: isSwitchingNetwork } = useSwitchChain();
   const chainConfig = getBoxChainConfig(selectedChainId);
@@ -221,6 +259,8 @@ export default function BanmaoBoxPage() {
     isCorrectChain,
     isDeployed,
     tokenDecimals,
+    tokenSymbol,
+    maxLockDuration,
     tokenBalance,
     boxes,
     boxesLoading,
@@ -230,16 +270,27 @@ export default function BanmaoBoxPage() {
     totalLocked,
     totalSupply,
     createBox,
+    createMultiTokenBox,
+    createCollection,
+    resolveCollection,
+    readAsset,
     openBox,
     transferBox,
+    refreshMetadata,
+    inspectBox,
     refetchAll,
     phase,
     transactionHash,
     transactionError,
     isBusy,
-  } = useBox(selectedChainId);
+  } = useBox(selectedChainId, activeBoxAddress, activeTokenAddress);
 
   const copy = BOX_COPY[language];
+  const pageCount = Math.max(1, Math.ceil(boxes.length / BOXES_PER_PAGE));
+  const visibleBoxes = useMemo(
+    () => boxes.slice(boxPage * BOXES_PER_PAGE, (boxPage + 1) * BOXES_PER_PAGE),
+    [boxPage, boxes],
+  );
 
   const handleNetworkChange = async (nextChainId: BoxChainId) => {
     setSelectedChainId(nextChainId);
@@ -252,13 +303,17 @@ export default function BanmaoBoxPage() {
       await switchChainAsync({ chainId: nextChainId });
     } catch (error) {
       setNetworkError(
-        error instanceof Error ? error.message.split("\n")[0] : "Unable to switch network",
+        error instanceof Error
+          ? error.message.split("\n")[0]
+          : "Unable to switch network",
       );
     }
   };
 
   useEffect(() => {
-    const savedChainId = Number(window.localStorage.getItem("banmaobox_chain_id"));
+    const savedChainId = Number(
+      window.localStorage.getItem("banmaobox_chain_id"),
+    );
     if (
       savedChainId === XLAYER_CHAIN_ID ||
       savedChainId === XLAYER_TESTNET_CHAIN_ID
@@ -266,6 +321,21 @@ export default function BanmaoBoxPage() {
       setSelectedChainId(savedChainId);
     }
   }, []);
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem(`banmaobox_collection_${selectedChainId}`);
+    const [savedToken, savedBox] = saved?.split(":") ?? [];
+    if (isAddress(savedToken ?? "") && isAddress(savedBox ?? "")) {
+      setActiveTokenAddress(getAddress(savedToken));
+      setActiveBoxAddress(getAddress(savedBox));
+      setCollectionToken(getAddress(savedToken));
+    } else {
+      setActiveTokenAddress(chainConfig.tokenAddress);
+      setActiveBoxAddress(chainConfig.boxAddress);
+      setCollectionToken(chainConfig.tokenAddress ?? "");
+    }
+    setExtraAssets([]);
+  }, [chainConfig.boxAddress, chainConfig.tokenAddress, selectedChainId]);
 
   useEffect(() => {
     setLanguage(getInitialBoxLanguage());
@@ -277,10 +347,7 @@ export default function BanmaoBoxPage() {
       }
     };
 
-    window.addEventListener(
-      "banmao:language-change",
-      handleLanguageChange,
-    );
+    window.addEventListener("banmao:language-change", handleLanguageChange);
     return () =>
       window.removeEventListener(
         "banmao:language-change",
@@ -300,6 +367,7 @@ export default function BanmaoBoxPage() {
   useEffect(() => {
     if (phase === "success") {
       setAmount("");
+      setExtraAssets([]);
       setTransferEntry(null);
       setTransferRecipient("");
     }
@@ -312,10 +380,7 @@ export default function BanmaoBoxPage() {
   }, [customDays, selectedDays]);
 
   const estimatedUnlock = useMemo(
-    () =>
-      new Date(
-        now + Math.max(durationDays, 0) * 24 * 60 * 60 * 1000,
-      ),
+    () => new Date(now + Math.max(durationDays, 0) * 24 * 60 * 60 * 1000),
     [durationDays, now],
   );
 
@@ -332,8 +397,28 @@ export default function BanmaoBoxPage() {
       return copy.invalidAmount;
     }
 
+    if (multiMode) {
+      if (extraAssets.length === 0 || extraAssets.length > 4) {
+        return "Add between 1 and 4 extra ERC-20 assets.";
+      }
+      for (const asset of extraAssets) {
+        try {
+          const value = parseUnits(asset.amount, asset.decimals);
+          if (value <= 0n) return "Every basket amount must be greater than zero.";
+          if (value > asset.balance) return `Insufficient ${asset.symbol} balance.`;
+        } catch {
+          return `Invalid ${asset.symbol} amount.`;
+        }
+      }
+    }
+
     if (!isAddress(recipient)) return copy.invalidRecipient;
-    if (durationDays < 1) return copy.invalidDuration;
+    if (
+      durationDays < 1 ||
+      BigInt(durationDays) * DAY_SECONDS > maxLockDuration
+    ) {
+      return copy.invalidDuration;
+    }
     return null;
   };
 
@@ -344,13 +429,87 @@ export default function BanmaoBoxPage() {
     if (validationError) return;
 
     try {
-      await createBox(
-        getAddress(recipient),
-        amount,
-        BigInt(durationDays) * DAY_SECONDS,
-      );
+      const duration = BigInt(durationDays) * DAY_SECONDS;
+      if (multiMode && activeTokenAddress) {
+        await createMultiTokenBox(
+          getAddress(recipient),
+          [
+            {
+              token: activeTokenAddress,
+              amount,
+              decimals: tokenDecimals,
+            },
+            ...extraAssets.map(({ token, amount: assetAmount, decimals }) => ({
+              token,
+              amount: assetAmount,
+              decimals,
+            })),
+          ],
+          duration,
+        );
+      } else {
+        await createBox(getAddress(recipient), amount, duration);
+      }
     } catch {
       // The hook exposes a normalized transaction error.
+    }
+  };
+
+  const selectCollection = (token: Address, box: Address) => {
+    setActiveTokenAddress(token);
+    setActiveBoxAddress(box);
+    setCollectionToken(token);
+    setExtraAssets([]);
+    setAmount("");
+    window.localStorage.setItem(`banmaobox_collection_${selectedChainId}`, `${token}:${box}`);
+  };
+
+  const handleCollection = async (create: boolean) => {
+    setCollectionError(null);
+    if (!isAddress(collectionToken)) {
+      setCollectionError("Enter a valid primary ERC-20 address.");
+      return;
+    }
+    const token = getAddress(collectionToken);
+    try {
+      await readAsset(token);
+      const existing = await resolveCollection(token);
+      if (existing !== "0x0000000000000000000000000000000000000000") {
+        selectCollection(token, existing);
+        return;
+      }
+      if (!create) {
+        setCollectionError("No collection exists for this token. Create it first.");
+        return;
+      }
+      selectCollection(token, await createCollection(token));
+    } catch (error) {
+      setCollectionError(error instanceof Error ? error.message.split("\n")[0] : "Collection action failed");
+    }
+  };
+
+  const handleAddAsset = async () => {
+    setFormError(null);
+    if (!isAddress(newAssetToken)) {
+      setFormError("Enter a valid ERC-20 address.");
+      return;
+    }
+    const token = getAddress(newAssetToken);
+    const allTokens = [activeTokenAddress, ...extraAssets.map((asset) => asset.token)];
+    if (allTokens.some((value) => value?.toLowerCase() === token.toLowerCase())) {
+      setFormError("Each basket token must be unique.");
+      return;
+    }
+    if (extraAssets.length >= 4) {
+      setFormError("A box supports at most five assets.");
+      return;
+    }
+    try {
+      const metadata = await readAsset(token);
+      setExtraAssets((current) => [...current, { ...metadata, amount: "" }]);
+      setNewAssetToken("");
+    } catch (error) {
+      setFormError(error instanceof Error ? error.message.split("\n")[0] : "Unable to read token");
     }
   };
 
@@ -359,6 +518,24 @@ export default function BanmaoBoxPage() {
       await openBox(tokenId);
     } catch {
       // The hook exposes a normalized transaction error.
+    }
+  };
+
+  const handleInspect = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!/^\d+$/.test(inspectId)) {
+      setInspectError(copy.inspectPlaceholder);
+      return;
+    }
+    setInspectLoading(true);
+    setInspectError(null);
+    setInspectedBox(null);
+    try {
+      setInspectedBox(await inspectBox(BigInt(inspectId)));
+    } catch {
+      setInspectError("Box does not exist or the RPC request failed.");
+    } finally {
+      setInspectLoading(false);
     }
   };
 
@@ -371,10 +548,7 @@ export default function BanmaoBoxPage() {
       return;
     }
 
-    if (
-      address &&
-      getAddress(transferRecipient) === getAddress(address)
-    ) {
+    if (address && getAddress(transferRecipient) === getAddress(address)) {
       setTransferError(copy.sameRecipient);
       return;
     }
@@ -441,10 +615,11 @@ export default function BanmaoBoxPage() {
               Testnet
             </button>
           </div>
-          <LanguageSelector
-            currentLang={language}
-            onChangeLang={setLanguage}
-          />
+          <Link href="/defi/box/admin" className="box-ops-link">
+            <ShieldCheck />
+            {copy.operations}
+          </Link>
+          <LanguageSelector currentLang={language} onChangeLang={setLanguage} />
           <ConnectButton
             targetChainId={selectedChainId}
             supportedChainIds={[XLAYER_CHAIN_ID, XLAYER_TESTNET_CHAIN_ID]}
@@ -466,7 +641,7 @@ export default function BanmaoBoxPage() {
               <span>{copy.lockedMetric}</span>
               <strong>
                 {isDeployed
-                  ? formatBanmao(totalLocked, tokenDecimals, 2)
+                  ? `${formatBanmao(totalLocked, tokenDecimals, 2)} ${tokenSymbol}`
                   : "—"}
               </strong>
             </div>
@@ -478,7 +653,7 @@ export default function BanmaoBoxPage() {
               <span>{copy.walletMetric}</span>
               <strong>
                 {isConnected
-                  ? formatBanmao(tokenBalance, tokenDecimals, 2)
+                  ? `${formatBanmao(tokenBalance, tokenDecimals, 2)} ${tokenSymbol}`
                   : "—"}
               </strong>
             </div>
@@ -504,11 +679,45 @@ export default function BanmaoBoxPage() {
             <Box />
           </span>
           <div>
-            <h2>{deploymentError ? "Deployment validation failed" : copy.notDeployedTitle}</h2>
+            <h2>
+              {deploymentError
+                ? "Deployment validation failed"
+                : copy.notDeployedTitle}
+            </h2>
             <p>{deploymentError ?? copy.notDeployedDescription}</p>
           </div>
         </section>
       ) : null}
+
+      <section className="box-collection-manager">
+        <div>
+          <strong>Collection manager</strong>
+          <span>
+            One canonical BanmaoBox collection per primary ERC-20. Anyone can create a missing collection.
+          </span>
+        </div>
+        <div className="box-collection-controls">
+          <input
+            value={collectionToken}
+            onChange={(event) => setCollectionToken(event.target.value.trim())}
+            placeholder="Primary ERC-20 address (0x…)"
+            spellCheck={false}
+            disabled={isBusy}
+          />
+          <button type="button" onClick={() => void handleCollection(false)} disabled={isBusy}>
+            Use collection
+          </button>
+          <button type="button" className="primary" onClick={() => void handleCollection(true)} disabled={isBusy || !isConnected}>
+            Create if missing
+          </button>
+        </div>
+        {activeBoxAddress && activeTokenAddress ? (
+          <small>
+            Active: {tokenSymbol} · {activeTokenAddress.slice(0, 8)}…{activeTokenAddress.slice(-6)} · Box {activeBoxAddress.slice(0, 8)}…{activeBoxAddress.slice(-6)}
+          </small>
+        ) : null}
+        {collectionError ? <p className="box-form-error" role="alert">{collectionError}</p> : null}
+      </section>
 
       <section className="box-workspace">
         <article className="box-panel box-create-panel">
@@ -523,12 +732,20 @@ export default function BanmaoBoxPage() {
           </div>
 
           <form onSubmit={handleCreate} className="box-form">
+            <div className="box-mode-switch" role="group" aria-label="Box asset mode">
+              <button type="button" className={!multiMode ? "active" : ""} onClick={() => setMultiMode(false)} disabled={isBusy}>
+                Single token
+              </button>
+              <button type="button" className={multiMode ? "active" : ""} onClick={() => setMultiMode(true)} disabled={isBusy}>
+                Multi-token basket (2–5)
+              </button>
+            </div>
             <label className="box-field">
               <span className="box-field__label">
                 {copy.amount}
                 <small>
-                  {copy.balance}:{" "}
-                  {formatBanmao(tokenBalance, tokenDecimals)}
+                  {copy.balance}: {formatBanmao(tokenBalance, tokenDecimals)}{" "}
+                  {tokenSymbol}
                   <button
                     type="button"
                     onClick={() =>
@@ -552,13 +769,51 @@ export default function BanmaoBoxPage() {
                   disabled={isBusy || !isDeployed || !isDeploymentValidated}
                   aria-invalid={Boolean(
                     formError &&
-                      (formError === copy.invalidAmount ||
-                        formError === copy.insufficientBalance),
+                    (formError === copy.invalidAmount ||
+                      formError === copy.insufficientBalance),
                   )}
                 />
-                <b>BANMAO</b>
+                <b>{tokenSymbol}</b>
               </span>
             </label>
+
+            {multiMode ? (
+              <div className="box-basket">
+                <div className="box-basket__add">
+                  <input
+                    value={newAssetToken}
+                    onChange={(event) => setNewAssetToken(event.target.value.trim())}
+                    placeholder="Additional ERC-20 address"
+                    spellCheck={false}
+                    disabled={isBusy || extraAssets.length >= 4}
+                  />
+                  <button type="button" onClick={() => void handleAddAsset()} disabled={isBusy || extraAssets.length >= 4}>
+                    Add asset
+                  </button>
+                </div>
+                {extraAssets.map((asset, index) => (
+                  <div className="box-basket__asset" key={asset.token}>
+                    <div>
+                      <strong>{asset.symbol}</strong>
+                      <small title={asset.token}>{asset.token.slice(0, 8)}…{asset.token.slice(-6)} · {asset.decimals} decimals · balance {formatBanmao(asset.balance, asset.decimals)}</small>
+                    </div>
+                    <input
+                      inputMode="decimal"
+                      value={asset.amount}
+                      placeholder="Amount"
+                      onChange={(event) => setExtraAssets((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: event.target.value.trim() } : item))}
+                      disabled={isBusy}
+                    />
+                    <button type="button" aria-label={`Remove ${asset.symbol}`} onClick={() => setExtraAssets((current) => current.filter((_, itemIndex) => itemIndex !== index))} disabled={isBusy}>
+                      <X />
+                    </button>
+                  </div>
+                ))}
+                <p className="box-token-warning">
+                  All assets release atomically. A paused, blacklisted, rebasing or upgraded token can permanently prevent opening. Use only trusted fixed-balance ERC-20s.
+                </p>
+              </div>
+            ) : null}
 
             <label className="box-field">
               <span className="box-field__label">{copy.recipient}</span>
@@ -663,11 +918,7 @@ export default function BanmaoBoxPage() {
               className="box-submit"
               disabled={!isConnected || !isDeployed || isBusy}
             >
-              {isBusy ? (
-                <LoaderCircle className="box-spin" />
-              ) : (
-                <Gift />
-              )}
+              {isBusy ? <LoaderCircle className="box-spin" /> : <Gift />}
               {isConnected ? copy.createButton : copy.connectToCreate}
               {!isBusy ? <ArrowRight /> : null}
             </button>
@@ -725,23 +976,140 @@ export default function BanmaoBoxPage() {
               <small>{copy.noBoxesHint}</small>
             </div>
           ) : (
-            <div className="box-list">
-              {boxes.map((entry) => (
-                <BoxCard
-                  key={entry.tokenId.toString()}
-                  entry={entry}
-                  copy={copy}
-                  language={language}
-                  now={now}
-                  decimals={tokenDecimals}
-                  busy={isBusy}
-                  onOpen={(tokenId) => void handleOpen(tokenId)}
-                  onTransfer={setTransferEntry}
-                />
-              ))}
-            </div>
+            <>
+              <div className="box-list">
+                {visibleBoxes.map((entry) => (
+                  <BoxCard
+                    key={entry.tokenId.toString()}
+                    entry={entry}
+                    copy={copy}
+                    language={language}
+                    now={now}
+                    decimals={tokenDecimals}
+                    tokenSymbol={tokenSymbol}
+                    busy={isBusy}
+                    onOpen={(tokenId) => void handleOpen(tokenId)}
+                    onTransfer={setTransferEntry}
+                    onRefreshMetadata={(tokenId) =>
+                      void refreshMetadata(tokenId)
+                    }
+                  />
+                ))}
+              </div>
+              {pageCount > 1 ? (
+                <nav className="box-pagination" aria-label="Box pages">
+                  <button
+                    type="button"
+                    disabled={boxPage === 0}
+                    onClick={() => setBoxPage((value) => value - 1)}
+                  >
+                    <ArrowLeft /> {copy.previous}
+                  </button>
+                  <span>
+                    {boxPage + 1} / {pageCount}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={boxPage + 1 >= pageCount}
+                    onClick={() => setBoxPage((value) => value + 1)}
+                  >
+                    {copy.next} <ArrowRight />
+                  </button>
+                </nav>
+              ) : null}
+            </>
           )}
         </article>
+      </section>
+
+      <section className="box-inspector">
+        <div className="box-inspector__copy">
+          <span className="box-eyebrow">
+            <Eye /> On-chain explorer
+          </span>
+          <h2>{copy.inspectTitle}</h2>
+          <p>{copy.inspectDescription}</p>
+          <form onSubmit={handleInspect}>
+            <input
+              inputMode="numeric"
+              value={inspectId}
+              onChange={(event) => {
+                setInspectId(event.target.value.trim());
+                setInspectError(null);
+              }}
+              placeholder={copy.inspectPlaceholder}
+              aria-label={copy.inspectPlaceholder}
+            />
+            <button
+              type="submit"
+              className="box-button box-button--primary"
+              disabled={inspectLoading || !isDeploymentValidated}
+            >
+              {inspectLoading ? <LoaderCircle className="box-spin" /> : <Eye />}
+              {copy.inspectButton}
+            </button>
+          </form>
+          {inspectError ? (
+            <p className="box-form-error" role="alert">
+              {inspectError}
+            </p>
+          ) : null}
+        </div>
+        <div className="box-inspector__result">
+          {inspectedBox ? (
+            <>
+              <div
+                className="box-svg"
+                dangerouslySetInnerHTML={{ __html: inspectedBox.svg }}
+              />
+              <div className="box-inspector__facts">
+                <strong>
+                  {copy.boxNumber} #{inspectedBox.tokenId.toString()}
+                </strong>
+                <span>
+                  {formatBanmao(inspectedBox.amount, tokenDecimals)}{" "}
+                  {tokenSymbol}
+                </span>
+                <dl>
+                  <div>
+                    <dt>{copy.owner}</dt>
+                    <dd title={inspectedBox.owner}>
+                      {inspectedBox.owner.slice(0, 8)}…
+                      {inspectedBox.owner.slice(-6)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{copy.createdAt}</dt>
+                    <dd>{formatDate(inspectedBox.createdAt, language)}</dd>
+                  </div>
+                  <div>
+                    <dt>{copy.unlocksAt}</dt>
+                    <dd>{formatDate(inspectedBox.unlockTime, language)}</dd>
+                  </div>
+                </dl>
+                <div className="box-inspector-assets">
+                  {inspectedBox.assets.map((asset, index) => (
+                    <span key={asset.token} title={asset.token}>
+                      Asset {index + 1}: {asset.amount.toString()} base units · {asset.token.slice(0, 8)}…{asset.token.slice(-6)}
+                    </span>
+                  ))}
+                </div>
+                <a
+                  href={`${chainConfig.chain.blockExplorers?.default.url}/token/${activeBoxAddress ?? chainConfig.boxAddress}?a=${inspectedBox.tokenId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Explorer <ExternalLink />
+                </a>
+              </div>
+            </>
+          ) : (
+            <div className="box-inspector__empty">
+              <Gift />
+              <span>Fully on-chain SVG &amp; metadata</span>
+            </div>
+          )}
+        </div>
       </section>
 
       {transactionMessage ? (
@@ -764,8 +1132,7 @@ export default function BanmaoBoxPage() {
                 target="_blank"
                 rel="noreferrer"
               >
-                {transactionHash.slice(0, 10)}…
-                {transactionHash.slice(-8)}
+                {transactionHash.slice(0, 10)}…{transactionHash.slice(-8)}
               </a>
             ) : null}
           </div>
@@ -896,11 +1263,7 @@ export default function BanmaoBoxPage() {
                   className="box-button box-button--primary"
                   disabled={isBusy}
                 >
-                  {isBusy ? (
-                    <LoaderCircle className="box-spin" />
-                  ) : (
-                    <Send />
-                  )}
+                  {isBusy ? <LoaderCircle className="box-spin" /> : <Send />}
                   {copy.confirmTransfer}
                 </button>
               </div>

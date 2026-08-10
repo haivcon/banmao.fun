@@ -67,6 +67,16 @@ export type BoxCopy = {
   hours: string;
   minutes: string;
   seconds: string;
+  createdAt: string;
+  inspectTitle: string;
+  inspectDescription: string;
+  inspectPlaceholder: string;
+  inspectButton: string;
+  owner: string;
+  refreshMetadata: string;
+  previous: string;
+  next: string;
+  operations: string;
 };
 
 export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
@@ -87,7 +97,8 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     useMax: "Max",
     recipient: "Initial recipient",
     recipientPlaceholder: "0x…",
-    recipientHint: "Use your wallet to keep it, or enter another wallet to gift it now.",
+    recipientHint:
+      "Use your wallet to keep it, or enter another wallet to gift it now.",
     duration: "Lock duration",
     customDays: "Custom",
     customDaysPlaceholder: "Number of days",
@@ -134,6 +145,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
       approving: "Approve BANMAO in your wallet…",
       creating: "Create the box in your wallet…",
       opening: "Open the box in your wallet…",
+      "refreshing-metadata": "Confirm the metadata refresh…",
       transferring: "Confirm the NFT transfer…",
       confirming: "Waiting for on-chain confirmation…",
     },
@@ -148,6 +160,17 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     hours: "h",
     minutes: "m",
     seconds: "s",
+    createdAt: "Created",
+    inspectTitle: "Explore any BanmaoBox",
+    inspectDescription:
+      "Enter a live token ID to verify its owner, backing, dates and on-chain artwork.",
+    inspectPlaceholder: "Token ID, e.g. 1",
+    inspectButton: "Inspect box",
+    owner: "Current owner",
+    refreshMetadata: "Refresh metadata",
+    previous: "Previous",
+    next: "Next",
+    operations: "Operations",
   },
   vi: {
     back: "Trang DeFi",
@@ -213,6 +236,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
       approving: "Xác nhận approve BANMAO trong ví…",
       creating: "Xác nhận tạo box trong ví…",
       opening: "Xác nhận mở box trong ví…",
+      "refreshing-metadata": "Xác nhận làm mới metadata…",
       transferring: "Xác nhận chuyển NFT…",
       confirming: "Đang chờ xác nhận on-chain…",
     },
@@ -227,12 +251,24 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     hours: "g",
     minutes: "p",
     seconds: "s",
+    createdAt: "Ngày tạo",
+    inspectTitle: "Khám phá BanmaoBox bất kỳ",
+    inspectDescription:
+      "Nhập token ID đang tồn tại để kiểm tra chủ sở hữu, tài sản bảo chứng, thời gian và artwork on-chain.",
+    inspectPlaceholder: "Token ID, ví dụ 1",
+    inspectButton: "Kiểm tra box",
+    owner: "Chủ sở hữu hiện tại",
+    refreshMetadata: "Làm mới metadata",
+    previous: "Trước",
+    next: "Tiếp",
+    operations: "Vận hành",
   },
   zh: {
     back: "DeFi 首页",
     eyebrow: "一份会等待的礼物",
     title: "将 BANMAO 封装进定时 NFT。",
-    subtitle: "创建可转让的 BanmaoBox，赠送给任意钱包，到期后由当前持有人开启。",
+    subtitle:
+      "创建可转让的 BanmaoBox，赠送给任意钱包，到期后由当前持有人开启。",
     lockedMetric: "已锁定 BANMAO",
     activeMetric: "有效礼盒",
     walletMetric: "您的余额",
@@ -252,7 +288,8 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     createButton: "创建礼盒",
     connectToCreate: "连接钱包以创建",
     notDeployedTitle: "BanmaoBox 已准备部署",
-    notDeployedDescription: "部署合约并设置 NEXT_PUBLIC_BANMAO_BOX_ADDRESS 以启用链上操作。",
+    notDeployedDescription:
+      "部署合约并设置 NEXT_PUBLIC_BANMAO_BOX_ADDRESS 以启用链上操作。",
     wrongNetwork: "签名前钱包将切换至 X Layer。",
     boxesTitle: "我的 BanmaoBox",
     boxesDescription: "当前连接钱包持有的礼盒。",
@@ -286,6 +323,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
       approving: "请在钱包授权 BANMAO…",
       creating: "请在钱包创建礼盒…",
       opening: "请在钱包开启礼盒…",
+      "refreshing-metadata": "请确认刷新元数据…",
       transferring: "请确认 NFT 转让…",
       confirming: "等待链上确认…",
     },
@@ -300,12 +338,23 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     hours: "时",
     minutes: "分",
     seconds: "秒",
+    createdAt: "创建时间",
+    inspectTitle: "查询任意 BanmaoBox",
+    inspectDescription: "输入有效 token ID，验证所有者、资产、日期和链上图像。",
+    inspectPlaceholder: "Token ID，例如 1",
+    inspectButton: "查询礼盒",
+    owner: "当前所有者",
+    refreshMetadata: "刷新元数据",
+    previous: "上一页",
+    next: "下一页",
+    operations: "运营",
   },
   ko: {
     back: "DeFi 홈",
     eyebrow: "기다리는 선물",
     title: "BANMAO를 타임락 NFT에 담으세요.",
-    subtitle: "전송 가능한 BanmaoBox를 만들어 선물하고, 만료 후 현재 소유자가 열 수 있습니다.",
+    subtitle:
+      "전송 가능한 BanmaoBox를 만들어 선물하고, 만료 후 현재 소유자가 열 수 있습니다.",
     lockedMetric: "잠긴 BANMAO",
     activeMetric: "활성 박스",
     walletMetric: "내 잔액",
@@ -317,7 +366,8 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     useMax: "최대",
     recipient: "최초 수령인",
     recipientPlaceholder: "0x…",
-    recipientHint: "보관하려면 내 지갑, 바로 선물하려면 다른 지갑을 입력하세요.",
+    recipientHint:
+      "보관하려면 내 지갑, 바로 선물하려면 다른 지갑을 입력하세요.",
     duration: "잠금 기간",
     customDays: "사용자 지정",
     customDaysPlaceholder: "일수",
@@ -325,7 +375,8 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     createButton: "박스 만들기",
     connectToCreate: "지갑 연결",
     notDeployedTitle: "BanmaoBox 배포 준비 완료",
-    notDeployedDescription: "계약 배포 후 NEXT_PUBLIC_BANMAO_BOX_ADDRESS를 설정하세요.",
+    notDeployedDescription:
+      "계약 배포 후 NEXT_PUBLIC_BANMAO_BOX_ADDRESS를 설정하세요.",
     wrongNetwork: "서명 전에 X Layer로 전환합니다.",
     boxesTitle: "내 BanmaoBox",
     boxesDescription: "연결된 지갑이 현재 보유한 박스입니다.",
@@ -349,16 +400,19 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     stepApprove: "포장",
     stepApproveText: "정확한 수량을 승인하고 새 ERC-721에 BANMAO를 잠급니다.",
     stepGift: "선물",
-    stepGiftText: "NFT를 보관, 선물 또는 거래하면 잠긴 BANMAO도 함께 이동합니다.",
+    stepGiftText:
+      "NFT를 보관, 선물 또는 거래하면 잠긴 BANMAO도 함께 이동합니다.",
     stepOpen: "개봉",
     stepOpenText: "기한 후 NFT 소유자가 BANMAO 전량을 받고 NFT는 소각됩니다.",
     safetyTitle: "신뢰 최소화 설계",
-    safetyText: "관리자 출금과 조기 개봉이 없습니다. 서명 전 계약 주소를 확인하세요.",
+    safetyText:
+      "관리자 출금과 조기 개봉이 없습니다. 서명 전 계약 주소를 확인하세요.",
     phase: {
       "switching-chain": "X Layer로 전환 중…",
       approving: "지갑에서 BANMAO 승인…",
       creating: "지갑에서 박스 생성…",
       opening: "지갑에서 박스 개봉…",
+      "refreshing-metadata": "메타데이터 새로고침 확인…",
       transferring: "NFT 전송 확인…",
       confirming: "온체인 확인 대기 중…",
     },
@@ -373,12 +427,24 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     hours: "시",
     minutes: "분",
     seconds: "초",
+    createdAt: "생성일",
+    inspectTitle: "BanmaoBox 조회",
+    inspectDescription:
+      "유효한 token ID로 소유자, 자산, 날짜와 온체인 아트를 확인하세요.",
+    inspectPlaceholder: "Token ID (예: 1)",
+    inspectButton: "박스 조회",
+    owner: "현재 소유자",
+    refreshMetadata: "메타데이터 새로고침",
+    previous: "이전",
+    next: "다음",
+    operations: "운영",
   },
   ru: {
     back: "Главная DeFi",
     eyebrow: "Подарок, который ждёт",
     title: "Упакуйте BANMAO в NFT с таймлоком.",
-    subtitle: "Создайте передаваемый BanmaoBox, подарите его, а владелец откроет после таймера.",
+    subtitle:
+      "Создайте передаваемый BanmaoBox, подарите его, а владелец откроет после таймера.",
     lockedMetric: "BANMAO заблокировано",
     activeMetric: "Активные боксы",
     walletMetric: "Ваш баланс",
@@ -398,7 +464,8 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     createButton: "Создать бокс",
     connectToCreate: "Подключить кошелёк",
     notDeployedTitle: "BanmaoBox готов к развёртыванию",
-    notDeployedDescription: "Разверните контракт и задайте NEXT_PUBLIC_BANMAO_BOX_ADDRESS.",
+    notDeployedDescription:
+      "Разверните контракт и задайте NEXT_PUBLIC_BANMAO_BOX_ADDRESS.",
     wrongNetwork: "Перед подписью кошелёк переключится на X Layer.",
     boxesTitle: "Мои BanmaoBox",
     boxesDescription: "Боксы, принадлежащие подключённому кошельку.",
@@ -420,18 +487,22 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     howTitle: "Как работает BanmaoBox",
     howDescription: "Один NFT, защищённый баланс BANMAO и дата открытия.",
     stepApprove: "Упаковать",
-    stepApproveText: "Одобрите точную сумму и заблокируйте BANMAO в новом ERC-721.",
+    stepApproveText:
+      "Одобрите точную сумму и заблокируйте BANMAO в новом ERC-721.",
     stepGift: "Подарить",
-    stepGiftText: "Храните или передавайте NFT — BANMAO следует за его владельцем.",
+    stepGiftText:
+      "Храните или передавайте NFT — BANMAO следует за его владельцем.",
     stepOpen: "Открыть",
     stepOpenText: "После срока владелец получает BANMAO, а NFT сжигается.",
     safetyTitle: "Минимум доверия",
-    safetyText: "Нет вывода администратором и раннего открытия. Проверяйте адрес контракта.",
+    safetyText:
+      "Нет вывода администратором и раннего открытия. Проверяйте адрес контракта.",
     phase: {
       "switching-chain": "Переключение на X Layer…",
       approving: "Одобрите BANMAO в кошельке…",
       creating: "Создайте бокс в кошельке…",
       opening: "Откройте бокс в кошельке…",
+      "refreshing-metadata": "Подтвердите обновление метаданных…",
       transferring: "Подтвердите передачу NFT…",
       confirming: "Ожидание подтверждения…",
     },
@@ -446,12 +517,24 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     hours: "ч",
     minutes: "м",
     seconds: "с",
+    createdAt: "Создан",
+    inspectTitle: "Проверить BanmaoBox",
+    inspectDescription:
+      "Введите token ID, чтобы проверить владельца, обеспечение, даты и изображение on-chain.",
+    inspectPlaceholder: "Token ID, например 1",
+    inspectButton: "Проверить",
+    owner: "Текущий владелец",
+    refreshMetadata: "Обновить метаданные",
+    previous: "Назад",
+    next: "Далее",
+    operations: "Операции",
   },
   id: {
     back: "Beranda DeFi",
     eyebrow: "Hadiah yang menunggu",
     title: "Bungkus BANMAO dalam NFT berkunci waktu.",
-    subtitle: "Buat BanmaoBox yang dapat dipindahtangankan, hadiahkan, lalu pemilik membukanya saat waktunya tiba.",
+    subtitle:
+      "Buat BanmaoBox yang dapat dipindahtangankan, hadiahkan, lalu pemilik membukanya saat waktunya tiba.",
     lockedMetric: "BANMAO terkunci",
     activeMetric: "Box aktif",
     walletMetric: "Saldo Anda",
@@ -463,7 +546,8 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     useMax: "Maks",
     recipient: "Penerima awal",
     recipientPlaceholder: "0x…",
-    recipientHint: "Gunakan dompet Anda atau masukkan dompet lain untuk langsung memberi hadiah.",
+    recipientHint:
+      "Gunakan dompet Anda atau masukkan dompet lain untuk langsung memberi hadiah.",
     duration: "Durasi kunci",
     customDays: "Kustom",
     customDaysPlaceholder: "Jumlah hari",
@@ -471,7 +555,8 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     createButton: "Buat box",
     connectToCreate: "Hubungkan dompet",
     notDeployedTitle: "BanmaoBox siap di-deploy",
-    notDeployedDescription: "Deploy kontrak lalu atur NEXT_PUBLIC_BANMAO_BOX_ADDRESS.",
+    notDeployedDescription:
+      "Deploy kontrak lalu atur NEXT_PUBLIC_BANMAO_BOX_ADDRESS.",
     wrongNetwork: "Dompet akan beralih ke X Layer sebelum tanda tangan.",
     boxesTitle: "BanmaoBox saya",
     boxesDescription: "Box yang dimiliki dompet terhubung.",
@@ -491,20 +576,26 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     loading: "Memuat box…",
     retry: "Muat ulang",
     howTitle: "Cara kerja BanmaoBox",
-    howDescription: "Satu NFT, saldo BANMAO terlindungi, dan satu tanggal buka.",
+    howDescription:
+      "Satu NFT, saldo BANMAO terlindungi, dan satu tanggal buka.",
     stepApprove: "Bungkus",
-    stepApproveText: "Setujui jumlah tepat dan kunci BANMAO dalam ERC-721 baru.",
+    stepApproveText:
+      "Setujui jumlah tepat dan kunci BANMAO dalam ERC-721 baru.",
     stepGift: "Hadiahkan",
-    stepGiftText: "Simpan atau transfer NFT; BANMAO terkunci mengikuti pemiliknya.",
+    stepGiftText:
+      "Simpan atau transfer NFT; BANMAO terkunci mengikuti pemiliknya.",
     stepOpen: "Buka",
-    stepOpenText: "Setelah waktunya, pemilik menerima semua BANMAO dan NFT dibakar.",
+    stepOpenText:
+      "Setelah waktunya, pemilik menerima semua BANMAO dan NFT dibakar.",
     safetyTitle: "Desain minim kepercayaan",
-    safetyText: "Tanpa penarikan admin dan tanpa buka awal. Verifikasi alamat kontrak sebelum menandatangani.",
+    safetyText:
+      "Tanpa penarikan admin dan tanpa buka awal. Verifikasi alamat kontrak sebelum menandatangani.",
     phase: {
       "switching-chain": "Beralih ke X Layer…",
       approving: "Setujui BANMAO di dompet…",
       creating: "Buat box di dompet…",
       opening: "Buka box di dompet…",
+      "refreshing-metadata": "Konfirmasi penyegaran metadata…",
       transferring: "Konfirmasi transfer NFT…",
       confirming: "Menunggu konfirmasi on-chain…",
     },
@@ -519,6 +610,17 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     hours: "j",
     minutes: "m",
     seconds: "d",
+    createdAt: "Dibuat",
+    inspectTitle: "Periksa BanmaoBox",
+    inspectDescription:
+      "Masukkan token ID aktif untuk memverifikasi pemilik, jaminan, tanggal, dan karya on-chain.",
+    inspectPlaceholder: "Token ID, misalnya 1",
+    inspectButton: "Periksa box",
+    owner: "Pemilik saat ini",
+    refreshMetadata: "Segarkan metadata",
+    previous: "Sebelumnya",
+    next: "Berikutnya",
+    operations: "Operasi",
   },
 };
 

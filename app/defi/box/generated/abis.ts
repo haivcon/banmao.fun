@@ -33,6 +33,17 @@ export const BANMAO_BOX_ABI = [
     "type": "error"
   },
   {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "DuplicateToken",
+    "type": "error"
+  },
+  {
     "inputs": [],
     "name": "ERC721EnumerableForbiddenBatchMint",
     "type": "error"
@@ -158,6 +169,11 @@ export const BANMAO_BOX_ABI = [
   },
   {
     "inputs": [],
+    "name": "InvalidAssetCount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidLockDuration",
     "type": "error"
   },
@@ -179,6 +195,11 @@ export const BANMAO_BOX_ABI = [
   {
     "inputs": [],
     "name": "NotOwnerOrApproved",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "PrimaryTokenRequired",
     "type": "error"
   },
   {
@@ -309,6 +330,62 @@ export const BANMAO_BOX_ABI = [
       {
         "indexed": true,
         "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "BoxAssetLocked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "BoxAssetReleased",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "creator",
         "type": "address"
       },
@@ -377,6 +454,43 @@ export const BANMAO_BOX_ABI = [
     "inputs": [
       {
         "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "recipient",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "assetCount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "unlockTime",
+        "type": "uint256"
+      }
+    ],
+    "name": "MultiTokenBoxCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
         "internalType": "address",
         "name": "from",
         "type": "address"
@@ -396,6 +510,19 @@ export const BANMAO_BOX_ABI = [
     ],
     "name": "Transfer",
     "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_ASSETS_PER_BOX",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   },
   {
     "inputs": [],
@@ -494,12 +621,36 @@ export const BANMAO_BOX_ABI = [
         "type": "uint256"
       }
     ],
+    "name": "boxAssetCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
     "name": "boxDetails",
     "outputs": [
       {
         "internalType": "uint256",
         "name": "amount",
         "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "creator",
+        "type": "address"
       },
       {
         "internalType": "uint64",
@@ -566,6 +717,40 @@ export const BANMAO_BOX_ABI = [
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "address[]",
+        "name": "tokens",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "amounts",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lockDurationSec",
+        "type": "uint256"
+      }
+    ],
+    "name": "createMultiTokenBox",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "uint256",
         "name": "tokenId",
         "type": "uint256"
@@ -577,6 +762,37 @@ export const BANMAO_BOX_ABI = [
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getBoxAssets",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "amount",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct BanmaoBox.BoxAsset[]",
+        "name": "",
+        "type": "tuple[]"
       }
     ],
     "stateMutability": "view",
@@ -1183,23 +1399,28 @@ export const BANMAO_BOX_RENDERER_ABI = [
             "type": "address"
           },
           {
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
             "internalType": "uint256",
             "name": "amount",
             "type": "uint256"
           },
           {
-            "internalType": "uint64",
-            "name": "createdAt",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "unlockTime",
-            "type": "uint64"
+            "internalType": "uint128",
+            "name": "timestamps",
+            "type": "uint128"
           },
           {
             "internalType": "uint8",
             "name": "tokenDecimals",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "assetCount",
             "type": "uint8"
           },
           {
@@ -1239,23 +1460,28 @@ export const BANMAO_BOX_RENDERER_ABI = [
             "type": "address"
           },
           {
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
             "internalType": "uint256",
             "name": "amount",
             "type": "uint256"
           },
           {
-            "internalType": "uint64",
-            "name": "createdAt",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "unlockTime",
-            "type": "uint64"
+            "internalType": "uint128",
+            "name": "timestamps",
+            "type": "uint128"
           },
           {
             "internalType": "uint8",
             "name": "tokenDecimals",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "assetCount",
             "type": "uint8"
           },
           {
@@ -1314,23 +1540,28 @@ export const BANMAO_BOX_RENDERER_ABI = [
             "type": "address"
           },
           {
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
             "internalType": "uint256",
             "name": "amount",
             "type": "uint256"
           },
           {
-            "internalType": "uint64",
-            "name": "createdAt",
-            "type": "uint64"
-          },
-          {
-            "internalType": "uint64",
-            "name": "unlockTime",
-            "type": "uint64"
+            "internalType": "uint128",
+            "name": "timestamps",
+            "type": "uint128"
           },
           {
             "internalType": "uint8",
             "name": "tokenDecimals",
+            "type": "uint8"
+          },
+          {
+            "internalType": "uint8",
+            "name": "assetCount",
             "type": "uint8"
           },
           {
@@ -1359,6 +1590,7 @@ export const BANMAO_BOX_RENDERER_ABI = [
 
 export const BANMAO_ERC20_ABI = [
   "function decimals() view returns (uint8)",
+  "function symbol() view returns (string)",
   "function balanceOf(address account) view returns (uint256)",
   "function allowance(address owner, address spender) view returns (uint256)",
   "function approve(address spender, uint256 amount) returns (bool)"
