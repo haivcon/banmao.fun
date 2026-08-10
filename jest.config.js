@@ -1,8 +1,14 @@
+const { existsSync } = require('node:fs');
+const { join } = require('node:path');
+
+const testsRoot = join(__dirname, '__tests__');
+const fallbackRoot = join(__dirname, '.github');
+
 /** @type {import('jest').Config} */
 const config = {
     preset: 'ts-jest',
     testEnvironment: 'node',
-    roots: ['<rootDir>/__tests__'],
+    roots: [existsSync(testsRoot) ? testsRoot : fallbackRoot],
     testMatch: ['**/*.test.ts'],
     moduleNameMapper: {
         '^../lib/(.*)$': '<rootDir>/lib/$1',
