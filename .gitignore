@@ -126,3 +126,6 @@ scripts/update_readme.js
 /app/gamefi/admin/components/MinerTab.tsx
 /contracts/BanMaoMiner.sol
 /contracts/WorldCupYieldWars.sol
+
+# Local-only tests
+/__tests__/
