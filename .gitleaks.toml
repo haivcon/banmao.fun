@@ -3,11 +3,7 @@ useDefault = true
 
 [[allowlists]]
 description = "Public X Layer deployment transaction and token identifiers"
-regexTarget = "secret"
-regexes = [
-  '''^0x5dd4f0718fe7da248931c838c3d100213cf3dc91ca98e721e75d698717915fd5$''',
-  '''^0x16d91d1615fc55b76d5f92365bd60c069b46ef78$''',
-]
-paths = [
-  '''^deployments/banmaobox-xlayer-(testnet|mainnet)\.json$''',
+fingerprints = [
+  "2e9dbede1f23fd24d7824ae05c02074c33d0f3eb:deployments/banmaobox-xlayer-mainnet.json:generic-api-key:9",
+  "2e9dbede1f23fd24d7824ae05c02074c33d0f3eb:deployments/banmaobox-xlayer-testnet.json:generic-api-key:23",
 ]
