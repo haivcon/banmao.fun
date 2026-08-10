@@ -7,6 +7,7 @@ import {
   useEffect,
   useRef,
 } from "react";
+import { usePathname } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   WagmiProvider,
@@ -16,6 +17,7 @@ import {
 import { WalletConnectionProvider } from "./components/wallet/WalletConnection";
 import {
   XLAYER_CHAIN_ID,
+  XLAYER_TESTNET_CHAIN_ID,
   walletConfig,
 } from "./lib/walletConfig";
 
@@ -42,9 +44,12 @@ function getQueryClient(): QueryClient {
 }
 
 function AutoChainSwitch({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const { chainId, isConnected } = useAccount();
   const { switchChain } = useSwitchChain();
   const attemptedChainId = useRef<number | undefined>(undefined);
+  const isBoxTestnet =
+    pathname.startsWith("/defi/box") && chainId === XLAYER_TESTNET_CHAIN_ID;
 
   useEffect(() => {
     if (!isConnected) {
@@ -52,7 +57,7 @@ function AutoChainSwitch({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (!chainId || chainId === XLAYER_CHAIN_ID) {
+    if (!chainId || chainId === XLAYER_CHAIN_ID || isBoxTestnet) {
       attemptedChainId.current = undefined;
       return;
     }
@@ -73,7 +78,7 @@ function AutoChainSwitch({ children }: { children: ReactNode }) {
     }, 300);
 
     return () => window.clearTimeout(timer);
-  }, [chainId, isConnected, switchChain]);
+  }, [chainId, isBoxTestnet, isConnected, switchChain]);
 
   return <>{children}</>;
 }

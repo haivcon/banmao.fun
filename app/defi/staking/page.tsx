@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useBalance } from 'wagmi';
 import { ConnectButton } from '../../components/wallet/WalletConnection';
@@ -28,13 +29,22 @@ export default function StakingPage() {
     const [txStatus, setTxStatus] = useState<string>("");
     const [showOnboardingTour, setShowOnboardingTour] = useState(false);
 
-    // Mobile detection - skip minimized panels, go straight to expanded
+    // Detect the physical device width instead of the scaled layout viewport.
+    // At initialScale 0.375 a 390px phone exposes ~1040 CSS px, but it must
+    // still use touch-friendly overlays rather than desktop drag windows.
     const [isMobile, setIsMobile] = useState(false);
     useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+        const checkMobile = () => {
+            const physicalWidth = Math.min(window.screen.width, window.screen.height);
+            setIsMobile(physicalWidth <= 768 || window.matchMedia("(pointer: coarse)").matches);
+        };
         checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
+        window.addEventListener("resize", checkMobile);
+        window.addEventListener("orientationchange", checkMobile);
+        return () => {
+            window.removeEventListener("resize", checkMobile);
+            window.removeEventListener("orientationchange", checkMobile);
+        };
     }, []);
 
     // Window Manager State (DeX Style)
@@ -742,7 +752,14 @@ export default function StakingPage() {
                                             top: `${orbY}px`
                                         }}
                                     >
-                                        <img src={item.iconUrl} alt={item.label} className="orb-icon-img" />
+                                        <Image
+                                            src={item.iconUrl}
+                                            alt={item.label}
+                                            className="orb-icon-img"
+                                            width={64}
+                                            height={64}
+                                            sizes="64px"
+                                        />
                                         <span className="orb-label">{item.label}</span>
                                     </li>
 
