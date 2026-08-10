@@ -11,6 +11,7 @@ pnpm-lock.yaml
 /.turbo/
 /storybook-static/
 *.tsbuildinfo
+.hermes/
 
 # Environment and credentials (examples remain tracked)
 .env

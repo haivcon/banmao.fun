@@ -8,10 +8,11 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 /// @notice Compact data required to render one live BanmaoBox NFT.
 struct BanmaoBoxRenderData {
     address token;
+    address creator;
     uint256 amount;
-    uint64 createdAt;
-    uint64 unlockTime;
+    uint128 timestamps;
     uint8 tokenDecimals;
+    uint8 assetCount;
     string tokenSymbol;
 }
 
@@ -66,7 +67,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         bytes memory metadataHead = abi.encodePacked(
             '{"name":"BanmaoBox #',
             tokenId.toString(),
-            '","description":"A transferable, time-locked NFT gift box backed 1:1 by an ERC-20 on X Layer. Verify the token contract attribute before interacting.",',
+            '","description":"A transferable, time-locked NFT gift box backed by up to five ERC-20 assets on X Layer. Verify every token contract before interacting.",',
             '"image":"data:image/svg+xml;base64,',
             encodedSvg
         );
@@ -110,7 +111,8 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         uint256 tokenId,
         BanmaoBoxRenderData calldata data
     ) internal view returns (string memory) {
-        bool ready = block.timestamp >= uint256(data.unlockTime);
+        uint64 unlockTime = _unlockTime(data);
+        bool ready = block.timestamp >= uint256(unlockTime);
         uint256 tier = _tier(data.amount, data.tokenDecimals);
         string memory accent = ready ? "#64F5A5" : _tierAccent(tier);
 
@@ -124,7 +126,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         bytes memory lowerArtwork = abi.encodePacked(
             _renderGiftBox(tier, ready, accent),
             _renderSparkles(tier, accent),
-            _renderCountdown(data.unlockTime, ready, accent),
+            _renderCountdown(unlockTime, ready, accent),
             _renderFooter(data, tier),
             "</svg>"
         );
@@ -403,8 +405,8 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
             );
 
         bytes memory panel = abi.encodePacked(
-            '<g transform="translate(56 602)">',
-            '<rect width="688" height="112" rx="24" fill="#0B1020" stroke="',
+            '<g transform="translate(56 548)">',
+            '<rect width="688" height="98" rx="22" fill="#0B1020" stroke="',
             accent,
             '" stroke-opacity=".72" stroke-width="2"/>',
             '<text class="label" x="24" y="29" fill="#929BB2" font-size="12">',
@@ -435,7 +437,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         bytes memory number = abi.encodePacked(
             '<text class="mono" x="',
             x.toString(),
-            '" y="78" fill="',
+            '" y="72" fill="',
             accent,
             '" font-size="38" font-weight="900">',
             value,
@@ -444,7 +446,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         bytes memory unit = abi.encodePacked(
             '<text class="label" x="',
             (x + 75).toString(),
-            '" y="77" fill="#737D96" font-size="11">',
+            '" y="71" fill="#737D96" font-size="11">',
             label,
             "</text>"
         );
@@ -456,42 +458,59 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         BanmaoBoxRenderData calldata data,
         uint256 tier
     ) internal pure returns (string memory) {
-        bytes memory giftTier = abi.encodePacked(
-            '<text class="label" x="56" y="758" fill="#747E96" font-size="12">',
+        bytes memory panel = abi.encodePacked(
+            '<g transform="translate(56 660)"><rect width="688" height="126" rx="22" fill="#0B1020" stroke="#FFFFFF" stroke-opacity=".10"/>',
+            '<text class="label" x="22" y="24" fill="#747E96" font-size="10">',
             _tierName(tier),
-            " GIFT</text>"
-        );
-        bytes memory amount = abi.encodePacked(
-            '<text class="mono" x="744" y="758" text-anchor="end" fill="#F5F7FB" font-size="17">',
+            data.assetCount > 1 ? " BASKET" : " GIFT",
+            '</text><text class="mono" x="666" y="25" text-anchor="end" fill="#F5F7FB" font-size="15">',
             _formatTokenAmount(data.amount, data.tokenDecimals),
             " ",
             data.tokenSymbol,
             "</text>"
         );
-        bytes memory unlock = abi.encodePacked(
-            '<text class="mono" x="744" y="782" text-anchor="end" fill="#747E96" font-size="11">UNLOCK ',
-            uint256(data.unlockTime).toString(),
+        bytes memory dates = abi.encodePacked(
+            '<text class="label" x="22" y="50" fill="#747E96" font-size="9">START DATE</text>',
+            '<text class="mono" x="22" y="70" fill="#F5F7FB" font-size="13">',
+            _formatDateTime(_createdAt(data)),
+            '</text><text class="label" x="356" y="50" fill="#747E96" font-size="9">UNLOCK DATE</text>',
+            '<text class="mono" x="356" y="70" fill="#F5F7FB" font-size="13">',
+            _formatDateTime(_unlockTime(data)),
             "</text>"
         );
+        bytes memory creator = abi.encodePacked(
+            '<path d="M22 82H666" stroke="#FFFFFF" stroke-opacity=".08"/>',
+            '<text class="label" x="22" y="101" fill="#747E96" font-size="9">CREATOR WALLET</text>',
+            '<text class="mono" x="666" y="105" text-anchor="end" fill="#AAB1C5" font-size="13">',
+            data.creator.toHexString(),
+            "</text></g>"
+        );
 
-        return string(abi.encodePacked(giftTier, amount, unlock));
+        return string(abi.encodePacked(panel, dates, creator));
     }
 
     function _renderAttributes(
         BanmaoBoxRenderData calldata data
     ) internal view returns (string memory) {
-        bool ready = block.timestamp >= uint256(data.unlockTime);
+        bool ready = block.timestamp >= uint256(_unlockTime(data));
         uint256 tier = _tier(data.amount, data.tokenDecimals);
 
-        bytes memory identityTraits = abi.encodePacked(
+        bytes memory identityHead = abi.encodePacked(
             '[{"trait_type":"Status","value":"',
             ready ? "Ready to open" : "Locked",
             '"},{"trait_type":"Gift Tier","value":"',
             _tierName(tier),
             '"},{"trait_type":"Token Symbol","value":"',
             data.tokenSymbol,
-            '"},{"trait_type":"Token Contract","value":"',
+            '"},{"display_type":"number","trait_type":"Asset Count","value":',
+            uint256(data.assetCount).toString(),
+            "}"
+        );
+        bytes memory identityTail = abi.encodePacked(
+            ',{"trait_type":"Token Contract","value":"',
             data.token.toHexString(),
+            '"},{"trait_type":"Creator Wallet","value":"',
+            data.creator.toHexString(),
             '"},{"trait_type":"Token Amount","value":"',
             _formatTokenAmount(data.amount, data.tokenDecimals),
             '"}'
@@ -500,9 +519,9 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
             ',{"display_type":"number","trait_type":"Token Amount (base units)","value":',
             data.amount.toString(),
             '},{"display_type":"date","trait_type":"Unlock Time","value":',
-            uint256(data.unlockTime).toString(),
+            uint256(_unlockTime(data)).toString(),
             '},{"display_type":"date","trait_type":"Created At","value":',
-            uint256(data.createdAt).toString(),
+            uint256(_createdAt(data)).toString(),
             "}"
         );
         bytes memory staticTraits = abi.encodePacked(
@@ -512,7 +531,12 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
 
         return
             string(
-                abi.encodePacked(identityTraits, numericTraits, staticTraits)
+                abi.encodePacked(
+                    identityHead,
+                    identityTail,
+                    numericTraits,
+                    staticTraits
+                )
             );
     }
 
@@ -628,6 +652,65 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
             return string(abi.encodePacked("0", value.toString()));
         }
         return value.toString();
+    }
+
+    function _createdAt(
+        BanmaoBoxRenderData calldata data
+    ) internal pure returns (uint64) {
+        return uint64(data.timestamps >> 64);
+    }
+
+    function _unlockTime(
+        BanmaoBoxRenderData calldata data
+    ) internal pure returns (uint64) {
+        return uint64(data.timestamps);
+    }
+
+    function _formatDateTime(
+        uint64 timestamp
+    ) internal pure returns (string memory) {
+        (uint256 year, uint256 month, uint256 day) = _dateFromDays(
+            uint256(timestamp) / 1 days
+        );
+        uint256 secondsInDay = uint256(timestamp) % 1 days;
+        uint256 hour = secondsInDay / 1 hours;
+        uint256 minute = (secondsInDay % 1 hours) / 1 minutes;
+
+        return
+            string(
+                abi.encodePacked(
+                    year.toString(),
+                    "-",
+                    _pad2(month),
+                    "-",
+                    _pad2(day),
+                    " ",
+                    _pad2(hour),
+                    ":",
+                    _pad2(minute),
+                    " UTC"
+                )
+            );
+    }
+
+    /// @dev Gregorian date conversion adapted from the public-domain
+    ///      BokkyPooBah DateTime Library algorithm.
+    function _dateFromDays(
+        uint256 daysSinceEpoch
+    ) internal pure returns (uint256 year, uint256 month, uint256 day) {
+        int256 __days = int256(daysSinceEpoch);
+        int256 l = __days + 68_569 + 2_440_588;
+        int256 n = (4 * l) / 146_097;
+        l = l - (146_097 * n + 3) / 4;
+        int256 _year = (4_000 * (l + 1)) / 1_461_001;
+        l = l - (1_461 * _year) / 4 + 31;
+        int256 _month = (80 * l) / 2_447;
+        int256 _day = l - (2_447 * _month) / 80;
+        l = _month / 11;
+        _month = _month + 2 - 12 * l;
+        _year = 100 * (n - 49) + _year + l;
+
+        return (uint256(_year), uint256(_month), uint256(_day));
     }
 
     function _validateDecimals(uint8 decimals) internal pure {

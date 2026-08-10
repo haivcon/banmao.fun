@@ -989,6 +989,9 @@ function AdminContent() {
                         </button>
                     </div>
 
+                    <a href="/defi/box/admin" className="admin-back-btn" title="BanmaoBox operations and monitoring">
+                        <span>▣</span> BanmaoBox Ops
+                    </a>
                     <a href="/defi" className="admin-back-btn">
                         <span>←</span> {t.backToHub}
                     </a>

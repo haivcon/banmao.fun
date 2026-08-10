@@ -16,21 +16,23 @@ Snake game reward distribution contract with:
 A permissionless system for transferable, time-locked ERC-20 gift boxes:
 
 - Anyone may call `BanmaoBoxFactory.createTokenBox(token)` to deploy the canonical collection for an ERC-20. Each token can have only one collection in a factory.
-- Collections are full, non-proxy deployments permanently bound to one token and one renderer. The factory has no owner, upgrade, withdrawal, pause, or custody capability.
-- A creator approves that token and calls `createBox(recipient, amount, lockDurationSec)` on its collection.
-- The collection locks the exact amount and mints a transferable ERC-721 (`BMAO-BOX`).
-- After `unlockTime`, the owner or an approved ERC-721 operator may call `openBox(tokenId)`, but payment always goes to the current NFT owner.
+- Collections are full, non-proxy deployments permanently bound to one **primary** token and one renderer. The factory has no owner, upgrade, withdrawal, pause, or custody capability.
+- A creator may call `createBox(recipient, amount, lockDurationSec)` for a primary-token-only NFT, or `createMultiTokenBox(recipient, tokens, amounts, lockDurationSec)` for a basket of 2–5 distinct ERC-20s.
+- Every basket's first asset must be the collection's primary token. This preserves canonical discovery and primary-token accounting while allowing up to four additional assets.
+- Deposits and releases are exact-balance checked independently for every asset. The collection mints one transferable ERC-721 (`BMAO-BOX`) and exposes its contents through `getBoxAssets(tokenId)`.
+- After `unlockTime`, the owner or an approved ERC-721 operator may call `openBox(tokenId)`, but every asset is paid atomically to the current NFT owner.
 - Opening burns the NFT and deletes its `boxDetails`; historical data remains available through `BoxOpened` events.
-- Metadata includes the snapshotted token symbol and, critically, the underlying token contract address. Symbol display is sanitized and never controls custody.
+- Metadata includes the snapshotted token symbol, underlying token contract address, creator wallet, and UTC start/unlock dates. The creator is permanently captured from `msg.sender` at mint and does not change when the NFT is transferred. Symbol display is sanitized and never controls custody.
 - There is no admin withdrawal, early unlock, renderer update, or collection upgrade path.
 - Deposits reject transfer discrepancies. Payout requires both the collection's balance to decrease and the owner's balance to increase by the exact recorded amount. Fee-on-transfer payouts therefore revert atomically and leave the box intact.
 
 Security and integration assumptions:
 
-- Rebasing, blacklistable, pausable, fee-changing, or upgradeable ERC-20s can change behavior after deposit and permanently prevent opening. BanmaoBox cannot bypass token-level rules, and intentionally has no privileged rescue path.
+- Rebasing, blacklistable, pausable, fee-changing, or upgradeable ERC-20s can change behavior after deposit and permanently prevent opening. In a basket, one failing asset prevents release of every asset because opening is intentionally atomic. BanmaoBox cannot bypass token-level rules, and intentionally has no privileged rescue path.
 - `decimals()` must succeed and return at most 69. `symbol()` is optional for display: invalid, unsafe, or overlong values fall back to `TOKEN`.
 - `ERC721Enumerable` enables bounded `getBoxesByOwner(owner, offset, limit)` reads but adds storage gas to mint, transfer, and burn.
-- The renderer is immutable and must advertise `IBanmaoBoxRenderer` through ERC-165.
+- The renderer is immutable and must advertise `IBanmaoBoxRenderer` through ERC-165. Renderer or storage-layout changes require deploying a new renderer, factory, and token collection; existing deployed NFTs cannot be upgraded in place.
+- Multi-token support adds `assetCount` to the renderer payload and therefore changes the renderer ERC-165 interface ID. Pre-basket renderer/factory/collection deployments are intentionally incompatible and must not be mixed with this release.
 - `unlockTime` is stored as `uint64`; lock duration is capped at ten years.
 
 Deployment order:
