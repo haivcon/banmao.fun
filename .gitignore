@@ -100,5 +100,8 @@ ehthumbs.db
 /contracts/BanMaoMiner.sol
 /contracts/WorldCupYieldWars.sol
 
-# Local-only planning material
+# Local-only planning and internal review material
 BANMAOBOX_DETAILED_PLAN_VN.md
+/ANALYSIS_REPORT_VN.md
+/CODEBASE_GUIDE_VN.md
+/contracts/launchpad/bug update.md
