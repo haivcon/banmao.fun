@@ -45,6 +45,7 @@ pnpm-lock.yaml
 /playwright-report/
 /test-results/
 /test/
+/__tests__/
 /public/Happy Smile.png
 
 # Logs and temporary files
