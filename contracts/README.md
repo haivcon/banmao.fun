@@ -66,15 +66,9 @@ underlying token, and renderer invariants have been verified.
 
 ## Development
 
-The repository uses npm, solc-js, and a local JSON-RPC EVM for its current
-integration suite:
-
-```bash
-npm ci
-npm run generate:banmaobox
-# Start Anvil or another compatible local EVM on 127.0.0.1:8545, then:
-npm run test:banmaobox
-```
+Install application dependencies with `npm ci`. BanmaoBox deployment,
+ABI-generation, and integration-test scripts are local-only and are not
+distributed in this repository.
 
 Foundry tests and independent contract review are still required before a
 production mainnet deployment.
