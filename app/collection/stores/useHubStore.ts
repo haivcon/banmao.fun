@@ -5,12 +5,14 @@ import type { Lang } from "../i18n";
 /* ===================== SHARED TYPES ===================== */
 
 export interface ImageItem {
+    publicId: string;
     src: string;
     thumb: string;
     thumbSm: string;
     name: string;
     folder: string;
     bytes: number;
+    createdAt?: string;
     type: "sticker" | "background";
     isVideo: boolean;
     duration?: number;
