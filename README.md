@@ -1,60 +1,190 @@
 # Banmao Fun
 
-Banmao Fun is a modular Web3 social, DeFi, collection, and GameFi application for X Layer. The interface combines a lightweight 2D landing page with an optional Three.js experience and direct wallet interactions.
+A Web3 social, DeFi, GameFi, and AI experience built for X Layer.
+
+**Live site:** [www.banmao.fun](https://www.banmao.fun)
+
+**Network:** X Layer mainnet (`196`) and testnet (`1952`), where supported by the checked-in deployment manifests
+
+## Overview
+
+Banmao Fun is a Next.js application that brings the Banmao ecosystem into one wallet-connected interface. It combines an adaptive 2D/3D landing experience with a community collection hub, DeFi utilities, on-chain games, and the feature-gated BANMAO AI assistant.
+
+This repository contains implemented product surfaces and deployment configuration, but the presence of a route or contract integration does not guarantee that it is enabled or deployed in production. Always verify the active network, feature flags, and versioned deployment manifests before using a write path.
+
+## Product surfaces
+
+### Landing and Web3D
+
+- Responsive landing page with 2D and Three.js experiences
+- Token, market, burn, and community views backed by application APIs
+- Adaptive Web3D quality controls and a 2D fallback
+- Wallet connection and navigation into the collection, DeFi, and GameFi areas
+
+### Collection and social hub
+
+- Collection browsing, search, profiles, posts, comments, reactions, follows, and bookmarks
+- Stories, quests, badges, leaderboards, notifications, tips, and daily check-ins
+- Multilingual community interface and wallet-aware experiences
+- Media workflows backed by configured storage services
+
+### DeFi
+
+- Staking views and actions, claim history, compounding, relocking, and leaderboards
+- Token burn dashboards and contributor history
+- Airdrop preparation, CSV processing, batching, progress tracking, and analytics
+- BanmaoBox UI for transferable, time-locked ERC-20 gift boxes
+
+BanmaoBox deployment state is chain-specific. The checked-in [X Layer testnet manifest](deployments/banmaobox-xlayer-testnet.json) records a deployment on chain `1952`; the [mainnet manifest](deployments/banmaobox-xlayer-mainnet.json) records BanmaoBox as not deployed on chain `196`. See [contracts/README.md](contracts/README.md) for contract behavior and security assumptions.
+
+### GameFi
+
+Implemented game surfaces include:
+
+- Banmao FOMO
+- Banmao Snake
+- Banmao Slots
+- Rock Paper Scissors (RPS)
+- Banmao PK
+
+Availability depends on the relevant network, contract deployment, backend support, and runtime configuration. Testnet-only or otherwise unverified integrations must not be treated as production deployments.
+
+## BANMAO AI
+
+BANMAO AI is an in-application assistant designed around Banmao product surfaces. Its current implementation includes:
+
+- Streaming chat over same-origin API routes and server-sent events (SSE)
+- A multilingual interface for English, Vietnamese, Chinese, Korean, Russian, and Indonesian
+- Model discovery and allowlisted model selection without silent provider fallback
+- Lexical retrieval with an optional semantic provider for hybrid RAG
+- Source citations and typed activity for retrieval and tool calls
+- Registered page-action proposals with explicit review and confirmation before execution
+- Read-only domain tools for supported DeFi, GameFi, collection, and market data
+- Optional, browser-tab-only conversation memory that is off by default and expires locally
+- Mascot, emotion, reduced-motion, and privacy controls
+- An authenticated transaction copilot that prepares and simulates bounded drafts but does not sign or submit transactions
+
+All BANMAO AI feature flags default to off. Chat, tools, RAG, domain advisors, and the transaction copilot can be enabled independently. Production use of the transaction copilot is additionally blocked unless distributed-state readiness is explicitly configured. Implemented or documented AI capabilities should not be interpreted as proof that they are enabled on the live site.
+
+Start with the [BANMAO AI documentation](docs/ai/README.md), then review [operations](docs/ai/OPERATIONS.md), [privacy](docs/ai/PRIVACY.md), [rollout](docs/ai/ROLLOUT.md), and the [threat model](docs/ai/THREAT_MODEL.md).
 
 ## Technology
 
-- Next.js 16, React 19, and TypeScript
-- Wagmi, Viem, RainbowKit, and React Query
-- Three.js, React Three Fiber, and Drei
-- Solidity contracts and generated frontend ABIs
+| Area | Technology |
+|---|---|
+| Application | Next.js 16 App Router, React 19, TypeScript 5 |
+| Web3 | Wagmi, Viem, Ethers |
+| Client state/data | TanStack Query, Zustand |
+| 3D and motion | Three.js, React Three Fiber, Drei, Framer Motion |
+| Styling | Tailwind CSS 4 and scoped CSS |
+| Server/data integrations | Next.js Route Handlers, libSQL, Cloudinary |
+| Contracts | Solidity, OpenZeppelin contracts, generated frontend ABIs |
+| Quality | TypeScript, ESLint, Jest, GitHub Actions, gitleaks |
+| Hosting | Vercel |
+
+## Repository map
+
+```text
+.github/       Community standards, security policy, templates, and CI
+__tests__/     Jest tests, including the BANMAO AI test suites
+app/           Next.js routes, APIs, product surfaces, and UI components
+components/    Shared application components
+contracts/     Solidity source and contract documentation
+data/          Checked-in application data
+deployments/   Versioned, chain-specific deployment manifests
+docs/ai/       BANMAO AI architecture, privacy, operations, and rollout docs
+lib/           Shared client/server libraries, including AI orchestration
+public/        Static assets and PWA resources
+```
 
 ## Quick start
 
 Use Node.js 20 and npm. `package-lock.json` is the canonical lockfile.
 
 ```bash
+git clone https://github.com/haivcon/banmao.fun.git
+cd banmao.fun
 npm ci
-npm run check
+cp .env.example .env.local
 npm run dev
 ```
 
-`npm run check` regenerates the BanmaoBox ABIs, runs TypeScript and ESLint, and executes the Jest suite.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Environment
+Before submitting a change, run:
 
-Copy `.env.example` to `.env.local` and configure only the services you need. Never commit credentials or private keys. Restart the development server after changing any `NEXT_PUBLIC_*` variable.
+```bash
+npm run check
+```
 
-Deployment scripts use a separate local file based on `.env.deploy.example`.
+## Environment configuration
 
-## BanmaoBox
+Use [.env.example](.env.example) as the local template. It documents variable names and safe placeholders; never commit real credentials, private keys, session secrets, or production environment files.
 
-BanmaoBox is a permissionless, immutable Factory → per-ERC-20 Box → Renderer system. The application currently provides a BANMAO-focused direct-RPC interface; no backend holds signing keys or mediates redemption.
+| Category | Purpose | Exposure |
+|---|---|---|
+| X Layer | Chain ID, RPC, explorer, and optional per-chain BanmaoBox overrides | Public variables where prefixed with `NEXT_PUBLIC_` |
+| WalletConnect | Wallet modal project configuration | Public project identifier |
+| Cloudinary | Server-side media upload configuration | Server only |
+| BANMAO AI core | API credential, default model, chat, tools, and RAG flags | Server only |
+| BANMAO AI safety | Session/SIWE settings, budgets, timeouts, and distributed-state gate | Server only |
+| AI domain modules | Transaction copilot and domain-advisor feature flags | Server only |
+| Read-only chain access | Server-side X Layer RPC configuration | Server only |
 
-- X Layer Testnet (chain ID `1952`) deployment data is versioned in `deployments/banmaobox-xlayer-testnet.json`.
-- X Layer Mainnet (chain ID `196`) is marked as not deployed and remains read-only.
-- Per-chain `NEXT_PUBLIC_BANMAO_*` values are optional local overrides, not cross-chain fallbacks.
-- The frontend verifies bytecode and Factory, Box, token, and renderer invariants before enabling writes.
-- Generated contract ABIs are versioned in `app/defi/box/generated/abis.ts`.
-- Deployment and integration-test scripts are maintained locally and are not distributed in this repository.
+Do not add `NEXT_PUBLIC_` to any AI credential, session secret, or other server-only value. Restart the development server after changing public environment variables.
 
-Read [`contracts/README.md`](contracts/README.md), [`CONTRIBUTING.md`](CONTRIBUTING.md), and [`SECURITY.md`](SECURITY.md) before changing contracts or deployments.
+## Scripts
 
-## Documentation
+| Command | Purpose |
+|---|---|
+| `npm run dev` | Start the Next.js development server |
+| `npm run build` | Create a production build |
+| `npm run start` | Serve the production build |
+| `npm run lint` | Run ESLint |
+| `npm run typecheck` | Run TypeScript without emitting files |
+| `npm test` | Run the Jest suite |
+| `npm run check` | Run type checking, linting, and Jest serially |
 
-- [`contracts/README.md`](contracts/README.md): contract behavior, assumptions, deployment, and testing
-- [`contracts/launchpad/README.md`](contracts/launchpad/README.md): launchpad Foundry setup and deployment order
-- [`WEB3D_AUDIT.md`](WEB3D_AUDIT.md): Web3D architecture and risk review
-- [`WEB3D_PERFORMANCE_BUDGET.md`](WEB3D_PERFORMANCE_BUDGET.md): quality targets and release budget
-- [`WEB3D_QA_CHECKLIST.md`](WEB3D_QA_CHECKLIST.md): manual Web3D release checks
-- [`MOBILE_COMPATIBILITY_REPORT.md`](MOBILE_COMPATIBILITY_REPORT.md): mobile layout review
+## Testing and quality
 
-Release history is available in Git history and GitHub releases.
+The required local quality gate is `npm run check`. GitHub Actions repeats type checking, linting, and Jest on pull requests and pushes to `main`, audits production dependencies at critical severity, and runs gitleaks secret scanning.
 
-## License
+For AI-focused work, the local documentation also lists targeted suites and additional build, privacy, and safety checks. Contract changes require relevant contract testing and independent deployment verification; a manifest alone is not proof that runtime bytecode or invariants are correct.
 
-An open-source license has not been selected. Until a `LICENSE` file is added, the repository is source-available for review, but no permission to copy, modify, or redistribute it is granted.
+## Deployment
 
----
+The application is configured for Vercel. Updates pushed to `origin/main` are expected to flow through the repository's connected Vercel project; this repository does not require a manual deployment step for normal releases.
 
-Developed for the Banmao ecosystem.
+Deployment notes:
+
+- Configure environment values in Vercel rather than committing them.
+- Keep server-only settings out of client-exposed variables.
+- `vercel.json` defines the repository's scheduled cleanup route.
+- Vercel Preview behavior, production feature flags, external services, and chain write readiness must be verified in the target environment.
+- A checked-in route, manifest, or feature flag documents implementation/configuration state, not guaranteed live availability.
+
+## Security
+
+Never commit private keys, seed phrases, API credentials, session secrets, production databases, or user data. Verify the chain ID, contract bytecode, registry relationships, token, and renderer invariants before enabling Web3 writes. Testnet contracts and mock tokens have no production value.
+
+Report vulnerabilities privately as described in the [security policy](.github/SECURITY.md). Do not disclose exploitable issues in a public issue.
+
+## Contributing and documentation
+
+- [Contributing guide](.github/CONTRIBUTING.md)
+- [Code of Conduct](.github/CODE_OF_CONDUCT.md)
+- [Security policy](.github/SECURITY.md)
+- [Contract documentation](contracts/README.md)
+- [BANMAO AI documentation](docs/ai/README.md)
+
+Please discuss substantial product, protocol, or dependency changes before opening a pull request, keep changes focused, and include tests and security notes where applicable.
+
+## Project status and feature flags
+
+Banmao Fun is under active development. Some capabilities depend on deployment manifests, wallet/network selection, external services, server configuration, or safety flags. In particular, BANMAO AI modules default off, BanmaoBox mainnet is marked not deployed in the checked-in manifest, and testnet-only integrations are not production features.
+
+Use the live application for the currently exposed experience and the repository's source, environment template, and deployment manifests to understand implementation boundaries. Do not infer production enablement from source presence alone.
+
+## License status
+
+No open-source license has been selected, and no `LICENSE` file is present. The source is available for review, but no permission to copy, modify, or redistribute it is granted unless the maintainers provide that permission separately. The project should not be described as open source until a license is selected.
