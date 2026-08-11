@@ -1,0 +1,1 @@
+"use client";export default function AIMessage({role,content}:{role:"user"|"assistant";content:string}){return <div className={`banmao-ai-message ${role}`}><strong>{role==="user"?"You":"BANMAO AI"}</strong><p>{content}</p></div>;}

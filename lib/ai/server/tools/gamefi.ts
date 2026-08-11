@@ -1,0 +1,1 @@
+import {readOrUnavailable,type Reader} from "./result";type Args={roundId?:string};export function createGamefiTools(readers:{pk?:Reader<Args,unknown>;fomo?:Reader<Args,unknown>}={}){return{pk:(a:Args)=>readOrUnavailable("internal:gamefi:pk",readers.pk,a),fomo:(a:Args)=>readOrUnavailable("internal:gamefi:fomo",readers.fomo,a)};}

@@ -7,6 +7,8 @@ import { Noto_Sans, Orbitron, Rajdhani, Share_Tech_Mono, Space_Mono } from "next
 
 import Script from "next/script";
 import SharedProviders from "./providers";
+import AIChatMount from "./components/ai/AIChatMount";
+import "./components/ai/ai-chat.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://banmao.fun"),
@@ -174,7 +176,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className={spaceMono.className}>
-        <SharedProviders>{children}</SharedProviders>
+        <SharedProviders>{children}<AIChatMount /></SharedProviders>
       </body>
     </html>
   );

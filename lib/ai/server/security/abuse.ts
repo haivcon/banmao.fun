@@ -1,0 +1,1 @@
+export function enforceRequestBudget(p:{message:string;maxPromptBytes:number;maxEstimatedTokens:number}){const promptBytes=Buffer.byteLength(p.message),estimatedTokens=Math.ceil([...p.message].length/4);if(promptBytes>p.maxPromptBytes||estimatedTokens>p.maxEstimatedTokens)throw new Error("Request budget exceeded");return{promptBytes,estimatedTokens};}

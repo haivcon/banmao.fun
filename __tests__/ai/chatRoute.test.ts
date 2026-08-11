@@ -1,0 +1,8 @@
+describe("AI chat route", () => {
+  const original={...process.env};
+  beforeEach(()=>{ jest.resetModules(); process.env={...original,AI_API_KEY:"unit-test-placeholder",AI_DEFAULT_MODEL:"banmao.fun",AI_CHAT_ENABLED:"true"}; });
+  afterAll(()=>{process.env=original;});
+  test("rejects malformed input before upstream", async()=>{ const fetchSpy=jest.spyOn(global,"fetch"); const {POST}=await import("../../app/api/ai/chat/route"); const response=await POST(new Request("https://banmao.fun/api/ai/chat",{method:"POST",headers:{"content-type":"application/json","origin":"https://banmao.fun"},body:JSON.stringify({model:"other"})})); expect(response.status).toBe(400); expect(fetchSpy).not.toHaveBeenCalled(); fetchSpy.mockRestore(); });
+  test("streams allowlisted SSE events", async()=>{ jest.spyOn(global,"fetch").mockResolvedValue(new Response('data: {"choices":[{"delta":{"content":"Hi"}}]}\n\ndata: [DONE]\n\n',{headers:{"content-type":"text/event-stream"}})); const {POST}=await import("../../app/api/ai/chat/route"); const response=await POST(new Request("https://banmao.fun/api/ai/chat",{method:"POST",headers:{"content-type":"application/json","origin":"https://banmao.fun"},body:JSON.stringify({message:"hello",model:"xenon1",context:{surface:"landing",pathname:"/"}})})); expect(response.status).toBe(200); const body=await response.text(); expect(body).toContain("event: meta"); expect(body).toContain('event: delta\ndata: {"text":"Hi"}'); expect(body).toContain("event: done"); jest.restoreAllMocks(); });
+  test("is disabled by default",async()=>{delete process.env.AI_CHAT_ENABLED; const {POST}=await import("../../app/api/ai/chat/route"); expect((await POST(new Request("https://banmao.fun/api/ai/chat",{method:"POST"}))).status).toBe(404);});
+});

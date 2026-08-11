@@ -1,0 +1,2 @@
+import { createTabMemory } from "../../lib/ai/client/memory";
+test("tab memory is opt-in bounded and isolated",()=>{const a=createTabMemory({maxTurns:2,ttlMs:1000}),b=createTabMemory({maxTurns:2,ttlMs:1000});expect(a.export()).toEqual([]);a.setOptIn(true);a.append({role:"user",content:"one"},0);a.append({role:"assistant",content:"two"},1);a.append({role:"user",content:"three"},2);expect(a.export(2)).toHaveLength(2);expect(b.export()).toEqual([]);a.clear();expect(a.export()).toEqual([]);});
