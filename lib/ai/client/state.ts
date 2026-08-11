@@ -1,6 +1,6 @@
 import { AI_MODELS, type AIModel, type AISurface } from "../contracts";
 
-export type ClientMessage = { role: "user" | "assistant"; content: string };
+export type ClientMessage = { role: "user" | "assistant"; content: string; createdAt: number };
 export type ToolActivity = { callId: string; name: string; status: string; source: string; summary: string };
 export type Citation = { documentId?: string; sourcePath: string; version?: string; excerpt?: string };
 export type ClientState = {
@@ -21,16 +21,36 @@ export function deriveSurface(pathname: string): AISurface {
   return "landing";
 }
 export const SUGGESTED_PROMPTS: Record<AISurface, readonly string[]> = {
-  landing: ["What can BANMAO AI explain?", "Show the current BANMAO market context"],
-  defi: ["Explain BANMAO staking", "Show staking protocol status", "What are the DeFi risks?"],
-  gamefi: ["Show the current FOMO round", "Explain the jackpot and timer", "Which GameFi products are live?"],
-  collection: ["Help me explore BANMAO collections", "Show public Hub activity", "Explain collection privacy"],
+  landing: [
+    "Banmao, introduce yourself and the ecosystem",
+    "Map the live BANMAO products and their current status",
+    "Show the current BANMAO market context with sources",
+    "What should a newcomer verify first?",
+  ],
+  defi: [
+    "Walk me through BANMAO staking and its risks",
+    "Show the live staking protocol status",
+    "Explain the burn and airdrop systems",
+    "Is BanmaoBox deployed on X Layer mainnet?",
+  ],
+  gamefi: [
+    "Show the current FOMO round from on-chain data",
+    "Explain Slots commit/reveal and pool risks",
+    "Which GameFi products are verified live?",
+    "Explain Snake rewards and current limits",
+  ],
+  collection: [
+    "Show recent public BanmaoHub activity",
+    "Help me search the Banmao media collection",
+    "Explain Hub quests, identity, and privacy",
+    "Which Collection features are live versus proposed?",
+  ],
 };
 export function initialClientState(model: AIModel): ClientState { return { model, models: [model], messages: [], tools: [], citations: [], status: "idle" }; }
 type Action =
   | { type: "models"; models: AIModel[]; defaultModel: AIModel }
   | { type: "select-model"; model: AIModel }
-  | { type: "start"; message: string }
+  | { type: "start"; message: string; createdAt?: number }
   | { type: "delta"; text: string }
   | { type: "tool"; tool: ToolActivity }
   | { type: "citation"; citation: Citation }
@@ -48,7 +68,8 @@ export function reduceClientState(state: ClientState, action: Action): ClientSta
       if (!state.models.includes(action.model)) throw new Error("Invalid model");
       return { ...state, model: action.model };
     case "start":
-      return { ...state, status: "streaming", error: undefined, lastPrompt: action.message, tools: [], citations: [], messages: [...state.messages, { role: "user", content: action.message }, { role: "assistant", content: "" }] };
+      const createdAt = action.createdAt ?? 0;
+      return { ...state, status: "streaming", error: undefined, lastPrompt: action.message, tools: [], citations: [], messages: [...state.messages, { role: "user", content: action.message, createdAt }, { role: "assistant", content: "", createdAt }] };
     case "delta": {
       const messages = [...state.messages];
       const last = messages.at(-1);

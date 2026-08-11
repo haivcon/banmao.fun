@@ -21,7 +21,8 @@ No secret value, authorization header, or upstream response body was read or rec
 
 ## Verified local capability boundary
 
-- Chat streams through same-origin server routes to the fixed upstream; models are allowlisted and there is no fallback.
+- Chat streams through same-origin server routes to the fixed upstream; models are allowlisted and there is no fallback. A versioned layered Banmao persona applies character, surface-specific guidance, factual policy, language selection, novelty cues, and untrusted RAG evidence without loading the full portable character bible into every request.
+- Optional memory remains browser-tab-only and sends bounded prior turns and topic/motif cues; the server does not persist conversation state.
 - DeFi adapters read staking protocol/wallet state, burn balances, and stored airdrop records. FOMO reads the deployed mainnet contract. Market readers use strict OKX endpoint allowlists. Every result carries source and observation time; failures are typed unavailable rather than mock data.
 - BanmaoBox create is hidden because `deployments/banmaobox-xlayer-mainnet.json` records `deployed=false` and `address=null`. BanMaoPK is unavailable because its only checked-in address is explicitly X Layer Testnet and no chain-196 deployment manifest exists. Collection search/prompts use bounded Cloudinary readers, and collection quests use SELECT-only Hub database reads; failures remain typed unavailable.
 - Transaction Copilot signs SIWE authentication text only, prepares a wallet-bound expiring draft, reads token balance/allowance/staking summary at the simulation block, and consumes the draft only after successful read execution. RPC failure preserves an unexpired draft for retry. It contains no transaction signing or submission path.

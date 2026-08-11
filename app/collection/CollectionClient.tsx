@@ -2149,6 +2149,10 @@ export default function CollectionPage() {
                             <span className="col-search-icon">🔍</span>
                             <input
                                 type="text"
+                                data-banmao-ai-id="collection.search"
+                                data-banmao-ai-label="Search Banmao collection"
+                                data-banmao-ai-action="fill"
+                                data-banmao-ai-risk="reversible"
                                 className="col-search-input"
                                 placeholder={t.search}
                                 value={searchQuery}
@@ -2162,6 +2166,10 @@ export default function CollectionPage() {
                                 {(["all", "images", "videos"] as const).map(type => (
                                     <button
                                         key={type}
+                                        data-banmao-ai-id={`collection.filter.${type}`}
+                                        data-banmao-ai-label={`Filter collection by ${type}`}
+                                        data-banmao-ai-action="activate"
+                                        data-banmao-ai-risk="reversible"
                                         className={`col-type-btn ${typeFilter === type ? "active" : ""}`}
                                         onClick={() => { setTypeFilter(type); setCurrentPage(1); }}
                                     >

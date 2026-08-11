@@ -4,6 +4,8 @@ import { type FormEvent, useEffect, useReducer, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAccount } from "wagmi";
 import { createTabMemory } from "../../../lib/ai/client/memory";
+import { executePageAction, proposePageAction, type AIPageAction } from "../../../lib/ai/client/actionBridge";
+import { collectPageElements } from "../../../lib/ai/client/pageContext";
 import { deriveSurface, initialClientState, reduceClientState } from "../../../lib/ai/client/state";
 import {
   createEmotionState,
@@ -36,7 +38,9 @@ export default function AIChatProvider() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [input, setInputState] = useState("");
-  const [optIn, setOptInState] = useState(false);
+  const [optIn, setOptInState] = useState(true);
+  const [pendingAction, setPendingAction] = useState<AIPageAction | null>(null);
+  const [actionNotice, setActionNotice] = useState("");
   const [txCopilotEnabled, setTxCopilotEnabled] = useState(false);
   const [mascotVisible, setMascotVisibleState] = useState(true);
   const [reducedMotion, setReducedMotionState] = useState(false);
@@ -47,6 +51,7 @@ export default function AIChatProvider() {
   const surface = deriveSurface(pathname);
 
   useEffect(() => {
+    memory.setOptIn(true);
     try {
       const preferences = JSON.parse(sessionStorage.getItem(PREF_KEY) || "{}");
       if (typeof preferences.mascotVisible === "boolean") setMascotVisibleState(preferences.mascotVisible);
@@ -117,12 +122,18 @@ export default function AIChatProvider() {
   async function send(message: string) {
     if (!message) return;
     setInputState("");
-    dispatch({ type: "start", message });
+    dispatch({ type: "start", message, createdAt: Date.now() });
     dispatchEmotion({ type: "send-start" });
+    const memorySnapshot = memory.snapshot();
+    const pageElements = collectPageElements();
+    const proposedAction = proposePageAction(message, pageElements);
+    setPendingAction(proposedAction);
+    setActionNotice("");
     memory.append({ role: "user", content: message });
     const controller = new AbortController();
     abort.current = controller;
     let receivedFirstDelta = false;
+    let assistantText = "";
     try {
       const response = await fetch("/api/ai/chat", {
         method: "POST",
@@ -131,7 +142,8 @@ export default function AIChatProvider() {
         body: JSON.stringify({
           message,
           model: state.model,
-          context: { pathname, surface },
+          context: { pathname, surface, locale: document.documentElement.lang || undefined, pageElements },
+          ...(optIn ? memorySnapshot : {}),
           ...(isConnected && address && chainId === 196 ? { wallet: { address, chainId } } : {}),
         }),
       });
@@ -151,6 +163,7 @@ export default function AIChatProvider() {
           if (emotionEvent) dispatchEmotion(emotionEvent);
           if (parsed.event === "delta") {
             receivedFirstDelta = true;
+            assistantText += typeof parsed.data.text === "string" ? parsed.data.text : "";
             dispatch({ type: "delta", text: parsed.data.text });
           }
           if (parsed.event === "tool") dispatch({ type: "tool", tool: parsed.data });
@@ -158,6 +171,7 @@ export default function AIChatProvider() {
           if (parsed.event === "error") throw new Error(parsed.data.code || "AI unavailable");
         }
       }
+      if (assistantText.trim()) memory.append({ role: "assistant", content: assistantText });
       dispatch({ type: "stop" });
       dispatchEmotion({ type: "stream-done" });
     } catch (error) {
@@ -175,6 +189,18 @@ export default function AIChatProvider() {
     event.preventDefault();
     await send(input.trim());
   }
+  function confirmPageAction() {
+    if (!pendingAction) return;
+    try {
+      executePageAction(pendingAction);
+      setActionNotice("Action completed on the approved page element ✅");
+      dispatchEmotion({ type: pendingAction.risk === "transaction" ? "tx-warning" : "tx-success" });
+      setPendingAction(null);
+    } catch (error) {
+      setActionNotice(error instanceof Error ? error.message : "Page action failed");
+      dispatchEmotion({ type: "tx-error" });
+    }
+  }
   function exportData() {
     const blob = new Blob([JSON.stringify(memory.export(), null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -188,6 +214,8 @@ export default function AIChatProvider() {
     memory.clear();
     dispatch({ type: "clear" });
     dispatchEmotion({ type: "clear" });
+    setPendingAction(null);
+    setActionNotice("");
   }
   function finishAnimation() {
     if (emotionState.closeAfterAnimation) setOpen(false);
@@ -203,6 +231,7 @@ export default function AIChatProvider() {
       optIn={optIn} setOptIn={setOptIn} mascotVisible={mascotVisible} setMascotVisible={setMascotVisible}
       reducedMotion={reducedMotion} setReducedMotion={setReducedMotion} onAnimationComplete={finishAnimation}
       clear={clear} exportData={exportData} selectModel={(model: AIModel) => dispatch({ type: "select-model", model })}
+      pendingAction={pendingAction} actionNotice={actionNotice} confirmAction={confirmPageAction} cancelAction={() => setPendingAction(null)} memoryTurns={memory.snapshot().history.length}
     >{txCopilotEnabled ? <TransactionCopilot onEmotion={txEmotion} /> : null}</AIChatPanel>}
   </div>;
 }

@@ -8,7 +8,8 @@ test("domain descriptors use only read-only module sources and preserve provenan
   const readContract = jest.fn(async ({ functionName }: { functionName: string }) => functionName === "paused" ? false : 7n);
   const okxFetch = jest.fn(async () => new Response(JSON.stringify({ code: "0", data: [{ price: "1.2" }] }), { status: 200 }));
   const descriptors = createDomainToolDescriptors({ readContract, okxFetch });
-  expect(descriptors.map((tool) => tool.name)).toEqual(expect.arrayContaining(["defi.staking", "gamefi.fomo", "market.price", "collection.search"]));
+  expect(descriptors.map((tool) => tool.name)).toEqual(expect.arrayContaining(["defi.staking", "gamefi.fomo", "gamefi.slots", "gamefi.snake", "gamefi.rps", "market.price", "collection.search"]));
+  expect(descriptors.map((tool) => tool.name)).not.toContain("gamefi.pk");
   const staking = descriptors.find((tool) => tool.name === "defi.staking")!;
   const value = await staking.execute(staking.parse({ chainId: 196 }));
   expect(value).toMatchObject({ status: "available", source: expect.stringContaining("xlayer:196") });
@@ -49,13 +50,15 @@ test("wallet-aware staking and burn tools use only validated contract reads", as
   await expect(burn.execute(burn.parse({ chainId: 196 }))).resolves.toMatchObject({ status: "available", value: { burnedRaw: "18" }, source: "xlayer:196:banmao-burn-address-balances" });
 });
 
-test("FOMO state is expanded and PK reports the exact mainnet source blocker", async () => {
+test("gamefi tools expose FOMO, Slots, Snake, and RPS read state", async () => {
   const readContract = jest.fn(async ({ functionName }: { functionName: string }) => ({ currentRound: 4n, rounds: [10n, 20n, false, "0x0000000000000000000000000000000000000001", 8n, 9n], jackpotPool: 100n, seedFundNextRound: 3n, paused: false, activeConfig: [1n,2n,3n,4n,5n,6n,7n,8n,9n] } as Record<string, unknown>)[functionName]);
   const descriptors = createDomainToolDescriptors({ readContract, okxFetch: jest.fn() });
   const fomo = descriptors.find((tool) => tool.name === "gamefi.fomo")!;
-  const pk = descriptors.find((tool) => tool.name === "gamefi.pk")!;
   await expect(fomo.execute(fomo.parse({ chainId: 196 }))).resolves.toMatchObject({ status: "available", value: { currentRound: "4", jackpotPool: "100", paused: false } });
-  await expect(pk.execute(pk.parse({ chainId: 196 }))).resolves.toMatchObject({ status: "unavailable", source: "repo:app/gamefi/banmaopk/lib/constants.ts" });
+  for (const [name, source] of [["gamefi.slots", "xlayer:196:banmaoslots-v2"], ["gamefi.snake", "xlayer:196:banmaosnake-v6"], ["gamefi.rps", "xlayer:196:banmaorps"]] as const) {
+    const tool = descriptors.find((item) => item.name === name)!;
+    await expect(tool.execute(tool.parse({ chainId: 196 }))).resolves.toMatchObject({ status: "available", source });
+  }
 });
 
 test("market tools use strict allowlisted OKX endpoints without mock fallback", async () => {
