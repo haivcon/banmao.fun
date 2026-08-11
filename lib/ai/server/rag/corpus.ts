@@ -11,6 +11,11 @@ export const APPROVED_RAG_SOURCES = Object.freeze([
   "docs/ai/RAG_SOURCES.md",
   "docs/ai/OPERATIONS.md",
   "docs/ai/ROLLOUT.md",
+  "docs/ai/BANMAO_PERSONA.md",
+  "docs/ai/DOMAIN_KNOWLEDGE.md",
+  "README.md",
+  "contracts/README.md",
+  "app/gamefi/banmaoslots/PROJECT_DOCUMENTATION.md",
 ]);
 
 export function assertApprovedSource(root: string, path: string): string {

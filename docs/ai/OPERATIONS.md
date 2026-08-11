@@ -5,7 +5,8 @@
 - Node.js Route Handlers stream SSE and use `no-store`. No provider/model fallback exists.
 - All flags default off. Browser requests are same-origin `/api/ai/*`; only the server client knows the fixed upstream.
 - Current limiter, nonce and transaction draft state is process-local; session state is an authenticated HttpOnly cookie. This is suitable only for deterministic local verification, not Vercel multi-instance production. An approved atomic distributed store is required before external canary.
-- Prompt budgets are deterministic byte/token estimates. Logs must use allowlisted fields only; raw prompts, wallet addresses, authorization values, upstream bodies and credentials are prohibited.
+- Prompt budgets are deterministic byte/token estimates. Optional history is schema-bounded and remains inside the total request-byte ceiling. Logs must use allowlisted fields only; raw prompts, history, wallet addresses, authorization values, upstream bodies, tool payloads and credentials are prohibited.
+- Persona releases are versioned by `BANMAO_PERSONA_VERSION`. Corporate/rubric diagnostics are quality signals only; explicit promotional guaranteed-profit patterns fail closed before output is streamed.
 
 ## Local gates
 

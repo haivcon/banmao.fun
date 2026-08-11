@@ -70,6 +70,9 @@ tmp_*.js
 build_error*.txt
 build_log*.txt
 fix_*.py
+__pycache__/
+*.py[cod]
+*$py.class
 
 # Generated/archive assets not required at runtime
 /public/**/*.zip

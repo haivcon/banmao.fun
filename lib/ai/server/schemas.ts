@@ -6,6 +6,33 @@ const contextSchema = z.object({
   pathname: z.string().min(1).max(512).startsWith("/"),
   locale: z.string().min(2).max(16).optional(),
   entity: z.object({ type: z.string().min(1).max(64), id: z.string().min(1).max(128) }).strict().optional(),
+  pageElements: z.array(z.object({
+    id: z.string().regex(/^[a-zA-Z0-9._:-]{1,80}$/),
+    type: z.enum(["button", "link", "input", "status", "section"]),
+    label: z.string().min(1).max(160),
+    state: z.string().max(160).optional(),
+    action: z.enum(["navigate", "focus", "fill", "activate"]).optional(),
+    risk: z.enum(["none", "reversible", "transaction"]).optional(),
+  }).strict()).max(40).optional(),
+}).strict();
+
+const historySchema = z.array(z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().min(1).max(4000),
+}).strict()).max(12);
+
+const motifSchema = z.enum([
+  "staking and lock mechanics",
+  "market inspection",
+  "game rules and fairness",
+  "collection and community",
+  "risk and verification",
+  "identity and ecosystem",
+]);
+
+const episodicSchema = z.object({
+  recentTopics: z.array(z.string().min(1).max(80)).max(8),
+  recentMotifs: z.array(motifSchema).max(8),
 }).strict();
 
 const chatRequestSchema = z.object({
@@ -13,6 +40,8 @@ const chatRequestSchema = z.object({
   message: z.string().min(1).max(8000),
   model: z.enum(AI_MODELS).optional(),
   context: contextSchema,
+  history: historySchema.optional(),
+  episodic: episodicSchema.optional(),
   wallet: z.object({
     address: z.custom<`0x${string}`>((value) => typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value)),
     chainId: z.literal(196),

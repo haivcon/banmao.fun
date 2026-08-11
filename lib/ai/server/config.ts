@@ -25,7 +25,7 @@ export function loadAIConfig(env: NodeJS.ProcessEnv = process.env) {
     apiKey,
     models: AI_MODELS,
     defaultModel: defaultModel as AIModel,
-    requestTimeoutMs: Number(env.AI_REQUEST_TIMEOUT_MS || 25_000),
+    requestTimeoutMs: Number(env.AI_REQUEST_TIMEOUT_MS || 60_000),
     maxStreamBytes: Number(env.AI_MAX_STREAM_BYTES || 1_000_000),
     maxRequestBytes: Number(env.AI_MAX_REQUEST_BYTES || 32_000),
     maxEstimatedTokens: Number(env.AI_MAX_ESTIMATED_TOKENS || 8_000),

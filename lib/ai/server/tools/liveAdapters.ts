@@ -5,6 +5,11 @@ import { xLayer } from "viem/chains";
 import { ERC20_ABI, STAKING_ABI, STAKING_CONTRACT_ADDRESS } from "../../../../app/defi/staking/contracts";
 import { BANMAOFOMO_ABI } from "../../../../app/gamefi/banmaofomo/lib/abis";
 import { BANMAOFOMO_ADDRESS, BANMAO_ADDRESS } from "../../../../app/gamefi/banmaofomo/lib/constants";
+import { RPS_ABI } from "../../../../app/gamefi/banmaorps/lib/abis";
+import { RPS_ADDRESS } from "../../../../app/gamefi/banmaorps/lib/constants";
+import { SLOTS_ABI, SLOTS_CONTRACT_ADDRESS } from "../../../../app/gamefi/banmaoslots/lib/abis";
+import { SNAKE_ABI } from "../../../../app/gamefi/banmaosnake/lib/abis";
+import { SNAKE_CONTRACT_ADDRESS } from "../../../../app/gamefi/banmaosnake/lib/constants";
 import { okxFetch as realOkxFetch } from "../../../okx/okxClient";
 import { readCollectionPrompts, readCollectionQuests, readCollectionSearch } from "../../../collection/server/readers";
 import type { ToolDescriptor } from "../toolRegistry";
@@ -103,7 +108,49 @@ export function createDomainToolDescriptors(dependencies: { readContract?: ReadC
       return available({ currentRound, round, jackpotPool, seedFundNextRound, paused, activeConfig, topAttackers, contract: BANMAOFOMO_ADDRESS, ...(wallet ? { wallet: { address: args.wallet, stats: wallet } } : {}) }, "xlayer:196:banmaofomo-v11", blockNumber as bigint | undefined);
     } catch { return unavailable("BanMaoFomo RPC read failed", "xlayer:196:banmaofomo-v11"); }
   }}));
-  tools.push(descriptor({ name: "gamefi.pk", description: "Report BanMaoPK mainnet capability", parameters: parameters({ chainId: { type: "integer", const: 196 } }, ["chainId"]), contexts: ["gamefi"], auth: "public", parse: (v) => chainSchema.parse(v), async execute() { return unavailable("The only PK address is explicitly labelled X Layer Testnet/keep testnet; no chain-196 deployment manifest exists", "repo:app/gamefi/banmaopk/lib/constants.ts"); } }));
+  const slotsSchema = z.object({ chainId: z.literal(196), wallet: addressSchema.optional(), poolId: z.number().int().min(0).optional() }).strict();
+  tools.push(descriptor({ name: "gamefi.slots", description: "Read BanmaoSlots multi-pool state: active pools, platform config, and optional player/pool stats", parameters: parameters({ chainId: { type: "integer", const: 196 }, wallet: { type: "string", pattern: "^0x[a-fA-F0-9]{40}$" }, poolId: { type: "integer", minimum: 0 } }, ["chainId"]), contexts: ["gamefi"], auth: "public", parse: (v) => slotsSchema.parse(v), async execute(args) {
+    try {
+      const names = ["paused", "activePoolCount", "platformPoolId", "platformEarnings"] as const;
+      const [paused, activePoolCount, platformPoolId, platformEarnings, activePools, blockNumber] = await Promise.all(names.map((functionName) => readContract({ address: SLOTS_CONTRACT_ADDRESS, abi: SLOTS_ABI, functionName })).concat([
+        readContract({ address: SLOTS_CONTRACT_ADDRESS, abi: SLOTS_ABI, functionName: "getActivePoolsPaginated", args: [0, 10] }),
+        block(),
+      ]));
+      let pool: unknown;
+      let poolStats: unknown;
+      let playerPoolStats: unknown;
+      if (args.poolId !== undefined) {
+        [pool, poolStats] = await Promise.all([
+          readContract({ address: SLOTS_CONTRACT_ADDRESS, abi: SLOTS_ABI, functionName: "getPool", args: [args.poolId] }),
+          readContract({ address: SLOTS_CONTRACT_ADDRESS, abi: SLOTS_ABI, functionName: "getPoolStats", args: [args.poolId] }),
+        ]);
+        if (args.wallet) playerPoolStats = await readContract({ address: SLOTS_CONTRACT_ADDRESS, abi: SLOTS_ABI, functionName: "getPlayerPoolStats", args: [args.poolId, args.wallet] });
+      }
+      return available({ paused, activePoolCount, platformPoolId, platformEarnings, activePools, contract: SLOTS_CONTRACT_ADDRESS, ...(args.poolId !== undefined ? { poolId: args.poolId, pool, poolStats } : {}), ...(args.wallet && args.poolId !== undefined ? { wallet: { address: args.wallet, playerPoolStats } } : {}) }, "xlayer:196:banmaoslots-v2", blockNumber as bigint | undefined);
+    } catch { return unavailable("BanmaoSlots RPC read failed", "xlayer:196:banmaoslots-v2"); }
+  }}));
+
+  tools.push(descriptor({ name: "gamefi.snake", description: "Read BanmaoSnake reward contract state: caps, paused status, and optional wallet claim data", parameters: parameters({ chainId: { type: "integer", const: 196 }, wallet: { type: "string", pattern: "^0x[a-fA-F0-9]{40}$" } }, ["chainId"]), contexts: ["gamefi"], auth: "public", parse: (v) => walletChainSchema.parse(v), async execute(args) {
+    try {
+      const names = ["paused", "dailyPlayerCap", "hourlySignerCap", "hourlySignedAmount", "minClaimAmount", "maxClaimPerGame", "minDonationForListing", "totalDonatedAmount", "getTotalDonors"] as const;
+      const [paused, dailyPlayerCap, hourlySignerCap, hourlySignedAmount, minClaimAmount, maxClaimPerGame, minDonationForListing, totalDonatedAmount, totalDonors, blockNumber] = await Promise.all(names.map((functionName) => readContract({ address: SNAKE_CONTRACT_ADDRESS, abi: SNAKE_ABI, functionName })).concat([block()]));
+      const wallet = args.wallet ? await Promise.all(["nonces", "userWithdrawals", "donatedAmount"].map((functionName) => readContract({ address: SNAKE_CONTRACT_ADDRESS, abi: SNAKE_ABI, functionName, args: [args.wallet] }))) : undefined;
+      return available({ paused, dailyPlayerCap, hourlySignerCap, hourlySignedAmount, minClaimAmount, maxClaimPerGame, minDonationForListing, totalDonatedAmount, totalDonors, contract: SNAKE_CONTRACT_ADDRESS, ...(wallet ? { wallet: { address: args.wallet, nonce: wallet[0], withdrawals: wallet[1], donatedAmount: wallet[2] } } : {}) }, "xlayer:196:banmaosnake-v6", blockNumber as bigint | undefined);
+    } catch { return unavailable("BanmaoSnake RPC read failed", "xlayer:196:banmaosnake-v6"); }
+  }}));
+
+  const rpsSchema = z.object({ chainId: z.literal(196), roomId: z.number().int().min(1).optional() }).strict();
+  tools.push(descriptor({ name: "gamefi.rps", description: "Read BanmaoRPS on-chain game state: total rooms, fee config, and optional room detail by roomId", parameters: parameters({ chainId: { type: "integer", const: 196 }, roomId: { type: "integer", minimum: 1 } }, ["chainId"]), contexts: ["gamefi"], auth: "public", parse: (v) => rpsSchema.parse(v), async execute(args) {
+    try {
+      const names = ["nextRoomId", "communityWallet", "deadWallet", "token"] as const;
+      const [nextRoomId, communityWallet, deadWallet, token, blockNumber] = await Promise.all(names.map((functionName) => readContract({ address: RPS_ADDRESS, abi: RPS_ABI, functionName })).concat([block()]));
+      let room: unknown;
+      if (args.roomId !== undefined) {
+        room = await readContract({ address: RPS_ADDRESS, abi: RPS_ABI, functionName: "rooms", args: [BigInt(args.roomId)] });
+      }
+      return available({ nextRoomId, totalRoomsCreated: nextRoomId ? Number(nextRoomId as bigint) - 1 : 0, communityWallet, deadWallet, token, feeBp: 200, contract: RPS_ADDRESS, ...(room ? { room: { roomId: args.roomId, ...normalize(room) as object } } : {}) }, "xlayer:196:banmaorps", blockNumber as bigint | undefined);
+    } catch { return unavailable("BanmaoRPS RPC read failed", "xlayer:196:banmaorps"); }
+  }}));
 
   const marketDefinitions = [
     ["market.price", "POST", "/api/v6/dex/market/price", "okx:dex-market-price"],

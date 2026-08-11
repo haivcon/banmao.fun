@@ -56,8 +56,24 @@ describe("OpenAI-compatible client", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
-  test("rejects malformed SSE", async () => {
-    const fetchImpl = jest.fn(async () => sseResponse("data: not-json\n\n"));
+  test("accepts the upstream terminal finish reason when the provider omits [DONE]", async () => {
+    const fetchImpl = jest.fn(async () => sseResponse(
+      'data: {"choices":[{"delta":{"content":"Hi"},"finish_reason":null}]}\n\n' +
+      'data: {"choices":[{"delta":{},"finish_reason":"stop"}]}\n\n',
+    ));
+    const chunks: string[] = [];
+    for await (const chunk of streamChatCompletion(
+      { model: "open9", messages: [{ role: "user", content: "hello" }] },
+      { config, fetchImpl },
+    )) chunks.push(chunk);
+    expect(chunks).toEqual(["Hi"]);
+  });
+
+  test.each([
+    "data: not-json\n\n",
+    'data: {"choices":[{"delta":{"content":"truncated"}}]}\n\n',
+  ])("rejects malformed or truncated SSE", async (body) => {
+    const fetchImpl = jest.fn(async () => sseResponse(body));
     await expect(async () => {
       for await (const _chunk of streamChatCompletion(
         { model: "open9", messages: [{ role: "user", content: "hello" }] },
@@ -83,6 +99,33 @@ describe("OpenAI-compatible client", () => {
       )) {
         // consume stream
       }
-    }).rejects.toMatchObject({ code: "UPSTREAM_ABORTED" });
+    }).rejects.toMatchObject({ code: "REQUEST_ABORTED" });
   });
+
+  test.each(["connecting", "streaming"])(
+    "reports the upstream timeout while %s separately from caller cancellation",
+    async (phase) => {
+      const fetchImpl = jest.fn((_url: string | URL | Request, init?: RequestInit) => {
+        if (phase === "connecting") {
+          return new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true });
+          });
+        }
+        return Promise.resolve(new Response(new ReadableStream({
+          start(controller) {
+            init?.signal?.addEventListener("abort", () => controller.error(init.signal?.reason), { once: true });
+          },
+        })));
+      });
+
+      await expect(async () => {
+        for await (const _chunk of streamChatCompletion(
+          { model: "open9", messages: [{ role: "user", content: "hello" }] },
+          { config: { ...config, requestTimeoutMs: 5 }, fetchImpl: fetchImpl as typeof fetch },
+        )) {
+          // consume stream
+        }
+      }).rejects.toMatchObject({ code: "UPSTREAM_TIMEOUT" });
+    },
+  );
 });

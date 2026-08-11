@@ -230,6 +230,10 @@ export function GameCard({ game, t, index, onNavigate, onShowInfo }: GameCardPro
 
                 <button
                     className={`game-card__play-btn ${isBtnHovered ? 'game-card__play-btn--active' : ''}`}
+                    data-banmao-ai-id={`gamefi.play.${game.id}`}
+                    data-banmao-ai-label={`Play ${String(t(game.nameKey))}`}
+                    data-banmao-ai-action="activate"
+                    data-banmao-ai-risk="none"
                     onClick={handlePlayClick}
                     onMouseEnter={() => {
                         setIsBtnHovered(true);

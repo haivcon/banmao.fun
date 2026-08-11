@@ -1273,6 +1273,10 @@ export default function DeFiPage() {
               <div className="defi-overview__hero-actions">
                 <Link
                   href="/defi/staking"
+                  data-banmao-ai-id="defi.open-staking"
+                  data-banmao-ai-label="Open BANMAO staking"
+                  data-banmao-ai-action="navigate"
+                  data-banmao-ai-risk="none"
                   className="defi-button defi-button--primary"
                   onClick={() =>
                     trackDeFiEvent("defi_primary_cta_click", {

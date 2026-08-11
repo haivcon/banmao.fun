@@ -31,6 +31,13 @@ function upstreamCode(status: number) {
   return status === 400 || status === 404 || status === 422 ? "MODEL_REJECTED" : "UPSTREAM_UNAVAILABLE";
 }
 
+function abortedError(error: unknown, callerSignal: AbortSignal | undefined, timeout: AbortSignal) {
+  if (callerSignal?.aborted) return new UpstreamAIError("REQUEST_ABORTED");
+  if (timeout.aborted) return new UpstreamAIError("UPSTREAM_TIMEOUT");
+  if (error instanceof DOMException && error.name === "AbortError") return new UpstreamAIError("UPSTREAM_ABORTED");
+  return null;
+}
+
 export async function* streamCompletion(
   request: CompletionRequest,
   options: { config: ClientConfig; fetchImpl?: typeof fetch; signal?: AbortSignal },
@@ -54,10 +61,7 @@ export async function* streamCompletion(
       signal,
     });
   } catch (error) {
-    if (signal.aborted || (error instanceof DOMException && error.name === "AbortError")) {
-      throw new UpstreamAIError("UPSTREAM_ABORTED");
-    }
-    throw new UpstreamAIError("UPSTREAM_UNAVAILABLE");
+    throw abortedError(error, options.signal, timeout) || new UpstreamAIError("UPSTREAM_UNAVAILABLE");
   }
   if (!response.ok) throw new UpstreamAIError(upstreamCode(response.status), response.status);
   if (!response.body) throw new UpstreamAIError("MALFORMED_UPSTREAM_STREAM");
@@ -70,6 +74,7 @@ export async function* streamCompletion(
   let finishReason = "stop";
   let total = 0;
   let doneSeen = false;
+  let finishReasonSeen = false;
   try {
     while (true) {
       const { done, value } = await reader.read();
@@ -88,7 +93,10 @@ export async function* streamCompletion(
             const parsed = JSON.parse(data);
             const choice = parsed?.choices?.[0];
             if (typeof choice?.delta?.content === "string") text += choice.delta.content;
-            if (typeof choice?.finish_reason === "string") finishReason = choice.finish_reason;
+            if (typeof choice?.finish_reason === "string") {
+              finishReason = choice.finish_reason;
+              finishReasonSeen = true;
+            }
             for (const partial of choice?.delta?.tool_calls || []) {
               const index = Number(partial.index || 0);
               const current = calls.get(index) || { id: "", name: "", arguments: "" };
@@ -103,10 +111,13 @@ export async function* streamCompletion(
         }
       }
     }
-    if (buffer.trim() || !doneSeen) throw new UpstreamAIError("MALFORMED_UPSTREAM_STREAM");
+    if (buffer.trim() || (!doneSeen && !finishReasonSeen)) throw new UpstreamAIError("MALFORMED_UPSTREAM_STREAM");
     const toolCalls = [...calls.entries()].sort(([a], [b]) => a - b).map(([, call]) => call);
     if (toolCalls.some((call) => !call.id || !call.name)) throw new UpstreamAIError("MALFORMED_TOOL_CALL");
     yield { text, toolCalls, finishReason };
+  } catch (error) {
+    if (error instanceof UpstreamAIError) throw error;
+    throw abortedError(error, options.signal, timeout) || new UpstreamAIError("UPSTREAM_ABORTED");
   } finally {
     reader.releaseLock();
   }

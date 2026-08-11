@@ -113,6 +113,10 @@ export function StakePanel({
                         <div className="input-group">
                             <input
                                 type="text"
+                                data-banmao-ai-id="staking.amount"
+                                data-banmao-ai-label="BANMAO stake amount"
+                                data-banmao-ai-action="fill"
+                                data-banmao-ai-risk="reversible"
                                 placeholder="0.00"
                                 value={formatInputNumber(stakeAmount)}
                                 onChange={(e) => {
@@ -271,6 +275,10 @@ export function StakePanel({
                     {/* Stake Button */}
                     <button
                         className="btn-stake"
+                        data-banmao-ai-id="staking.submit"
+                        data-banmao-ai-label="Review and submit BANMAO stake"
+                        data-banmao-ai-action="activate"
+                        data-banmao-ai-risk="transaction"
                         onClick={(e) => { e.stopPropagation(); handleStake(); }}
                         disabled={!isValidAmount || isLoading}
                     >

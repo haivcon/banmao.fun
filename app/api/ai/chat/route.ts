@@ -4,7 +4,7 @@ import { enforceRequestBudget } from "../../../../lib/ai/server/security/abuse";
 import { streamCompletion, UpstreamAIError } from "../../../../lib/ai/server/client";
 import { loadAIConfig } from "../../../../lib/ai/server/config";
 import { routeContext } from "../../../../lib/ai/server/contextRouter";
-import { runOrchestrator } from "../../../../lib/ai/server/orchestrator";
+import { BANMAO_PERSONA_VERSION, runOrchestrator } from "../../../../lib/ai/server/orchestrator";
 import { loadApprovedCorpus } from "../../../../lib/ai/server/rag/corpus";
 import { retrieve } from "../../../../lib/ai/server/rag/retriever";
 import { validateChatRequest, AIValidationError } from "../../../../lib/ai/server/schemas";
@@ -19,10 +19,19 @@ function sse(event: string, data: unknown) { return encoder.encode(`event: ${eve
 
 const limiter = createLocalRateLimiter({ limit: 20, windowMs: 60_000 });
 function requestSubject(request: Request) { return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous"; }
-function originAllowed(request: Request) { const origin=request.headers.get("origin"); return !origin || origin === new URL(request.url).origin; }
+function originAllowed(request: Request) {
+  const origin = request.headers.get("origin");
+  if (!origin) return true;
+  const url = new URL(request.url);
+  const host = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() || request.headers.get("host");
+  const protocol = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || url.protocol.slice(0, -1);
+  return origin === (host ? `${protocol}://${host}` : url.origin);
+}
 function errorStatus(error: unknown) {
-  if (error instanceof UpstreamAIError && error.code === "MODEL_REJECTED") return 422;
-  if (error instanceof UpstreamAIError && error.code === "UPSTREAM_ABORTED") return 504;
+  if (!(error instanceof UpstreamAIError)) return 502;
+  if (error.code === "MODEL_REJECTED") return 422;
+  if (error.code === "REQUEST_ABORTED") return 499;
+  if (error.code === "UPSTREAM_TIMEOUT") return 504;
   return 502;
 }
 function errorCode(error: unknown) { return error instanceof UpstreamAIError ? error.code : "UPSTREAM_UNAVAILABLE"; }
@@ -59,13 +68,15 @@ export async function POST(request: Request) {
   const requestId = randomUUID();
   const body = new ReadableStream({
     async start(controller) {
-      controller.enqueue(sse("meta", { requestId, model: validated.model }));
+      controller.enqueue(sse("meta", { requestId, model: validated.model, personaVersion: BANMAO_PERSONA_VERSION, ragHitCount: evidence.length, surface: routed.surface }));
       try {
         for await (const event of runOrchestrator({
           model: validated.model,
           message: validated.message,
-          context: routed,
+          context: { ...routed, locale: validated.context.locale, pageElements: validated.context.pageElements },
           evidence,
+          history: validated.history,
+          recentMotifs: validated.episodic?.recentMotifs,
           authenticated: false,
         }, {
           tools: [...tools],

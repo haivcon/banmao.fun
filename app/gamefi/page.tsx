@@ -336,6 +336,10 @@ function GameSearchBar({
                 <span className="game-search-bar__icon">🔍</span>
                 <input
                     type="text"
+                    data-banmao-ai-id="gamefi.search"
+                    data-banmao-ai-label="Search GameFi games"
+                    data-banmao-ai-action="fill"
+                    data-banmao-ai-risk="reversible"
                     className="game-search-bar__input"
                     placeholder="Search games..."
                     value={searchQuery}
