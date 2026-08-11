@@ -27,6 +27,10 @@ const RESOLVE_ALIASES = {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Include docs for server-side RAG corpus on Vercel serverless
+  outputFileTracingIncludes: {
+    "/api/ai/*": ["./docs/**/*.md", "./README.md", "./contracts/README.md", "./app/gamefi/banmaoslots/PROJECT_DOCUMENTATION.md"],
+  },
   // Inject build version for cache invalidation
   env: {
     NEXT_PUBLIC_BUILD_VERSION: Date.now().toString(),
