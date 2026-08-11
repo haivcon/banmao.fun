@@ -1,0 +1,13 @@
+[extend]
+useDefault = true
+
+[allowlist]
+paths = [
+  '''__tests__/''',
+]
+commits = [
+  # Public X Layer token address and deployment transaction hash
+  "2e9dbede1f23fd24d7824ae05c02074c33d0f3eb",
+  # Public on-chain BANMAO token address used in test fixtures (not a secret)
+  "e5a83413d1d166d77b9f6e11bde3544f9523f81c",
+]

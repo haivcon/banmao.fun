@@ -104,6 +104,10 @@ ehthumbs.db
 /contracts/BanMaoMiner.sol
 /contracts/WorldCupYieldWars.sol
 
+# Local-only DeFi Launchpad (dev only, never deploy)
+/app/defi/launchpad/
+/app/api/launchpad/
+
 # Local-only planning and internal review material
 BANMAOBOX_DETAILED_PLAN_VN.md
 /ANALYSIS_REPORT_VN.md
