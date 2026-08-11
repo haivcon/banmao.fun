@@ -22,6 +22,12 @@ import { DEFAULT_EDITOR as IMPORTED_DEFAULT_EDITOR } from "./stores/useHubStore"
 import { useHubStore } from "./stores/useHubStore";
 import { registerServiceWorker } from "./lib/notifications";
 import { startOfflineSync } from "./lib/offlineMode";
+import {
+    appendCollectionBatch,
+    collectionItemKey,
+    sortCollectionItems,
+    type CollectionSort,
+} from "./collectionOrdering";
 
 // Dynamic imports — modals are loaded on-demand, not in the initial bundle
 const CreatePostModal = dynamic(() => import("./components/CreatePostModal"), { ssr: false });
@@ -50,12 +56,14 @@ function ChatBellButton({ onClick, t }: { onClick: () => void, t: any }) {
 /* ===================== TYPES ===================== */
 
 interface ImageItem {
+    publicId: string;
     src: string;
     thumb: string;
     thumbSm: string;
     name: string;
     folder: string;
     bytes: number;
+    createdAt?: string;
     type: "sticker" | "background";
     isVideo: boolean;
     duration?: number;
@@ -464,7 +472,10 @@ export default function CollectionPage() {
     const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const translationCache = useRef<Record<string, Record<string, string>>>({});
     const sortTriggerRef = useRef<HTMLButtonElement>(null);
-    const randomSeedRef = useRef(Math.random());
+    const randomSeedRef = useRef(Math.floor(Math.random() * 0x7fffffff));
+    const sortByRef = useRef<CollectionSort>(sortBy);
+    const collectionItemsRef = useRef<ImageItem[]>([]);
+    const previousSortRef = useRef<CollectionSort>(sortBy);
     const touchStartX = useRef(0);
     const touchStartY = useRef(0);
     const isDragging = useRef(false);
@@ -757,19 +768,21 @@ export default function CollectionPage() {
     }, []);
 
     // ——— Helper: map raw API resource to ImageItem ———
-    const mapRawToItem = useCallback((img: { public_id: string; secure_url: string; folder: string; bytes: number; resource_type?: string; duration?: number; width?: number; height?: number; tags?: string[]; context?: Record<string, string> }): ImageItem | null => {
+    const mapRawToItem = useCallback((img: { public_id: string; secure_url: string; folder: string; bytes: number; created_at?: string; resource_type?: string; duration?: number; width?: number; height?: number; tags?: string[]; context?: Record<string, string> }): ImageItem | null => {
         if (img.resource_type === "raw") return null;
         const isVideo = img.resource_type === "video";
         let folder = img.folder;
         if (folder.endsWith("/a_prompt")) folder = folder.replace(/\/a_prompt$/, "");
         if (/\/hub\/0x[a-f0-9]/i.test(folder)) folder = "__hub__";
         return {
+            publicId: img.public_id,
             src: img.secure_url,
             thumb: isVideo ? toVideoThumb(img.secure_url) : toThumb(img.secure_url),
             thumbSm: isVideo ? toVideoThumb(img.secure_url, 200) : toThumbSm(img.secure_url),
             name: publicIdToName(img.public_id),
             folder,
             bytes: img.bytes || 0,
+            createdAt: img.created_at,
             type: "sticker" as const,
             isVideo,
             duration: img.duration,
@@ -821,7 +834,7 @@ export default function CollectionPage() {
 
         async function fetchAllPages() {
             let cursor: string | null = null;
-            let accumulated: ImageItem[] = [];
+            collectionItemsRef.current = [];
             let isFirstBatch = true;
 
             do {
@@ -829,6 +842,7 @@ export default function CollectionPage() {
                 if (cursor) params.set("cursor", cursor);
 
                 const res = await fetch(`/api/collection?${params}`);
+                if (!res.ok) throw new Error(`Collection request failed: ${res.status}`);
                 const data = await res.json();
                 if (cancelled) return;
 
@@ -836,13 +850,18 @@ export default function CollectionPage() {
                     .map(mapRawToItem)
                     .filter((item: ImageItem | null): item is ImageItem => item !== null);
 
-                accumulated = [...accumulated, ...batchItems];
+                collectionItemsRef.current = appendCollectionBatch(
+                    collectionItemsRef.current,
+                    batchItems,
+                    sortByRef.current,
+                    randomSeedRef.current,
+                );
 
-                // Update state after each batch so users see images immediately
-                setAllImages(accumulated);
-                setFolders(sortFolders(accumulated));
-                setTotalBytes(accumulated.reduce((sum, i) => sum + i.bytes, 0));
-                setLoadProgress({ loaded: accumulated.length, total: data.total || accumulated.length });
+                // Append each deduplicated batch without moving cards already rendered.
+                setAllImages(collectionItemsRef.current);
+                setFolders(sortFolders(collectionItemsRef.current));
+                setTotalBytes(collectionItemsRef.current.reduce((sum, i) => sum + i.bytes, 0));
+                setLoadProgress({ loaded: collectionItemsRef.current.length, total: data.total || collectionItemsRef.current.length });
 
                 // Clear full-page skeleton after first batch
                 if (isFirstBatch) {
@@ -1159,6 +1178,20 @@ export default function CollectionPage() {
 
     // Load initial favorites order (moved logic into the main mount effect above)
 
+    // Re-sort only when the user changes the selected sort. Network batches use
+    // the active sort for their own new items, then append below this sequence.
+    useEffect(() => {
+        sortByRef.current = sortBy;
+        if (previousSortRef.current === sortBy) return;
+        previousSortRef.current = sortBy;
+        collectionItemsRef.current = sortCollectionItems(
+            collectionItemsRef.current,
+            sortBy,
+            randomSeedRef.current,
+        );
+        setAllImages(collectionItemsRef.current);
+    }, [sortBy, setAllImages]);
+
     // ——— Filter by tab + search + type + sort ———
     const filteredImages = useMemo(() => {
         let filtered = allImages;
@@ -1192,28 +1225,13 @@ export default function CollectionPage() {
             return filtered.sort((a, b) => {
                 const indexA = favoritesOrder.indexOf(a.src);
                 const indexB = favoritesOrder.indexOf(b.src);
-                if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name);
+                if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name) || collectionItemKey(a).localeCompare(collectionItemKey(b));
                 if (indexA === -1) return 1;
                 if (indexB === -1) return -1;
-                return indexA - indexB; // Ascending based on array order
+                return indexA - indexB || collectionItemKey(a).localeCompare(collectionItemKey(b)); // Ascending based on array order
             });
         }
 
-        // Standard Sort
-        if (sortBy === "name") filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
-        if (sortBy === "size") filtered = [...filtered].sort((a, b) => b.bytes - a.bytes);
-        // newest = default order from API (already sorted by public_id asc), reverse for newest first
-        if (sortBy === "newest") filtered = [...filtered].reverse();
-        // Random shuffle (seeded per session for consistency)
-        if (sortBy === "random") {
-            filtered = [...filtered];
-            let h = Math.floor(randomSeedRef.current * 0x7fffffff);
-            const rng = () => { h = (h * 1103515245 + 12345) & 0x7fffffff; return h / 0x7fffffff; };
-            for (let i = filtered.length - 1; i > 0; i--) {
-                const j = Math.floor(rng() * (i + 1));
-                [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
-            }
-        }
         return filtered;
     }, [allImages, activeTab, searchQuery, favorites, favoritesOrder, typeFilter, sortBy]);
 
@@ -2284,9 +2302,9 @@ export default function CollectionPage() {
                         ) : displayImages.length > 0 ? (
                             <>
                                 <div className="col-grid" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
-                                    {displayImages.map((img, i) => (
+                                    {displayImages.map((img) => (
                                         <ImageCard
-                                            key={`${img.src}-${i}`}
+                                            key={collectionItemKey(img)}
                                             img={img}
                                             t={t}
                                             lang={lang}
@@ -2313,7 +2331,7 @@ export default function CollectionPage() {
                                     }}>
                                         <div className="col-infinite-spinner" style={{ width: "16px", height: "16px" }} />
                                         <span>
-                                            {t.loading || "Loading"} {loadProgress.loaded} / {loadProgress.total}
+                                            {t.loading} {loadProgress.loaded} / {loadProgress.total}
                                         </span>
                                         <div style={{
                                             width: "120px", height: "4px", borderRadius: "2px",
@@ -2888,7 +2906,7 @@ export default function CollectionPage() {
                                         <button
                                             key={s}
                                             className={`col-sort-option ${sortBy === s ? "active" : ""}`}
-                                            onClick={(e) => { e.stopPropagation(); setSortBy(s); setCurrentPage(1); setShowSortMenu(false); randomSeedRef.current = Math.random(); }}
+                                            onClick={(e) => { e.stopPropagation(); if (s === "random") randomSeedRef.current = Math.floor(Math.random() * 0x7fffffff); setSortBy(s); setCurrentPage(1); setShowSortMenu(false); }}
                                         >
                                             {s === "random" ? `🎲 ${t.sortRandom}` : s === "name" ? `↕ ${t.sortName}` : s === "newest" ? `🕐 ${t.sortNewest}` : `📦 ${t.sortSize}`}
                                         </button>
