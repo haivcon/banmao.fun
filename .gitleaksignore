@@ -1,3 +1,6 @@
 # Public X Layer token address and deployment transaction hash.
-2e9dbede1f23fd24d7824ae05c02074c33d0f3eb:deployments/banmaobox-xlayer-mainnet.json:generic-api-key:9
-2e9dbede1f23fd24d7824ae05c02074c33d0f3eb:deployments/banmaobox-xlayer-testnet.json:generic-api-key:23
+2e9dbede1f23fd24d7824ae05c02074c33d0f3eb:deployments/banmaobox-xlayer-mainnet.json:generic-api-key:***
+2e9dbede1f23fd24d7824ae05c02074c33d0f3eb:deployments/banmaobox-xlayer-testnet.json:generic-api-key:***
+
+# Public on-chain BANMAO token address used in test fixtures (not a secret).
+e5a83413d1d166d77b9f6e11bde3544f9523f81c:__tests__/ai/tools/liveAdapters.test.ts:generic-api-key:***
