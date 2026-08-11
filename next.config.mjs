@@ -1,7 +1,25 @@
+import { existsSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const RAG_CORPUS_FILES = [
+  "docs/ai/README.md",
+  "docs/ai/PRIVACY.md",
+  "docs/ai/THREAT_MODEL.md",
+  "docs/ai/RAG_SOURCES.md",
+  "docs/ai/OPERATIONS.md",
+  "docs/ai/ROLLOUT.md",
+  "docs/ai/BANMAO_PERSONA.md",
+  "docs/ai/DOMAIN_KNOWLEDGE.md",
+  "README.md",
+  "contracts/README.md",
+  "app/gamefi/banmaoslots/PROJECT_DOCUMENTATION.md",
+];
+const missingRagCorpusFiles = RAG_CORPUS_FILES.filter((file) => !existsSync(path.join(__dirname, file)));
+
+console.info(`[rag-corpus] build check: ${RAG_CORPUS_FILES.length - missingRagCorpusFiles.length}/${RAG_CORPUS_FILES.length} source files found`);
+if (missingRagCorpusFiles.length > 0) console.warn("[rag-corpus] missing source files:", missingRagCorpusFiles);
 
 const EMPTY_MODULE = "@/lib/emptyModule.ts";
 
@@ -27,9 +45,9 @@ const RESOLVE_ALIASES = {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Include docs for server-side RAG corpus on Vercel serverless
+  // Route keys match public URLs, not App Router filesystem paths.
   outputFileTracingIncludes: {
-    "/api/ai/*": ["./docs/**/*.md", "./README.md", "./contracts/README.md", "./app/gamefi/banmaoslots/PROJECT_DOCUMENTATION.md"],
+    "/api/ai/chat": RAG_CORPUS_FILES,
   },
   // Inject build version for cache invalidation
   env: {
