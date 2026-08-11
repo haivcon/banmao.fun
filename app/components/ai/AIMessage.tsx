@@ -26,7 +26,10 @@ export default function AIMessage({ role, content, createdAt, streaming = false,
     <div className="banmao-ai-message-wrap">
       <header><strong>{role === "user" ? t("you") : "BANMAO AI"}</strong>{time && <time dateTime={new Date(createdAt).toISOString()}>{time}</time>}</header>
       <div className="banmao-ai-message-bubble">
-        {!content && streaming ? <TypingIndicator language={language} /> : <MarkdownRenderer content={content} />}
+        {!content && streaming ? <>
+          <TypingIndicator language={language} />
+          <span className="banmao-ai-skeleton" aria-hidden="true"><i /><i /><i /></span>
+        </> : <MarkdownRenderer content={content} />}
         {streaming && content && <span className="banmao-ai-stream-caret" aria-hidden="true" />}
       </div>
       {role === "assistant" && content && !streaming && <button className="banmao-ai-copy" type="button" onClick={copy} aria-label={copied ? t("responseCopied") : t("copyResponse")}>{copied ? <Check size={13} /> : <Copy size={13} />}{copied ? t("copied") : t("copy")}</button>}
