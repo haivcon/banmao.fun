@@ -30,10 +30,12 @@ export function assertApprovedSource(root: string, path: string): string {
 let cached: Promise<IndexedChunk[]> | undefined;
 export function loadApprovedCorpus(root = process.cwd()): Promise<IndexedChunk[]> {
   if (!cached) cached = Promise.all(APPROVED_RAG_SOURCES.map(async (sourcePath) => {
-    const content = await readFile(assertApprovedSource(root, sourcePath), "utf8");
-    const version = createHash("sha256").update(content).digest("hex").slice(0, 16);
-    return { documentId: sourcePath.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase(), version, sourcePath, content };
-  })).then(buildIndex);
+    try {
+      const content = await readFile(assertApprovedSource(root, sourcePath), "utf8");
+      const version = createHash("sha256").update(content).digest("hex").slice(0, 16);
+      return { documentId: sourcePath.replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase(), version, sourcePath, content };
+    } catch { return null; }
+  })).then((docs) => buildIndex(docs.filter((d): d is NonNullable<typeof d> => d !== null)));
   return cached;
 }
 
