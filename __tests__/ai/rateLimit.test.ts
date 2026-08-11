@@ -1,0 +1,2 @@
+import { createLocalRateLimiter } from "../../lib/ai/server/security/rateLimit";
+describe("local safe-off limiter",()=>{test("bounds a subject without retaining raw identifier",()=>{const limiter=createLocalRateLimiter({limit:2,windowMs:1000});expect(limiter.take("raw-ip",0).allowed).toBe(true);expect(limiter.take("raw-ip",1).allowed).toBe(true);expect(limiter.take("raw-ip",2).allowed).toBe(false);expect([...limiter.keys()].join()).not.toContain("raw-ip");});});

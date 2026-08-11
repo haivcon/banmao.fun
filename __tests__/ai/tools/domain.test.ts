@@ -1,0 +1,4 @@
+import { createDefiTools } from "../../../lib/ai/server/tools/defi";import { createGamefiTools } from "../../../lib/ai/server/tools/gamefi";import { createCollectionTools } from "../../../lib/ai/server/tools/collection";import { createMarketTools } from "../../../lib/ai/server/tools/market";
+
+test("domain adapters return typed unavailable rather than fabricated values",async()=>{for(const tool of [createDefiTools().staking,createGamefiTools().pk,createCollectionTools().metadata,createMarketTools().price]){const result=await tool({} as never);expect(result.status).toBe("unavailable");expect(result.source).toBeTruthy();expect(result.observedAt).toBeTruthy();}});
+test("injected readers stay read-only and preserve provenance",async()=>{const staking=createDefiTools({staking:async()=>({value:{total:"1"},source:"internal:defi",blockNumber:7n})}).staking;expect(await staking({chainId:196})).toMatchObject({status:"available",source:"internal:defi",blockNumber:"7"});});

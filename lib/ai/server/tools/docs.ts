@@ -1,0 +1,2 @@
+import { z } from "zod"; import { retrieve } from "../rag/retriever"; import type { IndexedChunk } from "../rag/index";
+export function docsSearchTool(index:IndexedChunk[]){return {name:"docs.search",contexts:["landing","defi","gamefi","collection"] as const,auth:"public" as const,timeoutMs:500,maxBytes:16000,parse:(v:unknown)=>z.object({query:z.string().min(1).max(500),topK:z.number().int().min(1).max(8).optional()}).strict().parse(v),execute:async(a:{query:string;topK?:number})=>retrieve(index,a.query,a.topK||4)};}

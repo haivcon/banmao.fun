@@ -1,0 +1,1081 @@
+{
+  "schemaVersion": 1,
+  "name": "BANMAO AI Emotional Mascot",
+  "engine": "frame-sequence",
+  "generatedBy": "local Pillow composite pipeline; no generative image model used",
+  "canvas": {
+    "width": 256,
+    "height": 256,
+    "heroWidth": 384,
+    "heroHeight": 384,
+    "pivot": {
+      "x": 0.5,
+      "y": 1.0
+    },
+    "fit": "contain"
+  },
+  "format": {
+    "mime": "image/webp",
+    "alpha": true,
+    "quality": 88
+  },
+  "provenance": {
+    "type": "derived-composite",
+    "sourceRoot": "/gamefi/banmaofomo/sprites",
+    "note": "Original BANMAO PNG sprites resized and, for semantic states, composited with locally drawn UI glyph overlays. Not AI-generated."
+  },
+  "preloadPolicy": {
+    "eager": [
+      "idle",
+      "greeting",
+      "listening",
+      "thinking",
+      "answering"
+    ],
+    "lazyHigh": [
+      "researching",
+      "working",
+      "success",
+      "secure",
+      "warning",
+      "error"
+    ],
+    "lazy": [
+      "excited",
+      "confused",
+      "sleeping",
+      "love",
+      "goodbye"
+    ],
+    "reducedMotion": "Load poster256 only; do not advance frames."
+  },
+  "emotions": {
+    "idle": {
+      "event": "chat.ready | response.complete",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/idle/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 10616
+        },
+        {
+          "src": "/ai/mascot/frames/idle/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 10734
+        },
+        {
+          "src": "/ai/mascot/frames/idle/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 10744
+        },
+        {
+          "src": "/ai/mascot/frames/idle/frame-04@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 10198
+        }
+      ],
+      "durationMs": 3000,
+      "frameDurationMs": 750,
+      "loop": true,
+      "poster": {
+        "src": "/ai/mascot/frames/idle/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 10616
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/idle/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/idle/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 17186
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "eager",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame1_1770087961615.png",
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame2_1770087977712.png",
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame3_1770087992622.png",
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame4_1770088007856.png"
+        ],
+        "overlay": null,
+        "operation": "resize"
+      },
+      "totalBytes": 70094
+    },
+    "greeting": {
+      "event": "session.open | user.returned",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/greeting/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13134
+        },
+        {
+          "src": "/ai/mascot/frames/greeting/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13322
+        },
+        {
+          "src": "/ai/mascot/frames/greeting/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13618
+        }
+      ],
+      "durationMs": 1200,
+      "frameDurationMs": 400,
+      "loop": false,
+      "poster": {
+        "src": "/ai/mascot/frames/greeting/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 13134
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/greeting/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/greeting/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 19906
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "eager",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/banmao_idle_wave.png",
+          "/gamefi/banmaofomo/sprites/animations/dance/banmao_dance_frame1_1770088039240.png",
+          "/gamefi/banmaofomo/sprites/animations/dance/banmao_dance_frame2_1770088057493.png"
+        ],
+        "overlay": "spark",
+        "operation": "alpha composite + resize"
+      },
+      "totalBytes": 73114
+    },
+    "listening": {
+      "event": "input.voice.start | input.focus",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/listening/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13394
+        },
+        {
+          "src": "/ai/mascot/frames/listening/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13940
+        },
+        {
+          "src": "/ai/mascot/frames/listening/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 14594
+        }
+      ],
+      "durationMs": 1500,
+      "frameDurationMs": 500,
+      "loop": true,
+      "poster": {
+        "src": "/ai/mascot/frames/listening/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 13394
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/listening/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/listening/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 21234
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "eager",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame1_1770087961615.png",
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame2_1770087977712.png",
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame3_1770087992622.png"
+        ],
+        "overlay": "listening",
+        "operation": "alpha composite + resize"
+      },
+      "totalBytes": 76556
+    },
+    "thinking": {
+      "event": "assistant.thinking",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/thinking/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 19116
+        },
+        {
+          "src": "/ai/mascot/frames/thinking/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12930
+        },
+        {
+          "src": "/ai/mascot/frames/thinking/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12942
+        }
+      ],
+      "durationMs": 1800,
+      "frameDurationMs": 600,
+      "loop": true,
+      "poster": {
+        "src": "/ai/mascot/frames/thinking/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 19116
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/thinking/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/thinking/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 31974
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "eager",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/banmao_hourglass.png",
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame1_1770087961615.png",
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame2_1770087977712.png"
+        ],
+        "overlay": "thinking",
+        "operation": "alpha composite + resize"
+      },
+      "totalBytes": 96078
+    },
+    "researching": {
+      "event": "tool.search.start | retrieval.start",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/researching/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13614
+        },
+        {
+          "src": "/ai/mascot/frames/researching/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12322
+        },
+        {
+          "src": "/ai/mascot/frames/researching/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12828
+        }
+      ],
+      "durationMs": 1800,
+      "frameDurationMs": 600,
+      "loop": true,
+      "poster": {
+        "src": "/ai/mascot/frames/researching/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 13614
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/researching/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/researching/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 21270
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "lazy-high",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/animations/feed/banmao_feed_frame1_1770088133377.png",
+          "/gamefi/banmaofomo/sprites/animations/feed/banmao_feed_frame2_1770088151616.png",
+          "/gamefi/banmaofomo/sprites/animations/feed/banmao_feed_frame3_1770088169684.png"
+        ],
+        "overlay": "docs",
+        "operation": "alpha composite + resize"
+      },
+      "totalBytes": 73648
+    },
+    "working": {
+      "event": "tool.run.start | generation.start",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/working/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13712
+        },
+        {
+          "src": "/ai/mascot/frames/working/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12420
+        },
+        {
+          "src": "/ai/mascot/frames/working/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12950
+        }
+      ],
+      "durationMs": 1350,
+      "frameDurationMs": 450,
+      "loop": true,
+      "poster": {
+        "src": "/ai/mascot/frames/working/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 13712
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/working/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/working/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 21328
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "lazy-high",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/animations/feed/banmao_feed_frame1_1770088133377.png",
+          "/gamefi/banmaofomo/sprites/animations/feed/banmao_feed_frame2_1770088151616.png",
+          "/gamefi/banmaofomo/sprites/animations/feed/banmao_feed_frame3_1770088169684.png"
+        ],
+        "overlay": "typing",
+        "operation": "alpha composite + resize"
+      },
+      "totalBytes": 74122
+    },
+    "answering": {
+      "event": "assistant.stream.start",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/answering/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13754
+        },
+        {
+          "src": "/ai/mascot/frames/answering/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12774
+        },
+        {
+          "src": "/ai/mascot/frames/answering/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12622
+        }
+      ],
+      "durationMs": 1500,
+      "frameDurationMs": 500,
+      "loop": true,
+      "poster": {
+        "src": "/ai/mascot/frames/answering/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 13754
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/answering/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/answering/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 21020
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "eager",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/banmao_thumbs_up.png",
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame1_1770087961615.png",
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame2_1770087977712.png"
+        ],
+        "overlay": "answer",
+        "operation": "alpha composite + resize"
+      },
+      "totalBytes": 73924
+    },
+    "success": {
+      "event": "task.success | transaction.confirmed",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/success/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13596
+        },
+        {
+          "src": "/ai/mascot/frames/success/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 18556
+        },
+        {
+          "src": "/ai/mascot/frames/success/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 33102
+        },
+        {
+          "src": "/ai/mascot/frames/success/frame-04@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 14160
+        }
+      ],
+      "durationMs": 1400,
+      "frameDurationMs": 350,
+      "loop": false,
+      "poster": {
+        "src": "/ai/mascot/frames/success/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 13596
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/success/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/success/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 20862
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "lazy-high",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/banmao_thumbs_up.png",
+          "/gamefi/banmaofomo/sprites/animations/winner/winner_frame1_1770091949398.png",
+          "/gamefi/banmaofomo/sprites/animations/winner/winner_frame3_1770092005221.png",
+          "/gamefi/banmaofomo/sprites/animations/winner/winner_frame4_1770092034897.png"
+        ],
+        "overlay": "success",
+        "operation": "alpha composite + resize"
+      },
+      "totalBytes": 113872
+    },
+    "excited": {
+      "event": "reward.revealed | milestone",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/excited/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13280
+        },
+        {
+          "src": "/ai/mascot/frames/excited/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 27456
+        },
+        {
+          "src": "/ai/mascot/frames/excited/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13468
+        },
+        {
+          "src": "/ai/mascot/frames/excited/frame-04@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 18392
+        }
+      ],
+      "durationMs": 1000,
+      "frameDurationMs": 250,
+      "loop": true,
+      "poster": {
+        "src": "/ai/mascot/frames/excited/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 13280
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/excited/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/excited/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 20456
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "lazy",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/animations/excited/excited_frame1_1770093247148.png",
+          "/gamefi/banmaofomo/sprites/animations/excited/excited_frame2_1770093262435.png",
+          "/gamefi/banmaofomo/sprites/animations/excited/excited_frame3_1770093289967.png",
+          "/gamefi/banmaofomo/sprites/animations/excited/excited_frame4_1770093306426.png"
+        ],
+        "overlay": "spark",
+        "operation": "alpha composite + resize"
+      },
+      "totalBytes": 106332
+    },
+    "secure": {
+      "event": "security.verified | wallet.safe",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/secure/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12678
+        },
+        {
+          "src": "/ai/mascot/frames/secure/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12666
+        },
+        {
+          "src": "/ai/mascot/frames/secure/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12886
+        }
+      ],
+      "durationMs": 2100,
+      "frameDurationMs": 700,
+      "loop": true,
+      "poster": {
+        "src": "/ai/mascot/frames/secure/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 12678
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/secure/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/secure/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 19984
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "lazy-high",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame1_1770087961615.png",
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame2_1770087977712.png",
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame3_1770087992622.png"
+        ],
+        "overlay": "shield",
+        "operation": "alpha composite + resize"
+      },
+      "totalBytes": 70892
+    },
+    "warning": {
+      "event": "task.warning | confirmation.required",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/warning/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13996
+        },
+        {
+          "src": "/ai/mascot/frames/warning/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12798
+        },
+        {
+          "src": "/ai/mascot/frames/warning/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12658
+        }
+      ],
+      "durationMs": 1600,
+      "frameDurationMs": 533,
+      "loop": true,
+      "poster": {
+        "src": "/ai/mascot/frames/warning/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 13996
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/warning/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/warning/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 22498
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "lazy-high",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/banmao_sleeping_bored.png",
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame1_1770087961615.png",
+          "/gamefi/banmaofomo/sprites/animations/idle/banmao_idle_frame2_1770087977712.png"
+        ],
+        "overlay": "warning",
+        "operation": "alpha composite + resize"
+      },
+      "totalBytes": 75946
+    },
+    "confused": {
+      "event": "intent.unclear | empty.result",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/confused/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13986
+        },
+        {
+          "src": "/ai/mascot/frames/confused/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 11838
+        },
+        {
+          "src": "/ai/mascot/frames/confused/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12416
+        }
+      ],
+      "durationMs": 2200,
+      "frameDurationMs": 733,
+      "loop": true,
+      "poster": {
+        "src": "/ai/mascot/frames/confused/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 13986
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/confused/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/confused/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 22408
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "lazy",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/banmao_sleeping_bored.png",
+          "/gamefi/banmaofomo/sprites/animations/sleeping/sleeping_frame1_1770093105343.png",
+          "/gamefi/banmaofomo/sprites/animations/sleeping/sleeping_frame2_1770093122479.png"
+        ],
+        "overlay": "question",
+        "operation": "alpha composite + resize"
+      },
+      "totalBytes": 74634
+    },
+    "error": {
+      "event": "task.error | network.error",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/error/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 14008
+        },
+        {
+          "src": "/ai/mascot/frames/error/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 11780
+        },
+        {
+          "src": "/ai/mascot/frames/error/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12346
+        }
+      ],
+      "durationMs": 1400,
+      "frameDurationMs": 467,
+      "loop": false,
+      "poster": {
+        "src": "/ai/mascot/frames/error/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 14008
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/error/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/error/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 22544
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "lazy-high",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/banmao_sleeping_bored.png",
+          "/gamefi/banmaofomo/sprites/animations/sleeping/sleeping_frame1_1770093105343.png",
+          "/gamefi/banmaofomo/sprites/animations/sleeping/sleeping_frame2_1770093122479.png"
+        ],
+        "overlay": "error",
+        "operation": "alpha composite + resize"
+      },
+      "totalBytes": 74686
+    },
+    "sleeping": {
+      "event": "session.inactive | maintenance",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/sleeping/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 10572
+        },
+        {
+          "src": "/ai/mascot/frames/sleeping/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 10992
+        },
+        {
+          "src": "/ai/mascot/frames/sleeping/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 10964
+        },
+        {
+          "src": "/ai/mascot/frames/sleeping/frame-04@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 11812
+        }
+      ],
+      "durationMs": 4000,
+      "frameDurationMs": 1000,
+      "loop": true,
+      "poster": {
+        "src": "/ai/mascot/frames/sleeping/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 10572
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/sleeping/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/sleeping/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 16572
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "lazy",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/animations/sleeping/sleeping_frame1_1770093105343.png",
+          "/gamefi/banmaofomo/sprites/animations/sleeping/sleeping_frame2_1770093122479.png",
+          "/gamefi/banmaofomo/sprites/animations/sleeping/sleeping_frame3_1770093146437.png",
+          "/gamefi/banmaofomo/sprites/animations/sleeping/sleeping_frame4_1770093163430.png"
+        ],
+        "overlay": "sleep",
+        "operation": "alpha composite + resize"
+      },
+      "totalBytes": 71484
+    },
+    "love": {
+      "event": "user.like | community.love",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/love/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 10276
+        },
+        {
+          "src": "/ai/mascot/frames/love/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 14264
+        },
+        {
+          "src": "/ai/mascot/frames/love/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 12508
+        },
+        {
+          "src": "/ai/mascot/frames/love/frame-04@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 15256
+        }
+      ],
+      "durationMs": 2000,
+      "frameDurationMs": 500,
+      "loop": true,
+      "poster": {
+        "src": "/ai/mascot/frames/love/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 10276
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/love/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/love/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 16276
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "lazy",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/animations/love_eyes/love_eyes_frame1_1770093177547.png",
+          "/gamefi/banmaofomo/sprites/animations/love_eyes/love_eyes_frame2_1770093194472.png",
+          "/gamefi/banmaofomo/sprites/animations/love_eyes/love_eyes_frame3_1770093218755.png",
+          "/gamefi/banmaofomo/sprites/animations/love_eyes/love_eyes_frame4_1770093233003.png"
+        ],
+        "overlay": "heart",
+        "operation": "alpha composite + resize"
+      },
+      "totalBytes": 78856
+    },
+    "goodbye": {
+      "event": "session.close | sign.out",
+      "frames": [
+        {
+          "src": "/ai/mascot/frames/goodbye/frame-01@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13734
+        },
+        {
+          "src": "/ai/mascot/frames/goodbye/frame-02@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13846
+        },
+        {
+          "src": "/ai/mascot/frames/goodbye/frame-03@256.webp",
+          "width": 256,
+          "height": 256,
+          "bytes": 13950
+        }
+      ],
+      "durationMs": 1500,
+      "frameDurationMs": 500,
+      "loop": false,
+      "poster": {
+        "src": "/ai/mascot/frames/goodbye/poster@256.webp",
+        "width": 256,
+        "height": 256,
+        "bytes": 13734
+      },
+      "fallback": {
+        "src": "/ai/mascot/frames/goodbye/poster@256.webp",
+        "reducedMotion": true
+      },
+      "heroPoster": {
+        "src": "/ai/mascot/frames/goodbye/poster@384.webp",
+        "width": 384,
+        "height": 384,
+        "bytes": 21328
+      },
+      "dimensions": {
+        "width": 256,
+        "height": 256
+      },
+      "preload": "lazy",
+      "provenance": {
+        "sources": [
+          "/gamefi/banmaofomo/sprites/banmao_idle_wave.png",
+          "/gamefi/banmaofomo/sprites/animations/dance/banmao_dance_frame1_1770088039240.png",
+          "/gamefi/banmaofomo/sprites/animations/dance/banmao_dance_frame2_1770088057493.png"
+        ],
+        "overlay": "goodbye",
+        "operation": "alpha composite + resize"
+      },
+      "totalBytes": 76592
+    }
+  },
+  "overlays": {
+    "listening": {
+      "src": "/ai/mascot/overlays/listening@256.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 3218,
+      "alpha": true
+    },
+    "thinking": {
+      "src": "/ai/mascot/overlays/thinking@256.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 2548,
+      "alpha": true
+    },
+    "docs": {
+      "src": "/ai/mascot/overlays/docs@256.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 2512,
+      "alpha": true
+    },
+    "typing": {
+      "src": "/ai/mascot/overlays/typing@256.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 2644,
+      "alpha": true
+    },
+    "answer": {
+      "src": "/ai/mascot/overlays/answer@256.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 2388,
+      "alpha": true
+    },
+    "shield": {
+      "src": "/ai/mascot/overlays/shield@256.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 2454,
+      "alpha": true
+    },
+    "warning": {
+      "src": "/ai/mascot/overlays/warning@256.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 2400,
+      "alpha": true
+    },
+    "question": {
+      "src": "/ai/mascot/overlays/question@256.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 2344,
+      "alpha": true
+    },
+    "error": {
+      "src": "/ai/mascot/overlays/error@256.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 2300,
+      "alpha": true
+    },
+    "success": {
+      "src": "/ai/mascot/overlays/success@256.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 2272,
+      "alpha": true
+    },
+    "goodbye": {
+      "src": "/ai/mascot/overlays/goodbye@256.webp",
+      "width": 256,
+      "height": 256,
+      "bytes": 2664,
+      "alpha": true
+    }
+  },
+  "totalBytes": 1308574
+}

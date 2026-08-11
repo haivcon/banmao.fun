@@ -12,6 +12,7 @@ const config = {
     testMatch: ['**/*.test.ts'],
     moduleNameMapper: {
         '^../lib/(.*)$': '<rootDir>/lib/$1',
+        '^server-only$': '<rootDir>/__tests__/server-only.ts',
     },
     transform: {
         '^.+\\.tsx?$': ['ts-jest', {
