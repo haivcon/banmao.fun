@@ -1,0 +1,4 @@
+import { AI_LOCALES, detectInputLanguage, aiText, normalizeAILocale, aiPrompts, buildPagePrompt } from "../../lib/ai/client/i18n";
+test("AI i18n covers exactly every project locale", () => { expect(AI_LOCALES).toEqual(["en", "vi", "zh", "ko", "ru", "id"]); for (const locale of AI_LOCALES) { expect(aiText(locale, "again")).toBeTruthy(); expect(aiPrompts(locale, "defi")).toHaveLength(3); } });
+test("normalizes and detects latest input", () => { expect(normalizeAILocale("zh-CN")).toBe("zh"); expect(normalizeAILocale("ko_KR")).toBe("ko"); expect(detectInputLanguage("Xin chào, hãy giúp tôi")).toBe("vi"); expect(detectInputLanguage("请解释质押风险")).toBe("zh"); expect(detectInputLanguage("Объясни риски")).toBe("ru"); });
+test("dynamic prompts include bounded page context", () => { const p = buildPagePrompt("defi", [{ id: "staking.status", type: "status", label: "Live staking status", state: "paused" }], "en"); expect(p).toContain("Live staking status"); });

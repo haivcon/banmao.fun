@@ -4,8 +4,10 @@ import { type FormEvent, useEffect, useReducer, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAccount } from "wagmi";
 import { createTabMemory } from "../../../lib/ai/client/memory";
-import { executePageAction, proposePageAction, type AIPageAction } from "../../../lib/ai/client/actionBridge";
+import { confirmPageAction as executeConfirmedPageAction, proposePageAction, type AIPageAction } from "../../../lib/ai/client/actionBridge";
 import { collectPageElements } from "../../../lib/ai/client/pageContext";
+import { fetchWithOneRetry } from "../../../lib/ai/client/recovery";
+import { normalizeAILocale } from "../../../lib/ai/client/i18n";
 import { deriveSurface, initialClientState, reduceClientState } from "../../../lib/ai/client/state";
 import {
   createEmotionState,
@@ -20,7 +22,7 @@ import AIChatPanel from "./AIChatPanel";
 import TransactionCopilot from "./TransactionCopilot";
 import { getMascotAsset } from "./mascot/mascotAssets";
 
-const memory = createTabMemory({ maxTurns: 20, ttlMs: 30 * 60_000 });
+const memory = createTabMemory({ maxTurns: 20, ttlMs: 30 * 60_000, storage: typeof window === "undefined" ? undefined : window.localStorage, storageKey: "banmao-ai-memory-v1" });
 const PREF_KEY = "banmao-ai-mascot-preferences";
 
 function parseBlock(buffer: string) {
@@ -38,7 +40,9 @@ export default function AIChatProvider() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [input, setInputState] = useState("");
-  const [optIn, setOptInState] = useState(true);
+  const [language, setLanguage] = useState("en");
+  const [optIn, setOptInState] = useState(false);
+  const [actionReviewed, setActionReviewed] = useState(false);
   const [pendingAction, setPendingAction] = useState<AIPageAction | null>(null);
   const [actionNotice, setActionNotice] = useState("");
   const [txCopilotEnabled, setTxCopilotEnabled] = useState(false);
@@ -51,7 +55,13 @@ export default function AIChatProvider() {
   const surface = deriveSurface(pathname);
 
   useEffect(() => {
-    memory.setOptIn(true);
+    const readLanguage = () => normalizeAILocale(localStorage.getItem("banmao_language") || document.documentElement.lang || navigator.language);
+    setLanguage(readLanguage());
+    const syncLanguage = () => setLanguage(readLanguage());
+    window.addEventListener("storage", syncLanguage);
+    const remembered = localStorage.getItem("banmao-ai-memory-opt-in") === "true";
+    setOptInState(remembered);
+    memory.setOptIn(remembered);
     try {
       const preferences = JSON.parse(sessionStorage.getItem(PREF_KEY) || "{}");
       if (typeof preferences.mascotVisible === "boolean") setMascotVisibleState(preferences.mascotVisible);
@@ -67,6 +77,7 @@ export default function AIChatProvider() {
         dispatch({ type: "error", message: "AI model metadata unavailable" });
         dispatchEmotion({ type: "stream-error" });
       });
+    return () => window.removeEventListener("storage", syncLanguage);
   }, []);
 
   useEffect(() => {
@@ -98,6 +109,7 @@ export default function AIChatProvider() {
   function setOptIn(value: boolean) {
     setOptInState(value);
     memory.setOptIn(value);
+    try { if (value) localStorage.setItem("banmao-ai-memory-opt-in", "true"); else localStorage.removeItem("banmao-ai-memory-opt-in"); } catch { /* Storage may be unavailable. */ }
   }
   function setInput(value: string) {
     setInputState(value);
@@ -135,18 +147,19 @@ export default function AIChatProvider() {
     let receivedFirstDelta = false;
     let assistantText = "";
     try {
-      const response = await fetch("/api/ai/chat", {
+      const requestInit: RequestInit = {
         method: "POST",
         headers: { "content-type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
           message,
           model: state.model,
-          context: { pathname, surface, locale: document.documentElement.lang || undefined, pageElements },
+          context: { pathname, surface, locale: language, pageElements },
           ...(optIn ? memorySnapshot : {}),
           ...(isConnected && address && chainId === 196 ? { wallet: { address, chainId } } : {}),
         }),
-      });
+      };
+      const { response } = await fetchWithOneRetry("/api/ai/chat", requestInit);
       if (!response.ok || !response.body) throw new Error("AI unavailable");
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -192,10 +205,13 @@ export default function AIChatProvider() {
   function confirmPageAction() {
     if (!pendingAction) return;
     try {
-      executePageAction(pendingAction);
+      const stage = pendingAction.risk === "transaction" && !actionReviewed ? "review" : "confirm";
+      const result = executeConfirmedPageAction(pendingAction, stage);
+      if (result.requiresConfirmation) { setActionReviewed(true); setActionNotice("Review complete. Confirm once more to activate this transaction control."); return; }
       setActionNotice("Action completed on the approved page element ✅");
       dispatchEmotion({ type: pendingAction.risk === "transaction" ? "tx-warning" : "tx-success" });
       setPendingAction(null);
+      setActionReviewed(false);
     } catch (error) {
       setActionNotice(error instanceof Error ? error.message : "Page action failed");
       dispatchEmotion({ type: "tx-error" });
@@ -223,9 +239,9 @@ export default function AIChatProvider() {
   }
 
   return <div className="banmao-ai-root">
-    <AIChatLauncher open={open} emotion={open ? emotionState.emotion : "idle"} mascotVisible={mascotVisible} reducedMotion={reducedMotion} onClick={openPanel} />
+    <AIChatLauncher open={open} emotion={open ? emotionState.emotion : "idle"} mascotVisible={mascotVisible} reducedMotion={reducedMotion} language={language} onClick={openPanel} />
     {open && <AIChatPanel
-      state={state} surface={surface} emotion={emotionState.emotion} language={typeof document === "undefined" ? "en" : document.documentElement.lang}
+      state={state} surface={surface} emotion={emotionState.emotion} language={language}
       input={input} setInput={setInput} onInputFocus={() => dispatchEmotion({ type: "input-focus" })} submit={submit} stop={stop} close={openPanel}
       retry={() => { if (state.lastPrompt) { dispatchEmotion({ type: "retry" }); void send(state.lastPrompt); } }}
       optIn={optIn} setOptIn={setOptIn} mascotVisible={mascotVisible} setMascotVisible={setMascotVisible}

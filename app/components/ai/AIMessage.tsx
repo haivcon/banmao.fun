@@ -2,13 +2,15 @@
 
 import { Check, Copy, UserRound } from "lucide-react";
 import { useState } from "react";
+import { aiText } from "../../../lib/ai/client/i18n";
 import type { ClientMessage } from "../../../lib/ai/client/state";
 import BanmaoAIMascot from "./mascot/BanmaoAIMascot";
 import MarkdownRenderer from "./MarkdownRenderer";
 import TypingIndicator from "./TypingIndicator";
 
-export default function AIMessage({ role, content, createdAt, streaming = false }: ClientMessage & { streaming?: boolean }) {
+export default function AIMessage({ role, content, createdAt, streaming = false, language }: ClientMessage & { streaming?: boolean; language?: string }) {
   const [copied, setCopied] = useState(false);
+  const t = (key: Parameters<typeof aiText>[1]) => aiText(language, key);
   const time = createdAt ? new Intl.DateTimeFormat(undefined, { hour: "2-digit", minute: "2-digit" }).format(createdAt) : "";
   async function copy() {
     try {
@@ -22,12 +24,12 @@ export default function AIMessage({ role, content, createdAt, streaming = false 
       {role === "assistant" ? <BanmaoAIMascot emotion={streaming ? "answering" : "idle"} reducedMotion size="launcher" /> : <UserRound size={16} />}
     </div>
     <div className="banmao-ai-message-wrap">
-      <header><strong>{role === "user" ? "You" : "BANMAO AI"}</strong>{time && <time dateTime={new Date(createdAt).toISOString()}>{time}</time>}</header>
+      <header><strong>{role === "user" ? t("you") : "BANMAO AI"}</strong>{time && <time dateTime={new Date(createdAt).toISOString()}>{time}</time>}</header>
       <div className="banmao-ai-message-bubble">
-        {!content && streaming ? <TypingIndicator /> : <MarkdownRenderer content={content} />}
+        {!content && streaming ? <TypingIndicator language={language} /> : <MarkdownRenderer content={content} />}
         {streaming && content && <span className="banmao-ai-stream-caret" aria-hidden="true" />}
       </div>
-      {role === "assistant" && content && !streaming && <button className="banmao-ai-copy" type="button" onClick={copy} aria-label={copied ? "Response copied" : "Copy response"}>{copied ? <Check size={13} /> : <Copy size={13} />}{copied ? "Copied" : "Copy"}</button>}
+      {role === "assistant" && content && !streaming && <button className="banmao-ai-copy" type="button" onClick={copy} aria-label={copied ? t("responseCopied") : t("copyResponse")}>{copied ? <Check size={13} /> : <Copy size={13} />}{copied ? t("copied") : t("copy")}</button>}
     </div>
   </article>;
 }

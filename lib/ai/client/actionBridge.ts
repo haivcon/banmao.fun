@@ -7,7 +7,10 @@ export type AIPageAction = {
   label: string;
   value?: string;
   risk: "none" | "reversible" | "transaction";
+  fingerprint: string;
 };
+const executed = new Set<string>();
+function actionFingerprint(element: Pick<AIPageElement, "id" | "label" | "action" | "risk">) { return `${element.id}|${element.label}|${element.action}|${element.risk || "none"}`; }
 
 const normalize = (value: string) => value.toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
@@ -31,12 +34,16 @@ export function proposePageAction(message: string, elements: AIPageElement[]): A
     label: `${target.action === "activate" ? "Activate" : target.action === "fill" ? "Fill" : target.action === "focus" ? "Focus" : "Open"}: ${target.label}`,
     ...(value ? { value: value.slice(0, 200) } : {}),
     risk: target.risk || "none",
+    fingerprint: actionFingerprint(target),
   };
 }
 
 export function executePageAction(action: AIPageAction) {
   const element = findPageElement(action.elementId);
   if (!element) throw new Error("The page element is no longer available");
+  const current = { id: element.dataset.banmaoAiId || "", label: (element.dataset.banmaoAiLabel || element.getAttribute("aria-label") || element.textContent || "").replace(/\s+/g, " ").trim().slice(0, 160), action: element.dataset.banmaoAiAction as AIPageElement["action"], risk: (element.dataset.banmaoAiRisk || "none") as AIPageElement["risk"] };
+  if (actionFingerprint(current) !== action.fingerprint) throw new Error("The page action no longer matches the reviewed element");
+  if (executed.has(action.id)) throw new Error("This page action was already executed");
   if ((element instanceof HTMLButtonElement || element instanceof HTMLInputElement || element instanceof HTMLSelectElement || element instanceof HTMLTextAreaElement) && element.disabled) throw new Error("The approved page control is currently disabled");
   highlightPageElement(element);
   if (action.kind === "navigate") {
@@ -58,5 +65,12 @@ export function executePageAction(action: AIPageAction) {
     element.focus();
     return;
   }
+  executed.add(action.id);
   element.click();
+}
+
+export function confirmPageAction(action: AIPageAction, stage: "review" | "confirm") {
+  if (action.risk === "transaction" && stage === "review") return { requiresConfirmation: true };
+  executePageAction(action);
+  return { requiresConfirmation: false };
 }

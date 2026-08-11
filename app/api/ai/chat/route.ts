@@ -6,7 +6,8 @@ import { loadAIConfig } from "../../../../lib/ai/server/config";
 import { routeContext } from "../../../../lib/ai/server/contextRouter";
 import { BANMAO_PERSONA_VERSION, runOrchestrator } from "../../../../lib/ai/server/orchestrator";
 import { loadApprovedCorpus } from "../../../../lib/ai/server/rag/corpus";
-import { retrieve } from "../../../../lib/ai/server/rag/retriever";
+import { retrieveHybrid } from "../../../../lib/ai/server/rag/retriever";
+import { safeLogRecord } from "../../../../lib/ai/server/observability";
 import { validateChatRequest, AIValidationError } from "../../../../lib/ai/server/schemas";
 import { createLocalRateLimiter } from "../../../../lib/ai/server/security/rateLimit";
 import { createToolRegistry } from "../../../../lib/ai/server/toolRegistry";
@@ -52,9 +53,11 @@ export async function POST(request: Request) {
   catch (error) { return NextResponse.json({ error: error instanceof AIValidationError ? error.message : "Request budget exceeded" }, { status: error instanceof AIValidationError ? 400 : 413 }); }
 
   const routed = routeContext(validated.context);
+  const startedAt = Date.now();
+  let ragMode: "lexical" | "hybrid" = "lexical";
   let evidence: Array<{ chunkId: string; sourcePath: string; excerpt: string }> = [];
   if (config.flags.rag) {
-    try { evidence = retrieve(await loadApprovedCorpus(), validated.message, 4); } catch { evidence = []; }
+    try { const result = await retrieveHybrid(await loadApprovedCorpus(), validated.message, 4); evidence = result.hits; ragMode = result.mode; } catch { evidence = []; }
   }
   const domainTools = createDomainToolDescriptors().filter((tool) => {
     if (!tool.contexts.includes(routed.surface)) return false;
@@ -68,7 +71,7 @@ export async function POST(request: Request) {
   const requestId = randomUUID();
   const body = new ReadableStream({
     async start(controller) {
-      controller.enqueue(sse("meta", { requestId, model: validated.model, personaVersion: BANMAO_PERSONA_VERSION, ragHitCount: evidence.length, surface: routed.surface }));
+      controller.enqueue(sse("meta", { requestId, model: validated.model, personaVersion: BANMAO_PERSONA_VERSION, ragMode, ragHitCount: evidence.length, surface: routed.surface }));
       try {
         for await (const event of runOrchestrator({
           model: validated.model,
@@ -77,7 +80,7 @@ export async function POST(request: Request) {
           evidence,
           history: validated.history,
           recentMotifs: validated.episodic?.recentMotifs,
-          authenticated: false,
+          authenticated: Boolean(validated.wallet),
         }, {
           tools: [...tools],
           maxToolRounds: config.maxToolRounds,
@@ -90,8 +93,10 @@ export async function POST(request: Request) {
           else controller.enqueue(sse("error", { code: event.code }));
         }
         controller.enqueue(sse("done", { requestId }));
+        console.info("banmao_ai_metric", safeLogRecord({ requestId, model: validated.model, surface: routed.surface, status: "ok", durationMs: Date.now() - startedAt, ragMode, ragHitCount: evidence.length }));
       } catch (error) {
         controller.enqueue(sse("error", { code: errorCode(error), status: errorStatus(error) }));
+        console.warn("banmao_ai_metric", safeLogRecord({ requestId, model: validated.model, surface: routed.surface, status: "error", durationMs: Date.now() - startedAt, ragMode, ragHitCount: evidence.length, errorCode: errorCode(error) }));
       } finally { controller.close(); }
     },
     cancel() {},

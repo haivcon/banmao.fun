@@ -19,6 +19,7 @@ type ReadContract = (parameters: { address: Address; abi: readonly unknown[]; fu
 type OkxFetch = typeof realOkxFetch;
 type InternalRead = (name: string, args: Record<string, unknown>) => Promise<unknown>;
 type CollectionRead = (name: "search" | "prompts" | "quests", args: Record<string, unknown>) => Promise<unknown>;
+type GetBalance = (parameters: { address: Address; blockNumber?: bigint }) => Promise<bigint>;
 const publicClient = createPublicClient({ chain: xLayer, transport: http(process.env.XLAYER_RPC_URL || "https://rpc.xlayer.tech") });
 const addressSchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/).transform((value) => value.toLowerCase() as Address);
 const chainSchema = z.object({ chainId: z.literal(196) }).strict();
@@ -59,8 +60,9 @@ async function defaultCollectionRead(name: "search" | "prompts" | "quests", args
   });
 }
 
-export function createDomainToolDescriptors(dependencies: { readContract?: ReadContract; okxFetch?: OkxFetch; internalRead?: InternalRead; collectionRead?: CollectionRead } = {}): ToolDescriptor[] {
+export function createDomainToolDescriptors(dependencies: { readContract?: ReadContract; getBalance?: GetBalance; okxFetch?: OkxFetch; internalRead?: InternalRead; collectionRead?: CollectionRead } = {}): ToolDescriptor[] {
   const readContract: ReadContract = dependencies.readContract || ((parameters) => publicClient.readContract(parameters as never));
+  const getBalance: GetBalance = dependencies.getBalance || ((parameters) => publicClient.getBalance(parameters));
   const okxFetch = dependencies.okxFetch || realOkxFetch;
   const internalRead = dependencies.internalRead || defaultInternalRead;
   const collectionRead = dependencies.collectionRead || defaultCollectionRead;
@@ -81,6 +83,21 @@ export function createDomainToolDescriptors(dependencies: { readContract?: ReadC
       }
       return available({ totalStaked, totalShares, rewardBucket, paused, contract: STAKING_CONTRACT_ADDRESS, ...(wallet ? { wallet } : {}) }, "xlayer:196:banmao-staking", blockNumber as bigint | undefined);
     } catch { return unavailable("X Layer staking RPC read failed", "xlayer:196:banmao-staking"); }
+  }}));
+
+  const portfolioSchema = z.object({ chainId: z.literal(196), wallet: addressSchema }).strict();
+  tools.push(descriptor({ name: "defi.portfolio", description: "Aggregate a supplied X Layer wallet's native balance, BANMAO balance, staking position, and public Hub profile from approved read-only sources", parameters: parameters({ chainId: { type: "integer", const: 196 }, wallet: { type: "string", pattern: "^0x[a-fA-F0-9]{40}$" } }, ["chainId", "wallet"]), contexts: ["defi", "landing"], auth: "public", cacheTtlMs: 15_000, parse: (v) => portfolioSchema.parse(v), async execute(args) {
+    const blockNumber = await block().catch(() => undefined);
+    const reads = await Promise.allSettled([
+      getBalance({ address: args.wallet, ...(blockNumber ? { blockNumber } : {}) }),
+      readContract({ address: BANMAO_ADDRESS, abi: ERC20_ABI, functionName: "balanceOf", args: [args.wallet], ...(blockNumber ? { blockNumber } : {}) }),
+      Promise.all(["userSummary", "getUserStakeIds", "pendingRewards"].map((functionName) => readContract({ address: STAKING_CONTRACT_ADDRESS, abi: STAKING_ABI, functionName, args: [args.wallet], ...(blockNumber ? { blockNumber } : {}) }))),
+      internalRead("hub.profile", { wallet: args.wallet }),
+    ]);
+    const names = ["nativeBalance", "banmaoBalance", "staking", "hubProfile"] as const;
+    const sources = reads.map((entry, index) => entry.status === "fulfilled" ? { name: names[index], status: "available" as const, value: normalize(entry.value) } : { name: names[index], status: "unavailable" as const, reason: "Approved source unavailable" });
+    const availableCount = sources.filter((source) => source.status === "available").length;
+    return { status: availableCount ? "available" as const : "unavailable" as const, value: { wallet: args.wallet, chainId: 196, sources }, partial: availableCount !== sources.length, source: "aggregate:xlayer:196:wallet-portfolio", observedAt: now(), asOf: blockNumber ? `block:${blockNumber}` : now(), ...(blockNumber ? { blockNumber: blockNumber.toString() } : {}) };
   }}));
 
   tools.push(descriptor({ name: "defi.burn", description: "Read BANMAO balances at the two approved burn addresses", parameters: parameters({ chainId: { type: "integer", const: 196 } }, ["chainId"]), contexts: ["defi", "landing"], auth: "public", parse: (v) => chainSchema.parse(v), async execute() {
