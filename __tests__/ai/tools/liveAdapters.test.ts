@@ -8,7 +8,7 @@ test("domain descriptors use only read-only module sources and preserve provenan
   const readContract = jest.fn(async ({ functionName }: { functionName: string }) => functionName === "paused" ? false : 7n);
   const okxFetch = jest.fn(async () => new Response(JSON.stringify({ code: "0", data: [{ price: "1.2" }] }), { status: 200 }));
   const descriptors = createDomainToolDescriptors({ readContract, okxFetch });
-  expect(descriptors.map((tool) => tool.name)).toEqual(expect.arrayContaining(["defi.staking", "gamefi.fomo", "gamefi.slots", "gamefi.snake", "gamefi.rps", "market.price", "collection.search"]));
+  expect(descriptors.map((tool) => tool.name)).toEqual(expect.arrayContaining(["defi.staking", "defi.portfolio", "gamefi.fomo", "gamefi.slots", "gamefi.snake", "gamefi.rps", "market.price", "collection.search"]));
   expect(descriptors.map((tool) => tool.name)).not.toContain("gamefi.pk");
   const staking = descriptors.find((tool) => tool.name === "defi.staking")!;
   const value = await staking.execute(staking.parse({ chainId: 196 }));
@@ -23,6 +23,20 @@ test("market reader uses the existing server-side OKX client boundary", async ()
   const value = await market.execute(market.parse({ chainId: 196, tokenAddress: "0x16d91d1615fc55b76d5f92365bd60c069b46ef78" }));
   expect(value).toMatchObject({ status: "available", source: "okx:dex-market-price", value: [{ price: "1.2", liquidity: "3" }] });
   expect(okxFetch).toHaveBeenCalledWith("POST", "/api/v6/dex/market/price", expect.objectContaining({ body: expect.any(String) }));
+});
+
+test("portfolio aggregates approved wallet reads and preserves partial failures", async () => {
+  const wallet = "0x0000000000000000000000000000000000000001";
+  const readContract = jest.fn(async ({ functionName }: { functionName: string }) => {
+    if (functionName === "balanceOf") throw new Error("token RPC unavailable");
+    if (functionName === "getUserStakeIds") return [1n];
+    return 7n;
+  });
+  const tool = createDomainToolDescriptors({ readContract, getBalance: jest.fn(async () => 9n), internalRead: jest.fn(async () => ({ handle: "cat" })) }).find((item) => item.name === "defi.portfolio")!;
+  expect(() => tool.parse({ chainId: 196, wallet, extra: true })).toThrow();
+  const result = await tool.execute(tool.parse({ chainId: 196, wallet })) as { status: string; partial: boolean; source: string; value: { wallet: string; sources: Array<{ name: string; status: string; value?: unknown }> } };
+  expect(result).toMatchObject({ status: "available", partial: true, source: "aggregate:xlayer:196:wallet-portfolio", value: { wallet } });
+  expect(result.value.sources).toEqual(expect.arrayContaining([expect.objectContaining({ name: "nativeBalance", status: "available", value: "9" }), expect.objectContaining({ name: "banmaoBalance", status: "unavailable" })]));
 });
 
 test("undeployed Box and failed shared collection source return typed unavailable with evidence", async () => {

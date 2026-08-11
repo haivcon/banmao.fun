@@ -90,24 +90,38 @@ export async function* runOrchestrator(
       return;
     }
     let response: ChatRound | undefined;
+    let pendingText = "";
     for await (const value of options.completion({
       model: input.model,
       messages,
       tools: specs.length ? specs : undefined,
       toolChoice: specs.length ? "auto" : undefined,
-    }, options.signal)) response = value;
+    }, options.signal)) {
+      if (value.complete !== true && value.text) {
+        pendingText += value.text;
+        if (!value.toolCalls.length) {
+          const safeBoundary = pendingText.match(/^([\s\S]*[.!?。！？]\s+)([\s\S]*)$/);
+          if (safeBoundary) {
+            if (inspectBanmaoVoice(safeBoundary[1]).financial > 0) { yield { type: "error", code: "UNSAFE_FINANCIAL_LANGUAGE" }; return; }
+            yield { type: "delta", text: safeBoundary[1] };
+            pendingText = safeBoundary[2];
+          }
+        }
+      }
+      if (value.complete !== false || value.toolCalls.length) response = value;
+    }
     if (!response) {
       yield { type: "error", code: "EMPTY_UPSTREAM_RESPONSE" };
       return;
     }
     if (!response.toolCalls.length) {
-      if (response.text) {
-        const diagnostics = inspectBanmaoVoice(response.text);
+      if (pendingText) {
+        const diagnostics = inspectBanmaoVoice(pendingText);
         if (diagnostics.financial > 0) {
           yield { type: "error", code: "UNSAFE_FINANCIAL_LANGUAGE" };
           return;
         }
-        yield { type: "delta", text: response.text };
+        yield { type: "delta", text: pendingText };
       }
       return;
     }
@@ -122,9 +136,8 @@ export async function* runOrchestrator(
       function: { name: call.name, arguments: call.arguments },
     })) });
 
-    for (const call of response.toolCalls) {
+    const results = await Promise.all(response.toolCalls.map(async (call) => {
       const internalName = internalNames.get(call.name) || call.name;
-      yield { type: "tool", callId: call.id, name: internalName, status: "running", source: "banmao-ai:tool-registry", summary: "Reading approved source" };
       let result: unknown;
       try {
         const args = JSON.parse(call.arguments);
@@ -135,13 +148,14 @@ export async function* runOrchestrator(
         });
         const envelope = result as { status?: string; source?: string };
         const status = envelope.status === "unavailable" ? "unavailable" : "available";
-        yield { type: "tool", callId: call.id, name: internalName, status, source: envelope.source || "banmao-ai:tool-registry", summary: status === "available" ? "Read completed" : "Source unavailable" };
+        return { call, internalName, result, status, source: envelope.source || "banmao-ai:tool-registry", summary: status === "available" ? "Read completed" : "Source unavailable" } as const;
       } catch (error) {
         const code = error instanceof Error ? error.message : "TOOL_FAILED";
         result = errorResult(code);
-        yield { type: "tool", callId: call.id, name: internalName, status: "error", source: "banmao-ai:tool-registry", summary: code };
+        return { call, internalName, result, status: "error" as const, source: "banmao-ai:tool-registry", summary: code };
       }
-      messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result) });
-    }
+    }));
+    for (const call of response.toolCalls) yield { type: "tool", callId: call.id, name: internalNames.get(call.name) || call.name, status: "running", source: "banmao-ai:tool-registry", summary: "Reading approved source" };
+    for (const item of results) { yield { type: "tool", callId: item.call.id, name: item.internalName, status: item.status, source: item.source, summary: item.summary }; messages.push({ role: "tool", tool_call_id: item.call.id, content: JSON.stringify(item.result) }); }
   }
 }

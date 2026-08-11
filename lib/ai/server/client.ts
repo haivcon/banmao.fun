@@ -24,7 +24,7 @@ export type CompletionRequest = {
   tools?: ToolSpec[];
   toolChoice?: "auto";
 };
-export type ChatRound = { text: string; toolCalls: ToolCall[]; finishReason: string };
+export type ChatRound = { text: string; toolCalls: ToolCall[]; finishReason: string; complete?: boolean };
 type ClientConfig = Pick<AIConfig, "baseUrl" | "apiKey" | "requestTimeoutMs" | "maxStreamBytes">;
 
 function upstreamCode(status: number) {
@@ -92,7 +92,10 @@ export async function* streamCompletion(
           try {
             const parsed = JSON.parse(data);
             const choice = parsed?.choices?.[0];
-            if (typeof choice?.delta?.content === "string") text += choice.delta.content;
+            if (typeof choice?.delta?.content === "string" && choice.delta.content) {
+              text += choice.delta.content;
+              yield { text: choice.delta.content, toolCalls: [], finishReason: "", complete: false };
+            }
             if (typeof choice?.finish_reason === "string") {
               finishReason = choice.finish_reason;
               finishReasonSeen = true;
@@ -114,7 +117,7 @@ export async function* streamCompletion(
     if (buffer.trim() || (!doneSeen && !finishReasonSeen)) throw new UpstreamAIError("MALFORMED_UPSTREAM_STREAM");
     const toolCalls = [...calls.entries()].sort(([a], [b]) => a - b).map(([, call]) => call);
     if (toolCalls.some((call) => !call.id || !call.name)) throw new UpstreamAIError("MALFORMED_TOOL_CALL");
-    yield { text, toolCalls, finishReason };
+    yield { text: "", toolCalls, finishReason, complete: true };
   } catch (error) {
     if (error instanceof UpstreamAIError) throw error;
     throw abortedError(error, options.signal, timeout) || new UpstreamAIError("UPSTREAM_ABORTED");
