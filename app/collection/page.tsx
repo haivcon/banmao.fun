@@ -1,4 +1,5 @@
 import type { Metadata, ResolvingMetadata } from "next";
+import { Suspense } from "react";
 import CollectionClient from "./CollectionClient";
 
 type Props = {
@@ -94,5 +95,9 @@ export async function generateMetadata(
 }
 
 export default function CollectionPage() {
-    return <CollectionClient />;
+    return (
+        <Suspense fallback={null}>
+            <CollectionClient />
+        </Suspense>
+    );
 }

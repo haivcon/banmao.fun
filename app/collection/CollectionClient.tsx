@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import dynamic from "next/dynamic";
+import { useRouter, useSearchParams } from "next/navigation";
 import "./collection.css";
 import "./hub-redesign.css";
 import { T, Lang, LANG_LIST } from "./i18n";
@@ -28,6 +29,11 @@ import {
     sortCollectionItems,
     type CollectionSort,
 } from "./collectionOrdering";
+import {
+    collectionImageSizes,
+    toCloudinarySrcSet,
+    toCloudinaryThumb,
+} from "./collectionMedia";
 
 // Dynamic imports — modals are loaded on-demand, not in the initial bundle
 const CreatePostModal = dynamic(() => import("./components/CreatePostModal"), { ssr: false });
@@ -73,8 +79,27 @@ interface ImageItem {
     context?: Record<string, string>;
 }
 
-const ITEMS_PER_PAGE_DESKTOP = 24;
-const ITEMS_PER_PAGE_MOBILE = 48;
+interface CollectionPageData {
+    images?: Array<{
+        public_id: string;
+        secure_url: string;
+        folder: string;
+        bytes: number;
+        created_at?: string;
+        resource_type?: string;
+        duration?: number;
+        width?: number;
+        height?: number;
+        tags?: string[];
+        context?: Record<string, string>;
+    }>;
+    total?: number;
+    nextCursor?: string | null;
+}
+
+const COLLECTION_PAGE_SIZE = 48;
+const ITEMS_PER_PAGE_DESKTOP = COLLECTION_PAGE_SIZE;
+const ITEMS_PER_PAGE_MOBILE = COLLECTION_PAGE_SIZE;
 
 function useIsMobile() {
     const [isMobile, setIsMobile] = useState(false);
@@ -124,14 +149,6 @@ function folderIcon(folder: string): string {
     if (f.includes("parody")) return "🎬";
     if (f.includes("sticker")) return "⭐";
     return "📁";
-}
-
-function toThumb(secureUrl: string, size = 400): string {
-    return secureUrl.replace("/upload/", `/upload/c_fill,w_${size},h_${size},f_auto,q_auto/`);
-}
-
-function toThumbSm(secureUrl: string): string {
-    return secureUrl.replace("/upload/", "/upload/c_fill,w_200,h_200,f_auto,q_60/");
 }
 
 function toVideoThumb(secureUrl: string, size = 400): string {
@@ -297,8 +314,9 @@ function SkeletonCard() {
 
 /* ===================== COMPONENTS ===================== */
 
-const ImageCard = memo(function ImageCard({ img, t, lang, onOpen, isFav, onFav, dlCount, onDl, onDownloadToast, draggable, onDragStart, onDragOver, onDrop }: {
-    img: ImageItem; t: Record<string, string>; lang: Lang;
+const ImageCard = memo(function ImageCard({ img, index, gridCols, unloadOffscreen, t, lang, onOpen, isFav, onFav, dlCount, onDl, onDownloadToast, draggable, onDragStart, onDragOver, onDrop }: {
+    img: ImageItem; index: number; gridCols: number; unloadOffscreen: boolean;
+    t: Record<string, string>; lang: Lang;
     onOpen: (img: ImageItem) => void; isFav: boolean;
     onFav: (src: string) => void; dlCount: number; onDl: () => void;
     onDownloadToast: (success: boolean) => void;
@@ -308,7 +326,8 @@ const ImageCard = memo(function ImageCard({ img, t, lang, onOpen, isFav, onFav, 
     onDrop?: (e: React.DragEvent) => void;
 }) {
     const cardRef = useRef<HTMLDivElement>(null);
-    const [isVisible, setIsVisible] = useState(false);
+    const isPriority = index < gridCols;
+    const [isVisible, setIsVisible] = useState(isPriority);
     const [loaded, setLoaded] = useState(false);
     const [dlState, setDlState] = useState<"" | "downloading" | "dl-success">("");
 
@@ -317,13 +336,18 @@ const ImageCard = memo(function ImageCard({ img, t, lang, onOpen, isFav, onFav, 
 
     useEffect(() => {
         const el = cardRef.current;
-        if (!el) return;
+        if (!el || isPriority) return;
         const obs = new IntersectionObserver(([entry]) => {
-            if (entry.isIntersecting) { setIsVisible(true); obs.disconnect(); }
-        }, { rootMargin: "200px" });
+            if (entry.isIntersecting) {
+                setIsVisible(true);
+            } else if (unloadOffscreen) {
+                setIsVisible(false);
+                setLoaded(false);
+            }
+        }, { rootMargin: unloadOffscreen ? "600px 0px" : "200px" });
         obs.observe(el);
         return () => obs.disconnect();
-    }, []);
+    }, [isPriority, unloadOffscreen]);
 
     const handleDownload = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -350,9 +374,14 @@ const ImageCard = memo(function ImageCard({ img, t, lang, onOpen, isFav, onFav, 
                 {!img.isVideo && <div className="col-checker-bg" />}
                 <img
                     src={isVisible ? img.thumb : blurThumb}
+                    srcSet={isVisible && !img.isVideo ? toCloudinarySrcSet(img.src) : undefined}
+                    sizes={isVisible && !img.isVideo ? collectionImageSizes(gridCols) : undefined}
                     alt={img.name}
                     className={`col-card-img ${loaded ? "col-img-loaded" : "col-img-blur"}`}
-                    loading="lazy"
+                    loading={isPriority ? undefined : "lazy"}
+                    fetchPriority={isPriority ? "high" : undefined}
+                    decoding={isPriority ? undefined : "async"}
+                    data-media-visible={isVisible ? "true" : "false"}
                     onLoad={() => isVisible && setLoaded(true)}
                 />
                 {img.isVideo && (
@@ -385,6 +414,8 @@ const ImageCard = memo(function ImageCard({ img, t, lang, onOpen, isFav, onFav, 
 /* ===================== MAIN PAGE ===================== */
 
 export default function CollectionPage() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const isMobile = useIsMobile();
     const itemsPerPage = isMobile ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE_DESKTOP;
 
@@ -476,6 +507,12 @@ export default function CollectionPage() {
     const sortByRef = useRef<CollectionSort>(sortBy);
     const collectionItemsRef = useRef<ImageItem[]>([]);
     const previousSortRef = useRef<CollectionSort>(sortBy);
+    const nextCursorRef = useRef<string | null>(null);
+    const pageCacheRef = useRef<Map<string, CollectionPageData>>(new Map());
+    const prefetchedPageRef = useRef<{ cursor: string; data: CollectionPageData } | null>(null);
+    const collectionFetchRef = useRef<Promise<void> | null>(null);
+    const collectionTotalRef = useRef(0);
+    const urlStateReadyRef = useRef(false);
     const touchStartX = useRef(0);
     const touchStartY = useRef(0);
     const isDragging = useRef(false);
@@ -777,8 +814,8 @@ export default function CollectionPage() {
         return {
             publicId: img.public_id,
             src: img.secure_url,
-            thumb: isVideo ? toVideoThumb(img.secure_url) : toThumb(img.secure_url),
-            thumbSm: isVideo ? toVideoThumb(img.secure_url, 200) : toThumbSm(img.secure_url),
+            thumb: isVideo ? toVideoThumb(img.secure_url) : toCloudinaryThumb(img.secure_url),
+            thumbSm: isVideo ? toVideoThumb(img.secure_url, 200) : toCloudinaryThumb(img.secure_url, 200),
             name: publicIdToName(img.public_id),
             folder,
             bytes: img.bytes || 0,
@@ -825,78 +862,117 @@ export default function CollectionPage() {
         return uniqueFolders;
     }, []);
 
-    // ——— Progressive paginated fetch ———
+    // ——— On-demand cursor pagination ———
     const [loadProgress, setLoadProgress] = useState<{ loaded: number; total: number } | null>(null);
+    const [hasMoreCollection, setHasMoreCollection] = useState(true);
+    const [collectionPageLoading, setCollectionPageLoading] = useState(false);
+
+    const requestCollectionPage = useCallback(async (cursor: string | null): Promise<CollectionPageData> => {
+        const cacheKey = cursor || "__first__";
+        const cached = pageCacheRef.current.get(cacheKey);
+        if (cached) return cached;
+
+        const params = new URLSearchParams({ folder: "banmao", limit: String(COLLECTION_PAGE_SIZE) });
+        if (cursor) params.set("cursor", cursor);
+        const res = await fetch(`/api/collection?${params}`);
+        if (!res.ok) throw new Error(`Collection request failed: ${res.status}`);
+        const data = await res.json() as CollectionPageData;
+        pageCacheRef.current.set(cacheKey, data);
+        return data;
+    }, []);
+
+    const prefetchCollectionPage = useCallback((cursor: string | null) => {
+        if (!cursor || prefetchedPageRef.current?.cursor === cursor) return;
+        void requestCollectionPage(cursor)
+            .then((data) => { prefetchedPageRef.current = { cursor, data }; })
+            .catch((err) => console.error("Failed to prefetch collection page:", err));
+    }, [requestCollectionPage]);
+
+    const appendCollectionPage = useCallback((data: CollectionPageData) => {
+        const batchItems = (data.images || [])
+            .map(mapRawToItem)
+            .filter((item: ImageItem | null): item is ImageItem => item !== null);
+        collectionItemsRef.current = appendCollectionBatch(
+            collectionItemsRef.current,
+            batchItems,
+            sortByRef.current,
+            randomSeedRef.current,
+        );
+        collectionTotalRef.current = data.total || collectionTotalRef.current || collectionItemsRef.current.length;
+        nextCursorRef.current = data.nextCursor || null;
+        setAllImages(collectionItemsRef.current);
+        setTotalBytes(collectionItemsRef.current.reduce((sum, item) => sum + item.bytes, 0));
+        setLoadProgress({ loaded: collectionItemsRef.current.length, total: collectionTotalRef.current });
+        setHasMoreCollection(Boolean(nextCursorRef.current));
+        prefetchCollectionPage(nextCursorRef.current);
+    }, [mapRawToItem, prefetchCollectionPage, setAllImages, setTotalBytes]);
+
+    const fetchNextCollectionPage = useCallback(async () => {
+        const cursor = nextCursorRef.current;
+        if (!cursor || collectionFetchRef.current) return collectionFetchRef.current;
+        const task = (async () => {
+            setCollectionPageLoading(true);
+            try {
+                const prefetched = prefetchedPageRef.current?.cursor === cursor
+                    ? prefetchedPageRef.current.data
+                    : await requestCollectionPage(cursor);
+                if (prefetchedPageRef.current?.cursor === cursor) prefetchedPageRef.current = null;
+                appendCollectionPage(prefetched);
+            } finally {
+                collectionFetchRef.current = null;
+                setCollectionPageLoading(false);
+            }
+        })();
+        collectionFetchRef.current = task;
+        return task;
+    }, [appendCollectionPage, requestCollectionPage]);
 
     useEffect(() => {
         let cancelled = false;
-        const BATCH_SIZE = 500;
+        collectionItemsRef.current = [];
+        pageCacheRef.current.clear();
+        prefetchedPageRef.current = null;
+        nextCursorRef.current = null;
 
-        async function fetchAllPages() {
-            let cursor: string | null = null;
-            collectionItemsRef.current = [];
-            let isFirstBatch = true;
-
-            do {
-                const params = new URLSearchParams({ folder: "banmao", limit: String(BATCH_SIZE) });
-                if (cursor) params.set("cursor", cursor);
-
-                const res = await fetch(`/api/collection?${params}`);
-                if (!res.ok) throw new Error(`Collection request failed: ${res.status}`);
-                const data = await res.json();
-                if (cancelled) return;
-
-                const batchItems = (data.images || [])
-                    .map(mapRawToItem)
-                    .filter((item: ImageItem | null): item is ImageItem => item !== null);
-
-                collectionItemsRef.current = appendCollectionBatch(
-                    collectionItemsRef.current,
-                    batchItems,
-                    sortByRef.current,
-                    randomSeedRef.current,
-                );
-
-                // Append each deduplicated batch without moving cards already rendered.
-                setAllImages(collectionItemsRef.current);
-                setFolders(sortFolders(collectionItemsRef.current));
-                setTotalBytes(collectionItemsRef.current.reduce((sum, i) => sum + i.bytes, 0));
-                setLoadProgress({ loaded: collectionItemsRef.current.length, total: data.total || collectionItemsRef.current.length });
-
-                // Clear full-page skeleton after first batch
-                if (isFirstBatch) {
-                    setLoading(false);
-                    isFirstBatch = false;
-                }
-
-                cursor = data.nextCursor || null;
-            } while (cursor && !cancelled);
-
-            // All done
-            if (!cancelled) setLoadProgress(null);
-        }
-
-        fetchAllPages().catch((err) => {
+        requestCollectionPage(null).then((firstPage) => {
+            if (cancelled) return;
+            appendCollectionPage(firstPage);
+            setLoading(false);
+        }).catch((err) => {
             console.error("Failed to fetch images:", err);
             if (!cancelled) setLoading(false);
         });
 
+        fetch("/api/collection?folder=banmao&folders_only=true").then(async (res) => {
+            if (!res.ok) throw new Error(`Collection folders request failed: ${res.status}`);
+            return res.json() as Promise<{ folders?: string[] }>;
+        }).then((folderData) => {
+            if (cancelled) return;
+            setFolders(sortFolders((folderData.folders || []).map((folder) => ({ folder }) as ImageItem)));
+        }).catch((err) => {
+            console.error("Failed to fetch collection folders:", err);
+        });
+
         return () => { cancelled = true; };
-    }, [mapRawToItem, sortFolders]);
+    }, [appendCollectionPage, requestCollectionPage, setFolders, setLoading, sortFolders]);
 
 
 
 
     // ——— Deep Link & Initial State from URL ———
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
+        const params = new URLSearchParams(searchParams.toString());
         const postParam = params.get("post");
         const profileParam = params.get("profile");
         const vParam = params.get("v") as typeof viewMode;
-        const tabParam = params.get("tab");
+        const folderParam = params.get("folder");
+        const tabParam = params.get("tab") || folderParam;
         const ptabParam = params.get("ptab") as typeof hubProfileTab;
         const qParam = params.get("q");
         const sortParam = params.get("sort") as typeof sortBy;
+        const pageParam = Number(params.get("page"));
+        const typeParam = params.get("type") as typeof typeFilter;
+        const colsParam = Number(params.get("cols"));
 
         // 1. Set View Mode
         let currentView = viewMode;
@@ -917,7 +993,12 @@ export default function CollectionPage() {
             setSearchQuery(qParam);
             setHubSearch(qParam);
         }
-        if (sortParam) setSortBy(sortParam);
+        if (["random", "name", "newest", "size"].includes(sortParam)) setSortBy(sortParam);
+        if (Number.isInteger(pageParam) && pageParam > 0) setCurrentPage(pageParam);
+        if (["all", "images", "videos"].includes(typeParam)) setTypeFilter(typeParam);
+        if ([3, 5, 7, 9, 11].includes(colsParam)) setGridCols(colsParam);
+        // Let URL-derived state commit before state-to-URL synchronization is enabled.
+        window.setTimeout(() => { urlStateReadyRef.current = true; }, 0);
 
         // 4. Handle ?profile= deep link
         if (profileParam && !hubProfileFilter) {
@@ -987,10 +1068,13 @@ export default function CollectionPage() {
             updateParam('sort', null);
 
         } else {
-            updateParam('tab', activeTab !== 'all' ? activeTab : null);
+            updateParam('tab', null);
+            updateParam('folder', activeTab !== 'all' ? activeTab : null);
             updateParam('q', searchQuery);
             updateParam('sort', sortBy !== 'random' ? sortBy : null);
-
+            updateParam('page', currentPage > 1 ? String(currentPage) : null);
+            updateParam('type', typeFilter !== 'all' ? typeFilter : null);
+            updateParam('cols', gridCols !== 5 ? String(gridCols) : null);
         }
 
         // Sync Profile Data
@@ -1004,10 +1088,10 @@ export default function CollectionPage() {
         // Sync Post Details
         updateParam('post', hubDetailPost?.id?.toString());
 
-        if (changed) {
-            window.history.pushState({}, '', url);
+        if (changed && urlStateReadyRef.current) {
+            router.replace(`${url.pathname}${url.search}${url.hash}`, { scroll: false });
         }
-    }, [viewMode, hubFeedTab, activeTab, hubProfileFilter, hubProfileTab, searchQuery, hubSearch, hubDetailPost, sortBy]);
+    }, [router, viewMode, hubFeedTab, activeTab, hubProfileFilter, hubProfileTab, searchQuery, hubSearch, hubDetailPost, sortBy, currentPage, typeFilter, gridCols]);
 
     // ——— Handle browser back/forward button ———
     useEffect(() => {
@@ -1016,9 +1100,12 @@ export default function CollectionPage() {
             const profileParam = params.get('profile');
             const postParam = params.get('post');
             const vParam = params.get('v');
-            const tabParam = params.get('tab');
+            const tabParam = params.get('tab') || params.get('folder');
             const ptabParam = params.get('ptab');
             const qParam = params.get('q');
+            const pageParam = Number(params.get('page'));
+            const typeParam = params.get('type');
+            const colsParam = Number(params.get('cols'));
 
             // Sync View Mode
             setViewMode(vParam === 'hub' ? 'hub' : 'gallery');
@@ -1042,8 +1129,14 @@ export default function CollectionPage() {
 
             // Sync gallery filters
             if (vParam !== 'hub') {
-                setSortBy((params.get('sort') as any) || 'random');
-
+                setSortBy((params.get('sort') as CollectionSort) || 'random');
+                setCurrentPage(Number.isInteger(pageParam) && pageParam > 0 ? pageParam : 1);
+                if (["all", "images", "videos"].includes(typeParam || "")) {
+                    setTypeFilter(typeParam as "all" | "images" | "videos");
+                } else {
+                    setTypeFilter("all");
+                }
+                if ([3, 5, 7, 9, 11].includes(colsParam)) setGridCols(colsParam);
             }
 
             // Sync post detail
@@ -1253,11 +1346,18 @@ export default function CollectionPage() {
     }, [filteredImages]);
 
     // ——— Pagination / Infinite Scroll ———
-    const totalPages = Math.ceil(filteredImages.length / itemsPerPage);
-    // Virtual Scroll / Infinite Load: render all items from page 1 up to currentPage if infinite, else just current page
+    const hasClientFilters = activeTab !== "all" || Boolean(searchQuery.trim()) || typeFilter !== "all";
+    const knownItemCount = hasClientFilters ? filteredImages.length : (loadProgress?.total || filteredImages.length);
+    const totalPages = Math.max(1, Math.ceil(knownItemCount / itemsPerPage));
     const displayImages = isInfinite
         ? filteredImages.slice(0, currentPage * itemsPerPage)
         : filteredImages.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    useEffect(() => {
+        if (loading || collectionPageLoading || !hasMoreCollection) return;
+        if (currentPage * itemsPerPage <= collectionItemsRef.current.length) return;
+        void fetchNextCollectionPage();
+    }, [allImages.length, collectionPageLoading, currentPage, fetchNextCollectionPage, hasMoreCollection, itemsPerPage, loading]);
 
     // Infinite scroll observer setup
     const observerRef = useRef<IntersectionObserver | null>(null);
@@ -1265,12 +1365,17 @@ export default function CollectionPage() {
         if (loading) return;
         if (observerRef.current) observerRef.current.disconnect();
         observerRef.current = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && currentPage < totalPages) {
+            if (!entries[0].isIntersecting || collectionPageLoading) return;
+            if (currentPage * itemsPerPage < filteredImages.length) {
                 setCurrentPage(prev => prev + 1);
+                return;
+            }
+            if (hasMoreCollection) {
+                void fetchNextCollectionPage().then(() => setCurrentPage(prev => prev + 1));
             }
         }, { rootMargin: "400px" });
         if (node) observerRef.current.observe(node);
-    }, [loading, currentPage, totalPages]);
+    }, [collectionPageLoading, currentPage, fetchNextCollectionPage, filteredImages.length, hasMoreCollection, itemsPerPage, loading]);
 
     // Reset on tab/search change
     const handleTabChange = useCallback((tab: string) => {
@@ -1313,17 +1418,30 @@ export default function CollectionPage() {
         setCurrentPage(1);
     }, []);
 
-    // ——— Sticky header + scroll-to-top ———
+    // ——— Sticky header + scroll restoration ———
     useEffect(() => {
+        const storageKey = `banmao_collection_scroll:${window.location.pathname}${window.location.search}`;
+        const savedY = Number(sessionStorage.getItem(storageKey));
+        if (Number.isFinite(savedY) && savedY > 0) {
+            requestAnimationFrame(() => window.scrollTo({ top: savedY }));
+        }
+
+        let saveTimer: ReturnType<typeof setTimeout> | null = null;
         const onScroll = () => {
             const y = window.scrollY;
             setHeaderHidden(y > 200 && y > lastScrollY.current);
             setShowScrollTop(y > 500);
             lastScrollY.current = y;
+            if (saveTimer) clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => sessionStorage.setItem(storageKey, String(window.scrollY)), 150);
         };
         window.addEventListener("scroll", onScroll, { passive: true });
-        return () => window.removeEventListener("scroll", onScroll);
-    }, []);
+        return () => {
+            window.removeEventListener("scroll", onScroll);
+            if (saveTimer) clearTimeout(saveTimer);
+            sessionStorage.setItem(storageKey, String(window.scrollY));
+        };
+    }, [searchParams]);
 
     const scrollToTop = useCallback(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2302,10 +2420,13 @@ export default function CollectionPage() {
                         ) : displayImages.length > 0 ? (
                             <>
                                 <div className="col-grid" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
-                                    {displayImages.map((img) => (
+                                    {displayImages.map((img, index) => (
                                         <ImageCard
                                             key={collectionItemKey(img)}
                                             img={img}
+                                            index={index}
+                                            gridCols={gridCols}
+                                            unloadOffscreen={isInfinite && displayImages.length > COLLECTION_PAGE_SIZE * 4}
                                             t={t}
                                             lang={lang}
                                             onOpen={openLightbox}
@@ -2349,7 +2470,7 @@ export default function CollectionPage() {
 
                                 {/* Infinite Scroll Sentinel OR Pagination */}
                                 {isInfinite ? (
-                                    currentPage < totalPages && (
+                                    (hasMoreCollection || currentPage * itemsPerPage < filteredImages.length) && (
                                         <div ref={loadMoreRef} className="col-infinite-sentinel" style={{ height: "40px", width: "100%", display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }}>
                                             <div className="col-infinite-spinner" />
                                         </div>
@@ -2394,8 +2515,16 @@ export default function CollectionPage() {
                                             })()}
                                             <button
                                                 className="col-page-btn col-page-arrow"
-                                                disabled={currentPage === totalPages}
-                                                onClick={() => { setCurrentPage(Math.min(totalPages, currentPage + 1)); window.scrollTo({ top: 400, behavior: "smooth" }); }}
+                                                disabled={collectionPageLoading || (currentPage === totalPages && !hasMoreCollection)}
+                                                onClick={() => {
+                                                    const nextPage = currentPage + 1;
+                                                    if (nextPage * itemsPerPage > collectionItemsRef.current.length && hasMoreCollection) {
+                                                        void fetchNextCollectionPage().then(() => setCurrentPage(nextPage));
+                                                    } else {
+                                                        setCurrentPage(Math.min(totalPages, nextPage));
+                                                    }
+                                                    window.scrollTo({ top: 400, behavior: "smooth" });
+                                                }}
                                             >
                                                 ›
                                             </button>
