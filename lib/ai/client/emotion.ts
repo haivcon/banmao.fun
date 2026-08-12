@@ -88,7 +88,7 @@ export function emotionForTransactionEvent(event: TransactionEmotionEvent): Emot
   return { type: event };
 }
 
-const STATUS_PHRASES: Record<"en" | "vi", Record<BanmaoEmotion, string>> = {
+const STATUS_PHRASES: Record<"en" | "vi" | "zh" | "ko" | "ru" | "id", Record<BanmaoEmotion, string>> = {
   en: {
     idle: "Ready to help", greeting: "Hello!", listening: "Listening", thinking: "Thinking", researching: "Checking sources",
     working: "Using a tool", answering: "Answering", success: "Completed", excited: "Great news", secure: "Safety check complete",
@@ -99,10 +99,15 @@ const STATUS_PHRASES: Record<"en" | "vi", Record<BanmaoEmotion, string>> = {
     working: "Đang dùng công cụ", answering: "Đang trả lời", success: "Đã hoàn tất", excited: "Tin vui", secure: "Đã kiểm tra an toàn",
     warning: "Hãy kiểm tra kỹ", confused: "Cần thêm thông tin", error: "Đã xảy ra lỗi", sleeping: "Đang nghỉ", love: "Cảm ơn bạn", goodbye: "Hẹn gặp lại",
   },
+  zh: { idle:"随时为您服务", greeting:"您好！", listening:"正在聆听", thinking:"正在思考", researching:"正在核对来源", working:"正在使用工具", answering:"正在回答", success:"已完成", excited:"好消息", secure:"安全检查完成", warning:"请仔细检查", confused:"提供更多细节会更有帮助", error:"出现错误", sleeping:"休息中", love:"谢谢您", goodbye:"回头见" },
+  ko: { idle:"도울 준비가 됐어요", greeting:"안녕하세요!", listening:"듣는 중", thinking:"생각 중", researching:"출처 확인 중", working:"도구 사용 중", answering:"답변 중", success:"완료됨", excited:"좋은 소식", secure:"안전 확인 완료", warning:"주의 깊게 검토하세요", confused:"자세한 내용이 필요해요", error:"문제가 발생했어요", sleeping:"쉬는 중", love:"감사합니다", goodbye:"곧 다시 만나요" },
+  ru: { idle:"Готов помочь", greeting:"Здравствуйте!", listening:"Слушаю", thinking:"Думаю", researching:"Проверяю источники", working:"Использую инструмент", answering:"Отвечаю", success:"Готово", excited:"Отличные новости", secure:"Проверка безопасности завершена", warning:"Проверьте внимательно", confused:"Нужно больше деталей", error:"Что-то пошло не так", sleeping:"Отдыхаю", love:"Спасибо", goodbye:"До скорого" },
+  id: { idle:"Siap membantu", greeting:"Halo!", listening:"Mendengarkan", thinking:"Berpikir", researching:"Memeriksa sumber", working:"Menggunakan alat", answering:"Menjawab", success:"Selesai", excited:"Kabar baik", secure:"Pemeriksaan keamanan selesai", warning:"Tinjau dengan cermat", confused:"Detail tambahan akan membantu", error:"Terjadi kesalahan", sleeping:"Beristirahat", love:"Terima kasih", goodbye:"Sampai jumpa" },
 };
 
 export function getStatusPhrase(emotion: BanmaoEmotion, language?: string): string {
-  return STATUS_PHRASES[language?.toLowerCase().startsWith("vi") ? "vi" : "en"][emotion];
+  const locale = language?.toLowerCase().split(/[-_]/)[0];
+  return STATUS_PHRASES[locale && locale in STATUS_PHRASES ? locale as keyof typeof STATUS_PHRASES : "en"][emotion];
 }
 
 export const ONE_SHOT_EMOTIONS: ReadonlySet<BanmaoEmotion> = new Set<BanmaoEmotion>(["greeting", "success", "error", "goodbye"]);

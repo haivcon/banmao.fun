@@ -52,10 +52,12 @@ type Action =
   | { type: "models"; models: AIModel[]; defaultModel: AIModel }
   | { type: "select-model"; model: AIModel }
   | { type: "start"; message: string; createdAt?: number }
+  | { type: "retry" }
   | { type: "delta"; text: string }
   | { type: "tool"; tool: ToolActivity }
   | { type: "citation"; citation: Citation }
   | { type: "collection_results"; payload: CollectionResultsPayload }
+  | { type: "restore"; state: Pick<ClientState, "messages" | "tools" | "citations" | "collectionResults">; model?: AIModel }
   | { type: "error"; message: string }
   | { type: "stop" }
   | { type: "clear" };
@@ -72,6 +74,12 @@ export function reduceClientState(state: ClientState, action: Action): ClientSta
     case "start":
       const createdAt = action.createdAt ?? 0;
       return { ...state, status: "streaming", error: undefined, lastPrompt: action.message, tools: [], citations: [], collectionResults: undefined, messages: [...state.messages, { role: "user", content: action.message, createdAt }, { role: "assistant", content: "", createdAt }] };
+    case "retry": {
+      const messages = [...state.messages];
+      const last = messages.at(-1);
+      if (last?.role === "assistant") messages[messages.length - 1] = { ...last, content: "" };
+      return { ...state, status: "streaming", error: undefined, tools: [], citations: [], collectionResults: undefined, messages };
+    }
     case "delta": {
       const messages = [...state.messages];
       const last = messages.at(-1);
@@ -81,6 +89,7 @@ export function reduceClientState(state: ClientState, action: Action): ClientSta
     case "tool": return { ...state, tools: [...state.tools, action.tool] };
     case "collection_results": return { ...state, collectionResults: { ...action.payload, results: action.payload.results.slice(0, 10) } };
     case "citation": return state.citations.some((item) => item.sourcePath === action.citation.sourcePath && item.version === action.citation.version) ? state : { ...state, citations: [...state.citations, action.citation] };
+    case "restore": return { ...state, ...action.state, ...(action.model && state.models.includes(action.model) ? { model: action.model } : {}), status: "idle", error: undefined, lastPrompt: undefined };
     case "error": return { ...state, status: "error", error: action.message };
     case "stop": return { ...state, status: "idle" };
     case "clear": return { ...state, messages: [], tools: [], citations: [], collectionResults: undefined, lastPrompt: undefined, status: "idle", error: undefined };

@@ -14,8 +14,8 @@ export default function PrivacyControls(props: Props) {
   return <details className="banmao-ai-privacy">
     <summary><Settings2 size={15} aria-hidden="true" /> {t("privacy")}</summary>
     <div className="banmao-ai-privacy-body">
-      <p>{t("privacyInfo")}</p>
-      <Toggle checked={props.optIn} onChange={props.onOptIn}>{t("remember")}</Toggle>
+      <p>{t("privacyInfoStored")}</p>
+      <Toggle checked={props.optIn} onChange={props.onOptIn}>{t("disablePersistence")}</Toggle>
       <Toggle checked={props.mascotVisible} onChange={props.onMascotVisible}>{t("mascot")}</Toggle>
       <Toggle checked={props.reducedMotion} onChange={props.onReducedMotion}>{t("motion")}</Toggle>
       <div className="banmao-ai-data-actions"><button type="button" onClick={props.onExport}><Download size={14} /> {t("export")}</button><button type="button" className="is-danger" onClick={props.onClear}><Trash2 size={14} /> {t("clear")}</button></div>
