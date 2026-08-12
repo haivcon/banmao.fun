@@ -5,7 +5,7 @@ export interface CollectionPrefixRequest {
     hasMore: boolean;
 }
 
-export const COLLECTION_PAGE_SIZE = 36;
+export const COLLECTION_PAGE_SIZE = 500;
 
 export function shouldLoadCollectionPrefix({ requestedPage, pageSize, loaded, hasMore }: CollectionPrefixRequest): boolean {
     return hasMore && requestedPage > 0 && requestedPage * pageSize > loaded;

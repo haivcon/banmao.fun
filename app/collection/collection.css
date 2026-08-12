@@ -1012,6 +1012,23 @@ body::-webkit-scrollbar {
     gap: 16px;
 }
 
+.col-grid-virtual {
+    width: 100%;
+}
+
+.col-grid-window {
+    width: 100%;
+}
+
+.col-grid-contents {
+    display: contents;
+}
+
+.col-grid-spacer {
+    width: 100%;
+    pointer-events: none;
+}
+
 .col-masonry-grid {
     column-count: 4;
     column-gap: 16px;
