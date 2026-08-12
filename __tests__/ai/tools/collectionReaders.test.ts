@@ -31,7 +31,7 @@ test("collection search preserves deterministic fuzzy scoring and bounded result
   const expressions = fetcher.mock.calls.map((call) => JSON.parse(String(call[1]?.body)).expression as string);
   expect(expressions.join(" ")).toContain("public_id:*cute*");
   expect(expressions.join(" ")).toContain("tags=cute");
-  expect(expressions.every((expression) => expression.startsWith("folder:banmao* AND ("))).toBe(true);
+  expect(expressions.every((expression) => expression.startsWith("resource_type:image AND folder:banmao* AND ("))).toBe(true);
 });
 
 test("searches bounded expanded-term batches across the Cloudinary index and deduplicates candidates", async () => {
@@ -117,7 +117,7 @@ test("explicit folder is preserved while omitted folder searches broadly", async
   const fetcher = collectionFetcher([{ ...resource, public_id: "other/Happy_Smile", asset_folder: "other" }]);
   await readCollectionSearch({ query: "happy", folder: "other", limit: 10 }, { cloudinaryUrl, fetch: fetcher });
   const request = JSON.parse(String(fetcher.mock.calls[0][1]?.body));
-  expect(request.expression).toContain("folder:other* AND (");
+  expect(request.expression).toContain("resource_type:image AND folder:other* AND (");
   expect(request.expression).toContain("public_id:*happy*");
 });
 

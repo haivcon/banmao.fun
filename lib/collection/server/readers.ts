@@ -99,7 +99,7 @@ async function cloudinarySearch(fetcher: Fetcher, url: string, authorization: st
 const MAX_SEARCH_QUERIES = 3;
 const SEARCH_TERMS_PER_QUERY = 4;
 function searchExpressions(keywords: string[], folder?: string) {
-  const prefix = folder ? `folder:${folder}* AND ` : "";
+  const prefix = folder ? `resource_type:image AND folder:${folder}* AND ` : "resource_type:image AND ";
   return Array.from({ length: Math.min(MAX_SEARCH_QUERIES, Math.ceil(keywords.length / SEARCH_TERMS_PER_QUERY)) }, (_, index) => {
     const terms = keywords.slice(index * SEARCH_TERMS_PER_QUERY, (index + 1) * SEARCH_TERMS_PER_QUERY);
     const publicId = terms.map((term) => `public_id:*${term}*`);
