@@ -311,6 +311,7 @@ export default {
     downloadImage: "Tải ảnh",
     openImage: "Mở ảnh",
     loadedOfTotal: "Đã tải {loaded} / {total}",
+    loadMoreCollection: "Tải thêm",
     loadCollectionFailed: "Quá trình tải bộ sưu tập bị gián đoạn.",
     retryCollection: "Thử lại",
     collectionEnd: "Đã tải toàn bộ mục trong bộ sưu tập.",

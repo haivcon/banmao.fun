@@ -191,6 +191,7 @@ export default {
     downloadImage: "Unduh gambar",
     openImage: "Buka gambar",
     loadedOfTotal: "Memuat {loaded} dari {total}",
+    loadMoreCollection: "Muat lagi",
     loadCollectionFailed: "Pemuatan koleksi terhenti.",
     retryCollection: "Coba lagi",
     collectionEnd: "Semua item koleksi telah dimuat.",

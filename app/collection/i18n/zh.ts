@@ -195,6 +195,7 @@ export default {
     downloadImage: "下载图片",
     openImage: "打开图片",
     loadedOfTotal: "已加载 {loaded} / {total}",
+    loadMoreCollection: "加载更多",
     loadCollectionFailed: "图库加载已中断。",
     retryCollection: "重试",
     collectionEnd: "已加载全部图库项目。",

@@ -36,7 +36,7 @@ import {
     toCloudinaryThumb,
 } from "./collectionMedia";
 import { filterSmartCollection, isSmartCollection, SMART_COLLECTION_IDS } from "./smartCollections";
-import { collectionCountSummary, createCursorPageRequester, shouldLoadCollectionPrefix } from "./collectionPagination";
+import { COLLECTION_PAGE_SIZE, collectionCountSummary, createCursorPageRequester, shouldLoadCollectionPrefix } from "./collectionPagination";
 import { requestAIChatOpen } from "../../lib/ai/client/openContract";
 
 // Dynamic imports — modals are loaded on-demand, not in the initial bundle
@@ -101,7 +101,6 @@ interface CollectionPageData {
     nextCursor?: string | null;
 }
 
-const COLLECTION_PAGE_SIZE = 48;
 const ITEMS_PER_PAGE_DESKTOP = COLLECTION_PAGE_SIZE;
 const ITEMS_PER_PAGE_MOBILE = COLLECTION_PAGE_SIZE;
 
@@ -334,13 +333,13 @@ const ImageCard = memo(function ImageCard({ img, index, gridCols, unloadOffscree
     searchQuery: string;
 }) {
     const cardRef = useRef<HTMLDivElement>(null);
-    const isPriority = index < gridCols;
+    const isPriority = index < Math.min(gridCols, 6);
     const [isVisible, setIsVisible] = useState(isPriority);
     const [loaded, setLoaded] = useState(false);
     const [dlState, setDlState] = useState<"" | "downloading" | "dl-success">("");
 
     // Tiny blur placeholder via Cloudinary
-    const blurThumb = img.thumb.replace(/w_\d+,h_\d+/, "w_20,h_20").replace(/q_auto/, "q_auto:low");
+    const blurThumb = img.thumb.replace(/w_\d+,h_\d+/, "w_20,h_20").replace(/q_auto(?::eco)?/, "q_auto:low");
 
     useEffect(() => {
         const el = cardRef.current;
@@ -400,7 +399,7 @@ const ImageCard = memo(function ImageCard({ img, index, gridCols, unloadOffscree
                 {!img.isVideo && <div className="col-checker-bg" />}
                 <img
                     src={isVisible ? img.thumb : blurThumb}
-                    srcSet={isVisible && !img.isVideo ? toCloudinarySrcSet(img.src) : undefined}
+                    srcSet={isVisible && !img.isVideo ? toCloudinarySrcSet(img.src) || undefined : undefined}
                     sizes={isVisible && !img.isVideo ? collectionImageSizes(gridCols) : undefined}
                     alt={displayName}
                     className={`col-card-img ${loaded ? "col-img-loaded" : "col-img-blur"}`}
@@ -916,7 +915,8 @@ export default function CollectionPage() {
         return res.json() as Promise<CollectionPageData>;
     }), []);
 
-    const prefetchCollectionPage = useCallback((cursor: string | null) => {
+    const prefetchNextCollectionPage = useCallback(() => {
+        const cursor = nextCursorRef.current;
         if (!cursor || prefetchedPageRef.current?.cursor === cursor) return;
         void requestCollectionPage(cursor)
             .then((data) => { prefetchedPageRef.current = { cursor, data }; })
@@ -939,8 +939,7 @@ export default function CollectionPage() {
         setTotalBytes(collectionItemsRef.current.reduce((sum, item) => sum + item.bytes, 0));
         setLoadProgress({ loaded: collectionItemsRef.current.length, total: collectionTotalRef.current });
         setHasMoreCollection(Boolean(nextCursorRef.current));
-        prefetchCollectionPage(nextCursorRef.current);
-    }, [mapRawToItem, prefetchCollectionPage, setAllImages, setTotalBytes]);
+    }, [mapRawToItem, setAllImages, setTotalBytes]);
 
     const fetchNextCollectionPage = useCallback(async () => {
         const cursor = nextCursorRef.current;
@@ -2688,8 +2687,8 @@ export default function CollectionPage() {
                                     ))}
                                 </div>
 
-                                {/* Background loading progress */}
-                                {loadProgress && loadProgress.loaded < loadProgress.total && (
+                                {/* Cursor loading progress */}
+                                {collectionPageLoading && loadProgress && (
                                     <div className="col-load-progress" style={{
                                         display: "flex", alignItems: "center", justifyContent: "center",
                                         gap: "10px", padding: "12px 0", opacity: 0.7, fontSize: "13px",
@@ -2697,7 +2696,7 @@ export default function CollectionPage() {
                                     }}>
                                         <div className="col-infinite-spinner" style={{ width: "16px", height: "16px" }} />
                                         <span>
-                                            {t.loading} {loadProgress.loaded} / {loadProgress.total}
+                                            {t.loadingMore} {loadProgress.loaded} / {loadProgress.total}
                                         </span>
                                         <div style={{
                                             width: "120px", height: "4px", borderRadius: "2px",
@@ -2722,12 +2721,26 @@ export default function CollectionPage() {
                                                 setLoading(true);
                                                 void requestCollectionPage(null).then((firstPage) => appendCollectionPage(firstPage)).catch(() => setCollectionLoadError(true)).finally(() => setLoading(false));
                                             } else {
-                                                void loadCollectionThroughPage(currentPage + (isInfinite ? 1 : 0));
+                                                void fetchNextCollectionPage();
                                             }
                                         }}>{t.retryCollection}</button>
                                     </div>
                                 )}
-                                {!hasMoreCollection && loadProgress && loadProgress.loaded >= loadProgress.total && <p className="col-collection-end" role="status">{t.collectionEnd}</p>}
+                                {hasMoreCollection && !collectionLoadError && (
+                                    <div className="col-load-more-wrap">
+                                        <button
+                                            type="button"
+                                            className="col-load-more-btn"
+                                            disabled={collectionPageLoading}
+                                            onFocus={prefetchNextCollectionPage}
+                                            onPointerEnter={prefetchNextCollectionPage}
+                                            onClick={() => { void fetchNextCollectionPage(); }}
+                                        >
+                                            {collectionPageLoading ? t.loadingMore : t.loadMoreCollection}
+                                        </button>
+                                    </div>
+                                )}
+                                {!hasMoreCollection && loadProgress && <p className="col-collection-end" role="status">{t.collectionEnd}</p>}
 
                                 {/* Infinite Scroll Sentinel OR Pagination */}
                                 {isInfinite ? (
