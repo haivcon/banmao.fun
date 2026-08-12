@@ -49,6 +49,7 @@ pnpm-lock.yaml
 /__tests__/*
 !/__tests__/ai/
 !/__tests__/ai/**/*.test.ts
+!/__tests__/collectionSmartCollections.test.ts
 !/__tests__/server-only.ts
 /public/Happy Smile.png
 

@@ -35,6 +35,7 @@ import {
     toCloudinarySrcSet,
     toCloudinaryThumb,
 } from "./collectionMedia";
+import { filterSmartCollection, isSmartCollection, SMART_COLLECTION_IDS } from "./smartCollections";
 
 // Dynamic imports — modals are loaded on-demand, not in the initial bundle
 const CreatePostModal = dynamic(() => import("./components/CreatePostModal"), { ssr: false });
@@ -48,9 +49,9 @@ const HubLeaderboard = dynamic(() => import("./components/HubLeaderboard"), { ss
 function ChatBellButton({ onClick, t }: { onClick: () => void, t: any }) {
     const { unreadCount, clearUnread } = useChat();
     return (
-        <button className="col-pill-btn col-pill-pink hub-notif-bell-btn" style={{ position: 'relative' }} onClick={() => { clearUnread(); onClick(); }} title={t.messages || "Messages"}>
+        <button className="col-pill-btn col-pill-pink hub-notif-bell-btn" style={{ position: 'relative' }} onClick={() => { clearUnread(); onClick(); }} title={t.messages}>
             <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="hub-icon"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 01.778-.332 48.294 48.294 0 005.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" /></svg>
-            <span style={{ marginLeft: 6 }}>{t.messages || 'Messages'}</span>
+            <span style={{ marginLeft: 6 }}>{t.messages}</span>
             {unreadCount > 0 && (
                 <div style={{ position: 'absolute', top: -4, right: -4, background: '#ef4444', color: 'white', fontSize: '10px', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
                     {unreadCount > 9 ? '9+' : unreadCount}
@@ -135,7 +136,7 @@ function folderLabel(folder: string): string {
 }
 
 function folderLabelTranslated(folder: string, lang: Lang): string {
-    if (folder === "__hub__") return "Hub";
+    if (folder === "__hub__") return T[lang].hub;
     const base = folderLabel(folder);
     if (lang === "en") return base;
     return translateFolder(base, lang as "vi" | "zh" | "ko" | "ru" | "id");
@@ -379,6 +380,15 @@ const ImageCard = memo(function ImageCard({ img, index, gridCols, unloadOffscree
             ref={cardRef}
             className={`col-card ${img.isVideo ? "col-card-video" : ""} ${draggable ? "col-card-draggable" : ""} ${selectMode ? "col-card-selecting" : ""} ${selected ? "col-card-selected" : ""}`}
             onClick={() => selectMode ? onSelect?.(img.publicId) : onOpen(img)}
+            role="button"
+            tabIndex={0}
+            aria-label={`${t.openImage}: ${displayName}`}
+            aria-pressed={selectMode ? Boolean(selected) : undefined}
+            onKeyDown={(event) => {
+                if (event.key !== "Enter" && event.key !== " ") return;
+                event.preventDefault();
+                selectMode ? onSelect?.(img.publicId) : onOpen(img);
+            }}
             draggable={draggable}
             onDragStart={onDragStart}
             onDragOver={onDragOver}
@@ -390,7 +400,7 @@ const ImageCard = memo(function ImageCard({ img, index, gridCols, unloadOffscree
                     src={isVisible ? img.thumb : blurThumb}
                     srcSet={isVisible && !img.isVideo ? toCloudinarySrcSet(img.src) : undefined}
                     sizes={isVisible && !img.isVideo ? collectionImageSizes(gridCols) : undefined}
-                    alt={img.name}
+                    alt={displayName}
                     className={`col-card-img ${loaded ? "col-img-loaded" : "col-img-blur"}`}
                     loading={isPriority ? undefined : "lazy"}
                     fetchPriority={isPriority ? "high" : undefined}
@@ -413,8 +423,8 @@ const ImageCard = memo(function ImageCard({ img, index, gridCols, unloadOffscree
                     <button
                         className={`col-fav-btn ${isFav ? "active" : ""}`}
                         onClick={(e) => { e.stopPropagation(); onFav(img); }}
-                        aria-label={isFav ? t.removeFavorite : t.addFavorite}
-                        title={isFav ? t.removeFavorite : t.addFavorite}
+                        aria-label={isFav ? t.removeFromFavorites : t.addToFavorites}
+                        title={isFav ? t.removeFromFavorites : t.addToFavorites}
                     >{isFav ? "❤️" : "🤍"}</button>
                 )}
             </div>
@@ -422,7 +432,8 @@ const ImageCard = memo(function ImageCard({ img, index, gridCols, unloadOffscree
                 <span className="col-card-name">{img.isVideo && "🎬 "}{highlightName(displayName)}</span>
                 <button
                     className={`col-dl-btn ${dlState}`}
-                    title={t.download}
+                    title={t.downloadImage}
+                    aria-label={`${t.downloadImage}: ${displayName}`}
                     onClick={handleDownload}
                 >{dlState === "dl-success" ? "✓" : "⬇"}</button>
             </div>
@@ -539,6 +550,8 @@ export default function CollectionPage() {
     const qrCanvasRef = useRef<HTMLCanvasElement>(null);
     const lastScrollY = useRef(0);
     const hubLoadMoreRef = useRef<HTMLDivElement>(null);
+    const lightboxRef = useRef<HTMLDivElement>(null);
+    const lightboxReturnFocusRef = useRef<HTMLElement | null>(null);
     const [showStats, setShowStats] = useState(false);
     const hasOpenedDeepLink = useRef(false);
     const [searchInput, setSearchInput] = useState(() => searchParams.get("q") || searchQuery);
@@ -766,7 +779,7 @@ export default function CollectionPage() {
 
     const handleReport = useCallback(async (postId: number) => {
         if (!address) return;
-        const reason = window.prompt("Reason for reporting this post?");
+        const reason = window.prompt(t.reportReasonPrompt);
         if (reason === null) return; // cancelled
         try {
             await fetch("/api/hub/reports", {
@@ -774,9 +787,9 @@ export default function CollectionPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ postId, address, reason })
             });
-            alert("Post reported to admin. Thank you.");
+            alert(t.reportSubmitted);
         } catch { /* ignore */ }
-    }, [address]);
+    }, [address, t]);
 
     const handleHubScroll = useCallback((e: any) => {
         // This function will be implemented later
@@ -802,7 +815,7 @@ export default function CollectionPage() {
             ));
 
             if (typeof window !== 'undefined' && (window as any).toast) {
-                (window as any).toast.success(t.commentPosted || "Comment submitted!");
+                (window as any).toast.success(t.commentPosted);
             }
         } catch (e) {
             console.error("Inline comment error:", e);
@@ -1335,6 +1348,8 @@ export default function CollectionPage() {
         let filtered = allImages;
         if (activeTab === "favorites") {
             filtered = allImages.filter((i) => favorites.has(i.publicId) || favorites.has(i.src));
+        } else if (isSmartCollection(activeTab)) {
+            filtered = filterSmartCollection(allImages, activeTab, downloadCounts);
         } else if (activeTab !== "all") {
             filtered = allImages.filter((i) => i.folder === activeTab);
         }
@@ -1371,7 +1386,7 @@ export default function CollectionPage() {
         }
 
         return filtered;
-    }, [allImages, activeTab, searchQuery, favorites, favoritesOrder, typeFilter, sortBy]);
+    }, [allImages, activeTab, searchQuery, favorites, favoritesOrder, typeFilter, sortBy, downloadCounts, lang]);
 
     // ——— Deep Link: auto-open lightbox from URL param ———
     useEffect(() => {
@@ -1432,7 +1447,7 @@ export default function CollectionPage() {
     // ——— Share Favorites ———
     const handleShareFavorites = useCallback(() => {
         if (favoritesOrder.length === 0 && favorites.size === 0) {
-            setToast("No favorites to share!");
+            setToast(t.noFavoritesToShare);
             setTimeout(() => setToast(null), 3000);
             return;
         }
@@ -1445,18 +1460,18 @@ export default function CollectionPage() {
             const shareUrl = `${window.location.origin}${window.location.pathname}?img=#share=${encoded}`;
 
             navigator.clipboard.writeText(shareUrl).then(() => {
-                setToast("Share link copied to clipboard!");
+                setToast(t.favoritesLinkCopied);
                 setTimeout(() => setToast(null), 3000);
             }).catch(() => {
                 // Fallback for some browsers
-                setToast("Failed to copy link. Check console.");
+                setToast(t.copyLinkFailed);
                 console.warn("Share URL:", shareUrl);
                 setTimeout(() => setToast(null), 3000);
             });
         } catch (e) {
             console.error("Failed to generate share link", e);
         }
-    }, [favorites, favoritesOrder]);
+    }, [favorites, favoritesOrder, t]);
 
     useEffect(() => {
         try {
@@ -1564,6 +1579,7 @@ export default function CollectionPage() {
 
     // ——— Lightbox ———
     const openLightbox = useCallback((img: ImageItem) => {
+        lightboxReturnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         const idx = filteredImages.findIndex((i) => i.src === img.src);
         setLightboxIndex(idx >= 0 ? idx : 0);
         setDragY(0);
@@ -1593,7 +1609,25 @@ export default function CollectionPage() {
         const url = new URL(window.location.href);
         url.searchParams.delete("img");
         window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+        window.setTimeout(() => lightboxReturnFocusRef.current?.focus(), 0);
     }, []);
+
+    useEffect(() => {
+        if (lightboxIndex === null && !hubEditorOverride) return;
+        const dialog = lightboxRef.current;
+        window.setTimeout(() => dialog?.querySelector<HTMLElement>("button:not([disabled]), [href], input:not([disabled])")?.focus(), 0);
+        const trapFocus = (event: KeyboardEvent) => {
+            if (event.key !== "Tab" || !dialog) return;
+            const focusable = Array.from(dialog.querySelectorAll<HTMLElement>("button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex='-1'])"));
+            if (focusable.length === 0) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        };
+        document.addEventListener("keydown", trapFocus);
+        return () => document.removeEventListener("keydown", trapFocus);
+    }, [lightboxIndex, hubEditorOverride]);
 
     const lightboxPrev = useCallback(() => {
         setImgLoading(true);
@@ -2047,6 +2081,26 @@ export default function CollectionPage() {
         opacity: Math.max(0.3, 1 - dragY / 400),
         transition: isDragging.current ? "none" : "all 0.3s ease",
     } : {};
+    const smartCollectionLabel = (id: string) => id === "recently-added"
+        ? `🕐 ${t.recentlyAdded}`
+        : id === "most-downloaded"
+            ? `⬇ ${t.mostDownloaded}`
+            : `🔥 ${t.popularCollection}`;
+    const activeTabLabel = activeTab === "all"
+        ? `📂 ${t.filterAll}`
+        : activeTab === "favorites"
+            ? `❤️ ${t.favorites}`
+            : isSmartCollection(activeTab)
+                ? smartCollectionLabel(activeTab)
+                : `${folderIcon(activeTab)} ${folderLabelTranslated(activeTab, lang)}`;
+    const accessibilityStatus = loading || collectionPageLoading
+        ? t.loadingMore
+        : filteredImages.length === 0
+            ? t.noImages
+            : t.resultsCount.replace("{n}", String(filteredImages.length));
+    const openAISearch = () => window.dispatchEvent(new CustomEvent("banmao-ai-open", {
+        detail: { input: t.aiSearchPrompt },
+    }));
 
     return (
         <ChatProvider>
@@ -2060,8 +2114,8 @@ export default function CollectionPage() {
                             <a href="/" className="col-back-btn">{t.home}</a>
                         </div>
                         <div className="hub-view-toggle">
-                            <button className={`hub-toggle-btn ${viewMode === "gallery" ? "active" : ""}`} onClick={() => setViewMode("gallery")}>🖼 {t.galleryView || 'Gallery'}</button>
-                            <button className={`hub-toggle-btn ${viewMode === "hub" ? "active" : ""}`} onClick={() => setViewMode("hub")}>🐱 Hub</button>
+                            <button className={`hub-toggle-btn ${viewMode === "gallery" ? "active" : ""}`} onClick={() => setViewMode("gallery")}>🖼 {t.galleryView}</button>
+                            <button className={`hub-toggle-btn ${viewMode === "hub" ? "active" : ""}`} onClick={() => setViewMode("hub")}>🐱 {t.hub}</button>
                         </div>
                         <div className="col-header-right">
                             <div className="hub-wallet-btn">
@@ -2072,7 +2126,7 @@ export default function CollectionPage() {
                                     <button 
                                         className="col-pill-btn col-pill-pink hub-desktop-profile-btn" 
                                         onClick={() => { setHubProfileFilter(address); setHubFeedTab('newest'); setViewMode('hub'); }}
-                                        title={t.myProfile || "My Profile"}
+                                        title={t.myProfile}
                                         style={{ display: "flex", alignItems: "center", gap: "6px", fontWeight: 600 }}
                                     >
                                         <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="16" height="16"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
@@ -2157,9 +2211,9 @@ export default function CollectionPage() {
                             onProfileUpdated={() => {
                                 setProfileRefreshTrigger(prev => prev + 1);
                                 if (typeof window !== 'undefined' && (window as any).toast) {
-                                    (window as any).toast.success("Profile updated successfully!");
+                                    (window as any).toast.success(t.profileUpdated);
                                 } else {
-                                    alert("Profile updated successfully!");
+                                    alert(t.profileUpdated);
                                 }
                             }}
                             onHubPostsClear={() => setHubPosts([])}
@@ -2250,33 +2304,33 @@ export default function CollectionPage() {
                                                     <span>{hubDetailPost.comment_count || 0}</span>
                                                 </button>
                                                 <div style={{ position: 'relative' }}>
-                                                    <button className="hub-action" onClick={(e) => { e.stopPropagation(); setShareMenuPostId(shareMenuPostId === hubDetailPost.id ? null : hubDetailPost.id); }} title={t.share || 'Share'}>
+                                                    <button className="hub-action" onClick={(e) => { e.stopPropagation(); setShareMenuPostId(shareMenuPostId === hubDetailPost.id ? null : hubDetailPost.id); }} title={t.share}>
                                                         <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="hub-icon"><path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" /></svg>
                                                     </button>
                                                     {shareMenuPostId === hubDetailPost.id && (
                                                         <div className="hub-share-popup" onClick={(e) => e.stopPropagation()}>
-                                                            <div className="hub-share-popup-title">{t.sharePost || 'Share Post'}</div>
+                                                            <div className="hub-share-popup-title">{t.sharePost}</div>
                                                             <button className="hub-share-option" onClick={() => { copyUrl(`${window.location.origin}/collection?post=${hubDetailPost.id}`); setShareMenuPostId(null); }}>
-                                                                <span>📋</span> {t.copyLinkShare || 'Copy Link'}
+                                                                <span>📋</span> {t.copyLinkShare}
                                                             </button>
-                                                            <button className="hub-share-option" onClick={() => { window.open(`https://x.com/intent/tweet?url=${encodeURIComponent(`${window.location.origin}/collection?post=${hubDetailPost.id}`)}&text=${encodeURIComponent(hubDetailPost.caption || 'Check out this Banmao post! 🐱')}`, '_blank'); setShareMenuPostId(null); }}>
+                                                            <button className="hub-share-option" onClick={() => { window.open(`https://x.com/intent/tweet?url=${encodeURIComponent(`${window.location.origin}/collection?post=${hubDetailPost.id}`)}&text=${encodeURIComponent(hubDetailPost.caption || t.defaultSharePost)}`, '_blank'); setShareMenuPostId(null); }}>
                                                                 <span>𝕏</span> {t.shareOnX || 'X'}
                                                             </button>
-                                                            <button className="hub-share-option" onClick={() => { window.open(`https://t.me/share/url?url=${encodeURIComponent(`${window.location.origin}/collection?post=${hubDetailPost.id}`)}&text=${encodeURIComponent(hubDetailPost.caption || 'Check out this Banmao post! 🐱')}`, '_blank'); setShareMenuPostId(null); }}>
-                                                                <span>✈️</span> {t.shareOnTelegram || 'Telegram'}
+                                                            <button className="hub-share-option" onClick={() => { window.open(`https://t.me/share/url?url=${encodeURIComponent(`${window.location.origin}/collection?post=${hubDetailPost.id}`)}&text=${encodeURIComponent(hubDetailPost.caption || t.defaultSharePost)}`, '_blank'); setShareMenuPostId(null); }}>
+                                                                <span>✈️</span> {t.shareOnTelegram}
                                                             </button>
                                                             <button className="hub-share-option" onClick={() => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(`${window.location.origin}/collection?post=${hubDetailPost.id}`)}`, '_blank'); setShareMenuPostId(null); }}>
-                                                                <span>📘</span> {t.shareOnFacebook || 'Facebook'}
+                                                                <span>📘</span> {t.shareOnFacebook}
                                                             </button>
                                                             <button className="hub-share-option" onClick={() => { window.open(`https://service.weibo.com/share/share.php?url=${encodeURIComponent(`${window.location.origin}/collection?post=${hubDetailPost.id}`)}`, '_blank'); setShareMenuPostId(null); }}>
-                                                                <span>💬</span> {t.shareOnWeChat || 'WeChat'}
+                                                                <span>💬</span> {t.shareOnWeChat}
                                                             </button>
                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
                                             <div className="hub-card-actions-right">
-                                                <button className={`hub-action ${hubBookmarks.has(hubDetailPost.id) ? 'hub-bookmarked' : ''}`} onClick={() => handleBookmark(hubDetailPost.id)} title="Save">
+                                                <button className={`hub-action ${hubBookmarks.has(hubDetailPost.id) ? 'hub-bookmarked' : ''}`} onClick={() => handleBookmark(hubDetailPost.id)} title={t.save} aria-label={t.save}>
                                                     {hubBookmarks.has(hubDetailPost.id) ? (
                                                         <svg viewBox="0 0 24 24" fill="currentColor" className="hub-icon hub-icon-filled"><path fillRule="evenodd" d="M6.32 2.577a49.255 49.255 0 0111.36 0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 01-1.085.67L12 18.089l-7.165 3.583A.75.75 0 013.75 21V5.507c0-1.47 1.073-2.756 2.57-2.93z" clipRule="evenodd" /></svg>
                                                     ) : (
@@ -2290,11 +2344,11 @@ export default function CollectionPage() {
                                                         creatorName: hubDetailPost.username || shortAddr(hubDetailPost.author_address)
                                                     })}>
                                                         <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="hub-icon"><path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0V21m-8.625-9.75h18c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-18c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
-                                                        {t.tip || 'Tip'}
+                                                        {t.tip}
                                                     </button>
                                                 )}
                                                 {isConnected && address?.toLowerCase() !== hubDetailPost.author_address?.toLowerCase() && (
-                                                    <button className="hub-action hub-action-report" onClick={() => handleReport(hubDetailPost.id)} title={t.reportPost || 'Report Post'}>
+                                                    <button className="hub-action hub-action-report" onClick={() => handleReport(hubDetailPost.id)} title={t.reportPost}>
                                                         <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="hub-icon"><path strokeLinecap="round" strokeLinejoin="round" d="M3 3v1.5M3 21v-6m0 0l2.77-.693a9 9 0 016.208.682l.108.054a9 9 0 006.086.71l3.114-.732a48.524 48.524 0 01-.005-10.499l-3.11.732a9 9 0 01-6.085-.711l-.108-.054a9 9 0 00-6.208-.682L3 4.5M3 15V4.5" /></svg>
                                                     </button>
                                                 )}
@@ -2330,14 +2384,14 @@ export default function CollectionPage() {
                             <div className="hub-modal hub-like-list-modal" onClick={(e) => e.stopPropagation()}>
                                 <button className="hub-modal-close" onClick={() => setShowLikeList(null)}>✕</button>
                                 <div className="hub-like-list-header">
-                                    <h3 className="hub-like-list-title">❤️ {t.likes || 'Likes'}</h3>
+                                    <h3 className="hub-like-list-title">❤️ {t.likes}</h3>
                                     <span className="hub-like-list-count">{likeListData.length}</span>
                                 </div>
                                 <div className="hub-like-list">
                                     {likeListData.length === 0 ? (
                                         <div className="hub-like-list-empty">
                                             <span style={{ fontSize: 32 }}>💔</span>
-                                            <p>{t.noLikesYet || 'No likes yet'}</p>
+                                            <p>{t.noLikesYet}</p>
                                         </div>
                                     ) : likeListData.map((liker: any, i: number) => (
                                         <button
@@ -2361,7 +2415,7 @@ export default function CollectionPage() {
                                                 <span className="hub-like-list-name">{liker.username || shortAddr(liker.liker_address)}</span>
                                                 <span className="hub-like-list-addr">{shortAddr(liker.liker_address)}</span>
                                             </div>
-                                            <span className="hub-like-list-view">{t.profile || 'Profile'} →</span>
+                                            <span className="hub-like-list-view">{t.profile} →</span>
                                         </button>
                                     ))}
                                 </div>
@@ -2415,7 +2469,7 @@ export default function CollectionPage() {
                                 <input
                                     type="text"
                                     data-banmao-ai-id="collection.search"
-                                    data-banmao-ai-label="Search Banmao collection"
+                                    data-banmao-ai-label={t.search}
                                     data-banmao-ai-action="fill"
                                     data-banmao-ai-risk="reversible"
                                     className="col-search-input"
@@ -2427,6 +2481,9 @@ export default function CollectionPage() {
                                 />
                                 {searchInput && <button className="col-search-clear" title={t.clearSearch} onClick={() => setSearchInput("")}>✕</button>}
                             </div>
+                            <button className="col-ai-search-btn" onClick={openAISearch} title={t.aiSearchTooltip} aria-label={t.aiSearchTooltip}>
+                                ✨ {t.aiSearch}
+                            </button>
                             {searchFocused && !searchInput && recentSearches.length > 0 && (
                                 <div className="col-recent-searches">
                                     <span>{t.recentSearches}</span>
@@ -2471,18 +2528,23 @@ export default function CollectionPage() {
 
                     {/* Folder Tabs — collapsible on mobile */}
                     <section className="col-section">
-                        <button className="col-tabs-toggle" onClick={() => setShowTabsMenu(!showTabsMenu)}>
-                            <span>{activeTab === "all" ? "📂 All" : activeTab === "favorites" ? "❤️ Favorites" : `${folderIcon(activeTab)} ${folderLabelTranslated(activeTab, lang)}`}</span>
+                        <button className="col-tabs-toggle" onClick={() => setShowTabsMenu(!showTabsMenu)} aria-expanded={showTabsMenu}>
+                            <span>{activeTabLabel}</span>
                             <span className="col-tabs-toggle-arrow">{showTabsMenu ? "▲" : "▼"}</span>
                         </button>
                         {showTabsMenu && (
                             <div className="col-tabs">
                                 <button className={`col-tab ${activeTab === "all" ? "active" : ""}`} onClick={() => handleTabChange("all")}>
-                                    📂 All <span className="col-tab-count">{allImages.length}</span>
+                                    📂 {t.filterAll} <span className="col-tab-count">{allImages.length}</span>
                                 </button>
                                 <button className={`col-tab ${activeTab === "favorites" ? "active" : ""}`} onClick={() => handleTabChange("favorites")}>
-                                    ❤️ <span className="col-tab-count">{allImages.filter(isFavorite).length}</span>
+                                    ❤️ {t.favorites} <span className="col-tab-count">{allImages.filter(isFavorite).length}</span>
                                 </button>
+                                {SMART_COLLECTION_IDS.map((id) => (
+                                    <button key={id} className={`col-tab col-smart-tab ${activeTab === id ? "active" : ""}`} onClick={() => handleTabChange(id)}>
+                                        {smartCollectionLabel(id)}
+                                    </button>
+                                ))}
                                 {folders.map((f) => (
                                     <button
                                         key={f}
@@ -2502,7 +2564,7 @@ export default function CollectionPage() {
                         <div className="col-section-header">
                             <div>
                                 <h2 className="col-section-title">
-                                    {activeTab === "all" ? "📂 All" : activeTab === "favorites" ? "❤️ Favorites" : `${folderIcon(activeTab)} ${folderLabelTranslated(activeTab, lang)}`}
+                                    {activeTabLabel}
                                     {" "}<span style={{ fontSize: "13px", opacity: 0.5 }}>({filteredImages.length})</span>
                                 </h2>
                                 {totalPages > 1 && (
@@ -2519,7 +2581,8 @@ export default function CollectionPage() {
                                     <button
                                         className="col-layout-toggle"
                                         onClick={handleShareFavorites}
-                                        title="Share these favorites"
+                                        title={t.shareFavorites}
+                                        aria-label={t.shareFavorites}
                                         style={{ background: "rgba(244, 114, 182, 0.1)", color: "#f472b6" }}
                                     >
                                         📤
@@ -2568,6 +2631,7 @@ export default function CollectionPage() {
                             </div>
                         )}
 
+                        <span className="col-sr-only" role="status" aria-live="polite">{accessibilityStatus}</span>
                         {loading ? (
                             <div className="col-grid" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
                                 {Array.from({ length: 12 }).map((_, i) => <SkeletonCard key={i} />)}
@@ -2702,7 +2766,11 @@ export default function CollectionPage() {
                     {/* Lightbox */}
                     {currentLightboxImage && (
                         <div
+                            ref={lightboxRef}
                             className="col-lightbox"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-label={`${t.openImage}: ${lang === "en" ? currentLightboxImage.name : translateName(currentLightboxImage.name, lang as "vi" | "zh" | "ko" | "ru" | "id")}`}
                             onClick={closeLightbox}
                             onTouchStart={handleTouchStart}
                             onTouchMove={handleTouchMove}
@@ -2734,7 +2802,7 @@ export default function CollectionPage() {
                                 className={`col-lightbox-slideshow ${isSlideshow ? "col-lightbox-slideshow-active" : ""}`}
                                 onClick={(e) => { e.stopPropagation(); setIsSlideshow(!isSlideshow); }}
                             >
-                                {isSlideshow ? "⏸ Pause" : "▶ Play"}
+                                {isSlideshow ? `⏸ ${t.pause}` : `▶ ${t.play}`}
                             </button>
 
                             <div className="col-lightbox-inner" onClick={(e) => e.stopPropagation()} style={lightboxDragStyle}>
@@ -2757,7 +2825,7 @@ export default function CollectionPage() {
                                     ) : (
                                         <img
                                             src={currentLightboxImage.src}
-                                            alt={currentLightboxImage.name}
+                                            alt={lang === "en" ? currentLightboxImage.name : translateName(currentLightboxImage.name, lang as "vi" | "zh" | "ko" | "ru" | "id")}
                                             crossOrigin="anonymous"
                                             className={`col-lightbox-img ${imgLoading ? "col-img-loading" : ""}`}
                                             onLoad={() => setImgLoading(false)}
@@ -2804,7 +2872,7 @@ export default function CollectionPage() {
                                                 <span key={tag} className="col-lightbox-tag" onClick={() => {
                                                     setSearchInput(tag);
                                                     closeLightbox();
-                                                }} title={`Search: ${tag}`}>#{tag}</span>
+                                                }} title={`${t.searchTag}: ${tag}`}>#{tag}</span>
                                             ))}
                                         </div>
                                     )}
@@ -2867,7 +2935,7 @@ export default function CollectionPage() {
                                         {/* Prompt button - only show if there's valid prompt data for this folder */}
                                         <button className={`col-pill-btn col-pill-pink ${showPromptPanel ? "col-fav-active" : ""}`}
                                             onClick={() => setShowPromptPanel(!showPromptPanel)}>
-                                            ✨ {t.viewPrompt || "Prompt"}
+                                            ✨ {t.viewPrompt}
                                         </button>
                                     </div>
 
@@ -2934,7 +3002,7 @@ export default function CollectionPage() {
                                         <div className="col-qr-panel">
                                             <div className="col-qr-title">{t.qrCode}</div>
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img src={qrCanvasRef.current?.toDataURL()} alt="QR Code" className="col-qr-img" />
+                                            <img src={qrCanvasRef.current?.toDataURL()} alt={t.qrCode} className="col-qr-img" />
                                             <button className="col-pill-btn col-pill-pink" onClick={downloadQr}>
                                                 {t.downloadQr}
                                             </button>
@@ -2959,7 +3027,7 @@ export default function CollectionPage() {
                                                     setRemovingBg(false);
                                                 }}
                                             >
-                                                🛑 {(t as any).cancelBg || "Cancel"}
+                                                🛑 {t.cancelBg}
                                             </button>
                                         </div>
                                     )}
@@ -2969,7 +3037,7 @@ export default function CollectionPage() {
                                             <div className="col-bg-result-title">✅ {t.removeBgResult} ({t.savedBg})</div>
                                             <div className="col-bg-result-preview">
                                                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img src={bgRemovedUrl} alt="No background" className="col-bg-result-img" />
+                                                <img src={bgRemovedUrl} alt={t.noBackground} className="col-bg-result-img" />
                                             </div>
                                             <div className="col-bg-result-actions" style={{ display: 'flex', gap: '8px', width: '100%', justifyContent: 'center', flexWrap: 'wrap' }}>
                                                 <button className="col-pill-btn col-pill-green col-bg-action-btn" onClick={downloadBgRemoved}>
@@ -3157,7 +3225,7 @@ export default function CollectionPage() {
 
                     {/* Scroll to top FAB */}
                     {showScrollTop && (
-                        <button className="col-fab" onClick={scrollToTop} title="Scroll to top">↑</button>
+                        <button className="col-fab" onClick={scrollToTop} title={t.scrollToTop} aria-label={t.scrollToTop}>↑</button>
                     )}
 
                     {/* Toast */}
@@ -3179,7 +3247,7 @@ export default function CollectionPage() {
                                 </a>
                             </div>
                             <div className="col-footer-text">
-                                <p>Developed by <strong>ＤＯＲＥＭＯＮ</strong></p>
+                                <p>{t.developedBy} <strong>ＤＯＲＥＭＯＮ</strong></p>
                                 <p className="col-footer-copy">© 2026 banmao🐱🍌</p>
                             </div>
                         </div>
