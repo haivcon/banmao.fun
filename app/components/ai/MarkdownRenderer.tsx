@@ -2,6 +2,7 @@
 
 import { Check, Copy } from "lucide-react";
 import { Fragment, type ReactNode, useState } from "react";
+import { aiText } from "../../../lib/ai/client/i18n";
 
 function inline(text: string): ReactNode[] {
   const pattern = /(https?:\/\/[^\s<]+|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|`([^`]+)`|\*\*([^*]+)\*\*|__([^_]+)__|\*([^*\n]+)\*|_([^_\n]+)_)/g;
@@ -40,7 +41,7 @@ function renderTextBlock(text: string, key: number): ReactNode {
   return <p key={key}>{lines.map((line, index) => <Fragment key={index}>{inline(line)}{index < lines.length - 1 && <br />}</Fragment>)}</p>;
 }
 
-function CodeBlock({ language, code }: { language: string; code: string }) {
+function CodeBlock({ language, code, locale }: { language: string; code: string; locale: string }) {
   const [copied, setCopied] = useState(false);
   async function copy() {
     try {
@@ -49,18 +50,18 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
       window.setTimeout(() => setCopied(false), 1600);
     } catch { /* Clipboard may be unavailable in non-secure contexts. */ }
   }
-  return <div className="banmao-ai-code"><header><span>{language}</span><button type="button" onClick={copy} aria-label={copied ? "Code copied" : "Copy code"}>{copied ? <Check size={11} /> : <Copy size={11} />}{copied ? "Copied" : "Copy"}</button></header><pre><code>{code}</code></pre></div>;
+  return <div className="banmao-ai-code"><header><span>{language}</span><button type="button" onClick={copy} aria-label={aiText(locale, copied ? "codeCopied" : "copyCode")}>{copied ? <Check size={11} /> : <Copy size={11} />}{aiText(locale, copied ? "copied" : "copy")}</button></header><pre><code>{code}</code></pre></div>;
 }
 
-export default function MarkdownRenderer({ content }: { content: string }) {
+export default function MarkdownRenderer({ content, language }: { content: string; language: string }) {
   const blocks = content.replace(/\r\n?/g, "\n").split(/(```[\s\S]*?```)/g);
   return <div className="banmao-ai-markdown">{blocks.flatMap((block, index) => {
     if (!block) return [];
     if (block.startsWith("```")) {
       const match = block.match(/^```([^\n]*)\n?([\s\S]*?)```$/);
-      const language = match?.[1].trim() || "text";
+      const codeLanguage = match?.[1].trim() || "text";
       const code = match?.[2].replace(/\n$/, "") || "";
-      return <CodeBlock key={index} language={language} code={code} />;
+      return <CodeBlock key={index} language={codeLanguage} code={code} locale={language} />;
     }
     return block.split(/\n{2,}/).filter(Boolean).map((text, childIndex) => renderTextBlock(text, index * 100 + childIndex));
   })}</div>;

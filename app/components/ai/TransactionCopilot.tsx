@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAccount, useSignMessage } from "wagmi";
 import type { TransactionEmotionEvent } from "../../../lib/ai/client/emotion";
+import { aiText } from "../../../lib/ai/client/i18n";
 import ActionConfirmation from "./ActionConfirmation";
 
 type Draft = {
@@ -18,7 +19,7 @@ type Draft = {
   draftHash: string;
 };
 
-export default function TransactionCopilot({ onEmotion }: { onEmotion?: (event: TransactionEmotionEvent) => void }) {
+export default function TransactionCopilot({ language, onEmotion }: { language: string; onEmotion?: (event: TransactionEmotionEvent) => void }) {
   const [amount, setAmount] = useState("");
   const [lockOptionId, setLockOptionId] = useState(0);
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -26,14 +27,15 @@ export default function TransactionCopilot({ onEmotion }: { onEmotion?: (event: 
   const [busy, setBusy] = useState(false);
   const { address, chainId, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
+  const t = (key: Parameters<typeof aiText>[1]) => aiText(language, key);
 
   async function authenticate() {
     try {
-      if (!address || !isConnected || chainId !== 196) throw new Error("Connect an X Layer wallet first");
+      if (!address || !isConnected || chainId !== 196) throw new Error(t("connectWallet"));
       onEmotion?.("siwe-nonce");
       const nonceResponse = await fetch("/api/ai/auth/nonce", { method: "POST" });
       const nonceData = await nonceResponse.json().catch(() => ({}));
-      if (!nonceResponse.ok) throw new Error(nonceData.error || "Proof-of-wallet unavailable");
+      if (!nonceResponse.ok) throw new Error(nonceData.error || t("walletProofUnavailable"));
       const issuedAt = new Date();
       const expirationTime = new Date(issuedAt.getTime() + 5 * 60_000);
       const message = `${window.location.host} wants you to sign in with your Ethereum account:\n${address}\n\nAuthorize BANMAO AI prepare/simulate only. No transaction will be sent.\n\nURI: ${window.location.origin}\nVersion: 1\nChain ID: 196\nNonce: ${nonceData.nonce}\nIssued At: ${issuedAt.toISOString()}\nExpiration Time: ${expirationTime.toISOString()}`;
@@ -45,7 +47,7 @@ export default function TransactionCopilot({ onEmotion }: { onEmotion?: (event: 
         body: JSON.stringify({ message, signature }),
       });
       const verified = await verifyResponse.json().catch(() => ({}));
-      if (!verifyResponse.ok) throw new Error(verified.error || "Proof-of-wallet failed");
+      if (!verifyResponse.ok) throw new Error(verified.error || t("walletProofFailed"));
       onEmotion?.("siwe-verified");
     } catch (error) {
       onEmotion?.("siwe-error");
@@ -65,12 +67,12 @@ export default function TransactionCopilot({ onEmotion }: { onEmotion?: (event: 
         body: JSON.stringify({ intent: "stake", amount, lockOptionId, chainId: 196 }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || data.reason || "Draft preparation unavailable");
+      if (!response.ok) throw new Error(data.error || data.reason || t("draftUnavailable"));
       setDraft(data);
       onEmotion?.("tx-warning");
     } catch (error) {
       setDraft(null);
-      setResult(error instanceof Error ? error.message : "Draft preparation unavailable");
+      setResult(error instanceof Error ? error.message : t("draftUnavailable"));
       onEmotion?.("tx-error");
     } finally { setBusy(false); }
   }
@@ -86,27 +88,27 @@ export default function TransactionCopilot({ onEmotion }: { onEmotion?: (event: 
         body: JSON.stringify({ actionId: confirmed.actionId, draftHash: confirmed.draftHash }),
       });
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || data.reason || "Read-only simulation unavailable");
+      if (!response.ok) throw new Error(data.error || data.reason || t("simulationUnavailable"));
       setResult(JSON.stringify(data, null, 2));
       setDraft(null);
       onEmotion?.("tx-simulate-success");
     } catch (error) {
-      setResult(error instanceof Error ? error.message : "Read-only simulation unavailable");
+      setResult(error instanceof Error ? error.message : t("simulationUnavailable"));
       onEmotion?.("tx-error");
     } finally { setBusy(false); }
   }
 
   return <details className="banmao-ai-transaction">
-    <summary>Transaction draft (prepare/simulate only)</summary>
-    <p>A wallet signature authenticates this session only. BANMAO AI never opens a transaction signature or submits a transaction.</p>
-    <label htmlFor="banmao-ai-stake-amount">Stake amount in base units</label>
+    <summary>{t("transactionDraft")}</summary>
+    <p>{t("transactionPrivacy")}</p>
+    <label htmlFor="banmao-ai-stake-amount">{t("stakeAmount")}</label>
     <input id="banmao-ai-stake-amount" inputMode="numeric" pattern="[0-9]+" value={amount} onChange={(event) => setAmount(event.target.value)} />
-    <label htmlFor="banmao-ai-lock-option">Lock option</label>
+    <label htmlFor="banmao-ai-lock-option">{t("lockOption")}</label>
     <select id="banmao-ai-lock-option" value={lockOptionId} onChange={(event) => setLockOptionId(Number(event.target.value))}>
-      <option value={0}>Flexible</option><option value={1}>30 days</option><option value={2}>90 days</option><option value={3}>180 days</option>
+      <option value={0}>{t("flexible")}</option><option value={1}>{t("days30")}</option><option value={2}>{t("days90")}</option><option value={3}>{t("days180")}</option>
     </select>
-    <button type="button" disabled={busy || !isConnected || chainId !== 196 || !/^\d+$/.test(amount)} onClick={prepare}>Authenticate and prepare draft</button>
-    {draft && <ActionConfirmation draft={draft} onReview={simulate} />}
+    <button type="button" disabled={busy || !isConnected || chainId !== 196 || !/^\d+$/.test(amount)} onClick={prepare}>{t("authenticatePrepare")}</button>
+    {draft && <ActionConfirmation draft={draft} language={language} onReview={simulate} />}
     {result && <pre aria-live="polite">{result}</pre>}
   </details>;
 }

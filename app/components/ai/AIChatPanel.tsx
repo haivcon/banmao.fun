@@ -24,6 +24,7 @@ type Props = {
   setReducedMotion: (value: boolean) => void; onAnimationComplete: () => void; clear: () => void;
   exportData: () => void; selectModel: (model: ClientState["model"]) => void; children?: ReactNode;
   pendingAction: AIPageAction | null; actionNotice: string; confirmAction: () => void; cancelAction: () => void; memoryTurns: number;
+  persistenceReady: boolean; persistenceError?: string;
 };
 
 const PROMPT_ICONS = [Sparkles, TrendingUp, ShieldCheck];
@@ -37,6 +38,7 @@ export default function AIChatPanel(props: Props) {
   const streaming = props.state.status === "streaming";
   const phrase = getStatusPhrase(props.emotion, props.language);
   const t = (key: Parameters<typeof aiText>[1]) => aiText(props.language, key);
+  const errorText = props.state.error === "SESSION_QUOTA_EXCEEDED" ? t("quotaExceeded") : props.state.error === "MODEL_UNAVAILABLE" ? t("modelUnavailable") : props.state.error;
   const prompts = aiPrompts(props.language, props.surface);
   const surfaceLabel = props.surface === "landing" ? t("ecosystem") : props.surface === "collection" ? t("collections") : props.surface === "defi" ? "DeFi" : "GameFi";
 
@@ -117,10 +119,10 @@ export default function AIChatPanel(props: Props) {
       {props.state.messages.map((message, index) => <AIMessage key={`${message.role}-${message.createdAt}-${index}`} {...message} streaming={streaming && index === props.state.messages.length - 1 && message.role === "assistant"} language={props.language} />)}
       {!!props.state.tools.length && <section className="banmao-ai-activity" aria-label={t("activity")}><h3><Sparkles size={14} /> {t("activityTitle")}</h3>{props.state.tools.map((tool) => <ToolCard tool={tool} language={props.language} key={`${tool.callId}:${tool.status}`} />)}</section>}
       {props.state.collectionResults && <CollectionResultCards payload={props.state.collectionResults} language={props.language} />}
-      {!!props.state.citations.length && <aside className="banmao-ai-citations"><h3>{t("sources")} <span>{props.state.citations.length}</span></h3><div>{props.state.citations.map((citation, index) => <CitationCard citation={citation} index={index} key={`${citation.sourcePath}:${citation.version || ""}`} />)}</div></aside>}
+      {!!props.state.citations.length && <aside className="banmao-ai-citations"><h3>{t("sources")} <span>{props.state.citations.length}</span></h3><div>{props.state.citations.map((citation, index) => <CitationCard citation={citation} index={index} language={props.language} key={`${citation.sourcePath}:${citation.version || ""}`} />)}</div></aside>}
       {props.pendingAction && <PageActionCard action={props.pendingAction} language={props.language} onConfirm={props.confirmAction} onCancel={props.cancelAction} />}
       {props.actionNotice && <p className="banmao-ai-action-notice" role="status">{props.actionNotice}</p>}
-      {props.state.error && <div className="banmao-ai-error" role="alert"><span><CircleAlert size={18} /></span><div><strong>{t("interrupted")}</strong><p>{props.state.error}</p>{props.state.lastPrompt && <button type="button" onClick={props.retry}>{t("again")}</button>}</div></div>}
+      {errorText && <div className="banmao-ai-error" role="alert"><span><CircleAlert size={18} /></span><div><strong>{t("interrupted")}</strong><p>{errorText}</p>{props.state.lastPrompt && <button type="button" onClick={props.retry}>{t("again")}</button>}</div></div>}
     </div>
 
     {showScroll && <button className="banmao-ai-scroll-bottom" type="button" onClick={scrollToBottom} aria-label={t("latest")}><ArrowDown size={17} /></button>}
@@ -132,7 +134,8 @@ export default function AIChatPanel(props: Props) {
         <textarea ref={inputRef} id="banmao-ai-input" maxLength={8000} rows={1} required value={props.input} disabled={streaming} placeholder={streaming ? t("responding") : t("ask")} onFocus={props.onInputFocus} onKeyDown={onKeyDown} onChange={(event) => props.setInput(event.target.value)} />
         <div className="banmao-ai-composer-bar"><ModelSelector models={props.state.models} language={props.language} value={props.state.model} onChange={props.selectModel} disabled={streaming} />{props.input.length > 7000 && <span className="banmao-ai-count">{props.input.length}/8000</span>}<span className="banmao-ai-composer-hint">{t("sendHint")}</span>{streaming ? <button className="banmao-ai-stop" type="button" onClick={props.stop} aria-label={t("stop")}><Square size={13} fill="currentColor" /></button> : <button className="banmao-ai-send" disabled={!props.input.trim()} aria-label={t("send")}><ArrowUp size={17} /></button>}</div>
       </form>
-      <p className="banmao-ai-disclaimer"><ShieldCheck size={12} /> {t("context")}: {props.optIn ? `${props.memoryTurns} ${t("turns")}` : t("off")} · {t("review")}</p>
+      <p className="banmao-ai-disclaimer"><ShieldCheck size={12} /> {t("localHistory")}: {props.optIn ? `${props.memoryTurns} ${t("storedMessages")} · ${t("persistenceOn")}` : t("persistenceOff")} · {t("review")}</p>
+      {props.persistenceError && <p className="banmao-ai-disclaimer" role="status"><CircleAlert size={12} /> {t("persistenceWarning")}</p>}
       <PrivacyControls language={props.language} optIn={props.optIn} onOptIn={props.setOptIn} mascotVisible={props.mascotVisible} onMascotVisible={props.setMascotVisible} reducedMotion={props.reducedMotion} onReducedMotion={props.setReducedMotion} onClear={props.clear} onExport={props.exportData} />
       {props.children}
     </footer>
