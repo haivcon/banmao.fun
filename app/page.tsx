@@ -2527,6 +2527,7 @@ export default function BanmaoWebsite() {
         setLangState(newLang);
         if (typeof window !== "undefined") {
             localStorage.setItem("banmao_language", newLang);
+            window.dispatchEvent(new CustomEvent<Language>("banmao:language-change", { detail: newLang }));
         }
     }, []);
 
