@@ -29,8 +29,9 @@ test("collection search preserves deterministic fuzzy scoring and bounded result
   expect(fetcher).toHaveBeenCalled();
   expect(fetcher.mock.calls[0][0]).toBe("https://api.cloudinary.com/v1_1/demo-cloud/resources/search");
   const expressions = fetcher.mock.calls.map((call) => JSON.parse(String(call[1]?.body)).expression as string);
-  expect(expressions.join(" ")).toContain("public_id:*cute*");
-  expect(expressions.join(" ")).toContain("tags=cute");
+  expect(expressions.join(" ")).toContain("filename:cute");
+  expect(expressions.join(" ")).not.toContain("public_id:");
+  expect(expressions.join(" ")).not.toContain("tags=");
   expect(expressions.every((expression) => expression.startsWith("resource_type:image AND folder:banmao* AND ("))).toBe(true);
 });
 
@@ -49,22 +50,22 @@ test("searches bounded expanded-term batches across the Cloudinary index and ded
   expect(fetcher.mock.calls.length).toBeLessThanOrEqual(3);
   expect(requests.every((request) => request.max_results === 100)).toBe(true);
   expect(requests.every((request) => typeof request.expression === "string" && !request.expression.includes("folder:banmao"))).toBe(true);
-  expect(requests.map((request) => request.expression).join(" ")).toContain("public_id:*cyberpunk*");
-  expect(requests.map((request) => request.expression).join(" ")).toContain("tags=cyberpunk");
+  expect(requests.map((request) => request.expression).join(" ")).toContain("filename:cyberpunk");
+  expect(requests.map((request) => request.expression).join(" ")).not.toContain("tags=");
   expect(result.results.map((item) => item.public_id)).toEqual(["deep/Cyberpunk_Neon_Cat"]);
 });
 
-test("falls back to bounded public_id index queries when metadata field syntax is rejected", async () => {
+test("uses the proven tokenized filename field for Vietnamese aliases", async () => {
   const fetcher = jest.fn(async (_url: string | URL | Request, init?: RequestInit) => {
     const expression = JSON.parse(String(init?.body)).expression as string;
-    if (expression.includes("tags=") || expression.includes("context:")) return new Response("unsupported field", { status: 400 });
+    if (!expression.includes("filename:happy")) return new Response("unexpected expression", { status: 400 });
     return new Response(JSON.stringify({ resources: [{ ...resource, public_id: "archive/Happy_Smile" }] }), { status: 200 });
   });
 
   const result = await readCollectionSearch({ query: "vui", limit: 10 }, { cloudinaryUrl, fetch: fetcher });
   const expressions = fetcher.mock.calls.map((call) => JSON.parse(String(call[1]?.body)).expression as string);
-  expect(expressions.some((expression) => expression.includes("tags=happy"))).toBe(true);
-  expect(expressions.some((expression) => expression.includes("public_id:*happy*") && !expression.includes("tags=") && !expression.includes("context:"))).toBe(true);
+  expect(expressions.some((expression) => expression.includes("filename:happy"))).toBe(true);
+  expect(expressions.every((expression) => !expression.includes("public_id:") && !expression.includes("tags=") && !expression.includes("context:"))).toBe(true);
   expect(expressions.every((expression) => !expression.includes("folder:banmao"))).toBe(true);
   expect(result.results.map((item) => item.public_id)).toEqual(["archive/Happy_Smile"]);
 });
@@ -74,7 +75,7 @@ function collectionFetcher(resources: Array<Record<string, unknown>>) {
 }
 
 test.each([
-  ["Tìm ảnh Banmao vui vẻ", "banmao/Happy_Smile"],
+  ["Tìm ảnh Banmao vui vẻ", "1001_Happy_Smile_1"],
   ["cyberpunk", "banmao/Cyberpunk_City"],
 ] as const)("metadata search maps %s to relevant filename vocabulary", async (query, expectedId) => {
   const fetcher = collectionFetcher([
@@ -84,13 +85,14 @@ test.each([
   const result = await readCollectionSearch({ query, limit: 10 }, { cloudinaryUrl, fetch: fetcher });
   expect(result).toMatchObject({ searchMode: "metadata", results: [{ public_id: expectedId, matchedTerms: expect.any(Array), matchReason: expect.any(String), searchMode: "metadata" }] });
   const expressions = fetcher.mock.calls.map((call) => JSON.parse(String(call[1]?.body)).expression as string);
-  expect(expressions.join(" ")).toContain(`public_id:*${query === "cyberpunk" ? "cyberpunk" : "happy"}*`);
+  expect(expressions.join(" ")).toContain(`filename:${query === "cyberpunk" ? "cyberpunk" : "happy"}`);
   expect(expressions.every((expression) => !expression.includes("folder:banmao"))).toBe(true);
 });
 
 test("Vietnamese mèo đội mũ matches cat/hat metadata without transliteration false positives", async () => {
   const fetcher = collectionFetcher([
     { ...resource, public_id: "banmao/Cat_Wearing_Hat" },
+    { ...resource, public_id: "banmao/Cat_Habit" },
     { ...resource, public_id: "banmao/Red_Moon" },
     { ...resource, public_id: "banmao/Do_It" },
   ]);
@@ -118,7 +120,14 @@ test("explicit folder is preserved while omitted folder searches broadly", async
   await readCollectionSearch({ query: "happy", folder: "other", limit: 10 }, { cloudinaryUrl, fetch: fetcher });
   const request = JSON.parse(String(fetcher.mock.calls[0][1]?.body));
   expect(request.expression).toContain("resource_type:image AND folder:other* AND (");
-  expect(request.expression).toContain("public_id:*happy*");
+  expect(request.expression).toContain("filename:happy");
+});
+
+test("stopword-only search returns safely without sending an empty Cloudinary group", async () => {
+  const fetcher = jest.fn();
+  const result = await readCollectionSearch({ query: "find the images", limit: 10 }, { cloudinaryUrl, fetch: fetcher });
+  expect(result.results).toEqual([]);
+  expect(fetcher).not.toHaveBeenCalled();
 });
 
 test("collection readers reject invalid bounded arguments", async () => {
