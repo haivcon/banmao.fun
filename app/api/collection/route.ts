@@ -65,6 +65,11 @@ const SUMMARY_TTL_MS = 10 * 60 * 1000;
 type ProviderSummary = { total: number; totalOriginalBytes: number; folders: string[] };
 const summaryCache = new Map<string, { expiresAt: number; value: Promise<ProviderSummary> }>();
 
+export function collectionSearchExpression(folder: string): string {
+    const renderableResources = "resource_type:image OR resource_type:video";
+    return folder ? `(${renderableResources}) AND folder:${folder}*` : renderableResources;
+}
+
 async function getProviderSummary({ expression, searchUrl, authHeader }: {
     expression: string;
     searchUrl: string;
@@ -117,7 +122,7 @@ export async function GET(request: Request) {
         const summaryOnly = searchParams.get("summary") === "true";
 
         const { apiKey, apiSecret, cloudName } = parseCloudinaryUrl();
-        const expression = folder ? `folder:${folder}*` : "resource_type:image";
+        const expression = collectionSearchExpression(folder);
         const searchUrl = `https://api.cloudinary.com/v1_1/${cloudName}/resources/search`;
         const authHeader = "Basic " + Buffer.from(`${apiKey}:${apiSecret}`).toString("base64");
 
