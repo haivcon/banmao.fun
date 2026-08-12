@@ -34,12 +34,36 @@ test("three cursor pages append without duplicate public IDs and preserve provid
     expect(pages.at(-1)?.total).toBe(5);
 });
 
+test("Collection metadata requests use the approved 500 item batch", () => {
+    expect(COLLECTION_PAGE_SIZE).toBe(500);
+    expect(Math.ceil(3893 / COLLECTION_PAGE_SIZE)).toBe(8);
+});
+
+test("3,893 unique items drain in eight sequential 500-item cursor pages", async () => {
+    const pages = Array.from({ length: 8 }, (_, pageIndex) => ({
+        images: Array.from({ length: Math.min(500, 3893 - pageIndex * 500) }, (_, itemIndex) => item(`item-${pageIndex * 500 + itemIndex}`)),
+        total: 3893,
+        nextCursor: pageIndex < 7 ? `cursor-${pageIndex + 1}` : null,
+    }));
+    let inventory: Item[] = [];
+    const fetchPage = jest.fn(async (cursor: string | null) => pages[cursor ? Number(cursor.split("-")[1]) : 0]);
+    const result = await drainCollectionCursorPages({
+        fetchPage,
+        getNextCursor: page => page.nextCursor,
+        appendPage: page => { inventory = appendCollectionBatch(inventory, page.images, "name", 1); },
+        isCurrent: () => true,
+    });
+    expect(fetchPage).toHaveBeenCalledTimes(8);
+    expect(inventory).toHaveLength(3893);
+    expect(new Set(inventory.map(value => value.publicId)).size).toBe(3893);
+    expect(result).toEqual({ exhausted: true, stale: false, nextCursor: null });
+});
+
 test("a requested page beyond the loaded prefix keeps requesting bounded pages", () => {
-    expect(COLLECTION_PAGE_SIZE).toBe(36);
-    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: COLLECTION_PAGE_SIZE, loaded: 36, hasMore: true })).toBe(true);
-    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: COLLECTION_PAGE_SIZE, loaded: 108, hasMore: true })).toBe(true);
-    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: COLLECTION_PAGE_SIZE, loaded: 144, hasMore: true })).toBe(false);
-    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: COLLECTION_PAGE_SIZE, loaded: 108, hasMore: false })).toBe(false);
+    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: COLLECTION_PAGE_SIZE, loaded: 500, hasMore: true })).toBe(true);
+    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: COLLECTION_PAGE_SIZE, loaded: 1500, hasMore: true })).toBe(true);
+    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: COLLECTION_PAGE_SIZE, loaded: 2000, hasMore: true })).toBe(false);
+    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: COLLECTION_PAGE_SIZE, loaded: 1500, hasMore: false })).toBe(false);
 });
 
 test("cursor requester shares an in-flight prefetch and does not request a page twice", async () => {
@@ -152,13 +176,13 @@ test("provider summary keeps complete original bytes independent from the loaded
 test("infinite prefix loading reaches deterministic cursor exhaustion", () => {
     let loaded = 0;
     let hasMore = true;
-    const pageSizes = [36, 36, 13];
+    const pageSizes = [500, 500, 13];
     let requests = 0;
     while (shouldLoadCollectionPrefix({ requestedPage: requests + 1, pageSize: COLLECTION_PAGE_SIZE, loaded, hasMore })) {
         loaded += pageSizes[requests++];
         hasMore = requests < pageSizes.length;
     }
-    expect({ loaded, hasMore, requests }).toEqual({ loaded: 85, hasMore: false, requests: 3 });
+    expect({ loaded, hasMore, requests }).toEqual({ loaded: 1013, hasMore: false, requests: 3 });
 });
 
 test("all six Collection locales have parity for provider and pagination status keys", async () => {

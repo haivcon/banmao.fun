@@ -38,6 +38,21 @@ import {
 import { filterSmartCollection, isSmartCollection, SMART_COLLECTION_IDS } from "./smartCollections";
 import { COLLECTION_PAGE_SIZE, collectionCountSummary, createCursorPageRequester, drainCollectionCursorPages } from "./collectionPagination";
 import { loadOpenedCollectionImage } from "./collectionImageCache";
+import {
+    createCollectionInventoryEntry,
+    normalizeCollectionInventoryScope,
+    persistCompleteCollectionInventory,
+    readCollectionInventory,
+    type CollectionInventoryEntry,
+} from "./collectionInventoryCache";
+import {
+    calculateCollectionRowHeight,
+    calculateCollectionVirtualWindow,
+    collectionGridGap,
+    COLLECTION_VIRTUAL_OVERSCAN_ROWS,
+    resolveCollectionColumns,
+    sliceCollectionVirtualWindow,
+} from "./collectionVirtualization";
 import { requestAIChatOpen } from "../../lib/ai/client/openContract";
 
 // Dynamic imports — modals are loaded on-demand, not in the initial bundle
@@ -105,6 +120,7 @@ interface CollectionPageData {
 
 const ITEMS_PER_PAGE_DESKTOP = COLLECTION_PAGE_SIZE;
 const ITEMS_PER_PAGE_MOBILE = COLLECTION_PAGE_SIZE;
+const COLLECTION_INVENTORY_SCOPE = normalizeCollectionInventoryScope({ folder: "banmao", resourceTypes: ["image", "video"] });
 
 function useIsMobile() {
     const [isMobile, setIsMobile] = useState(false);
@@ -553,6 +569,8 @@ export default function CollectionPage() {
     const lastScrollY = useRef(0);
     const hubLoadMoreRef = useRef<HTMLDivElement>(null);
     const lightboxRef = useRef<HTMLDivElement>(null);
+    const collectionGridRef = useRef<HTMLDivElement>(null);
+    const collectionVirtualFrameRef = useRef<number | null>(null);
     const lightboxReturnFocusRef = useRef<HTMLElement | null>(null);
     const [showStats, setShowStats] = useState(false);
     const hasOpenedDeepLink = useRef(false);
@@ -564,6 +582,12 @@ export default function CollectionPage() {
     const [downloadingZip, setDownloadingZip] = useState(false);
     const [lightboxMediaUrl, setLightboxMediaUrl] = useState<string | null>(null);
     const [imageCacheStatus, setImageCacheStatus] = useState<"idle" | "ready" | "fallback">("idle");
+    const [collectionViewport, setCollectionViewport] = useState({
+        containerWidth: 0,
+        viewportHeight: 0,
+        scrollTop: 0,
+        gridTop: 0,
+    });
 
     // ——— Lightbox Zoom State ———
     const [zoomScale, setZoomScale] = useState(1);
@@ -910,6 +934,7 @@ export default function CollectionPage() {
     const [hasMoreCollection, setHasMoreCollection] = useState(true);
     const [collectionPageLoading, setCollectionPageLoading] = useState(false);
     const [collectionLoadError, setCollectionLoadError] = useState(false);
+    const [collectionCacheStatus, setCollectionCacheStatus] = useState<"network" | "cached" | "syncing" | "fallback">("network");
 
     const requestCollectionPage = useMemo(() => createCursorPageRequester(async (cursor: string | null): Promise<CollectionPageData> => {
         const params = new URLSearchParams({ folder: "banmao", limit: String(COLLECTION_PAGE_SIZE) });
@@ -920,42 +945,78 @@ export default function CollectionPage() {
     }), []);
 
 
-    const appendCollectionPage = useCallback((data: CollectionPageData) => {
+    const applyCollectionInventory = useCallback((entry: CollectionInventoryEntry) => {
+        collectionItemsRef.current = entry.items;
+        collectionTotalRef.current = entry.total;
+        nextCursorRef.current = null;
+        setAllImages(entry.items);
+        setTotalBytes(entry.totalOriginalBytes);
+        setLoadProgress({ loaded: entry.items.length, total: entry.total });
+        setHasMoreCollection(false);
+        setLoading(false);
+    }, [setAllImages, setLoading, setTotalBytes]);
+
+    const appendCollectionPage = useCallback((current: ImageItem[], data: CollectionPageData) => {
         const batchItems = (data.images || [])
             .map(mapRawToItem)
             .filter((item: ImageItem | null): item is ImageItem => item !== null);
-        collectionItemsRef.current = appendCollectionBatch(
-            collectionItemsRef.current,
+        return appendCollectionBatch(
+            current,
             batchItems,
             sortByRef.current,
             randomSeedRef.current,
         );
-        collectionTotalRef.current = data.total || collectionTotalRef.current || collectionItemsRef.current.length;
-        nextCursorRef.current = data.nextCursor || null;
-        setAllImages(collectionItemsRef.current);
-        if (typeof data.totalOriginalBytes === "number") setTotalBytes(data.totalOriginalBytes);
-        setLoadProgress({ loaded: collectionItemsRef.current.length, total: collectionTotalRef.current });
-        setHasMoreCollection(Boolean(nextCursorRef.current));
-    }, [mapRawToItem, setAllImages, setTotalBytes]);
+    }, [mapRawToItem]);
 
-    const loadCompleteCollection = useCallback(async (generation: number, initialCursor: string | null) => {
+    const loadCompleteCollection = useCallback(async (generation: number, initialCursor: string | null, preserveVisible = false) => {
         if (collectionFetchRef.current?.generation === generation) return collectionFetchRef.current.promise;
         const task = (async () => {
+            let refreshItems: ImageItem[] = preserveVisible ? [] : collectionItemsRef.current;
+            let refreshTotal = preserveVisible ? 0 : collectionTotalRef.current;
+            let refreshBytes = 0;
             setCollectionPageLoading(true);
             setCollectionLoadError(false);
+            if (preserveVisible) setCollectionCacheStatus("syncing");
             try {
-                await drainCollectionCursorPages({
+                const result = await drainCollectionCursorPages({
                     fetchPage: requestCollectionPage,
                     getNextCursor: page => page.nextCursor || null,
                     appendPage: page => {
-                        appendCollectionPage(page);
-                        setLoading(false);
+                        refreshItems = appendCollectionPage(refreshItems, page);
+                        refreshTotal = page.total || refreshTotal || refreshItems.length;
+                        if (typeof page.totalOriginalBytes === "number") refreshBytes = page.totalOriginalBytes;
+                        if (!preserveVisible) {
+                            collectionItemsRef.current = refreshItems;
+                            collectionTotalRef.current = refreshTotal;
+                            nextCursorRef.current = page.nextCursor || null;
+                            setAllImages(refreshItems);
+                            setTotalBytes(refreshBytes);
+                            setLoadProgress({ loaded: refreshItems.length, total: refreshTotal });
+                            setHasMoreCollection(Boolean(nextCursorRef.current));
+                            setLoading(false);
+                        }
                     },
                     isCurrent: () => collectionGenerationRef.current === generation,
                     initialCursor,
                 });
+                const completed = await persistCompleteCollectionInventory({
+                    exhausted: result.exhausted && !result.stale,
+                    isCurrent: () => collectionGenerationRef.current === generation,
+                    entry: () => createCollectionInventoryEntry({
+                        scopeKey: COLLECTION_INVENTORY_SCOPE,
+                        total: refreshTotal,
+                        totalOriginalBytes: refreshBytes,
+                        items: refreshItems,
+                    }),
+                });
+                if (!completed.entry) return;
+                applyCollectionInventory(completed.entry);
+                setCollectionCacheStatus(completed.persisted ? "cached" : "network");
             } catch (error) {
-                if (collectionGenerationRef.current === generation) setCollectionLoadError(true);
+                if (collectionGenerationRef.current === generation) {
+                    setCollectionLoadError(true);
+                    if (preserveVisible) setCollectionCacheStatus("fallback");
+                }
                 throw error;
             } finally {
                 if (collectionFetchRef.current?.generation === generation) collectionFetchRef.current = null;
@@ -967,17 +1028,32 @@ export default function CollectionPage() {
         })();
         collectionFetchRef.current = { generation, promise: task };
         return task;
-    }, [appendCollectionPage, requestCollectionPage, setLoading]);
+    }, [appendCollectionPage, applyCollectionInventory, requestCollectionPage, setAllImages, setLoading, setTotalBytes]);
 
     useEffect(() => {
         const generation = collectionGenerationRef.current + 1;
         collectionGenerationRef.current = generation;
-        collectionItemsRef.current = [];
         nextCursorRef.current = null;
         setCollectionLoadError(false);
 
-        void loadCompleteCollection(generation, null).catch((err) => {
-            console.error("Failed to fetch images:", err);
+        void readCollectionInventory(COLLECTION_INVENTORY_SCOPE).then((cached) => {
+            if (collectionGenerationRef.current !== generation) return;
+            const hasCachedInventory = Boolean(cached);
+            if (cached) {
+                applyCollectionInventory(cached);
+                setCollectionCacheStatus("cached");
+            } else {
+                collectionItemsRef.current = [];
+                collectionTotalRef.current = 0;
+                setAllImages([]);
+                setTotalBytes(0);
+                setLoadProgress(null);
+                setHasMoreCollection(true);
+                setCollectionCacheStatus("network");
+            }
+            return loadCompleteCollection(generation, null, hasCachedInventory).catch((err) => {
+                console.error("Failed to fetch images:", err);
+            });
         });
 
         fetch("/api/collection?folder=banmao&folders_only=true").then(async (res) => {
@@ -993,7 +1069,7 @@ export default function CollectionPage() {
         return () => {
             if (collectionGenerationRef.current === generation) collectionGenerationRef.current += 1;
         };
-    }, [loadCompleteCollection, setFolders, sortFolders]);
+    }, [applyCollectionInventory, loadCompleteCollection, setFolders, sortFolders]);
 
 
 
@@ -1413,6 +1489,62 @@ export default function CollectionPage() {
     const displayImages = isInfinite
         ? filteredImages
         : filteredImages.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    const virtualColumns = resolveCollectionColumns(collectionViewport.containerWidth || (isMobile ? 640 : 1200), gridCols);
+    const virtualWindow = useMemo(() => calculateCollectionVirtualWindow({
+        itemCount: filteredImages.length,
+        columns: virtualColumns,
+        rowHeight: calculateCollectionRowHeight(collectionViewport.containerWidth || (isMobile ? 640 : 1200), virtualColumns),
+        viewportHeight: collectionViewport.viewportHeight,
+        scrollTop: collectionViewport.scrollTop,
+        gridTop: collectionViewport.gridTop,
+        overscanRows: COLLECTION_VIRTUAL_OVERSCAN_ROWS,
+    }), [collectionViewport, filteredImages.length, isMobile, virtualColumns]);
+    const renderedImages = isInfinite
+        ? sliceCollectionVirtualWindow(filteredImages, virtualWindow)
+        : displayImages;
+
+    useEffect(() => {
+        if (!isInfinite || viewMode !== "gallery") return;
+        const grid = collectionGridRef.current;
+        if (!grid) return;
+
+        const measure = () => {
+            collectionVirtualFrameRef.current = null;
+            const rect = grid.getBoundingClientRect();
+            setCollectionViewport(current => {
+                const next = {
+                    containerWidth: rect.width,
+                    viewportHeight: window.innerHeight,
+                    scrollTop: window.scrollY,
+                    gridTop: rect.top + window.scrollY,
+                };
+                return current.containerWidth === next.containerWidth
+                    && current.viewportHeight === next.viewportHeight
+                    && current.scrollTop === next.scrollTop
+                    && current.gridTop === next.gridTop
+                    ? current
+                    : next;
+            });
+        };
+        const scheduleMeasure = () => {
+            if (collectionVirtualFrameRef.current !== null) return;
+            collectionVirtualFrameRef.current = window.requestAnimationFrame(measure);
+        };
+        const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(scheduleMeasure);
+        resizeObserver?.observe(grid);
+        window.addEventListener("scroll", scheduleMeasure, { passive: true });
+        window.addEventListener("resize", scheduleMeasure, { passive: true });
+        scheduleMeasure();
+        return () => {
+            resizeObserver?.disconnect();
+            window.removeEventListener("scroll", scheduleMeasure);
+            window.removeEventListener("resize", scheduleMeasure);
+            if (collectionVirtualFrameRef.current !== null) {
+                window.cancelAnimationFrame(collectionVirtualFrameRef.current);
+                collectionVirtualFrameRef.current = null;
+            }
+        };
+    }, [activeTab, filteredImages.length, gridCols, isInfinite, searchQuery, sortBy, typeFilter, viewMode]);
 
     // Reset on tab/search change
     const handleTabChange = useCallback((tab: string) => {
@@ -2568,6 +2700,11 @@ export default function CollectionPage() {
                                     {" "}<span style={{ fontSize: "13px", opacity: 0.5 }}>({countSummary.primary})</span>
                                 </h2>
                                 <p className="col-section-desc">{t.loadedOfTotal.replace("{loaded}", String(countSummary.loaded)).replace("{total}", String(loadProgress?.total || countSummary.primary))} · {t.networkLoadedNote}</p>
+                                {collectionCacheStatus !== "network" && (
+                                    <p className="col-section-desc" role="status">
+                                        {collectionCacheStatus === "syncing" ? t.collectionSyncing : collectionCacheStatus === "fallback" ? t.collectionSyncFailed : t.collectionCached}
+                                    </p>
+                                )}
                                 {totalPages > 1 && (
                                     <p className="col-section-desc">{t.page} {currentPage} / {totalPages}</p>
                                 )}
@@ -2639,14 +2776,29 @@ export default function CollectionPage() {
                             </div>
                         ) : displayImages.length > 0 ? (
                             <>
-                                <div className="col-grid" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
-                                    {displayImages.map((img, index) => (
+                                <div
+                                    ref={collectionGridRef}
+                                    className={isInfinite ? "col-grid-virtual" : "col-grid"}
+                                    style={isInfinite ? undefined : { gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}
+                                >
+                                    {isInfinite && virtualWindow.topSpacerHeight > 0 && (
+                                        <div className="col-grid-spacer" style={{ height: virtualWindow.topSpacerHeight }} aria-hidden="true" />
+                                    )}
+                                    <div
+                                        className={isInfinite ? "col-grid col-grid-window" : "col-grid-contents"}
+                                        style={isInfinite ? {
+                                            gridTemplateColumns: `repeat(${virtualColumns}, 1fr)`,
+                                            gap: collectionGridGap(collectionViewport.containerWidth || (isMobile ? 640 : 1200)),
+                                            paddingBottom: collectionGridGap(collectionViewport.containerWidth || (isMobile ? 640 : 1200)),
+                                        } : undefined}
+                                    >
+                                    {renderedImages.map((img, index) => (
                                         <ImageCard
                                             key={collectionItemKey(img)}
                                             img={img}
-                                            index={index}
-                                            gridCols={gridCols}
-                                            unloadOffscreen={isInfinite && displayImages.length > COLLECTION_PAGE_SIZE * 4}
+                                            index={(isInfinite ? virtualWindow.startIndex : 0) + index}
+                                            gridCols={isInfinite ? virtualColumns : gridCols}
+                                            unloadOffscreen={false}
                                             t={t}
                                             lang={lang}
                                             onOpen={openLightbox}
@@ -2665,6 +2817,10 @@ export default function CollectionPage() {
                                             searchQuery={searchQuery}
                                         />
                                     ))}
+                                    </div>
+                                    {isInfinite && virtualWindow.bottomSpacerHeight > 0 && (
+                                        <div className="col-grid-spacer" style={{ height: virtualWindow.bottomSpacerHeight }} aria-hidden="true" />
+                                    )}
                                 </div>
 
                                 {/* Cursor loading progress */}
@@ -2698,7 +2854,7 @@ export default function CollectionPage() {
                                         <button type="button" onClick={() => {
                                             setCollectionLoadError(false);
                                             const generation = collectionGenerationRef.current;
-                                            void loadCompleteCollection(generation, collectionItemsRef.current.length === 0 ? null : nextCursorRef.current)
+                                            void loadCompleteCollection(generation, collectionItemsRef.current.length === 0 ? null : nextCursorRef.current, collectionCacheStatus !== "network")
                                                 .catch((error) => console.error("Failed to retry Collection loading:", error));
                                         }}>{t.retryCollection}</button>
                                     </div>
