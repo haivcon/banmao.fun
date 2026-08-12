@@ -29,6 +29,30 @@ export function createCursorPageRequester<T>(fetchPage: (cursor: string | null) 
     };
 }
 
+export async function drainCollectionCursorPages<T>({
+    fetchPage,
+    getNextCursor,
+    appendPage,
+    isCurrent,
+    initialCursor = null,
+}: {
+    fetchPage: (cursor: string | null) => Promise<T>;
+    getNextCursor: (page: T) => string | null;
+    appendPage: (page: T) => void;
+    isCurrent: () => boolean;
+    initialCursor?: string | null;
+}) {
+    let cursor = initialCursor;
+    while (isCurrent()) {
+        const page = await fetchPage(cursor);
+        if (!isCurrent()) return { exhausted: false, stale: true, nextCursor: cursor };
+        appendPage(page);
+        cursor = getNextCursor(page);
+        if (!cursor) return { exhausted: true, stale: false, nextCursor: null };
+    }
+    return { exhausted: false, stale: true, nextCursor: cursor };
+}
+
 export function collectionCountSummary({ total, loaded, matches, filtered }: {
     total: number;
     loaded: number;
@@ -39,5 +63,21 @@ export function collectionCountSummary({ total, loaded, matches, filtered }: {
         primary: filtered ? matches : total,
         loaded,
         matches: filtered ? matches : loaded,
+    };
+}
+
+export function collectionProviderSummary(pages: Array<{
+    resources?: Array<{ bytes?: number }>;
+    total_count?: number;
+}>) {
+    return {
+        total: pages[0]?.total_count || 0,
+        totalOriginalBytes: pages.reduce(
+            (pageTotal, page) => pageTotal + (page.resources || []).reduce(
+                (resourceTotal, resource) => resourceTotal + (resource.bytes || 0),
+                0,
+            ),
+            0,
+        ),
     };
 }

@@ -36,7 +36,8 @@ import {
     toCloudinaryThumb,
 } from "./collectionMedia";
 import { filterSmartCollection, isSmartCollection, SMART_COLLECTION_IDS } from "./smartCollections";
-import { COLLECTION_PAGE_SIZE, collectionCountSummary, createCursorPageRequester, shouldLoadCollectionPrefix } from "./collectionPagination";
+import { COLLECTION_PAGE_SIZE, collectionCountSummary, createCursorPageRequester, drainCollectionCursorPages } from "./collectionPagination";
+import { loadOpenedCollectionImage } from "./collectionImageCache";
 import { requestAIChatOpen } from "../../lib/ai/client/openContract";
 
 // Dynamic imports — modals are loaded on-demand, not in the initial bundle
@@ -98,6 +99,7 @@ interface CollectionPageData {
         context?: Record<string, string>;
     }>;
     total?: number;
+    totalOriginalBytes?: number;
     nextCursor?: string | null;
 }
 
@@ -539,8 +541,8 @@ export default function CollectionPage() {
     const collectionItemsRef = useRef<ImageItem[]>([]);
     const previousSortRef = useRef<CollectionSort>(sortBy);
     const nextCursorRef = useRef<string | null>(null);
-    const prefetchedPageRef = useRef<{ cursor: string; data: CollectionPageData } | null>(null);
-    const collectionFetchRef = useRef<Promise<void> | null>(null);
+    const collectionFetchRef = useRef<{ generation: number; promise: Promise<void> } | null>(null);
+    const collectionGenerationRef = useRef(0);
     const collectionTotalRef = useRef(0);
     const urlStateReadyRef = useRef(false);
     const touchStartX = useRef(0);
@@ -560,6 +562,8 @@ export default function CollectionPage() {
     const [selectMode, setSelectMode] = useState(false);
     const [selectedFavorites, setSelectedFavorites] = useState<Set<string>>(new Set());
     const [downloadingZip, setDownloadingZip] = useState(false);
+    const [lightboxMediaUrl, setLightboxMediaUrl] = useState<string | null>(null);
+    const [imageCacheStatus, setImageCacheStatus] = useState<"idle" | "ready" | "fallback">("idle");
 
     // ——— Lightbox Zoom State ———
     const [zoomScale, setZoomScale] = useState(1);
@@ -901,7 +905,7 @@ export default function CollectionPage() {
         return uniqueFolders;
     }, []);
 
-    // ——— On-demand cursor pagination ———
+    // ——— Complete cursor inventory loading ———
     const [loadProgress, setLoadProgress] = useState<{ loaded: number; total: number } | null>(null);
     const [hasMoreCollection, setHasMoreCollection] = useState(true);
     const [collectionPageLoading, setCollectionPageLoading] = useState(false);
@@ -915,13 +919,6 @@ export default function CollectionPage() {
         return res.json() as Promise<CollectionPageData>;
     }), []);
 
-    const prefetchNextCollectionPage = useCallback(() => {
-        const cursor = nextCursorRef.current;
-        if (!cursor || prefetchedPageRef.current?.cursor === cursor) return;
-        void requestCollectionPage(cursor)
-            .then((data) => { prefetchedPageRef.current = { cursor, data }; })
-            .catch((err) => console.error("Failed to prefetch collection page:", err));
-    }, [requestCollectionPage]);
 
     const appendCollectionPage = useCallback((data: CollectionPageData) => {
         const batchItems = (data.images || [])
@@ -936,80 +933,67 @@ export default function CollectionPage() {
         collectionTotalRef.current = data.total || collectionTotalRef.current || collectionItemsRef.current.length;
         nextCursorRef.current = data.nextCursor || null;
         setAllImages(collectionItemsRef.current);
-        setTotalBytes(collectionItemsRef.current.reduce((sum, item) => sum + item.bytes, 0));
+        if (typeof data.totalOriginalBytes === "number") setTotalBytes(data.totalOriginalBytes);
         setLoadProgress({ loaded: collectionItemsRef.current.length, total: collectionTotalRef.current });
         setHasMoreCollection(Boolean(nextCursorRef.current));
     }, [mapRawToItem, setAllImages, setTotalBytes]);
 
-    const fetchNextCollectionPage = useCallback(async () => {
-        const cursor = nextCursorRef.current;
-        if (!cursor || collectionFetchRef.current) return collectionFetchRef.current;
+    const loadCompleteCollection = useCallback(async (generation: number, initialCursor: string | null) => {
+        if (collectionFetchRef.current?.generation === generation) return collectionFetchRef.current.promise;
         const task = (async () => {
             setCollectionPageLoading(true);
             setCollectionLoadError(false);
             try {
-                const prefetched = prefetchedPageRef.current?.cursor === cursor
-                    ? prefetchedPageRef.current.data
-                    : await requestCollectionPage(cursor);
-                if (prefetchedPageRef.current?.cursor === cursor) prefetchedPageRef.current = null;
-                appendCollectionPage(prefetched);
+                await drainCollectionCursorPages({
+                    fetchPage: requestCollectionPage,
+                    getNextCursor: page => page.nextCursor || null,
+                    appendPage: page => {
+                        appendCollectionPage(page);
+                        setLoading(false);
+                    },
+                    isCurrent: () => collectionGenerationRef.current === generation,
+                    initialCursor,
+                });
             } catch (error) {
-                setCollectionLoadError(true);
+                if (collectionGenerationRef.current === generation) setCollectionLoadError(true);
                 throw error;
             } finally {
-                collectionFetchRef.current = null;
-                setCollectionPageLoading(false);
+                if (collectionFetchRef.current?.generation === generation) collectionFetchRef.current = null;
+                if (collectionGenerationRef.current === generation) {
+                    setCollectionPageLoading(false);
+                    setLoading(false);
+                }
             }
         })();
-        collectionFetchRef.current = task;
+        collectionFetchRef.current = { generation, promise: task };
         return task;
-    }, [appendCollectionPage, requestCollectionPage]);
-
-    const loadCollectionThroughPage = useCallback(async (requestedPage: number) => {
-        try {
-            if (collectionFetchRef.current) await collectionFetchRef.current;
-            while (shouldLoadCollectionPrefix({
-                requestedPage,
-                pageSize: itemsPerPage,
-                loaded: collectionItemsRef.current.length,
-                hasMore: Boolean(nextCursorRef.current),
-            })) await fetchNextCollectionPage();
-        } catch (error) {
-            console.error("Failed to load Collection page:", error);
-        }
-    }, [fetchNextCollectionPage, itemsPerPage]);
+    }, [appendCollectionPage, requestCollectionPage, setLoading]);
 
     useEffect(() => {
-        let cancelled = false;
+        const generation = collectionGenerationRef.current + 1;
+        collectionGenerationRef.current = generation;
         collectionItemsRef.current = [];
-        prefetchedPageRef.current = null;
         nextCursorRef.current = null;
         setCollectionLoadError(false);
 
-        requestCollectionPage(null).then((firstPage) => {
-            if (cancelled) return;
-            appendCollectionPage(firstPage);
-            setLoading(false);
-        }).catch((err) => {
+        void loadCompleteCollection(generation, null).catch((err) => {
             console.error("Failed to fetch images:", err);
-            if (!cancelled) {
-                setCollectionLoadError(true);
-                setLoading(false);
-            }
         });
 
         fetch("/api/collection?folder=banmao&folders_only=true").then(async (res) => {
             if (!res.ok) throw new Error(`Collection folders request failed: ${res.status}`);
             return res.json() as Promise<{ folders?: string[] }>;
         }).then((folderData) => {
-            if (cancelled) return;
+            if (collectionGenerationRef.current !== generation) return;
             setFolders(sortFolders((folderData.folders || []).map((folder) => ({ folder }) as ImageItem)));
         }).catch((err) => {
             console.error("Failed to fetch collection folders:", err);
         });
 
-        return () => { cancelled = true; };
-    }, [appendCollectionPage, requestCollectionPage, setFolders, setLoading, sortFolders]);
+        return () => {
+            if (collectionGenerationRef.current === generation) collectionGenerationRef.current += 1;
+        };
+    }, [loadCompleteCollection, setFolders, sortFolders]);
 
 
 
@@ -1427,35 +1411,8 @@ export default function CollectionPage() {
     const totalPages = Math.max(1, Math.ceil(knownItemCount / itemsPerPage));
     const countSummary = collectionCountSummary({ total: loadProgress?.total || filteredImages.length, loaded: allImages.length, matches: filteredImages.length, filtered: hasClientFilters });
     const displayImages = isInfinite
-        ? filteredImages.slice(0, currentPage * itemsPerPage)
+        ? filteredImages
         : filteredImages.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-    useEffect(() => {
-        if (loading || collectionLoadError || !hasMoreCollection) return;
-        if (currentPage * itemsPerPage <= collectionItemsRef.current.length) return;
-        void loadCollectionThroughPage(currentPage);
-    }, [allImages.length, collectionLoadError, currentPage, hasMoreCollection, itemsPerPage, loadCollectionThroughPage, loading]);
-
-    // Infinite scroll observer setup
-    const observerRef = useRef<IntersectionObserver | null>(null);
-    const loadMoreRef = useCallback((node: HTMLDivElement | null) => {
-        if (loading) return;
-        if (observerRef.current) observerRef.current.disconnect();
-        observerRef.current = new IntersectionObserver(entries => {
-            if (!entries[0].isIntersecting || collectionPageLoading) return;
-            if (currentPage * itemsPerPage < filteredImages.length) {
-                setCurrentPage(prev => prev + 1);
-                return;
-            }
-            if (hasMoreCollection && !collectionLoadError) {
-                const nextPage = currentPage + 1;
-                void loadCollectionThroughPage(nextPage).then(() => {
-                    if (collectionItemsRef.current.length > currentPage * itemsPerPage) setCurrentPage(nextPage);
-                });
-            }
-        }, { rootMargin: "400px" });
-        if (node) observerRef.current.observe(node);
-    }, [collectionLoadError, collectionPageLoading, currentPage, filteredImages.length, hasMoreCollection, itemsPerPage, loadCollectionThroughPage, loading]);
 
     // Reset on tab/search change
     const handleTabChange = useCallback((tab: string) => {
@@ -1748,6 +1705,34 @@ export default function CollectionPage() {
         : (lightboxIndex !== null ? filteredImages[lightboxIndex] : null);
 
     useEffect(() => {
+        let cancelled = false;
+        let objectUrl: string | null = null;
+        if (!currentLightboxImage || currentLightboxImage.isVideo || hubEditorOverride) {
+            setLightboxMediaUrl(currentLightboxImage?.src || null);
+            setImageCacheStatus("idle");
+            return;
+        }
+        setLightboxMediaUrl(currentLightboxImage.src);
+        setImageCacheStatus("idle");
+        const publicId = "publicId" in currentLightboxImage && typeof currentLightboxImage.publicId === "string"
+            ? currentLightboxImage.publicId
+            : currentLightboxImage.src;
+        void loadOpenedCollectionImage({ publicId, sourceUrl: currentLightboxImage.src }).then(result => {
+            if (cancelled) {
+                if (result.url.startsWith("blob:")) URL.revokeObjectURL(result.url);
+                return;
+            }
+            objectUrl = result.url.startsWith("blob:") ? result.url : null;
+            setLightboxMediaUrl(result.url);
+            setImageCacheStatus(result.persisted ? "ready" : "fallback");
+        });
+        return () => {
+            cancelled = true;
+            if (objectUrl) URL.revokeObjectURL(objectUrl);
+        };
+    }, [currentLightboxImage, hubEditorOverride]);
+
+    useEffect(() => {
         if (lightboxIndex === null || hubEditorOverride) return;
         const image = filteredImages[lightboxIndex];
         if (!image) return;
@@ -1756,12 +1741,7 @@ export default function CollectionPage() {
         window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }, [filteredImages, hubEditorOverride, lightboxIndex]);
 
-    useEffect(() => {
-        if (lightboxIndex === null) return;
-        [filteredImages[lightboxIndex - 1], filteredImages[lightboxIndex + 1]].forEach(item => {
-            if (item && !item.isVideo) new Image().src = item.src;
-        });
-    }, [filteredImages, lightboxIndex]);
+    // Neighbor originals are intentionally not prefetched. High-quality bytes load only after opening.
 
     // Load saved BG from IndexedDB when navigating images
     useEffect(() => {
@@ -2453,8 +2433,8 @@ export default function CollectionPage() {
                                 <p className="col-hero-tagline">{t.heroTagline}</p>
                                 <div className="col-hero-stats">
                                     <div className="col-hero-stat">
-                                        <span className="col-hero-stat-value">{allImages.filter(i => !i.isVideo).length}</span>
-                                        <span className="col-hero-stat-label">🖼️ {t.filterImages}</span>
+                                        <span className="col-hero-stat-value">{collectionTotalRef.current || allImages.length}</span>
+                                        <span className="col-hero-stat-label">🖼️ {t.providerImages}</span>
                                     </div>
                                     <div className="col-hero-stat">
                                         <span className="col-hero-stat-value">{allImages.filter(i => i.isVideo).length}</span>
@@ -2466,7 +2446,7 @@ export default function CollectionPage() {
                                     </div>
                                     <div className="col-hero-stat">
                                         <span className="col-hero-stat-value">{formatBytes(totalBytes)}</span>
-                                        <span className="col-hero-stat-label">💾 {t.stats_size}</span>
+                                        <span className="col-hero-stat-label">💾 {t.providerOriginalSize}</span>
                                     </div>
                                 </div>
                                 <div className="col-hero-actions">
@@ -2587,7 +2567,7 @@ export default function CollectionPage() {
                                     {activeTabLabel}
                                     {" "}<span style={{ fontSize: "13px", opacity: 0.5 }}>({countSummary.primary})</span>
                                 </h2>
-                                <p className="col-section-desc">{t.loadedOfTotal.replace("{loaded}", String(countSummary.loaded)).replace("{total}", String(loadProgress?.total || countSummary.primary))}</p>
+                                <p className="col-section-desc">{t.loadedOfTotal.replace("{loaded}", String(countSummary.loaded)).replace("{total}", String(loadProgress?.total || countSummary.primary))} · {t.networkLoadedNote}</p>
                                 {totalPages > 1 && (
                                     <p className="col-section-desc">{t.page} {currentPage} / {totalPages}</p>
                                 )}
@@ -2696,7 +2676,7 @@ export default function CollectionPage() {
                                     }}>
                                         <div className="col-infinite-spinner" style={{ width: "16px", height: "16px" }} />
                                         <span>
-                                            {t.loadingMore} {loadProgress.loaded} / {loadProgress.total}
+                                            {t.loadingCompleteCollection} {loadProgress.loaded} / {loadProgress.total}
                                         </span>
                                         <div style={{
                                             width: "120px", height: "4px", borderRadius: "2px",
@@ -2717,39 +2697,16 @@ export default function CollectionPage() {
                                         <span>{t.loadCollectionFailed}</span>
                                         <button type="button" onClick={() => {
                                             setCollectionLoadError(false);
-                                            if (collectionItemsRef.current.length === 0) {
-                                                setLoading(true);
-                                                void requestCollectionPage(null).then((firstPage) => appendCollectionPage(firstPage)).catch(() => setCollectionLoadError(true)).finally(() => setLoading(false));
-                                            } else {
-                                                void fetchNextCollectionPage();
-                                            }
+                                            const generation = collectionGenerationRef.current;
+                                            void loadCompleteCollection(generation, collectionItemsRef.current.length === 0 ? null : nextCursorRef.current)
+                                                .catch((error) => console.error("Failed to retry Collection loading:", error));
                                         }}>{t.retryCollection}</button>
-                                    </div>
-                                )}
-                                {hasMoreCollection && !collectionLoadError && (
-                                    <div className="col-load-more-wrap">
-                                        <button
-                                            type="button"
-                                            className="col-load-more-btn"
-                                            disabled={collectionPageLoading}
-                                            onFocus={prefetchNextCollectionPage}
-                                            onPointerEnter={prefetchNextCollectionPage}
-                                            onClick={() => { void fetchNextCollectionPage(); }}
-                                        >
-                                            {collectionPageLoading ? t.loadingMore : t.loadMoreCollection}
-                                        </button>
                                     </div>
                                 )}
                                 {!hasMoreCollection && loadProgress && <p className="col-collection-end" role="status">{t.collectionEnd}</p>}
 
-                                {/* Infinite Scroll Sentinel OR Pagination */}
-                                {isInfinite ? (
-                                    (hasMoreCollection || currentPage * itemsPerPage < filteredImages.length) && (
-                                        <div ref={loadMoreRef} className="col-infinite-sentinel" style={{ height: "40px", width: "100%", display: "flex", justifyContent: "center", alignItems: "center", padding: "20px" }}>
-                                            <div className="col-infinite-spinner" />
-                                        </div>
-                                    )
-                                ) : (
+                                {/* Pagination operates only on the complete local inventory. */}
+                                {!isInfinite && (
                                     totalPages > 1 && (
                                         <div className="col-pagination">
                                             <button
@@ -2789,16 +2746,9 @@ export default function CollectionPage() {
                                             })()}
                                             <button
                                                 className="col-page-btn col-page-arrow"
-                                                disabled={collectionPageLoading || (currentPage === totalPages && !hasMoreCollection)}
+                                                disabled={currentPage === totalPages}
                                                 onClick={() => {
-                                                    const nextPage = currentPage + 1;
-                                                    if (nextPage * itemsPerPage > collectionItemsRef.current.length && hasMoreCollection) {
-                                                        void loadCollectionThroughPage(nextPage).then(() => {
-                                                            if (collectionItemsRef.current.length > (nextPage - 1) * itemsPerPage) setCurrentPage(nextPage);
-                                                        });
-                                                    } else {
-                                                        setCurrentPage(Math.min(totalPages, nextPage));
-                                                    }
+                                                    setCurrentPage(Math.min(totalPages, currentPage + 1));
                                                     window.scrollTo({ top: 400, behavior: "smooth" });
                                                 }}
                                             >
@@ -2877,9 +2827,9 @@ export default function CollectionPage() {
                                         />
                                     ) : (
                                         <img
-                                            src={currentLightboxImage.src}
+                                            src={lightboxMediaUrl || currentLightboxImage.src}
                                             alt={lang === "en" ? currentLightboxImage.name : translateName(currentLightboxImage.name, lang as "vi" | "zh" | "ko" | "ru" | "id")}
-                                            crossOrigin="anonymous"
+                                            crossOrigin={lightboxMediaUrl?.startsWith("blob:") ? undefined : "anonymous"}
                                             className={`col-lightbox-img ${imgLoading ? "col-img-loading" : ""}`}
                                             onLoad={() => setImgLoading(false)}
                                             style={{
@@ -2888,6 +2838,11 @@ export default function CollectionPage() {
                                                 transition: zoomScale === 1 ? "transform 0.3s ease" : "none",
                                             }}
                                         />
+                                    )}
+                                    {imageCacheStatus !== "idle" && (
+                                        <span className="col-lightbox-cache-status">
+                                            {imageCacheStatus === "ready" ? t.imageCacheReady : t.imageCacheFallback}
+                                        </span>
                                     )}
                                 </div>
 
