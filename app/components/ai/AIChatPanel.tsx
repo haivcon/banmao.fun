@@ -13,6 +13,7 @@ import CollectionResultCards from "./CollectionResultCards";
 import ModelSelector from "./ModelSelector";
 import PageActionCard from "./PageActionCard";
 import PrivacyControls from "./PrivacyControls";
+import SessionManager from "./SessionManager";
 import ToolCard from "./ToolCard";
 import BanmaoAIMascot from "./mascot/BanmaoAIMascot";
 
@@ -104,7 +105,7 @@ export default function AIChatPanel(props: Props) {
         {props.mascotVisible && <div className="banmao-ai-header-mascot"><BanmaoAIMascot emotion={props.emotion} reducedMotion={props.reducedMotion} onAnimationComplete={props.onAnimationComplete} /></div>}
         <div className="banmao-ai-heading"><span><h2>BANMAO AI</h2><i className="banmao-ai-live" aria-label={t("online")} /></span><p>{phrase}</p></div>
       </div>
-      <div className="banmao-ai-header-actions"><span className="banmao-ai-context">{surfaceLabel}</span><button className="banmao-ai-icon-button" type="button" aria-label={t("close")} onClick={props.close}><X size={18} /></button></div>
+      <div className="banmao-ai-header-actions"><SessionManager language={props.language} /><span className="banmao-ai-context">{surfaceLabel}</span><button className="banmao-ai-icon-button" type="button" aria-label={t("close")} onClick={props.close}><X size={18} /></button></div>
     </header>
     <span className="banmao-ai-sr-status" role="status" aria-live="polite">{phrase}</span>
 
