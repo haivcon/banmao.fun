@@ -34,6 +34,56 @@ describe("bounded BANMAO AI orchestrator", () => {
     expect(JSON.stringify(events)).not.toContain("bytes");
   });
 
+  test.each([
+    ["vui", "vi"],
+    ["happy", "en"],
+    ["cyberpunk", "en"],
+    ["hạnh phúc", "vi"],
+    ["vui vẻ", "vi"],
+    ["赛博朋克", "zh"],
+    ["사이버펑크", "ko"],
+    ["киберпанк", "ru"],
+    ["bahagia", "id"],
+  ] as const)("forces metadata media search for Collection concept %s", async (message, locale) => {
+    const collectionTool = {
+      ...tool,
+      name: "collection.search",
+      contexts: ["collection"] as const,
+      execute: jest.fn(async (_args: unknown, _context?: unknown) => ({ status: "available", source: "cloudinary:test", value: { results: [{ public_id: "banmao/Concept", secure_url: "https://res.cloudinary.com/demo/image/upload/concept.png" }] } })),
+    };
+    const requests: CompletionRequest[] = [];
+    const events = [];
+    const completion = async function* (request: CompletionRequest) {
+      requests.push(request);
+      if (requests.length === 1 && request.toolChoice !== "auto") {
+        yield { text: "", toolCalls: [{ id: "concept-search", name: "collection_search", arguments: JSON.stringify({ query: message }) }], finishReason: "tool_calls" };
+      } else {
+        yield { text: "Done", toolCalls: [], finishReason: "stop" };
+      }
+    };
+    for await (const event of runOrchestrator({ model: "banmao.fun", message, context: { surface: "collection", pathname: "/collection", locale }, evidence: [], authenticated: false }, { tools: [collectionTool], completion, maxToolRounds: 2 })) events.push(event);
+    expect(requests[0].toolChoice).toEqual({ type: "function", function: { name: "collection_search" } });
+    expect(collectionTool.execute).toHaveBeenCalledWith({ query: message }, expect.anything());
+    expect(events.filter((event) => event.type === "collection_results")).toHaveLength(1);
+    expect(events.find((event) => event.type === "collection_results")).toMatchObject({ searchMode: "metadata", results: [{ publicId: "banmao/Concept" }] });
+    expect(requests[1].toolChoice).toBe("auto");
+  });
+
+  test.each([
+    ["hello", "collection", "/collection"],
+    ["What is BANMAO?", "collection", "/collection"],
+    ["Tell me about happiness", "collection", "/collection"],
+    ["unhappy", "collection", "/collection"],
+    ["v", "collection", "/collection"],
+    ["vu", "collection", "/collection"],
+    ["happy", "landing", "/"],
+  ] as const)("does not force Collection search for unrelated or out-of-context prompt %s", async (message, surface, pathname) => {
+    const requests: CompletionRequest[] = [];
+    const completion = async function* (request: CompletionRequest) { requests.push(request); yield { text: "Answer", toolCalls: [], finishReason: "stop" }; };
+    for await (const _event of runOrchestrator({ model: "banmao.fun", message, context: { surface, pathname }, evidence: [], authenticated: false }, { tools: [{ ...tool, name: "collection.search", contexts: ["collection"] as const }], completion, maxToolRounds: 1 })) { /* consume */ }
+    expect(requests[0].toolChoice).toBe("auto");
+  });
+
   test("executes only a registered tool, feeds its result back, then streams final text", async () => {
     const requests: CompletionRequest[] = [];
     const completion = async function* (request: CompletionRequest) {

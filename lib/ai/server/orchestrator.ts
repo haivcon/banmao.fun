@@ -1,6 +1,7 @@
 import "server-only";
 import type { AIConversationTurn, AIModel, AISurface, CollectionMediaResult } from "../contracts";
 import type { ChatMessage, ChatRound, CompletionRequest, ToolSpec } from "./client";
+import { isCollectionMediaConcept } from "./contextRouter";
 import { buildBanmaoSystemPrompt, BANMAO_PERSONA_VERSION } from "./persona";
 import { createToolRegistry, type ToolDescriptor } from "./toolRegistry";
 import { inspectBanmaoVoice } from "./voiceGuard";
@@ -85,6 +86,8 @@ export async function* runOrchestrator(
 ): AsyncGenerator<OrchestratorEvent> {
   const registry = createToolRegistry(options.tools);
   const { specs, internalNames } = providerTools(registry.descriptors);
+  const collectionSearchProviderName = [...internalNames].find(([, internalName]) => internalName === "collection.search")?.[0];
+  const forceCollectionSearch = Boolean(collectionSearchProviderName && isCollectionMediaConcept(input.message, input.context.surface));
   const messages: ChatMessage[] = [
     { role: "system", content: buildBanmaoSystemPrompt({
       surface: input.context.surface,
@@ -115,7 +118,9 @@ export async function* runOrchestrator(
       model: input.model,
       messages,
       tools: specs.length ? specs : undefined,
-      toolChoice: specs.length ? "auto" : undefined,
+      toolChoice: specs.length ? forceCollectionSearch && roundIndex === 0
+        ? { type: "function", function: { name: collectionSearchProviderName! } }
+        : "auto" : undefined,
     }, options.signal)) {
       if (value.complete !== true && value.text) {
         pendingText += value.text;
