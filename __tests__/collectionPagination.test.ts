@@ -7,12 +7,18 @@ import {
     shouldLoadCollectionPrefix,
 } from "../app/collection/collectionPagination";
 import { appendCollectionBatch, sortCollectionItems } from "../app/collection/collectionOrdering";
+import { collectionSearchExpression } from "../app/api/collection/route";
 
 type Item = { publicId: string; src: string; name: string; bytes: number; createdAt?: string };
 type Page = { images: Item[]; total: number; nextCursor: string | null };
 
 const item = (publicId: string, name = publicId, bytes = 1, createdAt = "2026-01-01") => ({
     publicId, src: `https://example.com/${publicId}`, name, bytes, createdAt,
+});
+
+test("Collection queries include renderable image and video resources while excluding raw assets", () => {
+    expect(collectionSearchExpression("banmao")).toBe("(resource_type:image OR resource_type:video) AND folder:banmao*");
+    expect(collectionSearchExpression("")).toBe("resource_type:image OR resource_type:video");
 });
 
 test("three cursor pages append without duplicate public IDs and preserve provider total", () => {
