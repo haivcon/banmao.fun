@@ -45,6 +45,14 @@ const RESOLVE_ALIASES = {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: "/manifest.json",
+        destination: "/manifest.webmanifest",
+      },
+    ];
+  },
   // Route keys match public URLs, not App Router filesystem paths.
   outputFileTracingIncludes: {
     "/api/ai/chat": RAG_CORPUS_FILES,
