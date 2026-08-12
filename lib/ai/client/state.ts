@@ -1,4 +1,4 @@
-import { AI_MODELS, type AIModel, type AISurface } from "../contracts";
+import { AI_MODELS, type AIModel, type AISurface, type CollectionResultsPayload } from "../contracts";
 
 export type ClientMessage = { role: "user" | "assistant"; content: string; createdAt: number };
 export type ToolActivity = { callId: string; name: string; status: string; source: string; summary: string };
@@ -9,6 +9,7 @@ export type ClientState = {
   messages: ClientMessage[];
   tools: ToolActivity[];
   citations: Citation[];
+  collectionResults?: CollectionResultsPayload;
   lastPrompt?: string;
   status: "idle" | "streaming" | "error";
   error?: string;
@@ -54,6 +55,7 @@ type Action =
   | { type: "delta"; text: string }
   | { type: "tool"; tool: ToolActivity }
   | { type: "citation"; citation: Citation }
+  | { type: "collection_results"; payload: CollectionResultsPayload }
   | { type: "error"; message: string }
   | { type: "stop" }
   | { type: "clear" };
@@ -69,7 +71,7 @@ export function reduceClientState(state: ClientState, action: Action): ClientSta
       return { ...state, model: action.model };
     case "start":
       const createdAt = action.createdAt ?? 0;
-      return { ...state, status: "streaming", error: undefined, lastPrompt: action.message, tools: [], citations: [], messages: [...state.messages, { role: "user", content: action.message, createdAt }, { role: "assistant", content: "", createdAt }] };
+      return { ...state, status: "streaming", error: undefined, lastPrompt: action.message, tools: [], citations: [], collectionResults: undefined, messages: [...state.messages, { role: "user", content: action.message, createdAt }, { role: "assistant", content: "", createdAt }] };
     case "delta": {
       const messages = [...state.messages];
       const last = messages.at(-1);
@@ -77,9 +79,10 @@ export function reduceClientState(state: ClientState, action: Action): ClientSta
       return { ...state, messages };
     }
     case "tool": return { ...state, tools: [...state.tools, action.tool] };
+    case "collection_results": return { ...state, collectionResults: { ...action.payload, results: action.payload.results.slice(0, 10) } };
     case "citation": return state.citations.some((item) => item.sourcePath === action.citation.sourcePath && item.version === action.citation.version) ? state : { ...state, citations: [...state.citations, action.citation] };
     case "error": return { ...state, status: "error", error: action.message };
     case "stop": return { ...state, status: "idle" };
-    case "clear": return { ...state, messages: [], tools: [], citations: [], lastPrompt: undefined, status: "idle", error: undefined };
+    case "clear": return { ...state, messages: [], tools: [], citations: [], collectionResults: undefined, lastPrompt: undefined, status: "idle", error: undefined };
   }
 }

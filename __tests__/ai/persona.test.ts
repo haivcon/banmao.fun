@@ -29,4 +29,12 @@ describe("Banmao layered persona", () => {
     expect(directResponseMode("This failed again")).toBe("repair");
     expect(directResponseMode("urgent: help now")).toBe("urgent");
   });
+
+  test("routes image finding to metadata search without claiming pixel vision", () => {
+    const value = prompt("collection", "Tìm ảnh Banmao vui vẻ");
+    expect(value).toContain("collection.search");
+    expect(value).toContain("metadata");
+    expect(value).toContain("pixels");
+    expect(value).toContain("captions or tags");
+  });
 });

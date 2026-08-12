@@ -34,10 +34,14 @@ export type AIChatRequest = {
 
 export type ValidatedAIChatRequest = Omit<AIChatRequest, "model"> & { model: AIModel };
 
+export type CollectionMediaResult = { publicId: string; secureUrl: string; thumbnailUrl: string; name: string; folder: string; width: number; height: number; format: string; score: number; matchedTerms: string[]; matchReason: string; searchMode: "metadata"; observedAt: string };
+export type CollectionResultsPayload = { callId: string; observedAt: string; searchMode: "metadata"; results: CollectionMediaResult[] };
+
 export type AIStreamEvent =
   | { event: "meta"; data: { requestId: string; conversationId?: string; model: AIModel; surface: AISurface; personaVersion: string; ragHitCount: number } }
   | { event: "delta"; data: { text: string } }
   | { event: "tool"; data: { callId: string; name: string; status: string; source: string; summary: string } }
+  | { event: "collection_results"; data: CollectionResultsPayload }
   | { event: "citation"; data: { documentId?: string; sourcePath: string; version?: string; excerpt?: string } }
   | { event: "usage"; data: { inputTokens: number; outputTokens: number; budgetStatus: string } }
   | { event: "error"; data: { code: string; retryable: boolean; requestId: string } }

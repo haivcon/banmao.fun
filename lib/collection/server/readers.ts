@@ -2,7 +2,7 @@ import "server-only";
 import { z } from "zod";
 
 const folderSchema = z.string().trim().min(1).max(160).regex(/^[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/);
-const searchSchema = z.object({ query: z.string().trim().min(1).max(200), folder: folderSchema.default("banmao"), limit: z.number().int().min(1).max(50).default(20) }).strict();
+const searchSchema = z.object({ query: z.string().trim().min(1).max(200), folder: folderSchema.optional(), limit: z.number().int().min(1).max(50).default(20) }).strict();
 const promptsSchema = z.object({ folder: folderSchema, limit: z.number().int().min(1).max(50).default(20) }).strict();
 const questSchema = z.object({ wallet: z.string().regex(/^0x[a-fA-F0-9]{40}$/).transform((value) => value.toLowerCase()), now: z.date().optional() }).strict();
 const MAX_BODY_BYTES = 128_000;
@@ -17,9 +17,26 @@ const cloudinarySearchPayloadSchema = z.object({ resources: z.array(cloudinaryRe
 const rawResourcePayloadSchema = z.object({ resources: z.array(z.object({ public_id: z.string().min(1).max(500), secure_url: z.string().url().max(2_048).optional() }).strip()).max(20).default([]) }).strip();
 const promptSchema = z.object({ id: z.number().int(), prompt: z.string().max(8_000), share_link: z.string().url().max(2_048).optional() }).strip();
 
-const KEYWORD_MAP: Record<string, string[]> = {
-  cat: ["banmao", "mao", "cat", "kitty", "kitten", "neko"], defi: ["defi", "swap", "stake", "farm", "yield", "liquidity", "pool"], money: ["money", "coin", "token", "crypto", "cash", "rich", "gold"], game: ["game", "play", "gaming", "controller", "arcade"], space: ["space", "galaxy", "moon", "rocket", "astronaut", "cosmos"], food: ["food", "eat", "pizza", "ramen", "sushi", "cook", "chef"], music: ["music", "dj", "guitar", "dance", "party", "disco"], fight: ["fight", "battle", "warrior", "sword", "boxing", "punch"], love: ["love", "heart", "valentine", "romance", "kiss", "cute"], sad: ["sad", "cry", "rain", "lonely", "depressed"], happy: ["happy", "smile", "laugh", "joy", "celebrate", "party"], angry: ["angry", "mad", "rage", "fire", "furious"], cool: ["cool", "sunglasses", "chill", "ice", "snow", "winter"], hot: ["hot", "fire", "flame", "summer", "beach", "sun"], work: ["work", "office", "computer", "laptop", "code", "programming"], sport: ["sport", "football", "basketball", "soccer", "tennis", "gym"], travel: ["travel", "plane", "airplane", "vacation", "tourist", "map"], water: ["water", "sea", "ocean", "swim", "fish", "wave", "surf"], night: ["night", "dark", "moon", "star", "sleep", "dream"], meme: ["meme", "pepe", "doge", "wojak", "chad", "lol", "bruh"],
+// Bounded aliases map supported-locale wording to vocabulary used in filenames and metadata.
+// This is deterministic metadata-semantic matching, not pixel/image analysis.
+const CONCEPTS: Record<string, { aliases: string[]; terms: string[] }> = {
+  cat: { aliases: ["cat", "kitty", "kitten", "banmao", "mao", "mèo", "猫", "고양이", "кот", "кошка", "kucing"], terms: ["cat", "kitty", "kitten", "neko"] },
+  happy: { aliases: ["happy", "joy", "smile", "vui", "vui vẻ", "hạnh phúc", "开心", "快乐", "행복", "웃는", "веселый", "счастливый", "senang", "bahagia"], terms: ["happy", "smile", "laugh", "joy", "celebrate"] },
+  sad: { aliases: ["sad", "buồn", "伤心", "悲伤", "슬픈", "грустный", "sedih"], terms: ["sad", "cry", "rain", "lonely"] },
+  angry: { aliases: ["angry", "giận", "tức giận", "生气", "愤怒", "화난", "злой", "сердитый", "marah"], terms: ["angry", "mad", "rage", "furious", "fire"] },
+  hat: { aliases: ["hat", "wearing hat", "đội mũ", "戴帽子", "모자", "в шляпе", "topi"], terms: ["hat", "cap", "beanie", "helmet", "wearing"] },
+  cute: { aliases: ["cute", "dễ thương", "可爱", "귀여운", "милый", "lucu", "imut"], terms: ["cute", "adorable", "kawaii", "sweet"] },
+  space: { aliases: ["space", "không gian", "vũ trụ", "太空", "宇宙", "우주", "космос", "luar angkasa"], terms: ["space", "galaxy", "moon", "rocket", "astronaut", "cosmos"] },
+  cyberpunk: { aliases: ["cyberpunk", "赛博朋克", "사이버펑크", "киберпанк"], terms: ["cyberpunk", "cyber", "neon", "futuristic"] },
+  bitcoin: { aliases: ["bitcoin", "btc", "比特币", "비트코인", "биткоин"], terms: ["bitcoin", "btc", "crypto", "coin"] },
+  game: { aliases: ["game", "gaming", "trò chơi", "chơi game", "游戏", "게임", "игра", "permainan"], terms: ["game", "play", "gaming", "controller", "arcade"] },
+  food: { aliases: ["food", "eat", "ăn", "thức ăn", "吃", "食物", "먹는", "음식", "еда", "есть", "makan", "makanan"], terms: ["food", "eat", "eating", "pizza", "ramen", "sushi", "cook", "chef"] },
+  sleep: { aliases: ["sleep", "sleeping", "ngủ", "睡觉", "자는", "잠", "спать", "сон", "tidur"], terms: ["sleep", "sleeping", "dream", "bed", "night"] },
+  music: { aliases: ["music", "nhạc", "音乐", "음악", "музыка", "musik"], terms: ["music", "dj", "guitar", "dance", "party"] },
+  love: { aliases: ["love", "yêu", "tình yêu", "爱", "사랑", "любовь", "cinta"], terms: ["love", "heart", "valentine", "romance", "kiss"] },
+  work: { aliases: ["work", "làm việc", "工作", "일", "работа", "kerja"], terms: ["work", "office", "computer", "laptop", "code"] },
 };
+const STOPWORDS = new Set(["anh", "image", "images", "photo", "photos", "picture", "pictures", "find", "search", "show", "please", "tim", "kiem", "trong", "bo", "suu", "tap", "cho", "toi", "mot", "cua", "the", "and", "with", "for", "this", "that"]);
 
 function credentials(value: string | undefined) {
   if (!value) throw new Error("CLOUDINARY_URL is not set");
@@ -27,19 +44,48 @@ function credentials(value: string | undefined) {
   if (!match) throw new Error("Invalid CLOUDINARY_URL format");
   return { apiKey: match[1], apiSecret: match[2], cloudName: match[3] };
 }
-function tokenize(query: string) { return query.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter((token) => token.length > 1); }
-function expand(tokens: string[]) {
-  const values = new Set(tokens);
-  for (const token of tokens) for (const synonyms of Object.values(KEYWORD_MAP)) if (synonyms.includes(token)) for (const synonym of synonyms) values.add(synonym);
-  return Array.from(values);
+function normalize(value: string) {
+  return value.toLocaleLowerCase().normalize("NFKD").replace(/\p{M}+/gu, "").replace(/đ/g, "d").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 }
-function score(publicId: string, folder: string, keywords: string[]) {
-  const id = publicId.toLowerCase(), normalizedFolder = folder.toLowerCase();
-  return keywords.reduce((total, keyword) => total + (id.includes(keyword) ? 10 : 0) + (normalizedFolder.includes(keyword) ? 5 : 0) + (id.split(/[_\-/]/).some((part) => part.startsWith(keyword)) ? 3 : 0), 0);
+function tokenize(value: string) {
+  return normalize(value).split(/\s+/).filter((token) => token.length >= 3 && !STOPWORDS.has(token));
+}
+function expand(query: string) {
+  const normalizedQuery = normalize(query), tokens = tokenize(query), values = new Set(tokens);
+  for (const concept of Object.values(CONCEPTS)) {
+    const matched = concept.aliases.some((alias) => {
+      const normalizedAlias = normalize(alias);
+      return normalizedAlias.includes(" ") ? ` ${normalizedQuery} `.includes(` ${normalizedAlias} `) : tokens.includes(normalizedAlias);
+    });
+    if (matched) concept.terms.forEach((term) => values.add(normalize(term)));
+  }
+  return Array.from(values).filter((term) => term.length >= 3).slice(0, 40);
+}
+type MatchField = "public_id" | "folder" | "tags" | "context";
+function scoreField(value: string, keywords: string[], weight: number) {
+  const normalized = normalize(value), tokens = normalized.split(/\s+/).filter(Boolean), matched = new Set<string>();
+  let valueScore = 0;
+  for (const keyword of keywords) {
+    if (tokens.includes(keyword)) { valueScore += 12 * weight; matched.add(keyword); }
+    else if (tokens.some((token) => token.length >= 4 && keyword.length >= 4 && token.startsWith(keyword))) { valueScore += 7 * weight; matched.add(keyword); }
+    else if (keyword.length >= 4 && normalized.includes(keyword)) { valueScore += 4 * weight; matched.add(keyword); }
+  }
+  return { score: valueScore, matched: Array.from(matched) };
 }
 function mapResource(resource: CloudinaryResource, keywords: string[]) {
-  const folder = resource.asset_folder || resource.folder || "";
-  return { public_id: resource.public_id, secure_url: resource.secure_url, folder, format: resource.format, resource_type: resource.resource_type, width: resource.width, height: resource.height, bytes: resource.bytes, duration: resource.duration, tags: resource.tags || [], context: resource.context || {}, aspect_ratio: resource.aspect_ratio || (resource.width && resource.height ? +(resource.width / resource.height).toFixed(4) : undefined), score: score(resource.public_id, folder, keywords) };
+  const folder = resource.asset_folder || resource.folder || "", tags = resource.tags || [], context = resource.context || {};
+  const fields: Array<[MatchField, string, number]> = [
+    ["public_id", resource.public_id.split("/").at(-1) || resource.public_id, 4], ["folder", folder, 1], ["tags", tags.join(" "), 3], ["context", Object.values(context).join(" "), 2],
+  ];
+  let total = 0;
+  const terms = new Set<string>(), reasons: MatchField[] = [];
+  for (const [field, value, weight] of fields) {
+    const result = scoreField(value, keywords, weight);
+    total += result.score;
+    if (result.matched.length) { reasons.push(field); result.matched.forEach((term) => terms.add(term)); }
+  }
+  const matchedTerms = Array.from(terms).slice(0, 12);
+  return { public_id: resource.public_id, secure_url: resource.secure_url, folder, format: resource.format, resource_type: resource.resource_type, width: resource.width, height: resource.height, bytes: resource.bytes, duration: resource.duration, tags, context, aspect_ratio: resource.aspect_ratio || (resource.width && resource.height ? +(resource.width / resource.height).toFixed(4) : undefined), score: total, matchedTerms, matchReason: reasons.join(", "), searchMode: "metadata" as const };
 }
 async function boundedText(response: Response) {
   const text = await response.text();
@@ -50,6 +96,17 @@ async function cloudinarySearch(fetcher: Fetcher, url: string, authorization: st
   const response = await fetcher(url, { method: "POST", headers: { "Content-Type": "application/json", Authorization: authorization }, body: JSON.stringify(body), signal: AbortSignal.timeout(TIMEOUT_MS) });
   return { response, text: await boundedText(response) };
 }
+const MAX_SEARCH_QUERIES = 3;
+const SEARCH_TERMS_PER_QUERY = 4;
+function searchExpressions(keywords: string[], folder?: string) {
+  const prefix = folder ? `folder:${folder}* AND ` : "";
+  return Array.from({ length: Math.min(MAX_SEARCH_QUERIES, Math.ceil(keywords.length / SEARCH_TERMS_PER_QUERY)) }, (_, index) => {
+    const terms = keywords.slice(index * SEARCH_TERMS_PER_QUERY, (index + 1) * SEARCH_TERMS_PER_QUERY);
+    const publicId = terms.map((term) => `public_id:*${term}*`);
+    const metadata = terms.flatMap((term) => [`tags=${term}`, `context:*${term}*`]);
+    return { metadata: `${prefix}(${[...publicId, ...metadata].join(" OR ")})`, publicId: `${prefix}(${publicId.join(" OR ")})` };
+  });
+}
 function cloudinaryRawUrl(value: string, cloudName: string) {
   const url = new URL(value);
   if (url.protocol !== "https:" || url.hostname !== "res.cloudinary.com" || !url.pathname.startsWith(`/${cloudName}/raw/upload/`)) throw new Error("Unapproved Cloudinary raw URL");
@@ -58,19 +115,22 @@ function cloudinaryRawUrl(value: string, cloudName: string) {
 
 export async function readCollectionSearch(input: unknown, dependencies: { cloudinaryUrl?: string; fetch?: Fetcher } = {}) {
   const args = searchSchema.parse(input), config = credentials(dependencies.cloudinaryUrl ?? process.env.CLOUDINARY_URL), fetcher = dependencies.fetch || fetch;
-  const keywords = expand(tokenize(args.query));
+  const keywords = expand(args.query);
   const url = `https://api.cloudinary.com/v1_1/${config.cloudName}/resources/search`;
   const authorization = "Basic " + Buffer.from(`${config.apiKey}:${config.apiSecret}`).toString("base64");
-  let fallback = false;
-  let result = await cloudinarySearch(fetcher, url, authorization, { expression: `folder:${args.folder}* AND (${keywords.slice(0, 5).map((keyword) => `public_id:*${keyword}*`).join(" OR ")})`, max_results: 100, sort_by: [{ public_id: "asc" }], with_field: ["tags", "context"] });
-  if (!result.response.ok) {
-    fallback = true;
-    result = await cloudinarySearch(fetcher, url, authorization, { expression: `folder:${args.folder}*`, max_results: 100, sort_by: [{ public_id: "asc" }], with_field: ["tags", "context"] });
+  const resources = new Map<string, CloudinaryResource>();
+  let successfulQueries = 0;
+  for (const expressions of searchExpressions(keywords, args.folder)) {
+    let result = await cloudinarySearch(fetcher, url, authorization, { expression: expressions.metadata, max_results: 100, sort_by: [{ public_id: "asc" }], with_field: ["tags", "context"] });
+    if (!result.response.ok) result = await cloudinarySearch(fetcher, url, authorization, { expression: expressions.publicId, max_results: 100, sort_by: [{ public_id: "asc" }], with_field: ["tags", "context"] });
+    if (!result.response.ok) continue;
+    successfulQueries += 1;
+    const payload = cloudinarySearchPayloadSchema.parse(JSON.parse(result.text));
+    for (const resource of payload.resources) resources.set(resource.public_id, resource);
   }
-  if (!result.response.ok) throw new Error("Collection search unavailable");
-  const payload = cloudinarySearchPayloadSchema.parse(JSON.parse(result.text));
-  const results = payload.resources.map((resource) => mapResource(resource, keywords)).filter((item) => !fallback || item.score > 0).sort((a, b) => b.score - a.score).slice(0, args.limit);
-  return { results, total: results.length, query: args.query, keywords: keywords.slice(0, 10), source: "cloudinary:collection-search", observedAt: observedAt() };
+  if (!successfulQueries) throw new Error("Collection search unavailable");
+  const results = Array.from(resources.values()).map((resource) => mapResource(resource, keywords)).filter((item) => item.score >= 30).sort((a, b) => b.score - a.score || a.public_id.localeCompare(b.public_id)).slice(0, args.limit);
+  return { results, total: results.length, query: args.query, keywords: keywords.slice(0, 10), searchMode: "metadata" as const, source: "cloudinary:collection-search", observedAt: observedAt() };
 }
 
 export async function readCollectionPrompts(input: unknown, dependencies: { cloudinaryUrl?: string; fetch?: Fetcher } = {}) {

@@ -1,5 +1,5 @@
 import "server-only";
-import type { AIConversationTurn, AIModel, AISurface } from "../contracts";
+import type { AIConversationTurn, AIModel, AISurface, CollectionMediaResult } from "../contracts";
 import type { ChatMessage, ChatRound, CompletionRequest, ToolSpec } from "./client";
 import { buildBanmaoSystemPrompt, BANMAO_PERSONA_VERSION } from "./persona";
 import { createToolRegistry, type ToolDescriptor } from "./toolRegistry";
@@ -16,6 +16,7 @@ export type RAGEvidence = {
 export type OrchestratorEvent =
   | { type: "delta"; text: string }
   | { type: "tool"; callId: string; name: string; status: "running" | "available" | "unavailable" | "error"; source: string; summary: string }
+  | { type: "collection_results"; callId: string; observedAt: string; searchMode: "metadata"; results: CollectionMediaResult[] }
   | { type: "citation"; chunkId: string; sourcePath: string }
   | { type: "error"; code: string };
 
@@ -44,6 +45,25 @@ function providerTools(tools: readonly ToolDescriptor[]) {
 
 function errorResult(code: string, source = "banmao-ai:tool-registry") {
   return { status: "error", code, source, asOf: new Date().toISOString() };
+}
+
+function sanitizeCollectionResults(callId: string, value: unknown) {
+  if (!value || typeof value !== "object") return undefined;
+  const envelope = value as Record<string, unknown>;
+  const payload = envelope.value && typeof envelope.value === "object" ? envelope.value as Record<string, unknown> : undefined;
+  if (!payload || !Array.isArray(payload.results)) return undefined;
+  const observedAt = [payload.observedAt, envelope.observedAt, envelope.asOf].find((item) => typeof item === "string") as string | undefined || new Date().toISOString();
+  const results = payload.results.slice(0, 10).flatMap((raw): CollectionMediaResult[] => {
+    if (!raw || typeof raw !== "object") return [];
+    const item = raw as Record<string, unknown>;
+    const publicId = typeof item.public_id === "string" ? item.public_id.slice(0, 240) : "";
+    const secureUrl = typeof item.secure_url === "string" && /^https:\/\/res\.cloudinary\.com\//.test(item.secure_url) ? item.secure_url : "";
+    if (!publicId || !secureUrl) return [];
+    const leaf = publicId.split("/").at(-1) || publicId;
+    const boundedNumber = (candidate: unknown, max: number) => typeof candidate === "number" && Number.isFinite(candidate) ? Math.max(0, Math.min(max, candidate)) : 0;
+    return [{ publicId, secureUrl, thumbnailUrl: secureUrl.replace("/image/upload/", "/image/upload/f_auto,q_auto,w_480,c_limit/"), name: leaf.replace(/[_-]+/g, " ").trim().slice(0, 120), folder: typeof item.folder === "string" ? item.folder.slice(0, 160) : "", width: boundedNumber(item.width, 20_000), height: boundedNumber(item.height, 20_000), format: typeof item.format === "string" ? item.format.slice(0, 20) : "", score: boundedNumber(item.score, 10_000), matchedTerms: Array.isArray(item.matchedTerms) ? item.matchedTerms.filter((term): term is string => typeof term === "string").slice(0, 10).map((term) => term.slice(0, 40)) : [], matchReason: typeof item.matchReason === "string" ? item.matchReason.slice(0, 80) : "metadata", searchMode: "metadata", observedAt }];
+  });
+  return { type: "collection_results" as const, callId, observedAt, searchMode: "metadata" as const, results };
 }
 
 export async function* runOrchestrator(
@@ -156,6 +176,13 @@ export async function* runOrchestrator(
       }
     }));
     for (const call of response.toolCalls) yield { type: "tool", callId: call.id, name: internalNames.get(call.name) || call.name, status: "running", source: "banmao-ai:tool-registry", summary: "Reading approved source" };
-    for (const item of results) { yield { type: "tool", callId: item.call.id, name: item.internalName, status: item.status, source: item.source, summary: item.summary }; messages.push({ role: "tool", tool_call_id: item.call.id, content: JSON.stringify(item.result) }); }
+    for (const item of results) {
+      yield { type: "tool", callId: item.call.id, name: item.internalName, status: item.status, source: item.source, summary: item.summary };
+      if (item.internalName === "collection.search" && item.status === "available") {
+        const media = sanitizeCollectionResults(item.call.id, item.result);
+        if (media) yield media;
+      }
+      messages.push({ role: "tool", tool_call_id: item.call.id, content: JSON.stringify(item.result) });
+    }
   }
 }

@@ -191,6 +191,7 @@ export default function AIChatProvider() {
             dispatch({ type: "delta", text: parsed.data.text });
           }
           if (parsed.event === "tool") dispatch({ type: "tool", tool: parsed.data });
+          if (parsed.event === "collection_results") dispatch({ type: "collection_results", payload: parsed.data });
           if (parsed.event === "citation") dispatch({ type: "citation", citation: { ...parsed.data, sourcePath: parsed.data.sourcePath || "approved-project-doc" } });
           if (parsed.event === "error") throw new Error(parsed.data.code || "AI unavailable");
         }
