@@ -85,9 +85,12 @@ export async function* runOrchestrator(
   },
 ): AsyncGenerator<OrchestratorEvent> {
   const registry = createToolRegistry(options.tools);
-  const { specs, internalNames } = providerTools(registry.descriptors);
-  const collectionSearchProviderName = [...internalNames].find(([, internalName]) => internalName === "collection.search")?.[0];
-  const forceCollectionSearch = Boolean(collectionSearchProviderName && isCollectionMediaConcept(input.message, input.context.surface));
+  const collectionSearch = registry.descriptors.find((tool) => tool.name === "collection.search");
+  const executeCollectionSearch = Boolean(collectionSearch && isCollectionMediaConcept(input.message, input.context.surface));
+  const offeredDescriptors = executeCollectionSearch
+    ? registry.descriptors.filter((tool) => tool.name !== "collection.search")
+    : registry.descriptors;
+  const { specs, internalNames } = providerTools(offeredDescriptors);
   const messages: ChatMessage[] = [
     { role: "system", content: buildBanmaoSystemPrompt({
       surface: input.context.surface,
@@ -107,6 +110,43 @@ export async function* runOrchestrator(
     yield { type: "citation", chunkId: citation.chunkId, sourcePath: citation.sourcePath };
   }
 
+  if (executeCollectionSearch) {
+    const callId = "collection-concept-search";
+    const providerName = providerToolName("collection.search");
+    let result: unknown;
+    let status: "available" | "unavailable" | "error";
+    let source: string;
+    let summary: string;
+    try {
+      result = await registry.execute("collection.search", { query: input.message }, {
+        surface: input.context.surface,
+        authenticated: input.authenticated,
+        signal: options.signal,
+      });
+      const envelope = result as { status?: string; source?: string };
+      status = envelope.status === "unavailable" ? "unavailable" : "available";
+      source = envelope.source || "banmao-ai:tool-registry";
+      summary = status === "available" ? "Read completed" : "Source unavailable";
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "TOOL_FAILED";
+      result = errorResult(code);
+      status = "error";
+      source = "banmao-ai:tool-registry";
+      summary = code;
+    }
+    yield { type: "tool", callId, name: "collection.search", status, source, summary };
+    if (status === "available") {
+      const media = sanitizeCollectionResults(callId, result);
+      if (media) yield media;
+    }
+    messages.push({ role: "assistant", content: null, tool_calls: [{
+      id: callId,
+      type: "function",
+      function: { name: providerName, arguments: JSON.stringify({ query: input.message }) },
+    }] });
+    messages.push({ role: "tool", tool_call_id: callId, content: JSON.stringify(result) });
+  }
+
   for (let roundIndex = 0; roundIndex <= options.maxToolRounds; roundIndex++) {
     if (options.signal?.aborted) {
       yield { type: "error", code: "REQUEST_ABORTED" };
@@ -118,9 +158,7 @@ export async function* runOrchestrator(
       model: input.model,
       messages,
       tools: specs.length ? specs : undefined,
-      toolChoice: specs.length ? forceCollectionSearch && roundIndex === 0
-        ? { type: "function", function: { name: collectionSearchProviderName! } }
-        : "auto" : undefined,
+      toolChoice: specs.length ? "auto" : undefined,
     }, options.signal)) {
       if (value.complete !== true && value.text) {
         pendingText += value.text;
@@ -165,6 +203,7 @@ export async function* runOrchestrator(
       const internalName = internalNames.get(call.name) || call.name;
       let result: unknown;
       try {
+        if (executeCollectionSearch && internalName === "collection.search") throw new Error("TOOL_ALREADY_EXECUTED");
         const args = JSON.parse(call.arguments);
         result = await registry.execute(internalName, args, {
           surface: input.context.surface,

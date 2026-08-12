@@ -1,6 +1,7 @@
 import { describe, expect, jest, test } from "@jest/globals";
 import { runOrchestrator } from "../../lib/ai/server/orchestrator";
 import type { ChatRound, CompletionRequest } from "../../lib/ai/server/client";
+import { createDomainToolDescriptors } from "../../lib/ai/server/tools/liveAdapters";
 
 const tool = {
   name: "docs.search",
@@ -28,7 +29,7 @@ describe("bounded BANMAO AI orchestrator", () => {
     let calls = 0;
     const completion = async function* () { calls += 1; yield calls === 1 ? { text: "", toolCalls: [{ id: "collection-1", name: "collection_search", arguments: '{"query":"vui"}' }], finishReason: "tool_calls" } : { text: "Found one", toolCalls: [], finishReason: "stop" }; };
     const events = [];
-    for await (const event of runOrchestrator({ model: "banmao.fun", message: "vui", context: { surface: "collection", pathname: "/collection" }, evidence: [], authenticated: false }, { tools: [collectionTool], completion, maxToolRounds: 2 })) events.push(event);
+    for await (const event of runOrchestrator({ model: "banmao.fun", message: "find vui", context: { surface: "collection", pathname: "/collection" }, evidence: [], authenticated: false }, { tools: [collectionTool], completion, maxToolRounds: 2 })) events.push(event);
     expect(events).toContainEqual({ type: "collection_results", callId: "collection-1", observedAt: "2026-08-10T00:00:00.000Z", searchMode: "metadata", results: [{ publicId: "banmao/Happy_Smile", secureUrl: "https://res.cloudinary.com/demo/image/upload/happy.png", thumbnailUrl: "https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,w_480,c_limit/happy.png", name: "Happy Smile", folder: "banmao", width: 100, height: 50, format: "png", score: 48, matchedTerms: ["happy"], matchReason: "public_id", searchMode: "metadata", observedAt: "2026-08-10T00:00:00.000Z" }] });
     expect(JSON.stringify(events)).not.toContain("never-stream");
     expect(JSON.stringify(events)).not.toContain("bytes");
@@ -44,29 +45,36 @@ describe("bounded BANMAO AI orchestrator", () => {
     ["사이버펑크", "ko"],
     ["киберпанк", "ru"],
     ["bahagia", "id"],
-  ] as const)("forces metadata media search for Collection concept %s", async (message, locale) => {
-    const collectionTool = {
-      ...tool,
-      name: "collection.search",
-      contexts: ["collection"] as const,
-      execute: jest.fn(async (_args: unknown, _context?: unknown) => ({ status: "available", source: "cloudinary:test", value: { results: [{ public_id: "banmao/Concept", secure_url: "https://res.cloudinary.com/demo/image/upload/concept.png" }] } })),
-    };
+  ] as const)("directly executes metadata media search for Collection concept %s", async (message, locale) => {
+    const collectionRead = jest.fn(async (_name: "search" | "prompts" | "quests", _args: Record<string, unknown>) => ({
+      observedAt: "2026-08-10T00:00:00.000Z",
+      results: Array.from({ length: 12 }, (_, index) => ({
+        public_id: `banmao/Concept_${index}`,
+        secure_url: `https://res.cloudinary.com/demo/image/upload/concept-${index}.png`,
+        context: { secret: "never-stream" },
+      })),
+    }));
+    const collectionTool = createDomainToolDescriptors({ collectionRead }).find((descriptor) => descriptor.name === "collection.search")!;
     const requests: CompletionRequest[] = [];
     const events = [];
     const completion = async function* (request: CompletionRequest) {
       requests.push(request);
-      if (requests.length === 1 && request.toolChoice !== "auto") {
-        yield { text: "", toolCalls: [{ id: "concept-search", name: "collection_search", arguments: JSON.stringify({ query: message }) }], finishReason: "tool_calls" };
-      } else {
-        yield { text: "Done", toolCalls: [], finishReason: "stop" };
-      }
+      yield { text: "Done", toolCalls: [], finishReason: "stop" };
     };
     for await (const event of runOrchestrator({ model: "banmao.fun", message, context: { surface: "collection", pathname: "/collection", locale }, evidence: [], authenticated: false }, { tools: [collectionTool], completion, maxToolRounds: 2 })) events.push(event);
-    expect(requests[0].toolChoice).toEqual({ type: "function", function: { name: "collection_search" } });
-    expect(collectionTool.execute).toHaveBeenCalledWith({ query: message }, expect.anything());
+    expect(collectionRead).toHaveBeenCalledTimes(1);
+    expect(collectionRead).toHaveBeenCalledWith("search", { query: message, limit: 10 });
+    expect(events.filter((event) => event.type === "tool")).toHaveLength(1);
     expect(events.filter((event) => event.type === "collection_results")).toHaveLength(1);
-    expect(events.find((event) => event.type === "collection_results")).toMatchObject({ searchMode: "metadata", results: [{ publicId: "banmao/Concept" }] });
-    expect(requests[1].toolChoice).toBe("auto");
+    const media = events.find((event) => event.type === "collection_results");
+    expect(media).toMatchObject({ searchMode: "metadata" });
+    expect(media?.type === "collection_results" ? media.results[0] : undefined).toMatchObject({ publicId: "banmao/Concept_0" });
+    expect(media?.type === "collection_results" ? media.results : []).toHaveLength(10);
+    expect(JSON.stringify(media)).not.toContain("never-stream");
+    expect(requests).toHaveLength(1);
+    expect(requests[0].tools?.map((spec) => spec.function.name) || []).not.toContain("collection_search");
+    expect(requests[0].messages.some((entry) => entry.role === "assistant" && entry.tool_calls?.[0].function.name === "collection_search")).toBe(true);
+    expect(requests[0].messages.some((entry) => entry.role === "tool" && entry.content.includes("Concept_0"))).toBe(true);
   });
 
   test.each([
@@ -78,10 +86,13 @@ describe("bounded BANMAO AI orchestrator", () => {
     ["vu", "collection", "/collection"],
     ["happy", "landing", "/"],
   ] as const)("does not force Collection search for unrelated or out-of-context prompt %s", async (message, surface, pathname) => {
+    const collectionRead = jest.fn(async (_name: "search" | "prompts" | "quests", _args: Record<string, unknown>) => ({ results: [] }));
+    const collectionTool = createDomainToolDescriptors({ collectionRead }).find((descriptor) => descriptor.name === "collection.search")!;
     const requests: CompletionRequest[] = [];
     const completion = async function* (request: CompletionRequest) { requests.push(request); yield { text: "Answer", toolCalls: [], finishReason: "stop" }; };
-    for await (const _event of runOrchestrator({ model: "banmao.fun", message, context: { surface, pathname }, evidence: [], authenticated: false }, { tools: [{ ...tool, name: "collection.search", contexts: ["collection"] as const }], completion, maxToolRounds: 1 })) { /* consume */ }
-    expect(requests[0].toolChoice).toBe("auto");
+    for await (const _event of runOrchestrator({ model: "banmao.fun", message, context: { surface, pathname }, evidence: [], authenticated: false }, { tools: [collectionTool], completion, maxToolRounds: 1 })) { /* consume */ }
+    expect(collectionRead).not.toHaveBeenCalled();
+    expect(requests[0].tools?.map((spec) => spec.function.name)).toContain("collection_search");
   });
 
   test("executes only a registered tool, feeds its result back, then streams final text", async () => {
