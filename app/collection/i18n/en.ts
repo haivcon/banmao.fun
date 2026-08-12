@@ -311,6 +311,7 @@ export default {
     downloadImage: "Download image",
     openImage: "Open image",
     loadedOfTotal: "Loaded {loaded} of {total}",
+    loadMoreCollection: "Load more",
     loadCollectionFailed: "Collection loading was interrupted.",
     retryCollection: "Retry",
     collectionEnd: "All Collection items are loaded.",

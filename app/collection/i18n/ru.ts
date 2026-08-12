@@ -191,6 +191,7 @@ export default {
     downloadImage: "Скачать изображение",
     openImage: "Открыть изображение",
     loadedOfTotal: "Загружено {loaded} из {total}",
+    loadMoreCollection: "Загрузить ещё",
     loadCollectionFailed: "Загрузка коллекции прервана.",
     retryCollection: "Повторить",
     collectionEnd: "Все элементы коллекции загружены.",

@@ -1,4 +1,5 @@
 import {
+    COLLECTION_PAGE_SIZE,
     collectionCountSummary,
     createCursorPageRequester,
     shouldLoadCollectionPrefix,
@@ -26,10 +27,11 @@ test("three cursor pages append without duplicate public IDs and preserve provid
 });
 
 test("a requested page beyond the loaded prefix keeps requesting bounded pages", () => {
-    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: 48, loaded: 48, hasMore: true })).toBe(true);
-    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: 48, loaded: 144, hasMore: true })).toBe(true);
-    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: 48, loaded: 192, hasMore: true })).toBe(false);
-    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: 48, loaded: 144, hasMore: false })).toBe(false);
+    expect(COLLECTION_PAGE_SIZE).toBe(36);
+    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: COLLECTION_PAGE_SIZE, loaded: 36, hasMore: true })).toBe(true);
+    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: COLLECTION_PAGE_SIZE, loaded: 108, hasMore: true })).toBe(true);
+    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: COLLECTION_PAGE_SIZE, loaded: 144, hasMore: true })).toBe(false);
+    expect(shouldLoadCollectionPrefix({ requestedPage: 4, pageSize: COLLECTION_PAGE_SIZE, loaded: 108, hasMore: false })).toBe(false);
 });
 
 test("cursor requester shares an in-flight prefetch and does not request a page twice", async () => {
@@ -43,6 +45,17 @@ test("cursor requester shares an in-flight prefetch and does not request a page 
     await expect(Promise.all([prefetched, requested])).resolves.toHaveLength(2);
     await requester("cursor-2");
     expect(fetchPage).toHaveBeenCalledTimes(1);
+});
+
+test("a failed cursor remains retryable and successful retries are cached", async () => {
+    const fetchPage = jest.fn()
+        .mockRejectedValueOnce(new Error("temporary"))
+        .mockResolvedValueOnce({ images: [item("c")], total: 3, nextCursor: null });
+    const requester = createCursorPageRequester(fetchPage);
+    await expect(requester("cursor-2")).rejects.toThrow("temporary");
+    await expect(requester("cursor-2")).resolves.toMatchObject({ nextCursor: null });
+    await requester("cursor-2");
+    expect(fetchPage).toHaveBeenCalledTimes(2);
 });
 
 test("deterministic sorts use publicId as a tie-breaker after append", () => {
@@ -62,17 +75,17 @@ test("count summary distinguishes provider total, loaded inventory and loaded ma
 test("infinite prefix loading reaches deterministic cursor exhaustion", () => {
     let loaded = 0;
     let hasMore = true;
-    const pageSizes = [48, 48, 13];
+    const pageSizes = [36, 36, 13];
     let requests = 0;
-    while (shouldLoadCollectionPrefix({ requestedPage: requests + 1, pageSize: 48, loaded, hasMore })) {
+    while (shouldLoadCollectionPrefix({ requestedPage: requests + 1, pageSize: COLLECTION_PAGE_SIZE, loaded, hasMore })) {
         loaded += pageSizes[requests++];
         hasMore = requests < pageSizes.length;
     }
-    expect({ loaded, hasMore, requests }).toEqual({ loaded: 109, hasMore: false, requests: 3 });
+    expect({ loaded, hasMore, requests }).toEqual({ loaded: 85, hasMore: false, requests: 3 });
 });
 
 test("all six Collection locales have parity for pagination status keys", async () => {
     const locales = await Promise.all(["en", "vi", "zh", "ko", "ru", "id"].map(code => import(`../app/collection/i18n/${code}`)));
-    const keys = ["loadedOfTotal", "loadCollectionFailed", "retryCollection", "collectionEnd"];
+    const keys = ["loadedOfTotal", "loadMoreCollection", "loadingMore", "loadCollectionFailed", "retryCollection", "collectionEnd"];
     for (const locale of locales) for (const key of keys) expect(locale.default[key]).toEqual(expect.any(String));
 });

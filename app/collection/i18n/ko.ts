@@ -191,6 +191,7 @@ export default {
     downloadImage: "이미지 다운로드",
     openImage: "이미지 열기",
     loadedOfTotal: "{total}개 중 {loaded}개 로드됨",
+    loadMoreCollection: "더 불러오기",
     loadCollectionFailed: "컬렉션 로딩이 중단되었습니다.",
     retryCollection: "다시 시도",
     collectionEnd: "모든 컬렉션 항목을 불러왔습니다.",

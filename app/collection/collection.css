@@ -4729,3 +4729,34 @@ body::-webkit-scrollbar {
 .col-light .col-stats-preview-more {
     color: rgba(0, 0, 0, 0.35);
 }
+
+.col-load-more-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 16px 0 8px;
+}
+
+.col-load-more-btn {
+    min-width: 150px;
+    padding: 10px 20px;
+    border: 1px solid rgba(244, 114, 182, 0.35);
+    border-radius: 9999px;
+    background: rgba(244, 114, 182, 0.1);
+    color: #f9a8d4;
+    font: 600 14px/1.2 inherit;
+    cursor: pointer;
+}
+
+.col-load-more-btn:hover:not(:disabled) {
+    background: rgba(244, 114, 182, 0.18);
+}
+
+.col-load-more-btn:disabled {
+    cursor: wait;
+    opacity: 0.55;
+}
+
+.col-light .col-load-more-btn {
+    color: #be185d;
+    background: rgba(219, 39, 119, 0.08);
+}
