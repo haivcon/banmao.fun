@@ -22,7 +22,7 @@ export type CompletionRequest = {
   model: AIModel;
   messages: ChatMessage[];
   tools?: ToolSpec[];
-  toolChoice?: "auto" | { type: "function"; function: { name: string } };
+  toolChoice?: "auto";
 };
 export type ChatRound = { text: string; toolCalls: ToolCall[]; finishReason: string; complete?: boolean };
 type ClientConfig = Pick<AIConfig, "baseUrl" | "apiKey" | "requestTimeoutMs" | "maxStreamBytes">;
