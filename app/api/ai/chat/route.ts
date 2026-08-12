@@ -90,6 +90,7 @@ export async function POST(request: Request) {
           if (event.type === "delta") controller.enqueue(sse("delta", { text: event.text }));
           else if (event.type === "citation") controller.enqueue(sse("citation", event));
           else if (event.type === "tool") controller.enqueue(sse("tool", event));
+          else if (event.type === "collection_results") controller.enqueue(sse("collection_results", event));
           else controller.enqueue(sse("error", { code: event.code }));
         }
         controller.enqueue(sse("done", { requestId }));

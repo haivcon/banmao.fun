@@ -9,6 +9,7 @@ import type { AIPageAction } from "../../../lib/ai/client/actionBridge";
 import type { AISurface } from "../../../lib/ai/contracts";
 import AIMessage from "./AIMessage";
 import CitationCard from "./CitationCard";
+import CollectionResultCards from "./CollectionResultCards";
 import ModelSelector from "./ModelSelector";
 import PageActionCard from "./PageActionCard";
 import PrivacyControls from "./PrivacyControls";
@@ -63,7 +64,7 @@ export default function AIChatPanel(props: Props) {
     const container = messagesRef.current;
     if (!container || !stayAtBottom.current) return;
     container.scrollTo({ top: container.scrollHeight, behavior: props.reducedMotion ? "auto" : "smooth" });
-  }, [props.state.messages, props.state.tools, props.state.citations, props.state.error, props.reducedMotion]);
+  }, [props.state.messages, props.state.tools, props.state.citations, props.state.collectionResults, props.state.error, props.reducedMotion]);
 
   function choosePrompt(prompt: string) { props.setInput(prompt); inputRef.current?.focus(); }
   function onMessageScroll() {
@@ -114,7 +115,8 @@ export default function AIChatPanel(props: Props) {
         <div className="banmao-ai-prompt-grid" aria-label={t("suggested")}>{prompts.map((prompt, index) => { const Icon = PROMPT_ICONS[index % PROMPT_ICONS.length]; return <button type="button" key={prompt} onClick={() => choosePrompt(prompt)}><Icon size={16} aria-hidden="true" /><span>{prompt}</span><ArrowUp size={14} aria-hidden="true" /></button>; })}</div>
       </div>}
       {props.state.messages.map((message, index) => <AIMessage key={`${message.role}-${message.createdAt}-${index}`} {...message} streaming={streaming && index === props.state.messages.length - 1 && message.role === "assistant"} language={props.language} />)}
-      {!!props.state.tools.length && <section className="banmao-ai-activity" aria-label={t("activity")}><h3><Sparkles size={14} /> {t("activityTitle")}</h3>{props.state.tools.map((tool) => <ToolCard tool={tool} language={props.language} key={tool.callId} />)}</section>}
+      {!!props.state.tools.length && <section className="banmao-ai-activity" aria-label={t("activity")}><h3><Sparkles size={14} /> {t("activityTitle")}</h3>{props.state.tools.map((tool) => <ToolCard tool={tool} language={props.language} key={`${tool.callId}:${tool.status}`} />)}</section>}
+      {props.state.collectionResults && <CollectionResultCards payload={props.state.collectionResults} language={props.language} />}
       {!!props.state.citations.length && <aside className="banmao-ai-citations"><h3>{t("sources")} <span>{props.state.citations.length}</span></h3><div>{props.state.citations.map((citation, index) => <CitationCard citation={citation} index={index} key={`${citation.sourcePath}:${citation.version || ""}`} />)}</div></aside>}
       {props.pendingAction && <PageActionCard action={props.pendingAction} language={props.language} onConfirm={props.confirmAction} onCancel={props.cancelAction} />}
       {props.actionNotice && <p className="banmao-ai-action-notice" role="status">{props.actionNotice}</p>}

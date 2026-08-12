@@ -20,6 +20,20 @@ const tool = {
 function round(value: ChatRound) { return async function* (_request: CompletionRequest) { yield value; }; }
 
 describe("bounded BANMAO AI orchestrator", () => {
+  test("emits only sanitized structured Collection media results", async () => {
+    const collectionTool = {
+      ...tool, name: "collection.search", contexts: ["collection"] as const,
+      execute: jest.fn(async () => ({ status: "available", source: "cloudinary:test", asOf: "2026-08-10T00:00:00.000Z", value: { observedAt: "2026-08-10T00:00:00.000Z", results: [{ public_id: "banmao/Happy_Smile", secure_url: "https://res.cloudinary.com/demo/image/upload/happy.png", folder: "banmao", format: "png", width: 100, height: 50, score: 48, matchedTerms: ["happy"], matchReason: "public_id", searchMode: "metadata", context: { secret: "never-stream" }, bytes: 999 }] } })),
+    };
+    let calls = 0;
+    const completion = async function* () { calls += 1; yield calls === 1 ? { text: "", toolCalls: [{ id: "collection-1", name: "collection_search", arguments: '{"query":"vui"}' }], finishReason: "tool_calls" } : { text: "Found one", toolCalls: [], finishReason: "stop" }; };
+    const events = [];
+    for await (const event of runOrchestrator({ model: "banmao.fun", message: "vui", context: { surface: "collection", pathname: "/collection" }, evidence: [], authenticated: false }, { tools: [collectionTool], completion, maxToolRounds: 2 })) events.push(event);
+    expect(events).toContainEqual({ type: "collection_results", callId: "collection-1", observedAt: "2026-08-10T00:00:00.000Z", searchMode: "metadata", results: [{ publicId: "banmao/Happy_Smile", secureUrl: "https://res.cloudinary.com/demo/image/upload/happy.png", thumbnailUrl: "https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,w_480,c_limit/happy.png", name: "Happy Smile", folder: "banmao", width: 100, height: 50, format: "png", score: 48, matchedTerms: ["happy"], matchReason: "public_id", searchMode: "metadata", observedAt: "2026-08-10T00:00:00.000Z" }] });
+    expect(JSON.stringify(events)).not.toContain("never-stream");
+    expect(JSON.stringify(events)).not.toContain("bytes");
+  });
+
   test("executes only a registered tool, feeds its result back, then streams final text", async () => {
     const requests: CompletionRequest[] = [];
     const completion = async function* (request: CompletionRequest) {
