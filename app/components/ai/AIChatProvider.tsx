@@ -122,6 +122,17 @@ export default function AIChatProvider() {
       dispatchEmotion({ type: "panel-open" });
     }
   }
+  useEffect(() => {
+    function handleOpen(event: Event) {
+      const detail = (event as CustomEvent<{ input?: unknown }>).detail;
+      const requestedInput = typeof detail?.input === "string" ? detail.input : "";
+      setOpen(true);
+      if (requestedInput) setInput(requestedInput);
+      dispatchEmotion({ type: "panel-open" });
+    }
+    window.addEventListener("banmao-ai-open", handleOpen);
+    return () => window.removeEventListener("banmao-ai-open", handleOpen);
+  }, []);
   function stop() {
     abort.current?.abort();
     dispatch({ type: "stop" });

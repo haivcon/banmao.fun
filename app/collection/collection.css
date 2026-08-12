@@ -3069,6 +3069,56 @@ body::-webkit-scrollbar {
     padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
 }
 
+/* ===== COLLECTION BATCH 3: AI SEARCH + ACCESSIBILITY ===== */
+.col-ai-search-btn {
+    min-height: 42px;
+    padding: 0 16px;
+    border: 1px solid rgba(192, 132, 252, 0.45);
+    border-radius: 12px;
+    color: #f5d0fe;
+    background: linear-gradient(135deg, rgba(192, 132, 252, 0.18), rgba(244, 114, 182, 0.14));
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.col-sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+.collection-page :where(a, button, input, [role="button"]):focus-visible {
+    outline: 3px solid #f9a8d4;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 5px rgba(192, 132, 252, 0.35);
+}
+
+.col-card[role="button"]:focus-visible { border-color: #f9a8d4; }
+
+@media (max-width: 640px) {
+    .col-ai-search-btn { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .collection-page *,
+    .collection-page *::before,
+    .collection-page *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    .collection-page .col-card:hover,
+    .collection-page .col-card-img-wrap:hover,
+    .collection-page button:hover { transform: none !important; }
+}
+
 /* ========== ANIMATIONS ========== */
 @keyframes colFadeIn {
     from {
