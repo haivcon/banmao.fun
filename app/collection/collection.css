@@ -534,6 +534,55 @@ body::-webkit-scrollbar {
     box-shadow: 0 0 20px rgba(244, 114, 182, 0.1);
 }
 
+.col-search-input:has(+ .col-search-clear) {
+    padding-right: 42px;
+}
+
+.col-search-area {
+    max-width: 500px;
+    margin: 0 auto 8px;
+}
+
+.col-search-area .col-search-wrap {
+    margin-bottom: 0;
+}
+
+.col-search-clear {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(244, 114, 182, 0.12);
+    color: #f9a8d4;
+    cursor: pointer;
+}
+
+.col-recent-searches {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 12px 0;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 11px;
+}
+
+.col-recent-searches button,
+.col-selection-toolbar button {
+    border: 1px solid rgba(244, 114, 182, 0.18);
+    border-radius: 9999px;
+    background: rgba(244, 114, 182, 0.08);
+    color: #f9a8d4;
+    padding: 5px 10px;
+    cursor: pointer;
+    font: inherit;
+}
+
 /* ========== SECTIONS ========== */
 .col-section {
     padding: 10px 20px 16px;
@@ -569,8 +618,32 @@ body::-webkit-scrollbar {
     text-align: center;
     padding: 30px;
     background: rgba(244, 114, 182, 0.03);
-    border-radius: 9999px;
+    border-radius: 24px;
     border: 1px dashed rgba(244, 114, 182, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.col-empty strong {
+    color: #f9a8d4;
+    font-size: 16px;
+}
+
+.col-selection-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0 12px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 12px;
+}
+
+.col-selection-toolbar button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 /* ========== COLLAPSIBLE TABS ========== */
@@ -973,6 +1046,44 @@ body::-webkit-scrollbar {
 .col-card:hover {
     transform: translateY(-6px) scale(1.02);
     box-shadow: 0 16px 32px rgba(244, 114, 182, 0.2), 0 0 20px rgba(244, 114, 182, 0.1);
+}
+
+.col-card-selecting {
+    cursor: pointer;
+}
+
+.col-card-selected {
+    border-color: #f472b6;
+    box-shadow: 0 0 0 2px rgba(244, 114, 182, 0.2);
+}
+
+.col-select-checkbox {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 4;
+    width: 24px;
+    height: 24px;
+    border: 2px solid rgba(255, 255, 255, 0.65);
+    border-radius: 7px;
+    background: rgba(5, 5, 16, 0.72);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.col-select-checkbox.active {
+    border-color: #f472b6;
+    background: #f472b6;
+}
+
+.col-card-name mark {
+    border-radius: 3px;
+    background: #fde047;
+    color: #3f1d0b;
+    padding: 0 1px;
 }
 
 .col-card-img-wrap {
@@ -1680,6 +1791,49 @@ body::-webkit-scrollbar {
     margin-bottom: 4px;
 }
 
+@media (min-width: 641px) {
+    .col-lightbox-inner {
+        max-width: min(94vw, 1400px);
+        width: min(94vw, 1400px);
+        height: min(90vh, 920px);
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+        align-items: stretch;
+        gap: 20px;
+        overflow: hidden;
+    }
+
+    .col-lightbox-img-wrap {
+        min-width: 0;
+        border-radius: 24px;
+        background: rgba(255, 255, 255, 0.025);
+    }
+
+    .col-lightbox-img,
+    .col-lightbox-video {
+        max-height: 86vh;
+    }
+
+    .col-lightbox-sheet {
+        margin-top: 0;
+        max-width: none;
+        height: 100%;
+        overflow-y: auto;
+        justify-content: flex-start;
+    }
+
+    .col-sheet-handle {
+        display: none;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 900px) {
+    .col-lightbox-inner {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 330px);
+        gap: 12px;
+    }
+}
+
 .col-sheet-actions {
     display: flex;
     gap: 8px;
@@ -2205,6 +2359,23 @@ body::-webkit-scrollbar {
 .col-lightbox-info {
     font-size: 11px;
     color: rgba(255, 255, 255, 0.35);
+}
+
+.col-lightbox-metadata {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 12px;
+    padding: 8px 10px;
+    box-sizing: border-box;
+    border-radius: 12px;
+    background: rgba(244, 114, 182, 0.05);
+    color: rgba(255, 255, 255, 0.58);
+    font-size: 11px;
+}
+
+.col-lightbox-metadata strong {
+    color: #f9a8d4;
 }
 
 /* Lightbox Tags */

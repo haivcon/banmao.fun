@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import dynamic from "next/dynamic";
+import JSZip from "jszip";
 import { useRouter, useSearchParams } from "next/navigation";
 import "./collection.css";
 import "./hub-redesign.css";
@@ -104,7 +105,7 @@ const ITEMS_PER_PAGE_MOBILE = COLLECTION_PAGE_SIZE;
 function useIsMobile() {
     const [isMobile, setIsMobile] = useState(false);
     useEffect(() => {
-        const check = () => setIsMobile(window.innerWidth <= 768);
+        const check = () => setIsMobile(window.innerWidth <= 640);
         check();
         window.addEventListener("resize", check);
         return () => window.removeEventListener("resize", check);
@@ -314,16 +315,20 @@ function SkeletonCard() {
 
 /* ===================== COMPONENTS ===================== */
 
-const ImageCard = memo(function ImageCard({ img, index, gridCols, unloadOffscreen, t, lang, onOpen, isFav, onFav, dlCount, onDl, onDownloadToast, draggable, onDragStart, onDragOver, onDrop }: {
+const ImageCard = memo(function ImageCard({ img, index, gridCols, unloadOffscreen, t, lang, onOpen, isFav, onFav, dlCount, onDl, onDownloadToast, draggable, onDragStart, onDragOver, onDrop, selectMode, selected, onSelect, searchQuery }: {
     img: ImageItem; index: number; gridCols: number; unloadOffscreen: boolean;
     t: Record<string, string>; lang: Lang;
     onOpen: (img: ImageItem) => void; isFav: boolean;
-    onFav: (src: string) => void; dlCount: number; onDl: () => void;
+    onFav: (img: ImageItem) => void; dlCount: number; onDl: () => void;
     onDownloadToast: (success: boolean) => void;
     draggable?: boolean;
     onDragStart?: (e: React.DragEvent) => void;
     onDragOver?: (e: React.DragEvent) => void;
     onDrop?: (e: React.DragEvent) => void;
+    selectMode?: boolean;
+    selected?: boolean;
+    onSelect?: (publicId: string) => void;
+    searchQuery: string;
 }) {
     const cardRef = useRef<HTMLDivElement>(null);
     const isPriority = index < gridCols;
@@ -360,11 +365,20 @@ const ImageCard = memo(function ImageCard({ img, index, gridCols, unloadOffscree
         setTimeout(() => setDlState(""), 1500);
     };
 
+    const displayName = lang !== "en" ? translateName(img.name, lang as "vi" | "zh" | "ko" | "ru" | "id") : img.name;
+    const highlightName = (name: string) => {
+        const query = searchQuery.trim();
+        if (!query) return name;
+        const index = name.toLocaleLowerCase().indexOf(query.toLocaleLowerCase());
+        if (index < 0) return name;
+        return <>{name.slice(0, index)}<mark>{name.slice(index, index + query.length)}</mark>{name.slice(index + query.length)}</>;
+    };
+
     return (
         <div
             ref={cardRef}
-            className={`col-card ${img.isVideo ? "col-card-video" : ""} ${draggable ? "col-card-draggable" : ""}`}
-            onClick={() => onOpen(img)}
+            className={`col-card ${img.isVideo ? "col-card-video" : ""} ${draggable ? "col-card-draggable" : ""} ${selectMode ? "col-card-selecting" : ""} ${selected ? "col-card-selected" : ""}`}
+            onClick={() => selectMode ? onSelect?.(img.publicId) : onOpen(img)}
             draggable={draggable}
             onDragStart={onDragStart}
             onDragOver={onDragOver}
@@ -393,14 +407,19 @@ const ImageCard = memo(function ImageCard({ img, index, gridCols, unloadOffscree
                     </>
                 )}
                 {dlCount >= 3 && <span className="col-popular-badge">🔥</span>}
-                <button
-                    className={`col-fav-btn ${isFav ? "active" : ""}`}
-                    onClick={(e) => { e.stopPropagation(); onFav(img.src); }}
-                    title="Favorite"
-                >{isFav ? "❤️" : "🤍"}</button>
+                {selectMode ? (
+                    <span className={`col-select-checkbox ${selected ? "active" : ""}`} aria-hidden="true">{selected ? "✓" : ""}</span>
+                ) : (
+                    <button
+                        className={`col-fav-btn ${isFav ? "active" : ""}`}
+                        onClick={(e) => { e.stopPropagation(); onFav(img); }}
+                        aria-label={isFav ? t.removeFavorite : t.addFavorite}
+                        title={isFav ? t.removeFavorite : t.addFavorite}
+                    >{isFav ? "❤️" : "🤍"}</button>
+                )}
             </div>
             <div className="col-card-footer">
-                <span className="col-card-name">{img.isVideo ? `🎬 ${lang !== "en" ? translateName(img.name, lang as "vi" | "zh" | "ko" | "ru" | "id") : img.name}` : (lang !== "en" ? translateName(img.name, lang as "vi" | "zh" | "ko" | "ru" | "id") : img.name)}</span>
+                <span className="col-card-name">{img.isVideo && "🎬 "}{highlightName(displayName)}</span>
                 <button
                     className={`col-dl-btn ${dlState}`}
                     title={t.download}
@@ -522,6 +541,12 @@ export default function CollectionPage() {
     const hubLoadMoreRef = useRef<HTMLDivElement>(null);
     const [showStats, setShowStats] = useState(false);
     const hasOpenedDeepLink = useRef(false);
+    const [searchInput, setSearchInput] = useState(() => searchParams.get("q") || searchQuery);
+    const [searchFocused, setSearchFocused] = useState(false);
+    const [recentSearches, setRecentSearches] = useState<string[]>([]);
+    const [selectMode, setSelectMode] = useState(false);
+    const [selectedFavorites, setSelectedFavorites] = useState<Set<string>>(new Set());
+    const [downloadingZip, setDownloadingZip] = useState(false);
 
     // ——— Lightbox Zoom State ———
     const [zoomScale, setZoomScale] = useState(1);
@@ -595,10 +620,11 @@ export default function CollectionPage() {
         }
     }, [zoomScale]);
 
-    // Fix gridCols for mobile (store defaults to 5, but mobile needs 3)
+    // Keep the selected density valid when crossing the mobile breakpoint.
     useEffect(() => {
-        if (isMobile && gridCols === 5) setGridCols(3);
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+        const validColumns = isMobile ? [2, 3, 4] : [3, 5, 7, 9, 11];
+        if (!validColumns.includes(gridCols)) setGridCols(isMobile ? 3 : 5);
+    }, [isMobile, gridCols, setGridCols]);
 
     const t = T[lang];
 
@@ -1251,23 +1277,42 @@ export default function CollectionPage() {
     }, [lang, allImages]);
 
 
-    const toggleFav = useCallback((src: string) => {
+    const isFavorite = useCallback((img: { publicId?: string; src: string }) => (
+        Boolean(img.publicId && favorites.has(img.publicId)) || favorites.has(img.src)
+    ), [favorites]);
+
+    const toggleFav = useCallback((img: { publicId?: string; src: string }) => {
+        const favoriteId = img.publicId || img.src;
         setFavorites((prev) => {
             const next = new Set(prev);
-            if (next.has(src)) next.delete(src); else next.add(src);
+            const wasFavorite = next.has(favoriteId) || next.has(img.src);
+            next.delete(img.src);
+            if (wasFavorite) next.delete(favoriteId); else next.add(favoriteId);
             localStorage.setItem("banmao_favorites", JSON.stringify([...next]));
 
             setFavoritesOrder(prevOrder => {
-                let newOrder = [...prevOrder];
-                if (next.has(src) && !newOrder.includes(src)) newOrder.push(src);
-                else if (!next.has(src)) newOrder = newOrder.filter(id => id !== src);
+                let newOrder = prevOrder.filter(id => id !== img.src && id !== favoriteId);
+                if (!wasFavorite) newOrder.push(favoriteId);
                 localStorage.setItem("banmao_favorites_order", JSON.stringify(newOrder));
                 return newOrder;
             });
-
             return next;
         });
-    }, []);
+    }, [setFavorites, setFavoritesOrder]);
+
+    // Convert legacy src-based favorites after Collection data becomes available.
+    useEffect(() => {
+        if (allImages.length === 0 || favorites.size === 0) return;
+        const bySrc = new Map(allImages.map(img => [img.src, img.publicId]));
+        const migrated = [...favorites].map(id => bySrc.get(id) || id);
+        if (migrated.every(id => favorites.has(id)) && migrated.length === favorites.size) return;
+        const next = new Set(migrated);
+        setFavorites(next);
+        const order = favoritesOrder.map(id => bySrc.get(id) || id);
+        setFavoritesOrder(order);
+        localStorage.setItem("banmao_favorites", JSON.stringify([...next]));
+        localStorage.setItem("banmao_favorites_order", JSON.stringify(order));
+    }, [allImages, favorites, favoritesOrder, setFavorites, setFavoritesOrder]);
 
     // Load initial favorites order (moved logic into the main mount effect above)
 
@@ -1289,7 +1334,7 @@ export default function CollectionPage() {
     const filteredImages = useMemo(() => {
         let filtered = allImages;
         if (activeTab === "favorites") {
-            filtered = allImages.filter((i) => favorites.has(i.src));
+            filtered = allImages.filter((i) => favorites.has(i.publicId) || favorites.has(i.src));
         } else if (activeTab !== "all") {
             filtered = allImages.filter((i) => i.folder === activeTab);
         }
@@ -1316,8 +1361,8 @@ export default function CollectionPage() {
         // Custom sort for favorites tab
         if (activeTab === "favorites" && sortBy === "name") {
             return filtered.sort((a, b) => {
-                const indexA = favoritesOrder.indexOf(a.src);
-                const indexB = favoritesOrder.indexOf(b.src);
+                const indexA = Math.max(favoritesOrder.indexOf(a.publicId), favoritesOrder.indexOf(a.src));
+                const indexB = Math.max(favoritesOrder.indexOf(b.publicId), favoritesOrder.indexOf(b.src));
                 if (indexA === -1 && indexB === -1) return a.name.localeCompare(b.name) || collectionItemKey(a).localeCompare(collectionItemKey(b));
                 if (indexA === -1) return 1;
                 if (indexB === -1) return -1;
@@ -1337,7 +1382,7 @@ export default function CollectionPage() {
             hasOpenedDeepLink.current = true;
             return;
         }
-        const idx = filteredImages.findIndex(i => i.src.includes(imgParam) || i.name.toLowerCase().replace(/\s+/g, "_") === imgParam.toLowerCase());
+        const idx = filteredImages.findIndex(i => i.publicId === imgParam);
         if (idx >= 0) {
             setLightboxIndex(idx);
             setImgLoading(true);
@@ -1413,9 +1458,36 @@ export default function CollectionPage() {
         }
     }, [favorites, favoritesOrder]);
 
-    const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchQuery(e.target.value);
-        setCurrentPage(1);
+    useEffect(() => {
+        try {
+            const saved = JSON.parse(localStorage.getItem("banmao-collection-recent-searches") || "[]");
+            if (Array.isArray(saved)) setRecentSearches(saved.filter(item => typeof item === "string").slice(0, 5));
+        } catch { /* ignore invalid local data */ }
+    }, []);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const query = searchInput.trim();
+            setSearchQuery(searchInput);
+            setCurrentPage(1);
+            if (query) {
+                setRecentSearches(prev => {
+                    const next = [query, ...prev.filter(item => item.toLocaleLowerCase() !== query.toLocaleLowerCase())].slice(0, 5);
+                    localStorage.setItem("banmao-collection-recent-searches", JSON.stringify(next));
+                    return next;
+                });
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchInput, setCurrentPage, setSearchQuery]);
+
+    useEffect(() => {
+        setSearchInput(current => current === searchQuery ? current : searchQuery);
+    }, [searchQuery]);
+
+    const chooseRecentSearch = useCallback((query: string) => {
+        setSearchInput(query);
+        setSearchFocused(false);
     }, []);
 
     // ——— Sticky header + scroll restoration ———
@@ -1500,9 +1572,10 @@ export default function CollectionPage() {
         setShowEditor(false);
         setShowSharePanel(false);
         setShowQr(false);
-        // Update URL for deep link
-        const name = img.name.toLowerCase().replace(/\s+/g, "_");
-        window.history.replaceState(null, "", `?img=${encodeURIComponent(name)}`);
+        // Update URL for a stable publicId deep link without discarding other gallery state.
+        const url = new URL(window.location.href);
+        url.searchParams.set("img", img.publicId);
+        window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }, [filteredImages]);
 
     const closeLightbox = useCallback(() => {
@@ -1516,8 +1589,10 @@ export default function CollectionPage() {
         // Revoke blob URL to free memory
         setBgRemovedUrl(prev => { if (prev) URL.revokeObjectURL(prev); return null; });
         setBgRemovedName("");
-        // Clear URL param
-        window.history.replaceState(null, "", window.location.pathname);
+        // Clear only the lightbox URL param, preserving batch-1 gallery state.
+        const url = new URL(window.location.href);
+        url.searchParams.delete("img");
+        window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }, []);
 
     const lightboxPrev = useCallback(() => {
@@ -1618,6 +1693,22 @@ export default function CollectionPage() {
         ? hubEditorOverride
         : (lightboxIndex !== null ? filteredImages[lightboxIndex] : null);
 
+    useEffect(() => {
+        if (lightboxIndex === null || hubEditorOverride) return;
+        const image = filteredImages[lightboxIndex];
+        if (!image) return;
+        const url = new URL(window.location.href);
+        url.searchParams.set("img", image.publicId);
+        window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    }, [filteredImages, hubEditorOverride, lightboxIndex]);
+
+    useEffect(() => {
+        if (lightboxIndex === null) return;
+        [filteredImages[lightboxIndex - 1], filteredImages[lightboxIndex + 1]].forEach(item => {
+            if (item && !item.isVideo) new Image().src = item.src;
+        });
+    }, [filteredImages, lightboxIndex]);
+
     // Load saved BG from IndexedDB when navigating images
     useEffect(() => {
         if (!currentLightboxImage) return;
@@ -1689,10 +1780,10 @@ export default function CollectionPage() {
     }, [currentLightboxImage?.src]);
 
     // ——— Copy URL ———
-    const copyUrl = useCallback(async (url: string) => {
+    const copyUrl = useCallback(async (url: string, successMessage = t.copied) => {
         try {
             await navigator.clipboard.writeText(url);
-            setToast(t.copied);
+            setToast(successMessage);
         } catch {
             const ta = document.createElement("textarea");
             ta.value = url;
@@ -1700,7 +1791,7 @@ export default function CollectionPage() {
             ta.select();
             document.execCommand("copy");
             document.body.removeChild(ta);
-            setToast(t.copied);
+            setToast(successMessage);
         }
         setTimeout(() => setToast(null), 2500);
     }, [t.copied]);
@@ -1771,6 +1862,43 @@ export default function CollectionPage() {
             setTimeout(() => downloadImageBlob(img.src, img.name), index * 100);
         });
     }, []);
+
+    const toggleSelectedFavorite = useCallback((publicId: string) => {
+        setSelectedFavorites(prev => {
+            const next = new Set(prev);
+            if (next.has(publicId)) next.delete(publicId); else next.add(publicId);
+            return next;
+        });
+    }, []);
+
+    const downloadSelectedFavorites = useCallback(async () => {
+        const images = filteredImages.filter(img => selectedFavorites.has(img.publicId));
+        if (images.length === 0 || downloadingZip) return;
+        setDownloadingZip(true);
+        try {
+            const zip = new JSZip();
+            await Promise.all(images.map(async img => {
+                const response = await fetch(img.src);
+                if (!response.ok) throw new Error(`Failed to fetch ${img.publicId}`);
+                const extension = img.src.match(/\.([a-z0-9]+)(?:\?|$)/i)?.[1] || (img.isVideo ? "mp4" : "png");
+                zip.file(`${img.name.replace(/[\/:*?"<>|]+/g, "_")}.${extension}`, await response.blob());
+            }));
+            const blob = await zip.generateAsync({ type: "blob" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "banmao-favorites.zip";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Failed to create favorites ZIP", error);
+            showToast(t.downloadFailed, "col-toast-error");
+        } finally {
+            setDownloadingZip(false);
+        }
+    }, [downloadingZip, filteredImages, selectedFavorites, showToast, t.downloadFailed]);
 
     // ——— Page navigation ———
     const goToPage = useCallback((page: number) => {
@@ -2281,19 +2409,30 @@ export default function CollectionPage() {
 
                     {/* Search */}
                     <section className="col-section">
-                        <div className="col-search-wrap">
-                            <span className="col-search-icon">🔍</span>
-                            <input
-                                type="text"
-                                data-banmao-ai-id="collection.search"
-                                data-banmao-ai-label="Search Banmao collection"
-                                data-banmao-ai-action="fill"
-                                data-banmao-ai-risk="reversible"
-                                className="col-search-input"
-                                placeholder={t.search}
-                                value={searchQuery}
-                                onChange={handleSearch}
-                            />
+                        <div className="col-search-area">
+                            <div className="col-search-wrap">
+                                <span className="col-search-icon">🔍</span>
+                                <input
+                                    type="text"
+                                    data-banmao-ai-id="collection.search"
+                                    data-banmao-ai-label="Search Banmao collection"
+                                    data-banmao-ai-action="fill"
+                                    data-banmao-ai-risk="reversible"
+                                    className="col-search-input"
+                                    placeholder={t.search}
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                    onFocus={() => setSearchFocused(true)}
+                                    onBlur={() => setTimeout(() => setSearchFocused(false), 120)}
+                                />
+                                {searchInput && <button className="col-search-clear" title={t.clearSearch} onClick={() => setSearchInput("")}>✕</button>}
+                            </div>
+                            {searchFocused && !searchInput && recentSearches.length > 0 && (
+                                <div className="col-recent-searches">
+                                    <span>{t.recentSearches}</span>
+                                    {recentSearches.map(query => <button key={query} onMouseDown={() => chooseRecentSearch(query)}>{query}</button>)}
+                                </div>
+                            )}
                         </div>
 
                         {/* Filter Bar */}
@@ -2323,7 +2462,7 @@ export default function CollectionPage() {
                                     <span className="col-sort-arrow">{showSortMenu ? "▲" : "▼"}</span>
                                 </button>
                             </div>
-                            <button className="col-sort-trigger" onClick={() => setShowStats(true)} title="Statistics">
+                            <button className="col-sort-trigger" onClick={() => setShowStats(true)} title={t.statsTooltip}>
                                 📊
                             </button>
                         </div>
@@ -2342,7 +2481,7 @@ export default function CollectionPage() {
                                     📂 All <span className="col-tab-count">{allImages.length}</span>
                                 </button>
                                 <button className={`col-tab ${activeTab === "favorites" ? "active" : ""}`} onClick={() => handleTabChange("favorites")}>
-                                    ❤️ <span className="col-tab-count">{favorites.size}</span>
+                                    ❤️ <span className="col-tab-count">{allImages.filter(isFavorite).length}</span>
                                 </button>
                                 {folders.map((f) => (
                                     <button
@@ -2372,6 +2511,11 @@ export default function CollectionPage() {
                             </div>
                             <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
                                 {activeTab === "favorites" && (
+                                    <button className={`col-layout-toggle ${selectMode ? "active" : ""}`} onClick={() => { setSelectMode(!selectMode); setSelectedFavorites(new Set()); }} title={t.selectMode}>
+                                        ☑ {t.selectMode}
+                                    </button>
+                                )}
+                                {activeTab === "favorites" && !selectMode && (
                                     <button
                                         className="col-layout-toggle"
                                         onClick={handleShareFavorites}
@@ -2384,18 +2528,18 @@ export default function CollectionPage() {
                                 <button
                                     className={`col-layout-toggle ${isInfinite ? "active" : ""}`}
                                     onClick={() => { setIsInfinite(!isInfinite); setCurrentPage(1); }}
-                                    title={isInfinite ? "Disable Infinite Scroll" : "Enable Infinite Scroll"}
+                                    title={isInfinite ? t.infiniteScrollOff : t.infiniteScrollOn}
                                     style={{ fontSize: "14px" }}
                                 >
                                     ♾️
                                 </button>
-                                <div className="col-grid-selector">
-                                    {[3, 5, 7, 9, 11].map(n => (
+                                <div className="col-grid-selector" aria-label={t.columnsLabel}>
+                                    {(isMobile ? [2, 3, 4] : [3, 5, 7, 9, 11]).map(n => (
                                         <button
                                             key={n}
                                             className={`col-grid-btn ${gridCols === n ? "active" : ""}`}
                                             onClick={() => setGridCols(n)}
-                                            title={`${n} columns`}
+                                            title={t.nColumns.replace("{n}", String(n))}
                                         >
                                             <span className="col-grid-icon" style={{
                                                 display: "grid",
@@ -2412,6 +2556,17 @@ export default function CollectionPage() {
                                 </div>
                             </div>
                         </div>
+
+                        {activeTab === "favorites" && selectMode && filteredImages.length > 0 && (
+                            <div className="col-selection-toolbar">
+                                <button onClick={() => setSelectedFavorites(new Set(filteredImages.map(img => img.publicId)))}>{t.selectAll}</button>
+                                <button onClick={() => setSelectedFavorites(new Set())}>{t.deselectAll}</button>
+                                <span>{t.selectedCount.replace("{n}", String(selectedFavorites.size))}</span>
+                                <button disabled={selectedFavorites.size === 0 || downloadingZip} onClick={downloadSelectedFavorites}>
+                                    {downloadingZip ? t.downloadingZip : t.downloadSelected}
+                                </button>
+                            </div>
+                        )}
 
                         {loading ? (
                             <div className="col-grid" style={{ gridTemplateColumns: `repeat(${gridCols}, 1fr)` }}>
@@ -2430,15 +2585,19 @@ export default function CollectionPage() {
                                             t={t}
                                             lang={lang}
                                             onOpen={openLightbox}
-                                            isFav={favorites.has(img.src)}
+                                            isFav={isFavorite(img)}
                                             onFav={toggleFav}
                                             dlCount={downloadCounts[img.name] || 0}
                                             onDl={() => incrementDownloadCount(img.name)}
                                             onDownloadToast={handleDownloadToast}
                                             draggable={activeTab === "favorites" && sortBy === "name"}
-                                            onDragStart={(e) => handleDragStartItem(e, img.src)}
+                                            onDragStart={(e) => handleDragStartItem(e, img.publicId)}
                                             onDragOver={handleDragOverItem}
-                                            onDrop={(e) => handleDropItem(e, img.src)}
+                                            onDrop={(e) => handleDropItem(e, img.publicId)}
+                                            selectMode={activeTab === "favorites" && selectMode}
+                                            selected={selectedFavorites.has(img.publicId)}
+                                            onSelect={toggleSelectedFavorite}
+                                            searchQuery={searchQuery}
                                         />
                                     ))}
                                 </div>
@@ -2533,7 +2692,10 @@ export default function CollectionPage() {
                                 )}
                             </>
                         ) : (
-                            <p className="col-empty">{t.noImages}</p>
+                            <div className="col-empty">
+                                <strong>{activeTab === "favorites" && !searchQuery.trim() ? t.noFavoritesYet : searchQuery.trim() ? t.noResults : t.noImages}</strong>
+                                {searchQuery.trim() && <span>{t.noResultsSuggestion}</span>}
+                            </div>
                         )}
                     </section>
 
@@ -2628,17 +2790,19 @@ export default function CollectionPage() {
                                     </div>
 
                                     <p className="col-lightbox-name">{currentLightboxImage.isVideo ? `🎬 ${lang !== "en" ? translateName(currentLightboxImage.name, lang as "vi" | "zh" | "ko" | "ru" | "id") : currentLightboxImage.name}` : (lang !== "en" ? translateName(currentLightboxImage.name, lang as "vi" | "zh" | "ko" | "ru" | "id") : currentLightboxImage.name)}</p>
-                                    <span className="col-lightbox-info">
-                                        {folderLabelTranslated(currentLightboxImage.folder, lang)} · {formatBytes(currentLightboxImage.bytes)}
-                                        {currentLightboxImage.isVideo && currentLightboxImage.duration ? ` · ${formatDuration(currentLightboxImage.duration)}` : ""}
-                                        {currentLightboxImage.width && currentLightboxImage.height ? ` · ${currentLightboxImage.width}×${currentLightboxImage.height}` : ""}
-                                    </span>
+                                    <div className="col-lightbox-metadata">
+                                        <span><strong>{t.imgDimensions}:</strong> {currentLightboxImage.width && currentLightboxImage.height ? `${currentLightboxImage.width} × ${currentLightboxImage.height}` : "—"}</span>
+                                        <span><strong>{t.imgSize}:</strong> {formatBytes(currentLightboxImage.bytes)}</span>
+                                        <span><strong>{t.imgFormat}:</strong> {(currentLightboxImage.src.match(/\.([a-z0-9]+)(?:\?|$)/i)?.[1] || (currentLightboxImage.isVideo ? "video" : "image")).toUpperCase()}</span>
+                                        <span><strong>{t.imgFolder}:</strong> {folderLabelTranslated(currentLightboxImage.folder, lang)}</span>
+                                        {currentLightboxImage.isVideo && currentLightboxImage.duration ? <span>{formatDuration(currentLightboxImage.duration)}</span> : null}
+                                    </div>
                                     {/* Tags */}
                                     {currentLightboxImage.tags && currentLightboxImage.tags.length > 0 && (
                                         <div className="col-lightbox-tags">
                                             {currentLightboxImage.tags.map((tag) => (
                                                 <span key={tag} className="col-lightbox-tag" onClick={() => {
-                                                    setSearchQuery(tag);
+                                                    setSearchInput(tag);
                                                     closeLightbox();
                                                 }} title={`Search: ${tag}`}>#{tag}</span>
                                             ))}
@@ -2677,6 +2841,9 @@ export default function CollectionPage() {
                                                 )}
                                             </button>
                                         )}
+                                        <button className="col-pill-btn col-pill-pink" onClick={() => copyUrl(currentLightboxImage.src, t.imageLinkCopied)}>
+                                            🔗 {t.copyImageLink}
+                                        </button>
                                         <button className={`col-pill-btn col-pill-pink ${showSharePanel ? "col-fav-active" : ""}`}
                                             onClick={() => { setShowSharePanel(!showSharePanel); setShowQr(false); }}>
                                             📤 {t.share}
@@ -2685,9 +2852,11 @@ export default function CollectionPage() {
                                             onClick={() => { if (!showQr) generateQr(); else setShowQr(false); setShowSharePanel(false); }}>
                                             📱 {t.qrCode}
                                         </button>
-                                        <button className={`col-pill-btn col-pill-pink ${favorites.has(currentLightboxImage.src) ? "col-fav-active" : ""}`}
-                                            onClick={() => toggleFav(currentLightboxImage.src)}>
-                                            {favorites.has(currentLightboxImage.src) ? "❤️" : "🤍"}
+                                        <button className={`col-pill-btn col-pill-pink ${isFavorite(currentLightboxImage) ? "col-fav-active" : ""}`}
+                                            onClick={() => toggleFav(currentLightboxImage)}
+                                            aria-label={isFavorite(currentLightboxImage) ? t.removeFavorite : t.addFavorite}
+                                            title={isFavorite(currentLightboxImage) ? t.removeFavorite : t.addFavorite}>
+                                            {isFavorite(currentLightboxImage) ? "❤️" : "🤍"}
                                         </button>
                                         {!currentLightboxImage.isVideo && (
                                             <button className={`col-pill-btn col-pill-pink ${showEditor ? "col-fav-active" : ""}`}
