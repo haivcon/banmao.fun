@@ -36,7 +36,7 @@ const CONCEPTS: Record<string, { aliases: string[]; terms: string[] }> = {
   love: { aliases: ["love", "yêu", "tình yêu", "爱", "사랑", "любовь", "cinta"], terms: ["love", "heart", "valentine", "romance", "kiss"] },
   work: { aliases: ["work", "làm việc", "工作", "일", "работа", "kerja"], terms: ["work", "office", "computer", "laptop", "code"] },
 };
-const STOPWORDS = new Set(["anh", "image", "images", "photo", "photos", "picture", "pictures", "find", "search", "show", "please", "tim", "kiem", "trong", "bo", "suu", "tap", "cho", "toi", "mot", "cua", "the", "and", "with", "for", "this", "that"]);
+const STOPWORDS = new Set(["anh", "image", "images", "photo", "photos", "picture", "pictures", "find", "search", "show", "please", "tim", "kiem", "trong", "bo", "suu", "tap", "cho", "toi", "mot", "cua", "the", "and", "with", "for", "this", "that", "banmao"]);
 
 function credentials(value: string | undefined) {
   if (!value) throw new Error("CLOUDINARY_URL is not set");
@@ -60,6 +60,13 @@ function expand(query: string) {
     if (matched) concept.terms.forEach((term) => values.add(normalize(term)));
   }
   return Array.from(values).filter((term) => term.length >= 3).slice(0, 40);
+}
+function matchedConceptGroups(query: string) {
+  const normalizedQuery = normalize(query), tokens = tokenize(query);
+  return Object.values(CONCEPTS).filter((concept) => concept.aliases.some((alias) => {
+    const normalizedAlias = normalize(alias);
+    return normalizedAlias.includes(" ") ? ` ${normalizedQuery} `.includes(` ${normalizedAlias} `) : tokens.includes(normalizedAlias);
+  })).map((concept) => concept.terms.map(normalize));
 }
 type MatchField = "public_id" | "folder" | "tags" | "context";
 function scoreField(value: string, keywords: string[], weight: number) {
@@ -102,9 +109,7 @@ function searchExpressions(keywords: string[], folder?: string) {
   const prefix = folder ? `resource_type:image AND folder:${folder}* AND ` : "resource_type:image AND ";
   return Array.from({ length: Math.min(MAX_SEARCH_QUERIES, Math.ceil(keywords.length / SEARCH_TERMS_PER_QUERY)) }, (_, index) => {
     const terms = keywords.slice(index * SEARCH_TERMS_PER_QUERY, (index + 1) * SEARCH_TERMS_PER_QUERY);
-    const publicId = terms.map((term) => `public_id:*${term}*`);
-    const metadata = terms.flatMap((term) => [`tags=${term}`, `context:*${term}*`]);
-    return { metadata: `${prefix}(${[...publicId, ...metadata].join(" OR ")})`, publicId: `${prefix}(${publicId.join(" OR ")})` };
+    return `${prefix}(${terms.map((term) => `filename:${term}`).join(" OR ")})`;
   });
 }
 function cloudinaryRawUrl(value: string, cloudName: string) {
@@ -119,17 +124,18 @@ export async function readCollectionSearch(input: unknown, dependencies: { cloud
   const url = `https://api.cloudinary.com/v1_1/${config.cloudName}/resources/search`;
   const authorization = "Basic " + Buffer.from(`${config.apiKey}:${config.apiSecret}`).toString("base64");
   const resources = new Map<string, CloudinaryResource>();
+  if (!keywords.length) return { results: [], total: 0, query: args.query, keywords: [], searchMode: "metadata" as const, source: "cloudinary:collection-search", observedAt: observedAt() };
   let successfulQueries = 0;
-  for (const expressions of searchExpressions(keywords, args.folder)) {
-    let result = await cloudinarySearch(fetcher, url, authorization, { expression: expressions.metadata, max_results: 100, sort_by: [{ public_id: "asc" }], with_field: ["tags", "context"] });
-    if (!result.response.ok) result = await cloudinarySearch(fetcher, url, authorization, { expression: expressions.publicId, max_results: 100, sort_by: [{ public_id: "asc" }], with_field: ["tags", "context"] });
+  for (const expression of searchExpressions(keywords, args.folder)) {
+    const result = await cloudinarySearch(fetcher, url, authorization, { expression, max_results: 100, sort_by: [{ public_id: "asc" }], with_field: ["tags", "context"] });
     if (!result.response.ok) continue;
     successfulQueries += 1;
     const payload = cloudinarySearchPayloadSchema.parse(JSON.parse(result.text));
     for (const resource of payload.resources) resources.set(resource.public_id, resource);
   }
   if (!successfulQueries) throw new Error("Collection search unavailable");
-  const results = Array.from(resources.values()).map((resource) => mapResource(resource, keywords)).filter((item) => item.score >= 30).sort((a, b) => b.score - a.score || a.public_id.localeCompare(b.public_id)).slice(0, args.limit);
+  const conceptGroups = matchedConceptGroups(args.query);
+  const results = Array.from(resources.values()).map((resource) => mapResource(resource, keywords)).filter((item) => item.score >= 30 && conceptGroups.every((group) => group.some((term) => item.matchedTerms.includes(term)))).sort((a, b) => b.score - a.score || a.public_id.localeCompare(b.public_id)).slice(0, args.limit);
   return { results, total: results.length, query: args.query, keywords: keywords.slice(0, 10), searchMode: "metadata" as const, source: "cloudinary:collection-search", observedAt: observedAt() };
 }
 
