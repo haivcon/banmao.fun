@@ -8,6 +8,7 @@ import { collectPageElements } from "../../../lib/ai/client/pageContext";
 import { fetchWithOneRetry } from "../../../lib/ai/client/recovery";
 import { aiText, normalizeAILocale, type AILocale } from "../../../lib/ai/client/i18n";
 import { createAILanguageSubscriber, readAILanguage } from "../../../lib/ai/client/locale";
+import { subscribeAIChatOpen } from "../../../lib/ai/client/openContract";
 import {
   AI_CURRENT_SESSION_KEY,
   AI_PERSISTENCE_ENABLED_KEY,
@@ -182,7 +183,7 @@ export default function AIChatProvider({ children }: { children?: ReactNode }) {
   function setPersistenceEnabled(value: boolean) { setPersistenceEnabledState(value); try { localStorage.setItem(AI_PERSISTENCE_ENABLED_KEY, String(value)); } catch { /* In-memory chat remains available. */ } }
   function setInput(value: string) { setInputState(value); if (value) dispatchEmotion({ type: "input-change" }); }
   function openPanel() { if (open) dispatchEmotion({ type: "panel-close" }); else { setOpen(true); dispatchEmotion({ type: "panel-open" }); } }
-  useEffect(() => { function handleOpen(event: Event) { const detail = (event as CustomEvent<{ input?: unknown }>).detail; const requestedInput = typeof detail?.input === "string" ? detail.input : ""; setOpen(true); if (requestedInput) setInput(requestedInput); dispatchEmotion({ type: "panel-open" }); } window.addEventListener("banmao-ai-open", handleOpen); return () => window.removeEventListener("banmao-ai-open", handleOpen); }, []);
+  useEffect(() => subscribeAIChatOpen(window, (detail) => { const requestedInput = typeof detail.input === "string" ? detail.input : ""; setOpen(true); if (requestedInput) setInput(requestedInput); dispatchEmotion({ type: "panel-open" }); }), []);
   function stop() { abort.current?.abort(); dispatch({ type: "stop" }); dispatchEmotion({ type: "stream-abort" }); }
   function txEmotion(event: TransactionEmotionEvent) { dispatchEmotion(emotionForTransactionEvent(event)); }
 

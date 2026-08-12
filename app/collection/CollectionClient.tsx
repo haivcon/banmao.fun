@@ -37,6 +37,7 @@ import {
 } from "./collectionMedia";
 import { filterSmartCollection, isSmartCollection, SMART_COLLECTION_IDS } from "./smartCollections";
 import { collectionCountSummary, createCursorPageRequester, shouldLoadCollectionPrefix } from "./collectionPagination";
+import { requestAIChatOpen } from "../../lib/ai/client/openContract";
 
 // Dynamic imports — modals are loaded on-demand, not in the initial bundle
 const CreatePostModal = dynamic(() => import("./components/CreatePostModal"), { ssr: false });
@@ -2120,9 +2121,7 @@ export default function CollectionPage() {
         : filteredImages.length === 0
             ? t.noImages
             : t.resultsCount.replace("{n}", String(filteredImages.length));
-    const openAISearch = () => window.dispatchEvent(new CustomEvent("banmao-ai-open", {
-        detail: { input: t.aiSearchPrompt },
-    }));
+    const openAISearch = () => requestAIChatOpen(window, { input: t.aiSearchPrompt });
 
     return (
         <ChatProvider>
