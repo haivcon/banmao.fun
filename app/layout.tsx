@@ -3,7 +3,7 @@ import "./landing.css";
 import "./web2d/web2d.css";
 import "./design-tokens.css";
 import type { Metadata } from "next";
-import { Noto_Sans, Orbitron, Rajdhani, Share_Tech_Mono, Space_Mono } from "next/font/google";
+import { Orbitron, Rajdhani, Share_Tech_Mono, Space_Mono } from "next/font/google";
 
 import Script from "next/script";
 import SharedProviders from "./providers";
@@ -89,12 +89,6 @@ export const metadata: Metadata = {
   },
 };
 
-const noto = Noto_Sans({
-  subsets: ["latin", "latin-ext", "vietnamese", "cyrillic"],
-  weight: ["400", "600", "700"],
-  variable: "--font-sans",
-  display: "swap",
-});
 const orbitron = Orbitron({
   subsets: ["latin"],
   weight: ["400", "700", "900"],
@@ -123,7 +117,7 @@ const spaceMono = Space_Mono({
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${noto.variable} ${orbitron.variable} ${rajdhani.variable} ${shareTech.variable} ${spaceMono.variable}`}>
+    <html lang="en" className={`${orbitron.variable} ${rajdhani.variable} ${shareTech.variable} ${spaceMono.variable}`}>
       <head>
         {/* Viewport for mobile */}
         <meta
