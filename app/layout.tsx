@@ -176,7 +176,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className={spaceMono.className}>
-        <SharedProviders>{children}<AIChatMount /></SharedProviders>
+        <SharedProviders><AIChatMount />{children}</SharedProviders>
       </body>
     </html>
   );
