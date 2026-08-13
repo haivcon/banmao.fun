@@ -30,7 +30,7 @@ export const metadata: Metadata = {
         description: "Experience the future of blockchain gaming on XLayer. Play, stake, and win in our immersive 3D ecosystem.",
         images: [
             {
-                url: "/branding/banmao_logo.png",
+                url: "/pwa/main/icon-512x512.png",
                 width: 512,
                 height: 512,
                 alt: "BANMAO Logo",
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
         creator: "@banmao_X",
         title: "BANMAO — XLayer Gaming Ecosystem",
         description: "Experience the future of blockchain gaming on XLayer. Play, stake, and win in our immersive 3D ecosystem.",
-        images: ["/branding/banmao_logo.png"],
+        images: ["/pwa/main/icon-512x512.png"],
     },
 
   // App metadata
@@ -55,12 +55,11 @@ export const metadata: Metadata = {
   // Icons - Enhanced for PWA
   icons: {
     icon: [
-      { url: "/favicon.ico" },
       { url: "/pwa/main/icon-192x192.png", sizes: "192x192", type: "image/png" },
       { url: "/pwa/main/icon-512x512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/pwa/main/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
     other: [
       { rel: "mask-icon", url: "/pwa/main/icon-maskable-512x512.png", color: "#a855f7" },

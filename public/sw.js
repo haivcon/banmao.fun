@@ -14,11 +14,8 @@ const CLOUDINARY_THUMB = /res\.cloudinary\.com.*\/image\/upload\/c_fill,w_400,h_
 const PRECACHE_ASSETS = [
     '/',
     '/manifest.json',
-    '/favicon.ico',
-    '/branding/animated-icon.gif',
     '/pwa/main/icon-192x192.png',
     '/pwa/main/icon-512x512.png',
-    '/banmao_logo.png',
     '/gamefi',
     '/pwa/gamefi/gamefi-icon-192x192.png',
     '/pwa/gamefi/gamefi-icon-512x512.png',

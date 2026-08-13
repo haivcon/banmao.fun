@@ -64,12 +64,11 @@ export default function SplashScreen({
             <div className="splash-screen__content">
                 <div className="splash-screen__icon">
                     <Image
-                        src="/branding/animated-icon.gif"
+                        src="/pwa/main/icon-512x512.png"
                         alt="BANMAO"
                         width={200}
                         height={200}
                         priority
-                        unoptimized // Required for GIF animation to work
                     />
                 </div>
                 <h1 className="splash-screen__title">$BANMAO 🐱🍌</h1>

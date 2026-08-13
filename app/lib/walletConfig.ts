@@ -104,7 +104,7 @@ const connectors = [
             description:
               "BANMAO GameFi, DeFi and NFT ecosystem on X Layer",
             url: "https://banmao.fun",
-            icons: ["https://banmao.fun/branding/banmao_logo.png"],
+            icons: ["https://banmao.fun/pwa/main/icon-512x512.png"],
             redirect: {
               universal: "https://banmao.fun",
             },
