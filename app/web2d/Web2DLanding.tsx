@@ -52,13 +52,6 @@ const LANGUAGE_OPTIONS: Array<{
 ];
 
 const HEADER_TABS: Web2DTabKey[] = ["gamefi", "defi", "collection"];
-const MOBILE_TABS: Web2DTabKey[] = [
-    "overview",
-    "gamefi",
-    "defi",
-    "collection",
-    "community",
-];
 const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
 
 function isExternalHref(href: string) {
@@ -180,7 +173,7 @@ export function Web2DLanding({
                 <div className="web2d-container web2d-header__inner">
                     <Link href="/" className="web2d-brand" aria-label={copy.ariaLabels.home}>
                         <span className="web2d-brand__mark">
-                            <Image src="/branding/animated-icon.gif" alt="" width={38} height={38} unoptimized />
+                            <Image src="/pwa/main/icon-512x512.png" alt="" width={38} height={38} priority />
                         </span>
                         <span className="web2d-brand__copy">
                             <strong>BANMAO</strong>
@@ -332,13 +325,6 @@ export function Web2DLanding({
                 </div>
             </footer>
 
-            <nav className="web2d-mobile-nav" aria-label={copy.ariaLabels.quickLinks}>
-                {MOBILE_TABS.map((tab) => (
-                    <button key={tab} type="button" className={activeTab === tab ? "is-active" : ""} aria-label={copy.tabs[tab]} onClick={() => selectTab(tab, true)}>
-                        <Web2DIcon name={TAB_ICONS[tab]} /><span>{copy.tabs[tab]}</span>
-                    </button>
-                ))}
-            </nav>
         </div>
     );
 }
