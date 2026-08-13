@@ -319,3 +319,62 @@
 @media (prefers-reduced-motion: reduce) {
   .banmao-ai-root *, .banmao-ai-root *::before, .banmao-ai-root *::after { animation:none!important; transition:none!important; scroll-behavior:auto!important; }
 }
+
+/* Soft Cyber readability pass: visual only, no AI behavior changes. */
+.banmao-ai-root { --ai-bg:#080811; --ai-raised:#10101c; --ai-card:#171727; --ai-text:#f7f5fa; --ai-muted:#aaa4b5; }
+.banmao-ai-panel { border-radius:24px; background:linear-gradient(170deg,rgba(var(--ai-aura-rgb),.07),transparent 22%),rgba(8,8,17,.98); }
+.banmao-ai-header { background:rgba(16,16,28,.9); }
+.banmao-ai-context,
+.banmao-ai-session-tabs button,
+.banmao-ai-session-state,
+.banmao-ai-session-error,
+.banmao-ai-session-empty,
+.banmao-ai-session-select small,
+.banmao-ai-quota > div,
+.banmao-ai-quota p,
+.banmao-ai-local-only,
+.banmao-ai-eyebrow,
+.banmao-ai-message-wrap > header time,
+.banmao-ai-code > header,
+.banmao-ai-code > header button,
+.banmao-ai-copy,
+.banmao-ai-activity > h3,
+.banmao-ai-citations > h3,
+.banmao-ai-tool small,
+.banmao-ai-tool-status,
+.banmao-ai-citation strong,
+.banmao-ai-citation > code,
+.banmao-ai-citation > small,
+.banmao-ai-citation > p,
+.banmao-ai-error p,
+.banmao-ai-error button,
+.banmao-ai-suggestions button,
+.banmao-ai-model select,
+.banmao-ai-count,
+.banmao-ai-composer-hint,
+.banmao-ai-disclaimer,
+.banmao-ai-privacy > summary,
+.banmao-ai-transaction > summary,
+.banmao-ai-privacy-body > p,
+.banmao-ai-toggle,
+.banmao-ai-data-actions button,
+.banmao-ai-page-action small,
+.banmao-ai-page-action-risk,
+.banmao-ai-media-heading span,
+.banmao-ai-media-card small,
+.banmao-ai-media-note,
+.banmao-ai-media-empty { font-size:12px; }
+.banmao-ai-session-select strong,
+.banmao-ai-message-wrap > header strong,
+.banmao-ai-tool strong,
+.banmao-ai-tool > p,
+.banmao-ai-action-notice { font-size:12px; }
+.banmao-ai-composer-bar { min-height:42px; }
+.banmao-ai-model { height:32px; }
+.banmao-ai-send, .banmao-ai-stop { flex-basis:36px; width:36px; height:36px; }
+
+@media (max-width:640px) {
+  .web2d ~ .banmao-ai-root, .banmao-ai-root { bottom:calc(env(safe-area-inset-bottom) + 84px); }
+  .banmao-ai-panel { bottom:0; padding-bottom:max(12px,env(safe-area-inset-bottom)); }
+  .banmao-ai-footer { padding-bottom:max(12px,env(safe-area-inset-bottom)); }
+}

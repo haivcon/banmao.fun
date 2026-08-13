@@ -38,11 +38,11 @@
   --bm-accent-glow: rgba(6, 182, 212, 0.28);
 
   /* Dark mineral surfaces */
-  --bm-surface-deep: #050510;
-  --bm-surface-base: #0a0a1a;
-  --bm-surface-raised: #111128;
-  --bm-surface-card: #151529;
-  --bm-surface-overlay: #1a1a2e;
+  --bm-surface-deep: #080811;
+  --bm-surface-base: #080811;
+  --bm-surface-raised: #10101c;
+  --bm-surface-card: #171727;
+  --bm-surface-overlay: #1d1d30;
   --bm-surface-hover: rgba(255, 255, 255, 0.045);
   --bm-surface-pressed: rgba(255, 255, 255, 0.075);
 
@@ -55,10 +55,10 @@
   --bm-ink-faint: rgba(23, 17, 31, 0.42);
 
   /* Text tiers */
-  --bm-text: #ffffff;
-  --bm-text-strong: rgba(255, 255, 255, 0.94);
-  --bm-text-soft: rgba(255, 255, 255, 0.78);
-  --bm-text-muted: rgba(255, 255, 255, 0.58);
+  --bm-text: #f7f5fa;
+  --bm-text-strong: #f7f5fa;
+  --bm-text-soft: #aaa4b5;
+  --bm-text-muted: #aaa4b5;
   --bm-text-faint: rgba(255, 255, 255, 0.36);
   --bm-text-disabled: rgba(255, 255, 255, 0.24);
 
@@ -70,10 +70,10 @@
   --bm-rule-brand: rgba(244, 114, 182, 0.22);
 
   /* State colors */
-  --bm-success: #22c55e;
+  --bm-success: #39d98a;
   --bm-success-soft: rgba(34, 197, 94, 0.12);
   --bm-success-border: rgba(34, 197, 94, 0.24);
-  --bm-warning: #f59e0b;
+  --bm-warning: #f5c842;
   --bm-warning-soft: rgba(245, 158, 11, 0.12);
   --bm-warning-border: rgba(245, 158, 11, 0.26);
   --bm-error: #ef4444;
@@ -183,7 +183,7 @@
 ======================================================================== */
 
 /* Web2D adopts the shared Banmao palette while keeping its composition. */
-.web2d-landing {
+.web2d {
   --web2d-bg: var(--bm-surface-base);
   --web2d-bg-deep: var(--bm-surface-deep);
   --web2d-surface: var(--bm-surface-raised);

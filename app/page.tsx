@@ -2580,6 +2580,8 @@ export default function BanmaoWebsite() {
                                     reason={modeUnavailableReason}
                                     manual={canUse3D}
                                     lang={lang}
+                                    onLanguageChange={setLang}
+                                    onSwitchTo3D={canUse3D ? () => setViewMode("3d") : undefined}
                                 />
                             </ErrorBoundary>
                         </div>
