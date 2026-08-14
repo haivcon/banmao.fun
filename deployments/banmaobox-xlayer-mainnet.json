@@ -3,7 +3,7 @@
   "network": "X Layer Mainnet",
   "chainId": 196,
   "rpcUrl": "https://rpc.xlayer.tech",
-  "explorerUrl": "https://www.okx.com/web3/explorer/xlayer",
+  "explorerUrl": "https://web3.okx.com/explorer/x-layer/evm",
   "status": "not-deployed",
   "contracts": {
     "token": "0x16d91d1615fc55b76d5f92365bd60c069b46ef78",

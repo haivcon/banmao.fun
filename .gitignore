@@ -46,13 +46,8 @@ pnpm-lock.yaml
 /playwright-report/
 /test-results/
 /test/
-/__tests__/*
-!/__tests__/ai/
-!/__tests__/ai/**/*.test.ts
-!/__tests__/collectionSmartCollections.test.ts
-!/__tests__/manifest.test.ts
-!/__tests__/server-only.ts
 /public/Happy Smile.png
+/public/previews
 
 # Logs and temporary files
 *.log
@@ -94,8 +89,12 @@ ehthumbs.db
 /1/
 /api_docs/
 
-# Local-only scripts
-/scripts/
+# Local-only scripts. Keep the audited BanmaoBox release tooling versioned.
+/scripts/*
+!/scripts/deploy-banmaobox-mainnet.cjs
+!/scripts/verify-banmaobox-mainnet.cjs
+!/scripts/generate-banmaobox-abis.cjs
+/deployments/.banmaobox-mainnet-journal.json
 
 # Local-only removed games: keep source on this machine, never commit/deploy
 /local-only/

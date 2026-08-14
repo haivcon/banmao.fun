@@ -118,7 +118,7 @@ export function useBox(
 
   const tokenSymbol = (tokenSymbolQuery.data as string | undefined) ?? "BANMAO";
   const maxLockDuration =
-    (maxLockDurationQuery.data as bigint | undefined) ?? 10n * 365n * 86_400n;
+    (maxLockDurationQuery.data as bigint | undefined) ?? 100n * 365n * 86_400n;
 
   const balanceQuery = useReadContract({
     address: tokenAddress,
@@ -204,6 +204,8 @@ export function useBox(
           boxRenderer,
           factoryRenderer,
           maxAssets,
+          maxBatchSize,
+          maxLockDurationValue,
         ] = await Promise.all([
           publicClient.getCode({ address: boxAddress }),
           publicClient.getCode({ address: factoryAddress }),
@@ -240,6 +242,16 @@ export function useBox(
             abi: BANMAO_BOX_ABI,
             functionName: "MAX_ASSETS_PER_BOX",
           } as never) as Promise<bigint>,
+          publicClient.readContract({
+            address: boxAddress,
+            abi: BANMAO_BOX_ABI,
+            functionName: "MAX_BATCH_SIZE",
+          } as never) as Promise<bigint>,
+          publicClient.readContract({
+            address: boxAddress,
+            abi: BANMAO_BOX_ABI,
+            functionName: "MAX_LOCK_DURATION",
+          } as never) as Promise<bigint>,
         ]);
         const same = (left: Address, right: Address) =>
           left.toLowerCase() === right.toLowerCase();
@@ -257,8 +269,13 @@ export function useBox(
           throw new Error("Factory registry does not match the Box manifest");
         if (!same(underlying, tokenAddress))
           throw new Error("Box underlying token does not match the selected collection");
-        if (maxAssets !== 5n)
-          throw new Error("Collection is not the multi-token BanmaoBox release");
+        if (
+          maxAssets !== 5n ||
+          maxBatchSize !== 20n ||
+          maxLockDurationValue !== 3_153_600_000n
+        ) {
+          throw new Error("Collection constants do not match the production BanmaoBox release");
+        }
         if (
           !same(boxRenderer, expectedRendererAddress) ||
           !same(factoryRenderer, expectedRendererAddress)
@@ -529,6 +546,77 @@ export function useBox(
     ],
   );
 
+  const createBoxes = useCallback(
+    async (
+      entries: readonly { recipient: Address; amount: string }[],
+      lockDurationSec: bigint,
+    ) => {
+      resetTransaction();
+
+      try {
+        const { account, boxAddress, client } = await ensureReady();
+        if (entries.length === 0 || entries.length > 20) {
+          throw new Error("A batch must contain between 1 and 20 boxes");
+        }
+        const recipients = entries.map((entry) => entry.recipient);
+        const amounts = entries.map((entry) => parseUnits(entry.amount, tokenDecimals));
+        if (amounts.some((value) => value <= 0n)) {
+          throw new Error("Every amount must be greater than zero");
+        }
+        if (lockDurationSec <= 0n) {
+          throw new Error("Lock duration must be greater than zero");
+        }
+        const totalAmount = amounts.reduce((sum, value) => sum + value, 0n);
+
+        let currentAllowance = (allowanceQuery.data as bigint | undefined) ?? 0n;
+        if (currentAllowance < totalAmount) {
+          setPhase("approving");
+          const { request: approvalRequest } = await client.simulateContract({
+            account,
+            address: tokenAddress,
+            abi: BANMAO_ERC20_ABI,
+            functionName: "approve",
+            args: [boxAddress, totalAmount],
+          } as never);
+          const approvalHash = await writeContractAsync(approvalRequest as never);
+          await waitForHash(approvalHash, client);
+          currentAllowance = totalAmount;
+        }
+        if (currentAllowance < totalAmount) {
+          throw new Error("Token approval was not sufficient");
+        }
+
+        setPhase("creating");
+        const { request } = await client.simulateContract({
+          account,
+          address: boxAddress,
+          abi: BANMAO_BOX_ABI,
+          functionName: "createBoxes",
+          args: [recipients, amounts, lockDurationSec],
+        } as never);
+        const hash = await writeContractAsync(request as never);
+        await waitForHash(hash, client);
+        setPhase("success");
+        await refetchAll();
+        return hash;
+      } catch (error) {
+        setPhase("error");
+        setTransactionError(getErrorMessage(error));
+        throw error;
+      }
+    },
+    [
+      allowanceQuery.data,
+      ensureReady,
+      refetchAll,
+      resetTransaction,
+      tokenAddress,
+      tokenDecimals,
+      waitForHash,
+      writeContractAsync,
+    ],
+  );
+
   const readAsset = useCallback(
     async (assetToken: Address) => {
       if (!publicClient) throw new Error("X Layer RPC is unavailable");
@@ -717,6 +805,33 @@ export function useBox(
     ],
   );
 
+  const openAsset = useCallback(
+    async (tokenId: bigint, assetIndex: bigint) => {
+      resetTransaction();
+      try {
+        const { account, boxAddress, client } = await ensureReady();
+        setPhase("opening");
+        const { request } = await client.simulateContract({
+          account,
+          address: boxAddress,
+          abi: BANMAO_BOX_ABI,
+          functionName: "openAsset",
+          args: [tokenId, assetIndex],
+        } as never);
+        const hash = await writeContractAsync(request as never);
+        await waitForHash(hash, client);
+        setPhase("success");
+        await refetchAll();
+        return hash;
+      } catch (error) {
+        setPhase("error");
+        setTransactionError(getErrorMessage(error));
+        throw error;
+      }
+    },
+    [ensureReady, refetchAll, resetTransaction, waitForHash, writeContractAsync],
+  );
+
   const inspectBox = useCallback(
     async (tokenId: bigint): Promise<InspectedBox> => {
       if (!boxAddress || !publicClient || !isDeploymentValidated) {
@@ -858,11 +973,13 @@ export function useBox(
     totalLocked: (totalLockedQuery.data as bigint | undefined) ?? 0n,
     totalSupply: (totalSupplyQuery.data as bigint | undefined) ?? 0n,
     createBox,
+    createBoxes,
     createMultiTokenBox,
     createCollection,
     resolveCollection,
     readAsset,
     openBox,
+    openAsset,
     transferBox,
     refreshMetadata,
     inspectBox,
