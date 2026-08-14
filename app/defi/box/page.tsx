@@ -55,6 +55,10 @@ import "./box.css";
 const DAY_SECONDS = 86_400n;
 const DURATION_OPTIONS = [7, 30, 90, 180, 365] as const;
 const BOXES_PER_PAGE = 6;
+const MAX_BATCH_SIZE = 20;
+
+type CreateMode = "single" | "batch" | "basket";
+type BatchRow = { recipient: string; amount: string };
 
 function getTier(amount: bigint, decimals: number): string {
   const unit = 10n ** BigInt(decimals);
@@ -223,7 +227,7 @@ function BoxCard({
 export default function BanmaoBoxPage() {
   const [language, setLanguage] = useState<BoxLanguage>("en");
   const [selectedChainId, setSelectedChainId] = useState<BoxChainId>(
-    XLAYER_TESTNET_CHAIN_ID,
+    XLAYER_CHAIN_ID,
   );
   const [networkError, setNetworkError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -232,7 +236,11 @@ export default function BanmaoBoxPage() {
   const [activeTokenAddress, setActiveTokenAddress] = useState<Address>();
   const [collectionToken, setCollectionToken] = useState("");
   const [collectionError, setCollectionError] = useState<string | null>(null);
-  const [multiMode, setMultiMode] = useState(false);
+  const [createMode, setCreateMode] = useState<CreateMode>("single");
+  const [batchRows, setBatchRows] = useState<BatchRow[]>([
+    { recipient: "", amount: "" },
+    { recipient: "", amount: "" },
+  ]);
   const [extraAssets, setExtraAssets] = useState<
     (BasketInput & { symbol: string; balance: bigint })[]
   >([]);
@@ -241,6 +249,8 @@ export default function BanmaoBoxPage() {
   const [selectedDays, setSelectedDays] = useState<number | "custom">(30);
   const [customDays, setCustomDays] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [lockAcknowledged, setLockAcknowledged] = useState(false);
   const [transferEntry, setTransferEntry] = useState<BoxEntry | null>(null);
   const [transferRecipient, setTransferRecipient] = useState("");
   const [transferError, setTransferError] = useState<string | null>(null);
@@ -270,11 +280,13 @@ export default function BanmaoBoxPage() {
     totalLocked,
     totalSupply,
     createBox,
+    createBoxes,
     createMultiTokenBox,
     createCollection,
     resolveCollection,
     readAsset,
     openBox,
+    openAsset,
     transferBox,
     refreshMetadata,
     inspectBox,
@@ -367,11 +379,15 @@ export default function BanmaoBoxPage() {
   useEffect(() => {
     if (phase === "success") {
       setAmount("");
+      setBatchRows([
+        { recipient: address ?? "", amount: "" },
+        { recipient: address ?? "", amount: "" },
+      ]);
       setExtraAssets([]);
       setTransferEntry(null);
       setTransferRecipient("");
     }
-  }, [phase]);
+  }, [address, phase]);
 
   const durationDays = useMemo(() => {
     if (selectedDays !== "custom") return selectedDays;
@@ -384,20 +400,50 @@ export default function BanmaoBoxPage() {
     [durationDays, now],
   );
 
-  const validateCreate = () => {
-    if (!amount || !/^\d+(\.\d+)?$/.test(amount)) {
-      return copy.invalidAmount;
-    }
-
+  const batchTotal = useMemo(() => {
     try {
-      const baseAmount = parseUnits(amount, tokenDecimals);
-      if (baseAmount <= 0n) return copy.invalidAmount;
-      if (baseAmount > tokenBalance) return copy.insufficientBalance;
+      return batchRows.reduce(
+        (total, row) => total + parseUnits(row.amount || "0", tokenDecimals),
+        0n,
+      );
     } catch {
-      return copy.invalidAmount;
+      return 0n;
+    }
+  }, [batchRows, tokenDecimals]);
+
+  const validateCreate = () => {
+    if (!isDeploymentValidated) {
+      return deploymentError ?? "The selected BanmaoBox deployment is not validated yet.";
+    }
+    if (createMode === "batch") {
+      if (batchRows.length === 0 || batchRows.length > MAX_BATCH_SIZE) {
+        return `A batch must contain between 1 and ${MAX_BATCH_SIZE} boxes.`;
+      }
+      for (let index = 0; index < batchRows.length; index += 1) {
+        const row = batchRows[index];
+        if (!isAddress(row.recipient)) return `Row ${index + 1}: ${copy.invalidRecipient}`;
+        try {
+          if (!/^\d+(\.\d+)?$/.test(row.amount) || parseUnits(row.amount, tokenDecimals) <= 0n) {
+            return `Row ${index + 1}: ${copy.invalidAmount}`;
+          }
+        } catch {
+          return `Row ${index + 1}: ${copy.invalidAmount}`;
+        }
+      }
+      if (batchTotal > tokenBalance) return copy.insufficientBalance;
+    } else {
+      if (!amount || !/^\d+(\.\d+)?$/.test(amount)) return copy.invalidAmount;
+      try {
+        const baseAmount = parseUnits(amount, tokenDecimals);
+        if (baseAmount <= 0n) return copy.invalidAmount;
+        if (baseAmount > tokenBalance) return copy.insufficientBalance;
+      } catch {
+        return copy.invalidAmount;
+      }
+      if (!isAddress(recipient)) return copy.invalidRecipient;
     }
 
-    if (multiMode) {
+    if (createMode === "basket") {
       if (extraAssets.length === 0 || extraAssets.length > 4) {
         return "Add between 1 and 4 extra ERC-20 assets.";
       }
@@ -412,37 +458,43 @@ export default function BanmaoBoxPage() {
       }
     }
 
-    if (!isAddress(recipient)) return copy.invalidRecipient;
-    if (
-      durationDays < 1 ||
-      BigInt(durationDays) * DAY_SECONDS > maxLockDuration
-    ) {
+    if (durationDays < 1 || BigInt(durationDays) * DAY_SECONDS > maxLockDuration) {
       return copy.invalidDuration;
     }
     return null;
   };
 
-  const handleCreate = async (event: FormEvent<HTMLFormElement>) => {
+  const handleCreate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const validationError = validateCreate();
     setFormError(validationError);
     if (validationError) return;
+    setLockAcknowledged(false);
+    setReviewOpen(true);
+  };
+
+  const confirmCreate = async () => {
+    const validationError = validateCreate();
+    setFormError(validationError);
+    if (validationError || !lockAcknowledged) return;
 
     try {
       const duration = BigInt(durationDays) * DAY_SECONDS;
-      if (multiMode && activeTokenAddress) {
+      if (createMode === "batch") {
+        await createBoxes(
+          batchRows.map((row) => ({
+            recipient: getAddress(row.recipient),
+            amount: row.amount,
+          })),
+          duration,
+        );
+      } else if (createMode === "basket" && activeTokenAddress) {
         await createMultiTokenBox(
           getAddress(recipient),
           [
-            {
-              token: activeTokenAddress,
-              amount,
-              decimals: tokenDecimals,
-            },
+            { token: activeTokenAddress, amount, decimals: tokenDecimals },
             ...extraAssets.map(({ token, amount: assetAmount, decimals }) => ({
-              token,
-              amount: assetAmount,
-              decimals,
+              token, amount: assetAmount, decimals,
             })),
           ],
           duration,
@@ -450,6 +502,7 @@ export default function BanmaoBoxPage() {
       } else {
         await createBox(getAddress(recipient), amount, duration);
       }
+      setReviewOpen(false);
     } catch {
       // The hook exposes a normalized transaction error.
     }
@@ -516,6 +569,21 @@ export default function BanmaoBoxPage() {
   const handleOpen = async (tokenId: bigint) => {
     try {
       await openBox(tokenId);
+    } catch {
+      // The hook exposes a normalized transaction error.
+    }
+  };
+
+  const handleOpenAsset = async (assetIndex: number) => {
+    if (!inspectedBox) return;
+    try {
+      await openAsset(inspectedBox.tokenId, BigInt(assetIndex));
+      try {
+        setInspectedBox(await inspectBox(inspectedBox.tokenId));
+      } catch {
+        // The NFT burns after its final asset is released.
+        setInspectedBox(null);
+      }
     } catch {
       // The hook exposes a normalized transaction error.
     }
@@ -732,15 +800,18 @@ export default function BanmaoBoxPage() {
           </div>
 
           <form onSubmit={handleCreate} className="box-form">
-            <div className="box-mode-switch" role="group" aria-label="Box asset mode">
-              <button type="button" className={!multiMode ? "active" : ""} onClick={() => setMultiMode(false)} disabled={isBusy}>
-                Single token
+            <div className="box-mode-switch" role="group" aria-label="Box creation mode">
+              <button type="button" className={createMode === "single" ? "active" : ""} onClick={() => setCreateMode("single")} disabled={isBusy}>
+                Single box
               </button>
-              <button type="button" className={multiMode ? "active" : ""} onClick={() => setMultiMode(true)} disabled={isBusy}>
-                Multi-token basket (2–5)
+              <button type="button" className={createMode === "batch" ? "active" : ""} onClick={() => setCreateMode("batch")} disabled={isBusy}>
+                Batch (1–20)
+              </button>
+              <button type="button" className={createMode === "basket" ? "active" : ""} onClick={() => setCreateMode("basket")} disabled={isBusy}>
+                Basket (2–5 tokens)
               </button>
             </div>
-            <label className="box-field">
+            {createMode !== "batch" ? <label className="box-field">
               <span className="box-field__label">
                 {copy.amount}
                 <small>
@@ -775,9 +846,9 @@ export default function BanmaoBoxPage() {
                 />
                 <b>{tokenSymbol}</b>
               </span>
-            </label>
+            </label> : null}
 
-            {multiMode ? (
+            {createMode === "basket" ? (
               <div className="box-basket">
                 <div className="box-basket__add">
                   <input
@@ -815,24 +886,66 @@ export default function BanmaoBoxPage() {
               </div>
             ) : null}
 
-            <label className="box-field">
-              <span className="box-field__label">{copy.recipient}</span>
-              <span className="box-input-wrap box-input-wrap--address">
-                <Wallet />
-                <input
-                  value={recipient}
-                  onChange={(event) => {
-                    setRecipient(event.target.value.trim());
-                    setFormError(null);
-                  }}
-                  placeholder={copy.recipientPlaceholder}
-                  disabled={isBusy || !isDeployed || !isDeploymentValidated}
-                  spellCheck={false}
-                  autoComplete="off"
-                />
-              </span>
-              <small className="box-field__hint">{copy.recipientHint}</small>
-            </label>
+            {createMode === "batch" ? (
+              <div className="box-batch">
+                <div className="box-batch__summary">
+                  <strong>{batchRows.length} / {MAX_BATCH_SIZE} boxes</strong>
+                  <span>Total: {formatBanmao(batchTotal, tokenDecimals)} {tokenSymbol}</span>
+                </div>
+                {batchRows.map((row, index) => (
+                  <div className="box-batch__row" key={index}>
+                    <span>{index + 1}</span>
+                    <input
+                      value={row.recipient}
+                      onChange={(event) => setBatchRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, recipient: event.target.value.trim() } : item))}
+                      placeholder="Recipient 0x…"
+                      aria-label={`Recipient ${index + 1}`}
+                      spellCheck={false}
+                      disabled={isBusy}
+                    />
+                    <input
+                      value={row.amount}
+                      onChange={(event) => setBatchRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: event.target.value.trim() } : item))}
+                      placeholder={`Amount ${tokenSymbol}`}
+                      aria-label={`Amount ${index + 1}`}
+                      inputMode="decimal"
+                      disabled={isBusy}
+                    />
+                    <button type="button" aria-label={`Remove row ${index + 1}`} onClick={() => setBatchRows((current) => current.filter((_, itemIndex) => itemIndex !== index))} disabled={isBusy || batchRows.length === 1}>
+                      <X />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="box-batch__add"
+                  onClick={() => setBatchRows((current) => [...current, { recipient: address ?? "", amount: "" }])}
+                  disabled={isBusy || batchRows.length >= MAX_BATCH_SIZE}
+                >
+                  Add recipient
+                </button>
+                <small>Balance: {formatBanmao(tokenBalance, tokenDecimals)} {tokenSymbol}. The batch is atomic and uses one shared unlock date.</small>
+              </div>
+            ) : (
+              <label className="box-field">
+                <span className="box-field__label">{copy.recipient}</span>
+                <span className="box-input-wrap box-input-wrap--address">
+                  <Wallet />
+                  <input
+                    value={recipient}
+                    onChange={(event) => {
+                      setRecipient(event.target.value.trim());
+                      setFormError(null);
+                    }}
+                    placeholder={copy.recipientPlaceholder}
+                    disabled={isBusy || !isDeployed || !isDeploymentValidated}
+                    spellCheck={false}
+                    autoComplete="off"
+                  />
+                </span>
+                <small className="box-field__hint">{copy.recipientHint}</small>
+              </label>
+            )}
 
             <fieldset className="box-duration">
               <legend>{copy.duration}</legend>
@@ -880,6 +993,7 @@ export default function BanmaoBoxPage() {
                   disabled={isBusy || !isDeployed || !isDeploymentValidated}
                 />
               ) : null}
+              <small className="box-duration__limit">Maximum: 36,500 days (100 years). Locked assets cannot be opened early.</small>
             </fieldset>
 
             <div className="box-unlock-preview">
@@ -916,7 +1030,7 @@ export default function BanmaoBoxPage() {
             <button
               type="submit"
               className="box-submit"
-              disabled={!isConnected || !isDeployed || isBusy}
+              disabled={!isConnected || !isDeployed || !isDeploymentValidated || isBusy}
             >
               {isBusy ? <LoaderCircle className="box-spin" /> : <Gift />}
               {isConnected ? copy.createButton : copy.connectToCreate}
@@ -1089,9 +1203,22 @@ export default function BanmaoBoxPage() {
                 </dl>
                 <div className="box-inspector-assets">
                   {inspectedBox.assets.map((asset, index) => (
-                    <span key={asset.token} title={asset.token}>
-                      Asset {index + 1}: {asset.amount.toString()} base units · {asset.token.slice(0, 8)}…{asset.token.slice(-6)}
-                    </span>
+                    <button
+                      type="button"
+                      key={asset.token}
+                      title={
+                        inspectedBox.canOpen
+                          ? `Release asset ${index + 1} separately. Asset indexes reload after every release.`
+                          : asset.token
+                      }
+                      disabled={!inspectedBox.canOpen || isBusy}
+                      onClick={() => void handleOpenAsset(index)}
+                    >
+                      <span>
+                        Asset {index + 1}: {asset.amount.toString()} base units · {asset.token.slice(0, 8)}…{asset.token.slice(-6)}
+                      </span>
+                      {inspectedBox.canOpen ? <PackageOpen aria-label="Release this asset" /> : <LockKeyhole aria-label="Locked" />}
+                    </button>
                   ))}
                 </div>
                 <a
@@ -1181,6 +1308,47 @@ export default function BanmaoBoxPage() {
           </div>
         </aside>
       </section>
+
+      {reviewOpen ? (
+        <div
+          className="box-dialog-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isBusy) setReviewOpen(false);
+          }}
+        >
+          <section className="box-dialog box-review" role="dialog" aria-modal="true" aria-labelledby="box-review-title">
+            <button type="button" className="box-dialog__close" onClick={() => setReviewOpen(false)} disabled={isBusy} aria-label={copy.cancel}>
+              <X />
+            </button>
+            <ShieldCheck className="box-review__shield" />
+            <h2 id="box-review-title">Review permanent lock</h2>
+            <p>Verify every detail before your wallet request. This lock cannot be shortened or cancelled.</p>
+            <dl className="box-review__details">
+              <div><dt>Mode</dt><dd>{createMode === "batch" ? `Batch · ${batchRows.length} boxes` : createMode === "basket" ? `Basket · ${extraAssets.length + 1} tokens` : "Single box"}</dd></div>
+              <div><dt>Primary total</dt><dd>{createMode === "batch" ? formatBanmao(batchTotal, tokenDecimals) : amount} {tokenSymbol}</dd></div>
+              <div><dt>Lock duration</dt><dd>{durationDays.toLocaleString()} days</dd></div>
+              <div><dt>Estimated opening</dt><dd>{estimatedUnlock.toLocaleString(language, { dateStyle: "medium", timeStyle: "short" })}</dd></div>
+            </dl>
+            {createMode === "batch" ? (
+              <div className="box-review__rows">
+                {batchRows.map((row, index) => <small key={index}>#{index + 1} · {row.recipient.slice(0, 8)}…{row.recipient.slice(-6)} · {row.amount} {tokenSymbol}</small>)}
+              </div>
+            ) : null}
+            <label className="box-review__ack">
+              <input type="checkbox" checked={lockAcknowledged} onChange={(event) => setLockAcknowledged(event.target.checked)} disabled={isBusy} />
+              <span>I understand these assets cannot be opened before the date shown above, even if I make a mistake.</span>
+            </label>
+            <div className="box-dialog__actions">
+              <button type="button" className="box-button box-button--secondary" onClick={() => setReviewOpen(false)} disabled={isBusy}>{copy.cancel}</button>
+              <button type="button" className="box-button box-button--primary" onClick={() => void confirmCreate()} disabled={isBusy || !lockAcknowledged}>
+                {isBusy ? <LoaderCircle className="box-spin" /> : <LockKeyhole />}
+                Confirm and continue
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
 
       {transferEntry ? (
         <div

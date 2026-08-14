@@ -39,9 +39,13 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
 
     uint8 private constant MAX_SUPPORTED_TOKEN_DECIMALS = 69;
     bytes4 private constant ERC4906_INTERFACE_ID = bytes4(0x49064906);
-    uint256 public constant MAX_LOCK_DURATION = 10 * 365 days;
+    uint256 public constant MAX_LOCK_DURATION = 100 * 365 days;
     uint256 public constant MAX_PAGE_SIZE = 100;
     uint256 public constant MAX_ASSETS_PER_BOX = 5;
+    uint256 public constant MAX_BATCH_SIZE = 20;
+    uint256 public constant BATCH_RELEASE_GAS_LIMIT = 500_000;
+    uint256 public constant MAX_FAILURE_REASON_BYTES = 256;
+    uint256 private constant BATCH_RELEASE_GAS_RESERVE = 100_000;
 
     IERC20 public immutable underlyingToken;
     IBanmaoBoxRenderer public immutable renderer;
@@ -66,6 +70,7 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
 
     mapping(uint256 tokenId => BoxInfo info) public boxDetails;
     mapping(uint256 tokenId => BoxAsset[] assets) private _boxAssets;
+    mapping(uint256 tokenId => bool opening) private _opening;
 
     event BoxCreated(
         uint256 indexed tokenId,
@@ -110,6 +115,8 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
     error ZeroAddress();
     error ZeroAmount();
     error InvalidLockDuration();
+    error InvalidBatchSize();
+    error BatchLengthMismatch();
     error InvalidPageSize();
     error InvalidToken();
     error InvalidRenderer();
@@ -123,7 +130,8 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
     error PrimaryTokenRequired();
     error DuplicateToken(address token);
     error OnlySelf();
-    error NoAssetReleased();
+    error InvalidAssetIndex();
+    error TransferWhileOpening(uint256 tokenId);
 
     constructor(
         address tokenAddress,
@@ -174,14 +182,49 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
         if (amount == 0) revert ZeroAmount();
 
         _pullExact(underlyingToken, amount);
-        tokenId = _recordBox(amount, unlockTimestamp);
-        _boxAssets[tokenId].push(
-            BoxAsset({token: address(underlyingToken), amount: amount})
-        );
+        tokenId = _mintPrimaryBox(to, amount, unlockTimestamp);
+    }
 
-        emit BoxCreated(tokenId, msg.sender, to, amount, unlockTimestamp);
-        emit BoxAssetLocked(tokenId, address(underlyingToken), amount);
-        _safeMint(to, tokenId);
+    /**
+     * @notice Creates 1-20 primary-token boxes with one shared lock duration.
+     * @param recipients Initial recipients in token-ID order.
+     * @param amounts Amount locked in each box, in the token's smallest unit.
+     * @param lockDurationSec Shared number of seconds until every box can open.
+     * @return firstTokenId The first of the consecutively minted token IDs.
+     * @dev Pulls the aggregate underlying amount once. Any failed transfer or
+     *      ERC-721 receiver callback reverts the entire batch atomically.
+     */
+    function createBoxes(
+        address[] calldata recipients,
+        uint256[] calldata amounts,
+        uint256 lockDurationSec
+    ) external nonReentrant returns (uint256 firstTokenId) {
+        uint256 batchSize = recipients.length;
+        if (batchSize == 0 || batchSize > MAX_BATCH_SIZE) {
+            revert InvalidBatchSize();
+        }
+        if (amounts.length != batchSize) revert BatchLengthMismatch();
+
+        uint256 unlockTimestamp = _validateCreation(
+            recipients[0],
+            lockDurationSec
+        );
+        uint256 totalAmount;
+        for (uint256 i; i < batchSize; ++i) {
+            if (recipients[i] == address(0)) revert ZeroAddress();
+            if (amounts[i] == 0) revert ZeroAmount();
+            totalAmount += amounts[i];
+        }
+
+        _pullExact(underlyingToken, totalAmount);
+        for (uint256 i; i < batchSize; ++i) {
+            uint256 tokenId = _mintPrimaryBox(
+                recipients[i],
+                amounts[i],
+                unlockTimestamp
+            );
+            if (i == 0) firstTokenId = tokenId;
+        }
     }
 
     /**
@@ -252,41 +295,24 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
      *      fee-charging, or otherwise incompatible. The NFT burns only when empty.
      */
     function openBox(uint256 tokenId) external nonReentrant {
-        address currentOwner = ownerOf(tokenId);
-        if (!_isAuthorized(currentOwner, msg.sender, tokenId)) {
-            revert NotOwnerOrApproved();
-        }
-
-        BoxInfo storage box = boxDetails[tokenId];
-        if (block.timestamp < uint256(box.unlockTime)) {
-            revert BoxStillLocked(box.unlockTime);
-        }
+        address currentOwner = _validateOpening(tokenId);
+        _opening[tokenId] = true;
 
         uint256 released;
         uint256 i;
         while (i < _boxAssets[tokenId].length) {
             BoxAsset memory asset = _boxAssets[tokenId][i];
-            try this.releaseAsset(asset.token, currentOwner, asset.amount) returns (
-                uint256 amountReceived
-            ) {
-                totalLockedByToken[asset.token] -= asset.amount;
-                if (asset.token == address(underlyingToken)) {
-                    totalTokensLocked -= asset.amount;
-                }
-                uint256 last = _boxAssets[tokenId].length - 1;
-                if (i != last) _boxAssets[tokenId][i] = _boxAssets[tokenId][last];
-                _boxAssets[tokenId].pop();
-                emit BoxAssetReleased(
-                    tokenId,
-                    asset.token,
-                    currentOwner,
-                    asset.amount,
-                    amountReceived
-                );
+            (
+                bool success,
+                uint256 amountReceived,
+                bytes memory reason
+            ) = _tryReleaseAsset(asset, currentOwner);
+            if (success) {
+                _removeReleasedAsset(tokenId, i, asset, currentOwner, amountReceived);
                 unchecked {
                     ++released;
                 }
-            } catch (bytes memory reason) {
+            } else {
                 emit BoxAssetReleaseFailed(
                     tokenId,
                     asset.token,
@@ -300,15 +326,38 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
             }
         }
 
-        if (released == 0) revert NoAssetReleased();
-        if (_boxAssets[tokenId].length == 0) {
-            uint256 primaryAmount = box.amount;
-            delete boxDetails[tokenId];
-            emit BoxOpened(tokenId, currentOwner, primaryAmount);
-            _burn(tokenId);
-        } else {
-            emit MetadataUpdate(tokenId);
-        }
+        _opening[tokenId] = false;
+        if (released == 0) return;
+        _finishOpening(tokenId, currentOwner);
+    }
+
+    /**
+     * @notice Releases one asset from an unlocked box without touching the rest.
+     * @dev This is the recovery path when another basket asset is incompatible or
+     *      deliberately consumes excessive gas. Asset order may change after a
+     *      successful release because the array uses swap-and-pop removal.
+     */
+    function openAsset(uint256 tokenId, uint256 assetIndex) external nonReentrant {
+        address currentOwner = _validateOpening(tokenId);
+        if (assetIndex >= _boxAssets[tokenId].length) revert InvalidAssetIndex();
+
+        BoxAsset memory asset = _boxAssets[tokenId][assetIndex];
+        _opening[tokenId] = true;
+        uint256 amountReceived = _pushAvailable(
+            IERC20(asset.token),
+            currentOwner,
+            asset.amount
+        );
+        _opening[tokenId] = false;
+
+        _removeReleasedAsset(
+            tokenId,
+            assetIndex,
+            asset,
+            currentOwner,
+            amountReceived
+        );
+        _finishOpening(tokenId, currentOwner);
     }
 
     /** @dev Isolated payout target. It may only be reached through `openBox`. */
@@ -319,6 +368,93 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
     ) external returns (uint256 amountReceived) {
         if (msg.sender != address(this)) revert OnlySelf();
         return _pushAvailable(IERC20(token), to, amount);
+    }
+
+    function _validateOpening(uint256 tokenId) internal view returns (address owner) {
+        owner = ownerOf(tokenId);
+        if (!_isAuthorized(owner, msg.sender, tokenId)) {
+            revert NotOwnerOrApproved();
+        }
+
+        uint256 unlockTime = uint256(boxDetails[tokenId].unlockTime);
+        if (block.timestamp < unlockTime) revert BoxStillLocked(unlockTime);
+    }
+
+    function _tryReleaseAsset(
+        BoxAsset memory asset,
+        address owner
+    ) internal returns (bool success, uint256 amountReceived, bytes memory reason) {
+        if (gasleft() <= BATCH_RELEASE_GAS_RESERVE) {
+            return (false, 0, bytes("INSUFFICIENT_BATCH_GAS"));
+        }
+
+        uint256 callGas = gasleft() - BATCH_RELEASE_GAS_RESERVE;
+        if (callGas > BATCH_RELEASE_GAS_LIMIT) callGas = BATCH_RELEASE_GAS_LIMIT;
+        bytes memory payload = abi.encodeCall(
+            this.releaseAsset,
+            (asset.token, owner, asset.amount)
+        );
+        assembly ("memory-safe") {
+            success := call(callGas, address(), 0, add(payload, 0x20), mload(payload), 0, 0)
+            let returnSize := returndatasize()
+            if and(success, lt(returnSize, 0x20)) {
+                success := 0
+            }
+            if success {
+                returndatacopy(0, 0, 0x20)
+                amountReceived := mload(0)
+            }
+            if iszero(success) {
+                let copySize := returnSize
+                if gt(copySize, MAX_FAILURE_REASON_BYTES) {
+                    copySize := MAX_FAILURE_REASON_BYTES
+                }
+                reason := mload(0x40)
+                mstore(reason, copySize)
+                returndatacopy(add(reason, 0x20), 0, copySize)
+                mstore(
+                    0x40,
+                    and(add(add(reason, 0x3f), copySize), not(0x1f))
+                )
+            }
+        }
+    }
+
+    function _removeReleasedAsset(
+        uint256 tokenId,
+        uint256 assetIndex,
+        BoxAsset memory asset,
+        address owner,
+        uint256 amountReceived
+    ) internal {
+        totalLockedByToken[asset.token] -= asset.amount;
+        if (asset.token == address(underlyingToken)) {
+            totalTokensLocked -= asset.amount;
+        }
+
+        uint256 last = _boxAssets[tokenId].length - 1;
+        if (assetIndex != last) {
+            _boxAssets[tokenId][assetIndex] = _boxAssets[tokenId][last];
+        }
+        _boxAssets[tokenId].pop();
+        emit BoxAssetReleased(
+            tokenId,
+            asset.token,
+            owner,
+            asset.amount,
+            amountReceived
+        );
+    }
+
+    function _finishOpening(uint256 tokenId, address owner) internal {
+        if (_boxAssets[tokenId].length == 0) {
+            uint256 primaryAmount = boxDetails[tokenId].amount;
+            delete boxDetails[tokenId];
+            emit BoxOpened(tokenId, owner, primaryAmount);
+            _burn(tokenId);
+        } else {
+            emit MetadataUpdate(tokenId);
+        }
     }
 
     /**
@@ -433,6 +569,7 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
         uint256 tokenId,
         address auth
     ) internal override returns (address previousOwner) {
+        if (_opening[tokenId]) revert TransferWhileOpening(tokenId);
         if (to == address(this)) revert CannotTransferToSelf();
         return super._update(to, tokenId, auth);
     }
@@ -472,7 +609,8 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
         return block.timestamp + lockDurationSec;
     }
 
-    function _recordBox(
+    function _mintPrimaryBox(
+        address to,
         uint256 amount,
         uint256 unlockTimestamp
     ) internal returns (uint256 tokenId) {
@@ -483,8 +621,15 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
             createdAt: uint64(block.timestamp),
             unlockTime: uint64(unlockTimestamp)
         });
+        _boxAssets[tokenId].push(
+            BoxAsset({token: address(underlyingToken), amount: amount})
+        );
         totalTokensLocked += amount;
         totalLockedByToken[address(underlyingToken)] += amount;
+
+        emit BoxCreated(tokenId, msg.sender, to, amount, unlockTimestamp);
+        emit BoxAssetLocked(tokenId, address(underlyingToken), amount);
+        _safeMint(to, tokenId);
     }
 
     function _pullExact(IERC20 token, uint256 amount) internal {

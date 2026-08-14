@@ -9,6 +9,10 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "jest",
+    "test:contracts": "jest __tests__/contracts/banmaoBox.security.test.ts --runInBand",
+    "generate:banmaobox": "node scripts/generate-banmaobox-abis.cjs",
+    "deploy:banmaobox:mainnet": "node scripts/deploy-banmaobox-mainnet.cjs",
+    "verify:banmaobox:mainnet": "node scripts/verify-banmaobox-mainnet.cjs",
     "check": "npm run typecheck && npm run lint && npm test -- --runInBand --passWithNoTests"
   },
   "dependencies": {
@@ -65,6 +69,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.0.0",
     "fastestsmallesttextencoderdecoder": "^1.0.22",
+    "ganache": "^7.9.2",
     "javascript-obfuscator": "^4.1.1",
     "jest": "^30.2.0",
     "sharp": "^0.34.5",

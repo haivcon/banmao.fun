@@ -17,6 +17,11 @@ export const BANMAO_BOX_ABI = [
     "type": "constructor"
   },
   {
+    "inputs": [],
+    "name": "BatchLengthMismatch",
+    "type": "error"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -174,6 +179,16 @@ export const BANMAO_BOX_ABI = [
   },
   {
     "inputs": [],
+    "name": "InvalidAssetIndex",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidBatchSize",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidLockDuration",
     "type": "error"
   },
@@ -190,11 +205,6 @@ export const BANMAO_BOX_ABI = [
   {
     "inputs": [],
     "name": "InvalidToken",
-    "type": "error"
-  },
-  {
-    "inputs": [],
-    "name": "NoAssetReleased",
     "type": "error"
   },
   {
@@ -231,6 +241,17 @@ export const BANMAO_BOX_ABI = [
   {
     "inputs": [],
     "name": "TimestampOverflow",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      }
+    ],
+    "name": "TransferWhileOpening",
     "type": "error"
   },
   {
@@ -566,7 +587,46 @@ export const BANMAO_BOX_ABI = [
   },
   {
     "inputs": [],
+    "name": "BATCH_RELEASE_GAS_LIMIT",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "MAX_ASSETS_PER_BOX",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_BATCH_SIZE",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_FAILURE_REASON_BYTES",
     "outputs": [
       {
         "internalType": "uint256",
@@ -770,6 +830,35 @@ export const BANMAO_BOX_ABI = [
   {
     "inputs": [
       {
+        "internalType": "address[]",
+        "name": "recipients",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "amounts",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lockDurationSec",
+        "type": "uint256"
+      }
+    ],
+    "name": "createBoxes",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "firstTokenId",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
         "name": "to",
         "type": "address"
@@ -915,6 +1004,24 @@ export const BANMAO_BOX_ABI = [
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assetIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "openAsset",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

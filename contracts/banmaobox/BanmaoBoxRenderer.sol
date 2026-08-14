@@ -35,9 +35,7 @@ interface IBanmaoBoxRenderer is IERC165 {
 
 /// @title BanmaoBoxRenderer
 /// @notice Fully on-chain dynamic SVG and metadata renderer for BanmaoBox.
-/// @dev The countdown is calculated whenever tokenURI/renderSVG is queried.
-///      Marketplaces may cache metadata, so their displayed countdown advances
-///      only when they refresh the token metadata.
+/// @dev Lock status is recalculated whenever tokenURI/renderSVG is queried.
 contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
     using Strings for uint256;
     using Strings for address;
@@ -116,81 +114,44 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         uint256 tier = _tier(data.amount, data.tokenDecimals);
         string memory accent = ready ? "#64F5A5" : _tierAccent(tier);
 
-        bytes memory upperArtwork = abi.encodePacked(
-            '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Dynamic Banmao time-locked gift box NFT">',
-            _renderDefsAndStyle(accent),
-            _renderBackground(tier, accent),
-            _renderHeader(tokenId, ready, accent),
-            _renderBanmaoCharacter()
-        );
-        bytes memory lowerArtwork = abi.encodePacked(
-            _renderGiftBox(tier, ready, accent),
-            _renderSparkles(tier, accent),
-            _renderCountdown(unlockTime, ready, accent),
-            _renderFooter(data, tier),
-            "</svg>"
-        );
-
-        return string(abi.encodePacked(upperArtwork, lowerArtwork));
+        return
+            string(
+                abi.encodePacked(
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800" role="img" aria-label="Banmao Box time-locked NFT">',
+                    _renderDefsAndStyle(accent),
+                    _renderBackground(accent),
+                    _renderHeader(tokenId, ready, accent),
+                    _renderVault(ready, accent),
+                    _renderDetails(data, ready, accent),
+                    "</svg>"
+                )
+            );
     }
 
     function _renderDefsAndStyle(
         string memory accent
     ) internal pure returns (string memory) {
-        bytes memory gradients = abi.encodePacked(
-            "<defs>",
-            '<linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#151A31"/><stop offset=".55" stop-color="#0A0E1D"/><stop offset="1" stop-color="#05070E"/></linearGradient>',
-            '<radialGradient id="halo"><stop stop-color="',
-            accent,
-            '" stop-opacity=".28"/><stop offset="1" stop-color="',
-            accent,
-            '" stop-opacity="0"/></radialGradient>'
-        );
-        bytes memory materials = abi.encodePacked(
-            '<linearGradient id="banana" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF36A"/><stop offset=".5" stop-color="#F7D72D"/><stop offset="1" stop-color="#D9A817"/></linearGradient>',
-            '<linearGradient id="fur" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#F8B45F"/><stop offset="1" stop-color="#C9732E"/></linearGradient>',
-            '<linearGradient id="gift" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#FFE274"/><stop offset="1" stop-color="#E99B16"/></linearGradient>',
-            '<filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>',
-            '<filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="9" flood-color="#000" flood-opacity=".38"/></filter>',
-            "</defs>"
-        );
-        bytes memory styles = abi.encodePacked(
-            "<style>",
-            ".title{font-family:Arial,sans-serif;font-weight:900;letter-spacing:.08em}.mono{font-family:Consolas,'Courier New',monospace}.label{font-family:Arial,sans-serif;letter-spacing:.12em}.mascot{transform-origin:245px 360px;animation:float 4s ease-in-out infinite}.lid{transform-origin:585px 300px;animation:lid 2.8s ease-in-out infinite}.spark{transform-box:fill-box;transform-origin:center;animation:twinkle 2.4s ease-in-out infinite}.readyPulse{animation:pulse 1.8s ease-in-out infinite}@keyframes float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-8px) rotate(1deg)}}@keyframes lid{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}@keyframes twinkle{0%,100%{opacity:.2;transform:scale(.65) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(45deg)}}@keyframes pulse{0%,100%{opacity:.72}50%{opacity:1}}",
-            "</style>"
-        );
-
-        return string(abi.encodePacked(gradients, materials, styles));
-    }
-
-    function _renderBackground(
-        uint256 tier,
-        string memory accent
-    ) internal pure returns (string memory) {
-        uint256 ringCount = tier + 2;
-        bytes memory rings = '<g fill="none" stroke-width="1">';
-        for (uint256 i; i < ringCount; ++i) {
-            rings = abi.encodePacked(
-                rings,
-                '<circle cx="585" cy="335" r="',
-                (118 + i * 27).toString(),
-                '" stroke="',
-                accent,
-                '" stroke-opacity=".',
-                _pad2(8 + i * 3),
-                '" stroke-dasharray="8 16"/>'
-            );
-        }
-
         return
             string(
                 abi.encodePacked(
-                    '<rect width="800" height="800" rx="48" fill="url(#bg)"/>',
-                    '<circle cx="585" cy="335" r="300" fill="url(#halo)"/>',
-                    '<path d="M0 610C165 548 274 674 430 621s245-13 370 45V800H0Z" fill="#11182B" opacity=".76"/>',
-                    rings,
-                    "</g>",
-                    '<g opacity=".12" stroke="#fff"><path d="M0 176h800M0 622h800"/><path d="M126 0v800M674 0v800"/></g>'
+                    '<defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#171B2D"/><stop offset=".55" stop-color="#090D18"/><stop offset="1" stop-color="#04060B"/></linearGradient><linearGradient id="v" x2="0" y2="1"><stop stop-color="#283142"/><stop offset="1" stop-color="#0D121D"/></linearGradient><radialGradient id="h"><stop stop-color="',
+                    accent,
+                    '" stop-opacity=".25"/><stop offset="1" stop-color="',
+                    accent,
+                    '" stop-opacity="0"/></radialGradient></defs><style>.t{font-family:Arial,sans-serif;font-weight:900}.l{font-family:Arial,sans-serif;font-weight:700;letter-spacing:.15em}.n{font-family:Consolas,monospace}</style>'
+                )
+            );
+    }
+
+    function _renderBackground(
+        string memory accent
+    ) internal pure returns (string memory) {
+        return
+            string(
+                abi.encodePacked(
+                    '<rect width="800" height="800" rx="48" fill="url(#b)"/><circle cx="400" cy="305" r="285" fill="url(#h)"/><path d="M56 112H744" stroke="',
+                    accent,
+                    '" stroke-opacity=".45"/>'
                 )
             );
     }
@@ -200,293 +161,167 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         bool ready,
         string memory accent
     ) internal pure returns (string memory) {
-        bytes memory title = abi.encodePacked(
-            '<text class="title" x="56" y="73" fill="#F9FAFB" font-size="34">BANMAOBOX</text>',
-            '<text class="mono" x="744" y="70" text-anchor="end" fill="#AAB1C5" font-size="18">#',
-            tokenId.toString(),
-            "</text>",
-            '<rect x="56" y="91" width="688" height="2" rx="1" fill="',
-            accent,
-            '" opacity=".55"/>'
-        );
-        bytes memory status = abi.encodePacked(
-            '<circle class="',
-            ready ? "readyPulse" : "",
-            '" cx="63" cy="122" r="6" fill="',
-            accent,
-            '"/><text class="label" x="79" y="128" fill="',
-            accent,
-            '" font-size="16" font-weight="700">'
-        );
-        bytes memory statusText = abi.encodePacked(
-            ready ? "READY TO OPEN" : "TIME LOCK ACTIVE",
-            "</text>"
-        );
-
-        return string(abi.encodePacked(title, status, statusText));
-    }
-
-    /// @dev Vector interpretation of Happy Smile.png: an orange cat wearing a
-    ///      bright yellow banana costume.
-    function _renderBanmaoCharacter() internal pure returns (string memory) {
-        bytes memory body = abi.encodePacked(
-            '<g class="mascot" filter="url(#soft)">',
-            '<path d="M184 437c-46 8-58-44-24-66 13-9 26-4 30 8-20 8-20 28 1 31Z" fill="url(#fur)"/>',
-            '<path d="M298 430c52-12 77 32 48 61-11 11-26 9-31-2 18-12 14-31-8-32Z" fill="none" stroke="#D47A31" stroke-width="17" stroke-linecap="round"/>',
-            '<path d="M217 538c-3 28-2 47-20 52-21 6-30-11-20-28l13-30m83 3c4 28 3 47 21 52 21 6 30-12 19-29l-13-30" fill="url(#fur)" stroke="#AF5B25" stroke-width="3"/>',
-            '<path d="M237 153c-8-29 7-58 25-72l11-34 23-2-3 38c30 21 47 58 42 97l-24 284c-5 61-42 92-83 84-42-8-67-47-57-106l43-259c3-17 11-25 23-30Z" fill="url(#banana)" stroke="#C99716" stroke-width="4"/>',
-            '<path d="M273 47l23-2 1-19-25 1Z" fill="#86502D" stroke="#65381F" stroke-width="3"/>',
-            '<path d="M198 435c24 28 78 32 111 6-8 69-38 111-81 107-40-4-61-48-57-106Z" fill="#F5C925" opacity=".65"/>'
-        );
-        bytes memory faceShape = abi.encodePacked(
-            '<ellipse cx="255" cy="244" rx="78" ry="72" fill="url(#fur)" stroke="#9E5828" stroke-width="4"/>',
-            '<path d="M196 207l19-42 25 32m71 11-14-43-27 31" fill="#D47A31"/>',
-            '<path d="M208 207l10-24 14 18m67 7-8-25-15 18" fill="#F6B6A0"/>',
-            '<path d="M211 211c13-14 25-20 39-23m48 24c-13-15-25-21-39-24" fill="none" stroke="#A95625" stroke-width="7" stroke-linecap="round"/>',
-            '<ellipse cx="226" cy="237" rx="14" ry="18" fill="#171923"/><ellipse cx="282" cy="237" rx="14" ry="18" fill="#171923"/>',
-            '<circle cx="222" cy="231" r="5" fill="#fff"/><circle cx="278" cy="231" r="5" fill="#fff"/>'
-        );
-        bytes memory smile = abi.encodePacked(
-            '<ellipse cx="254" cy="267" rx="38" ry="27" fill="#FFE2B8" opacity=".96"/>',
-            '<path d="M247 256q7-8 15 0l-7 7Z" fill="#D95F62"/>',
-            '<path d="M255 263c-2 16-25 17-28 5m28-5c2 16 25 17 29 5" fill="none" stroke="#653B31" stroke-width="3" stroke-linecap="round"/>',
-            '<g stroke="#FFF4DA" stroke-width="2" opacity=".9"><path d="M225 261l-47-8m49 17-51 7m106-16 48-10m-46 19 50 5"/></g>',
-            '<path d="M201 305c13 11 26 16 41 17m42-17c-12 10-25 15-39 17" fill="none" stroke="#B36529" stroke-width="5" stroke-linecap="round" opacity=".7"/>',
-            '<path d="M323 379c36-29 56 25 24 50-13 10-27 4-30-8 21-7 22-27 6-31Z" fill="url(#fur)"/>',
-            "</g>"
-        );
-
-        return string(abi.encodePacked(body, faceShape, smile));
-    }
-
-    function _renderGiftBox(
-        uint256 tier,
-        bool ready,
-        string memory accent
-    ) internal pure returns (string memory) {
-        string memory scale;
-        string memory translate;
-        if (tier == 0) {
-            scale = ".78";
-            translate = "translate(128 99)";
-        } else if (tier == 1) {
-            scale = ".88";
-            translate = "translate(72 57)";
-        } else if (tier == 2) {
-            scale = "1";
-            translate = "translate(0 0)";
-        } else {
-            scale = "1.08";
-            translate = "translate(-46 -28)";
-        }
-
         return
             string(
                 abi.encodePacked(
-                    '<g transform="',
-                    translate,
-                    ' scale(',
-                    scale,
-                    ')" filter="url(#soft)">',
-                    _renderGiftBoxLid(ready),
-                    _renderGiftBoxBody(ready, accent),
-                    "</g>"
+                    '<text class="t" x="400" y="78" text-anchor="middle" fill="#F8FAFC" font-size="38" letter-spacing="3">BANMAO BOX</text><text class="n" x="744" y="76" text-anchor="end" fill="#9CA6BB" font-size="20">#',
+                    tokenId.toString(),
+                    "</text>",
+                    _renderStatus(ready, accent)
                 )
             );
     }
 
-    function _renderGiftBoxLid(
-        bool ready
-    ) internal pure returns (string memory) {
-        return
-            string(
-                abi.encodePacked(
-                    '<g class="',
-                    ready ? "lid readyPulse" : "",
-                    '">',
-                    '<path d="M463 273h245a20 20 0 0 1 20 20v44H443v-44a20 20 0 0 1 20-20Z" fill="url(#gift)" stroke="#FFF0A6" stroke-width="5"/>',
-                    '<path d="M585 274c-43-55-91-52-92-16 0 28 45 22 92 16Zm0 0c43-55 91-52 92-16 0 28-45 22-92 16Z" fill="none" stroke="#F6BC27" stroke-width="18" stroke-linecap="round"/>',
-                    "</g>"
-                )
-            );
-    }
-
-    function _renderGiftBoxBody(
+    function _renderStatus(
         bool ready,
         string memory accent
     ) internal pure returns (string memory) {
-        bytes memory shell = abi.encodePacked(
-            '<rect x="463" y="337" width="245" height="183" rx="18" fill="url(#gift)" stroke="#FFF0A6" stroke-width="5"/>',
-            '<path d="M559 273h53v247h-53Z" fill="#E56F23"/>',
-            '<rect x="509" y="382" width="153" height="81" rx="18" fill="#101526" stroke="',
+        bytes memory pill = abi.encodePacked(
+            '<g transform="translate(',
+            ready ? "285" : "312",
+            ' 137)"><rect width="',
+            ready ? "230" : "176",
+            '" height="40" rx="20" fill="',
             accent,
-            '" stroke-width="4"/>'
-        );
-        bytes memory lock = abi.encodePacked(
-            '<path d="M574 410v-9a12 12 0 0 1 24 0v9" fill="none" stroke="',
+            '" fill-opacity=".1" stroke="',
             accent,
-            '" stroke-width="5"/><rect x="565" y="409" width="42" height="34" rx="7" fill="',
+            '" stroke-opacity=".5"/>'
+        );
+        bytes memory text = abi.encodePacked(
+            '<circle cx="',
+            ready ? "25" : "26",
+            '" cy="20" r="6" fill="',
             accent,
-            '"/><circle cx="586" cy="424" r="5" fill="#101526"/>'
-        );
-        bytes memory label = abi.encodePacked(
-            '<text class="label" x="585" y="489" text-anchor="middle" fill="#6F4218" font-size="14" font-weight="900">',
-            ready ? "UNLOCKED" : "BANMAO LOCKED",
-            "</text>"
-        );
-
-        return string(abi.encodePacked(shell, lock, label));
-    }
-
-    function _renderSparkles(
-        uint256 tier,
-        string memory accent
-    ) internal pure returns (string memory) {
-        uint256 count = 3 + tier * 3;
-        bytes memory output = '<g filter="url(#glow)">';
-
-        for (uint256 i; i < count; ++i) {
-            output = abi.encodePacked(
-                output,
-                _renderSingleSparkle(tier, accent, i)
-            );
-        }
-
-        return string(abi.encodePacked(output, "</g>"));
-    }
-
-    function _renderSingleSparkle(
-        uint256 tier,
-        string memory accent,
-        uint256 index
-    ) internal pure returns (string memory) {
-        uint256 x = 420 + ((index * 67 + tier * 29) % 337);
-        uint256 y = 167 + ((index * 91 + tier * 17) % 360);
-        uint256 size = 5 + (index % 4) * 2;
-
-        bytes memory head = abi.encodePacked(
-            '<path class="spark" style="animation-delay:-',
-            index.toString(),
-            ".",
-            tier.toString(),
-            's" d="M',
-            x.toString(),
-            " ",
-            (y - size).toString(),
-            "L",
-            (x + size).toString(),
-            " ",
-            y.toString()
-        );
-        bytes memory tail = abi.encodePacked(
-            " ",
-            x.toString(),
-            " ",
-            (y + size).toString(),
-            " ",
-            (x - size).toString(),
-            " ",
-            y.toString(),
-            'Z" fill="',
+            '"/><text class="l" x="',
+            ready ? "125" : "100",
+            '" y="26" text-anchor="middle" fill="',
             accent,
-            '"/>'
-        );
-
-        return string(abi.encodePacked(head, tail));
-    }
-
-    function _renderCountdown(
-        uint64 unlockTime,
-        bool ready,
-        string memory accent
-    ) internal view returns (string memory) {
-        (uint256 daysLeft, uint256 hoursLeft, uint256 minutesLeft, uint256 secondsLeft) = _countdown(
-                unlockTime
-            );
-
-        bytes memory panel = abi.encodePacked(
-            '<g transform="translate(56 548)">',
-            '<rect width="688" height="98" rx="22" fill="#0B1020" stroke="',
-            accent,
-            '" stroke-opacity=".72" stroke-width="2"/>',
-            '<text class="label" x="24" y="29" fill="#929BB2" font-size="12">',
-            ready ? "LOCK EXPIRED" : "TIME UNTIL UNLOCK",
-            "</text>"
-        );
-        bytes memory firstHalf = abi.encodePacked(
-            _countdownCell(24, _pad2(daysLeft), "DAYS", accent),
-            _countdownCell(190, _pad2(hoursLeft), "HOURS", accent)
-        );
-        bytes memory secondHalf = abi.encodePacked(
-            _countdownCell(356, _pad2(minutesLeft), "MIN", accent),
-            _countdownCell(522, _pad2(secondsLeft), "SEC", accent)
-        );
-
-        return
-            string(
-                abi.encodePacked(panel, firstHalf, secondHalf, "</g>")
-            );
-    }
-
-    function _countdownCell(
-        uint256 x,
-        string memory value,
-        string memory label,
-        string memory accent
-    ) internal pure returns (string memory) {
-        bytes memory number = abi.encodePacked(
-            '<text class="mono" x="',
-            x.toString(),
-            '" y="72" fill="',
-            accent,
-            '" font-size="38" font-weight="900">',
-            value,
-            "</text>"
-        );
-        bytes memory unit = abi.encodePacked(
-            '<text class="label" x="',
-            (x + 75).toString(),
-            '" y="71" fill="#737D96" font-size="11">',
-            label,
-            "</text>"
-        );
-
-        return string(abi.encodePacked(number, unit));
-    }
-
-    function _renderFooter(
-        BanmaoBoxRenderData calldata data,
-        uint256 tier
-    ) internal pure returns (string memory) {
-        bytes memory panel = abi.encodePacked(
-            '<g transform="translate(56 660)"><rect width="688" height="126" rx="22" fill="#0B1020" stroke="#FFFFFF" stroke-opacity=".10"/>',
-            '<text class="label" x="22" y="24" fill="#747E96" font-size="10">',
-            _tierName(tier),
-            data.assetCount > 1 ? " BASKET" : " GIFT",
-            '</text><text class="mono" x="666" y="25" text-anchor="end" fill="#F5F7FB" font-size="15">',
-            _formatTokenAmount(data.amount, data.tokenDecimals),
-            " ",
-            data.tokenSymbol,
-            "</text>"
-        );
-        bytes memory dates = abi.encodePacked(
-            '<text class="label" x="22" y="50" fill="#747E96" font-size="9">START DATE</text>',
-            '<text class="mono" x="22" y="70" fill="#F5F7FB" font-size="13">',
-            _formatDateTime(_createdAt(data)),
-            '</text><text class="label" x="356" y="50" fill="#747E96" font-size="9">UNLOCK DATE</text>',
-            '<text class="mono" x="356" y="70" fill="#F5F7FB" font-size="13">',
-            _formatDateTime(_unlockTime(data)),
-            "</text>"
-        );
-        bytes memory creator = abi.encodePacked(
-            '<path d="M22 82H666" stroke="#FFFFFF" stroke-opacity=".08"/>',
-            '<text class="label" x="22" y="101" fill="#747E96" font-size="9">CREATOR WALLET</text>',
-            '<text class="mono" x="666" y="105" text-anchor="end" fill="#AAB1C5" font-size="13">',
-            data.creator.toHexString(),
+            '" font-size="14">',
+            ready ? "READY TO OPEN" : "LOCKED",
             "</text></g>"
         );
+        return string(abi.encodePacked(pill, text));
+    }
 
-        return string(abi.encodePacked(panel, dates, creator));
+    function _renderVault(
+        bool ready,
+        string memory accent
+    ) internal pure returns (string memory) {
+        return
+            string(
+                abi.encodePacked(
+                    _renderVaultShell(accent),
+                    _renderVaultLock(ready, accent)
+                )
+            );
+    }
+
+    function _renderVaultShell(
+        string memory accent
+    ) internal pure returns (string memory) {
+        bytes memory outer = abi.encodePacked(
+            '<g transform="translate(250 178)"><rect width="300" height="270" rx="54" fill="url(#v)" stroke="',
+            accent,
+            '" stroke-opacity=".7" stroke-width="3"/><path d="M44 65H256M44 205H256" stroke="#fff" stroke-opacity=".08"/><circle cx="150" cy="135" r="79" fill="#080C14" stroke="',
+            accent,
+            '" stroke-opacity=".3" stroke-width="2"/>'
+        );
+        bytes memory inner = abi.encodePacked(
+            '<circle cx="150" cy="135" r="58" fill="#111827" stroke="',
+            accent,
+            '" stroke-width="3"/><g stroke="',
+            accent,
+            '" stroke-width="5" stroke-linecap="round"><path d="M150 77v15M150 178v15M92 135h15M193 135h15"/></g>'
+        );
+        return string(abi.encodePacked(outer, inner));
+    }
+
+    function _renderVaultLock(
+        bool ready,
+        string memory accent
+    ) internal pure returns (string memory) {
+        bytes memory shackle = abi.encodePacked(
+            '<path d="',
+            ready
+                ? "M130 132v-15a20 20 0 0 1 37-10"
+                : "M130 132v-15a20 20 0 0 1 40 0v15",
+            '" fill="none" stroke="',
+            accent,
+            '" stroke-width="9" stroke-linecap="round"/>'
+        );
+        bytes memory body = abi.encodePacked(
+            '<rect x="123" y="130" width="54" height="46" rx="10" fill="',
+            accent,
+            '"/><circle cx="150" cy="149" r="5" fill="#101522"/><path d="M147 153h6v11h-6Z" fill="#101522"/></g>'
+        );
+        return string(abi.encodePacked(shackle, body));
+    }
+
+    function _renderDetails(
+        BanmaoBoxRenderData calldata data,
+        bool ready,
+        string memory accent
+    ) internal pure returns (string memory) {
+        return
+            string(
+                abi.encodePacked(
+                    _renderAmount(data),
+                    _renderIdentity(data),
+                    _renderTimeline(data, ready, accent)
+                )
+            );
+    }
+
+    function _renderAmount(
+        BanmaoBoxRenderData calldata data
+    ) internal pure returns (string memory) {
+        return
+            string(
+                abi.encodePacked(
+                    '<g transform="translate(56 474)"><rect width="688" height="92" rx="20" fill="#0C111D" stroke="#fff" stroke-opacity=".1"/><text class="l" x="344" y="27" text-anchor="middle" fill="#78839A" font-size="12">AMOUNT</text><text class="n" x="344" y="68" text-anchor="middle" fill="#F8FAFC" font-size="30" font-weight="700">',
+                    _formatTokenAmount(data.amount, data.tokenDecimals),
+                    " ",
+                    data.tokenSymbol,
+                    "</text></g>"
+                )
+            );
+    }
+
+    function _renderIdentity(
+        BanmaoBoxRenderData calldata data
+    ) internal pure returns (string memory) {
+        return
+            string(
+                abi.encodePacked(
+                    '<g transform="translate(56 582)"><rect width="688" height="162" rx="20" fill="#0C111D" stroke="#fff" stroke-opacity=".1"/><text class="l" x="344" y="24" text-anchor="middle" fill="#78839A" font-size="12">MINT WALLET</text><text class="n" x="344" y="48" text-anchor="middle" fill="#D1D6E0" font-size="16">',
+                    data.creator.toHexString(),
+                    '</text><path d="M22 65H666" stroke="#fff" stroke-opacity=".08"/><text class="l" x="172" y="94" text-anchor="middle" fill="#78839A" font-size="12">CREATED</text><text class="n" x="172" y="121" text-anchor="middle" fill="#D1D6E0" font-size="16">',
+                    _formatDateTime(_createdAt(data)),
+                    "</text>"
+                )
+            );
+    }
+
+    function _renderTimeline(
+        BanmaoBoxRenderData calldata data,
+        bool ready,
+        string memory accent
+    ) internal pure returns (string memory) {
+        bytes memory label = abi.encodePacked(
+            '<text class="l" x="516" y="94" text-anchor="middle" fill="',
+            accent,
+            '" font-size="12">',
+            ready ? "UNLOCKED AT" : "UNLOCKS",
+            "</text>"
+        );
+        bytes memory value = abi.encodePacked(
+            '<text class="n" x="516" y="121" text-anchor="middle" fill="',
+            accent,
+            '" font-size="16" font-weight="700">',
+            _formatDateTime(_unlockTime(data)),
+            "</text></g>"
+        );
+        return string(abi.encodePacked(label, value));
     }
 
     function _renderAttributes(
@@ -538,31 +373,6 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
                     staticTraits
                 )
             );
-    }
-
-    function _countdown(
-        uint64 unlockTime
-    )
-        internal
-        view
-        returns (
-            uint256 daysLeft,
-            uint256 hoursLeft,
-            uint256 minutesLeft,
-            uint256 secondsLeft
-        )
-    {
-        if (block.timestamp >= uint256(unlockTime)) {
-            return (0, 0, 0, 0);
-        }
-
-        uint256 remaining = uint256(unlockTime) - block.timestamp;
-        daysLeft = remaining / 1 days;
-        remaining %= 1 days;
-        hoursLeft = remaining / 1 hours;
-        remaining %= 1 hours;
-        minutesLeft = remaining / 1 minutes;
-        secondsLeft = remaining % 1 minutes;
     }
 
     function _tier(
