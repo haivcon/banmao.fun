@@ -3,7 +3,7 @@ import { streamChatCompletion, UpstreamAIError } from "../../lib/ai/server/clien
 const config = {
   baseUrl: "https://xlayerbot.fun/v1" as const,
   apiKey: "unit-test-placeholder",
-  models: ["banmao.fun", "open9", "xenon1"] as const,
+  models: ["banmao.fun"] as const,
   defaultModel: "banmao.fun" as const,
   requestTimeoutMs: 100,
   maxStreamBytes: 1024,
@@ -20,7 +20,7 @@ describe("OpenAI-compatible client", () => {
   test("injects auth server-side and preserves selected model", async () => {
     const fetchImpl = jest.fn(async (_url: string | URL | Request, init?: RequestInit) => {
       const requestBody = JSON.parse(String(init?.body));
-      expect(requestBody.model).toBe("xenon1");
+      expect(requestBody.model).toBe("banmao.fun");
       expect(new Headers(init?.headers).get("authorization")).toBe(
         "Bearer unit-test-placeholder",
       );
@@ -31,7 +31,7 @@ describe("OpenAI-compatible client", () => {
 
     const chunks: string[] = [];
     for await (const chunk of streamChatCompletion(
-      { model: "xenon1", messages: [{ role: "user", content: "hello" }] },
+      { model: "banmao.fun", messages: [{ role: "user", content: "hello" }] },
       { config, fetchImpl },
     )) chunks.push(chunk);
 
@@ -47,7 +47,7 @@ describe("OpenAI-compatible client", () => {
 
     await expect(async () => {
       for await (const _chunk of streamChatCompletion(
-        { model: "open9", messages: [{ role: "user", content: "hello" }] },
+        { model: "banmao.fun", messages: [{ role: "user", content: "hello" }] },
         { config, fetchImpl },
       )) {
         // consume stream
@@ -63,7 +63,7 @@ describe("OpenAI-compatible client", () => {
     ));
     const chunks: string[] = [];
     for await (const chunk of streamChatCompletion(
-      { model: "open9", messages: [{ role: "user", content: "hello" }] },
+      { model: "banmao.fun", messages: [{ role: "user", content: "hello" }] },
       { config, fetchImpl },
     )) chunks.push(chunk);
     expect(chunks).toEqual(["Hi"]);
@@ -72,7 +72,7 @@ describe("OpenAI-compatible client", () => {
   test("retains authoritative provider usage on the terminal round", async () => {
     const fetchImpl = jest.fn(async () => sseResponse('data: {"choices":[{"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":7,"completion_tokens":2}}\n\ndata: [DONE]\n\n'));
     const { streamCompletion } = await import("../../lib/ai/server/client"); const rounds=[];
-    for await(const value of streamCompletion({model:"open9",messages:[{role:"user",content:"hello"}]},{config,fetchImpl})) rounds.push(value);
+    for await(const value of streamCompletion({model:"banmao.fun",messages:[{role:"user",content:"hello"}]},{config,fetchImpl})) rounds.push(value);
     expect(rounds.at(-1)).toMatchObject({finishReason:"stop",usage:{inputTokens:7,outputTokens:2}});
   });
 
@@ -83,7 +83,7 @@ describe("OpenAI-compatible client", () => {
     const fetchImpl = jest.fn(async () => sseResponse(body));
     await expect(async () => {
       for await (const _chunk of streamChatCompletion(
-        { model: "open9", messages: [{ role: "user", content: "hello" }] },
+        { model: "banmao.fun", messages: [{ role: "user", content: "hello" }] },
         { config, fetchImpl },
       )) {
         // consume stream
@@ -101,7 +101,7 @@ describe("OpenAI-compatible client", () => {
 
     await expect(async () => {
       for await (const _chunk of streamChatCompletion(
-        { model: "open9", messages: [{ role: "user", content: "hello" }] },
+        { model: "banmao.fun", messages: [{ role: "user", content: "hello" }] },
         { config, fetchImpl, signal: controller.signal },
       )) {
         // consume stream
@@ -127,7 +127,7 @@ describe("OpenAI-compatible client", () => {
 
       await expect(async () => {
         for await (const _chunk of streamChatCompletion(
-          { model: "open9", messages: [{ role: "user", content: "hello" }] },
+          { model: "banmao.fun", messages: [{ role: "user", content: "hello" }] },
           { config: { ...config, requestTimeoutMs: 5 }, fetchImpl: fetchImpl as typeof fetch },
         )) {
           // consume stream

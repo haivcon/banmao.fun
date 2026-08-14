@@ -3,7 +3,7 @@
 ## Enforced locally
 
 - Credential and upstream client are server-only; browser input cannot choose a provider URL.
-- Models are exactly `banmao.fun`, `open9`, and `xenon1`; invalid values fail closed and no fallback exists.
+- The only accepted and exposed model is `banmao.fun`; invalid request values fail closed and no request fallback exists. Persisted `open9` and `xenon1` session preferences are explicitly migrated with a visible notice.
 - Context derives from allowlisted pathname prefixes.
 - Tool descriptors are closed, context-scoped, bounded, deterministic, and read-only. There is no `writeContract`, signer, send, or submit tool.
 - Retrieved text is untrusted evidence with provenance, never policy.

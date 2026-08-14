@@ -16,6 +16,14 @@ describe("disabled route surfaces", () => {
     expect((await GET()).status).toBe(404);
   });
 
+  test("models metadata exposes exactly banmao.fun when chat is on", async () => {
+    process.env.AI_CHAT_ENABLED = "true";
+    const { GET } = await import("../../app/api/ai/models/route");
+    const response = await GET();
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ models: ["banmao.fun"], defaultModel: "banmao.fun" });
+  });
+
   test("proof nonce is not issued when transaction copilot is off", async () => {
     const { POST } = await import("../../app/api/ai/auth/nonce/route");
     expect((await POST()).status).toBe(404);

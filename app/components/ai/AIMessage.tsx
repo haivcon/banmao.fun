@@ -8,6 +8,11 @@ import BanmaoAIMascot from "./mascot/BanmaoAIMascot";
 import MarkdownRenderer from "./MarkdownRenderer";
 import TypingIndicator from "./TypingIndicator";
 
+export const COPY_FEEDBACK_MS = 2000;
+export function scheduleCopyFeedbackReset(reset: () => void, schedule: (callback: () => void, delay: number) => unknown = window.setTimeout) {
+  return schedule(reset, COPY_FEEDBACK_MS);
+}
+
 export default function AIMessage({ role, content, createdAt, streaming = false, language }: ClientMessage & { streaming?: boolean; language?: string }) {
   const [copied, setCopied] = useState(false);
   const t = (key: Parameters<typeof aiText>[1]) => aiText(language, key);
@@ -16,7 +21,7 @@ export default function AIMessage({ role, content, createdAt, streaming = false,
     try {
       await navigator.clipboard.writeText(content);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
+      scheduleCopyFeedbackReset(() => setCopied(false));
     } catch { /* Clipboard may be unavailable in non-secure contexts. */ }
   }
   return <article className={`banmao-ai-message ${role}${streaming ? " is-streaming" : ""}`}>

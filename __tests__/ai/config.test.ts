@@ -10,7 +10,7 @@ describe("AI server config", () => {
   test("uses the fixed HTTPS upstream and exact model allowlist", () => {
     const config = loadAIConfig(validEnv);
     expect(config.baseUrl).toBe("https://xlayerbot.fun/v1");
-    expect(config.models).toEqual(["banmao.fun", "open9", "xenon1"]);
+    expect(config.models).toEqual(["banmao.fun"]);
     expect(config.defaultModel).toBe("banmao.fun");
     expect(Object.isFrozen(config)).toBe(true);
   });

@@ -2,7 +2,7 @@ import { describe, expect, jest, test } from "@jest/globals";
 import { runOrchestrator } from "../../lib/ai/server/orchestrator";
 import type { ChatRound, CompletionRequest } from "../../lib/ai/server/client";
 import { createDomainToolDescriptors } from "../../lib/ai/server/tools/liveAdapters";
-import { createOnchainOSReadOnlyDescriptors, ONCHAINOS_READ_ONLY_TOOL_NAMES } from "../../lib/ai/server/tools/onchainosReadOnly";
+import { createOnchainOSReadOnlyDescriptors, ONCHAINOS_READ_ONLY_TOOL_NAMES, preferOnchainOSReadOnlyTools } from "../../lib/ai/server/tools/onchainosReadOnly";
 
 const tool = {
   name: "docs.search",
@@ -143,6 +143,27 @@ describe("bounded BANMAO AI orchestrator", () => {
     const eventNames = events.filter((event) => event.type === "tool").map((event) => event.type === "tool" ? event.name : "");
     expect(eventNames).toHaveLength(ONCHAINOS_READ_ONLY_TOOL_NAMES.length * 2);
     for (const name of ONCHAINOS_READ_ONLY_TOOL_NAMES) expect(eventNames.filter((eventName) => eventName === name)).toHaveLength(2);
+  });
+
+  test("a price intent can invoke only the OnchainOS equivalent when enabled", async () => {
+    const legacy = createDomainToolDescriptors();
+    const onchainos = createOnchainOSReadOnlyDescriptors({ enabled: true, okxFetch: jest.fn(async () => new Response()) });
+    const tools = preferOnchainOSReadOnlyTools(legacy, onchainos);
+    const price = tools.find((descriptor) => descriptor.name === "onchainos.priceInfo")!;
+    const execute = jest.spyOn(price, "execute").mockResolvedValue({ status: "unavailable", reason: "payment-required", paymentRequired: true, source: "okx:onchainos:price-info", observedAt: "now", asOf: "now" });
+    const requests: CompletionRequest[] = [];
+    const completion = async function* (request: CompletionRequest) {
+      requests.push(request);
+      if (requests.length === 1) yield { text: "", toolCalls: [{ id: "price-1", name: "onchainos_priceInfo", arguments: JSON.stringify({ chainId: 196, tokenAddress: "0x16d91d1615fc55b76d5f92365bd60c069b46ef78" }) }], finishReason: "tool_calls" } as ChatRound;
+      else yield { text: "Market data is unavailable. Retry later or open the explorer.", toolCalls: [], finishReason: "stop" } as ChatRound;
+    };
+    const events = [];
+    for await (const event of runOrchestrator({ model: "banmao.fun", message: "BANMAO price?", context: { surface: "landing", pathname: "/" }, evidence: [], authenticated: false }, { tools, completion, maxToolRounds: 2 })) events.push(event);
+    const offered = requests[0].tools?.map((spec) => spec.function.name) || [];
+    expect(offered).toContain("onchainos_priceInfo");
+    expect(offered).not.toEqual(expect.arrayContaining(["market_price", "market_tokenInfo", "market_holders"]));
+    expect(execute).toHaveBeenCalledTimes(1);
+    expect(events).toContainEqual(expect.objectContaining({ type: "tool", callId: "price-1", status: "unavailable", summary: "Payment required" }));
   });
 
   test("rejects invented tools and invalid arguments without executing them", async () => {

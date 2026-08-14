@@ -37,4 +37,13 @@ describe("Banmao layered persona", () => {
     expect(value).toContain("pixels");
     expect(value).toContain("captions or tags");
   });
+
+  test("defaults simple questions to concise truthful answers and unavailable market reads to explicit recovery", () => {
+    const value = prompt("landing", "What is BANMAO?");
+    expect(value).toContain("short, simple question");
+    expect(value).toContain("Do not add detail unless requested");
+    expect(value).toContain("market data is unavailable");
+    expect(value).toContain("retry or explorer");
+    expect(value).toContain("Never invent a price");
+  });
 });

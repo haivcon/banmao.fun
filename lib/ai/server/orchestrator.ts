@@ -122,10 +122,10 @@ export async function* runOrchestrator(
         authenticated: input.authenticated,
         signal: options.signal,
       });
-      const envelope = result as { status?: string; source?: string };
+      const envelope = result as { status?: string; source?: string; reason?: string };
       status = envelope.status === "unavailable" ? "unavailable" : "available";
       source = envelope.source || "banmao-ai:tool-registry";
-      summary = status === "available" ? "Read completed" : "Source unavailable";
+      summary = status === "available" ? "Read completed" : envelope.reason === "payment-required" ? "Payment required" : "Source unavailable";
     } catch (error) {
       const code = error instanceof Error ? error.message : "TOOL_FAILED";
       result = errorResult(code);
@@ -212,9 +212,9 @@ export async function* runOrchestrator(
           authenticated: input.authenticated,
           signal: options.signal,
         });
-        const envelope = result as { status?: string; source?: string };
+        const envelope = result as { status?: string; source?: string; reason?: string };
         const status = envelope.status === "unavailable" ? "unavailable" : "available";
-        return { call, internalName, result, status, source: envelope.source || "banmao-ai:tool-registry", summary: status === "available" ? "Read completed" : "Source unavailable" } as const;
+        return { call, internalName, result, status, source: envelope.source || "banmao-ai:tool-registry", summary: status === "available" ? "Read completed" : envelope.reason === "payment-required" ? "Payment required" : "Source unavailable" } as const;
       } catch (error) {
         const code = error instanceof Error ? error.message : "TOOL_FAILED";
         result = errorResult(code);

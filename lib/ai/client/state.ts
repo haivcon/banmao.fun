@@ -61,9 +61,13 @@ export const SUGGESTED_PROMPTS: Record<AISurface, readonly string[]> = {
   ],
 };
 export function initialClientState(model: AIModel | null = null): ClientState { return { model, models: model ? [model] : [], messages: [], tools: [], citations: [], status: "idle" }; }
+export function migratePersistedModel(model: unknown): { model: AIModel; migrated: boolean } {
+  if (model === "banmao.fun") return { model, migrated: false };
+  if (model === "open9" || model === "xenon1") return { model: "banmao.fun", migrated: true };
+  throw new Error("Invalid persisted model");
+}
 type Action =
   | { type: "models"; models: AIModel[]; defaultModel: AIModel }
-  | { type: "select-model"; model: AIModel }
   | { type: "start"; message: string; createdAt?: number }
   | { type: "retry" }
   | { type: "delta"; text: string }
@@ -71,7 +75,7 @@ type Action =
   | { type: "tool"; tool: ToolActivity }
   | { type: "citation"; citation: Citation }
   | { type: "collection_results"; payload: CollectionResultsPayload }
-  | { type: "restore"; state: Pick<ClientState, "messages" | "tools" | "citations" | "collectionResults">; model?: AIModel }
+  | { type: "restore"; state: Pick<ClientState, "messages" | "tools" | "citations" | "collectionResults">; model?: unknown; migrated?: boolean }
   | { type: "error"; message: string }
   | { type: "interrupted"; message: string }
   | { type: "complete" }
@@ -80,14 +84,9 @@ type Action =
 export function reduceClientState(state: ClientState, action: Action): ClientState {
   switch (action.type) {
     case "models": {
-      const models = Array.from(new Set(action.models.filter((model) => typeof model === "string" && model.length > 0 && model.length <= 80)));
-      if (!models.length || !models.includes(action.defaultModel)) throw new Error("Invalid model metadata");
-      const migrated = state.model !== null && !models.includes(state.model);
-      return { ...state, models, model: state.model && models.includes(state.model) ? state.model : action.defaultModel, ...(migrated ? { notice: "MODEL_MIGRATED" as const } : {}) };
+      if (action.models.length !== 1 || action.models[0] !== "banmao.fun" || action.defaultModel !== "banmao.fun") throw new Error("Invalid model metadata");
+      return { ...state, models: ["banmao.fun"], model: state.model ?? "banmao.fun" };
     }
-    case "select-model":
-      if (!state.models.includes(action.model)) throw new Error("Invalid model");
-      return { ...state, model: action.model };
     case "start":
       const createdAt = action.createdAt ?? 0;
       return { ...state, status: "streaming", error: undefined, lastPrompt: action.message, tools: [], citations: [], collectionResults: undefined, messages: [...state.messages, { role: "user", content: action.message, createdAt }, { role: "assistant", content: "", createdAt }] };
@@ -104,10 +103,19 @@ export function reduceClientState(state: ClientState, action: Action): ClientSta
       return { ...state, messages };
     }
     case "rag-status": return { ...state, ragStatus: action.status };
-    case "tool": return { ...state, tools: [...state.tools, action.tool] };
+    case "tool": {
+      const existing = state.tools.findIndex((tool) => tool.callId === action.tool.callId);
+      if (existing < 0) return { ...state, tools: [...state.tools, action.tool] };
+      const tools = [...state.tools];
+      tools[existing] = action.tool;
+      return { ...state, tools };
+    }
     case "collection_results": return { ...state, collectionResults: { ...action.payload, results: action.payload.results.slice(0, 10) } };
     case "citation": return state.citations.some((item) => item.sourcePath === action.citation.sourcePath && item.version === action.citation.version) ? state : { ...state, citations: [...state.citations, action.citation] };
-    case "restore": return { ...state, ...action.state, ...(action.model ? { model: action.model } : {}), status: "idle", error: undefined, lastPrompt: undefined };
+    case "restore": {
+      const persisted = action.model === undefined ? undefined : migratePersistedModel(action.model);
+      return { ...state, ...action.state, ...(persisted ? { model: persisted.model } : {}), ...(action.migrated || persisted?.migrated ? { notice: "MODEL_MIGRATED" as const } : {}), status: "idle", error: undefined, lastPrompt: undefined };
+    }
     case "error": return { ...state, status: "error", error: action.message };
     case "interrupted": return { ...state, status: "interrupted", error: action.message };
     case "complete": return { ...state, status: "idle", error: undefined };

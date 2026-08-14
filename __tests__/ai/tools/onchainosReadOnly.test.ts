@@ -1,5 +1,6 @@
 import { createToolRegistry } from "../../../lib/ai/server/toolRegistry";
-import { createOnchainOSReadOnlyDescriptors, ONCHAINOS_READ_ONLY_TOOL_NAMES } from "../../../lib/ai/server/tools/onchainosReadOnly";
+import { createDomainToolDescriptors } from "../../../lib/ai/server/tools/liveAdapters";
+import { createOnchainOSReadOnlyDescriptors, ONCHAINOS_READ_ONLY_TOOL_NAMES, preferOnchainOSReadOnlyTools } from "../../../lib/ai/server/tools/onchainosReadOnly";
 
 const address = "0x16d91d1615fc55b76d5f92365bd60c069b46ef78";
 const response = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status });
@@ -11,6 +12,15 @@ function setup(reply: unknown = { code: "0", data: [{ tokenContractAddress: addr
 }
 
 describe("OnchainOS read-only Phase 1", () => {
+  test("enabled read-only tools replace only equivalent legacy market descriptors", () => {
+    const legacy = createDomainToolDescriptors();
+    expect(preferOnchainOSReadOnlyTools(legacy, [])).toEqual(legacy);
+    const names = preferOnchainOSReadOnlyTools(legacy, createOnchainOSReadOnlyDescriptors({ enabled: true, okxFetch: jest.fn() })).map((tool) => tool.name);
+    expect(names).toEqual(expect.arrayContaining(ONCHAINOS_READ_ONLY_TOOL_NAMES));
+    expect(names).not.toEqual(expect.arrayContaining(["market.price", "market.tokenInfo", "market.holders"]));
+    expect(names).toEqual(expect.arrayContaining(["market.trades", "market.hot", "market.discovery"]));
+  });
+
   test("feature gate defaults off and on exposes only the exact read allowlist", () => {
     expect(createOnchainOSReadOnlyDescriptors({ okxFetch: jest.fn() })).toEqual([]);
     expect(createOnchainOSReadOnlyDescriptors({ enabled: false, okxFetch: jest.fn() })).toEqual([]);
@@ -106,7 +116,7 @@ describe("OnchainOS read-only Phase 1", () => {
   });
 
   test.each([
-    ["HTTP 402", () => response({ error: "payment" }, 402)],
+    ["bodyless oversized HTTP 402", () => new Response(null, { status: 402, headers: { "content-length": String(256 * 1024) } })],
     ["confirming true", () => response({ confirming: true, notifications: [{ code: "MARKET_API_NEW_USER_OVER_QUOTA" }] })],
     ["blocking payment notification", () => response({ code: "0", data: [{ price: "1" }], notifications: [{ code: "MARKET_API_OLD_USER_POST_GRACE_OVER_QUOTA" }] })],
     ["future confirming notification", () => response({ code: "0", data: [{ price: "1" }], notifications: [{ code: "FUTURE_PAYMENT_CODE", confirming: true }] })],
