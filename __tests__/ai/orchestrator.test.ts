@@ -154,7 +154,7 @@ describe("bounded BANMAO AI orchestrator", () => {
     const requests: CompletionRequest[] = [];
     const completion = async function* (request: CompletionRequest) {
       requests.push(request);
-      if (requests.length === 1) yield { text: "", toolCalls: [{ id: "price-1", name: "onchainos_priceInfo", arguments: JSON.stringify({ chainId: 196, tokenAddress: "0x16d91d1615fc55b76d5f92365bd60c069b46ef78" }) }], finishReason: "tool_calls" } as ChatRound;
+      if (requests.length === 1) yield { text: "", toolCalls: [{ id: "price-1", name: "onchainos_priceInfo", arguments: JSON.stringify({ chainId: 196, tokenAddress: "0x0000000000000000000000000000000000001234" }) }], finishReason: "tool_calls" } as ChatRound;
       else yield { text: "Market data is unavailable. Retry later or open the explorer.", toolCalls: [], finishReason: "stop" } as ChatRound;
     };
     const events = [];

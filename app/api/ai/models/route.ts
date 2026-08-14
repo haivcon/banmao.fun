@@ -9,6 +9,7 @@ export async function GET() {
     if (!config.flags.chat) return new NextResponse(null, { status: 404 });
     return NextResponse.json(
       {
+        availableModels: config.models,
         models: config.models,
         defaultModel: config.defaultModel,
         capabilities: { txCopilot: config.flags.txCopilot },
