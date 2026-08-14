@@ -1,3 +1,5 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { AI_SESSION_TOKEN_CAP, type ChatSession } from "../../lib/ai/client/persistence";
 import { filterSessions, getQuotaState, validateSessionTitle, runConfirmedDelete } from "../../lib/ai/client/sessionUI";
 
@@ -30,4 +32,16 @@ test("delete only runs after confirmation for the same pending session", async (
   expect(deleted).toEqual([]);
   await runConfirmedDelete("one", "one", async (id) => { deleted.push(id); });
   expect(deleted).toEqual(["one"]);
+});
+
+test("desktop low-height panel reserves the root offset and panel gap", () => {
+  const css = fs.readFileSync(path.join(process.cwd(), "app/components/ai/ai-chat.css"), "utf8");
+  const rootRule = css.match(/\.banmao-ai-root \{([^}]*)\}/)?.[1];
+  const rule = css.match(/@media \(max-height: 650px\) and \(min-width: 641px\) \{\s*\.banmao-ai-panel \{([^}]*)\}/)?.[1];
+
+  expect(rootRule).toMatch(/--ai-root-bottom:\s*max\(20px,\s*calc\(env\(safe-area-inset-bottom\)\s*\+\s*68px\)\)/);
+  expect(rootRule).toMatch(/bottom:\s*var\(--ai-root-bottom\)/);
+  expect(rule).toBeDefined();
+  expect(rule).toMatch(/height:\s*min\(760px,\s*calc\(100dvh\s*-\s*var\(--ai-root-bottom\)\s*-\s*72px\s*-\s*20px\)\)/);
+  expect(rule).toMatch(/bottom:\s*72px/);
 });

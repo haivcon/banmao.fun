@@ -1,6 +1,7 @@
 import { validateChatRequest } from "../../lib/ai/server/schemas";
 
 const request = {
+  requestId: "123e4567-e89b-42d3-a456-426614174099",
   message: "Explain staking",
   model: "xenon1",
   context: { surface: "defi", pathname: "/defi/staking" },
@@ -36,6 +37,13 @@ describe("AI chat request validation", () => {
   test("accepts bounded allowlisted page element context", () => {
     const value = validateChatRequest({ ...request, context: { ...request.context, pageElements: [{ id: "staking.amount", type: "input", label: "Stake amount", action: "fill", risk: "reversible" }] } }, "open9");
     expect(value.context.pageElements?.[0].id).toBe("staking.amount");
+  });
+
+  test("treats browser wallet JSON only as a connected wallet hint", () => {
+    const connectedWalletHint = { address: "0x0000000000000000000000000000000000000001", chainId: 196 } as const;
+    const value = validateChatRequest({ ...request, connectedWalletHint }, "open9");
+    expect(value.connectedWalletHint).toEqual(connectedWalletHint);
+    expect(() => validateChatRequest({ ...request, wallet: connectedWalletHint }, "open9")).toThrow("Unknown field");
   });
 
   test("rejects invalid page selectors and unknown element fields", () => {

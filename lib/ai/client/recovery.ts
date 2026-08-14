@@ -4,7 +4,7 @@ export async function fetchWithOneRetry(input: RequestInfo | URL, init: RequestI
   let retries = 0;
   try {
     let response = await fetcher(input, init);
-    if (isTransientStatus(response.status)) { retries = 1; await sleep(Math.min(1500, (options.baseDelayMs || 250) * (1 + random()))); response = await fetcher(input, init); }
+    if (isTransientStatus(response.status)) { retries = 1; const retryAfter = Number(response.headers.get("retry-after")); const delay = Number.isFinite(retryAfter) && retryAfter >= 0 ? retryAfter * 1000 : Math.min(1500, (options.baseDelayMs || 250) * (1 + random())); await sleep(delay); response = await fetcher(input, init); }
     return { response, retries };
   } catch (error) {
     if ((init.signal as AbortSignal | undefined)?.aborted) throw error;

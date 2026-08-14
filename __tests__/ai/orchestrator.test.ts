@@ -2,6 +2,7 @@ import { describe, expect, jest, test } from "@jest/globals";
 import { runOrchestrator } from "../../lib/ai/server/orchestrator";
 import type { ChatRound, CompletionRequest } from "../../lib/ai/server/client";
 import { createDomainToolDescriptors } from "../../lib/ai/server/tools/liveAdapters";
+import { createOnchainOSReadOnlyDescriptors, ONCHAINOS_READ_ONLY_TOOL_NAMES } from "../../lib/ai/server/tools/onchainosReadOnly";
 
 const tool = {
   name: "docs.search",
@@ -113,6 +114,35 @@ describe("bounded BANMAO AI orchestrator", () => {
     expect(requests[1].messages.some((message) => message.role === "assistant" && message.tool_calls?.[0].function.name === "docs_search")).toBe(true);
     expect(requests[1].messages.some((message) => message.role === "tool" && message.tool_call_id === "call-1")).toBe(true);
     expect(events).toContainEqual({ type: "delta", text: "Grounded answer" });
+  });
+
+  test("round-trips all OnchainOS provider-safe names to internal names and tool events", async () => {
+    const tools = createOnchainOSReadOnlyDescriptors({ enabled: true, okxFetch: jest.fn(async () => new Response()) }).map((descriptor) => ({
+      ...descriptor,
+      parse: jest.fn((value: unknown) => value),
+      execute: jest.fn(async () => ({ status: "available", source: "okx:test", value: [] })),
+    }));
+    const requests: CompletionRequest[] = [];
+    const completion = async function* (request: CompletionRequest) {
+      requests.push(request);
+      if (requests.length === 1) {
+        yield {
+          text: "",
+          toolCalls: request.tools!.map((spec, index) => ({ id: `okx-${index}`, name: spec.function.name, arguments: "{}" })),
+          finishReason: "tool_calls",
+        } as ChatRound;
+      } else yield { text: "Done", toolCalls: [], finishReason: "stop" } as ChatRound;
+    };
+    const events = [];
+    for await (const event of runOrchestrator({ model: "banmao.fun", message: "read tokens", context: { surface: "landing", pathname: "/" }, evidence: [], authenticated: false }, { tools, completion, maxToolRounds: 2 })) events.push(event);
+
+    const providerNames = requests[0].tools!.map((spec) => spec.function.name);
+    expect(providerNames).toEqual(ONCHAINOS_READ_ONLY_TOOL_NAMES.map((name) => name.replace(".", "_")));
+    expect(providerNames.every((name) => name.includes("_") && !name.includes("."))).toBe(true);
+    expect(tools.every((descriptor) => descriptor.execute.mock.calls.length === 1)).toBe(true);
+    const eventNames = events.filter((event) => event.type === "tool").map((event) => event.type === "tool" ? event.name : "");
+    expect(eventNames).toHaveLength(ONCHAINOS_READ_ONLY_TOOL_NAMES.length * 2);
+    for (const name of ONCHAINOS_READ_ONLY_TOOL_NAMES) expect(eventNames.filter((eventName) => eventName === name)).toHaveLength(2);
   });
 
   test("rejects invented tools and invalid arguments without executing them", async () => {

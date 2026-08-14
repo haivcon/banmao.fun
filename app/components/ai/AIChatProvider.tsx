@@ -24,9 +24,9 @@ import {
   type SessionInvalidation,
   type StoredChatMessage,
 } from "../../../lib/ai/client/persistence";
-import { deriveSurface, initialClientState, reduceClientState, type Citation, type ToolActivity } from "../../../lib/ai/client/state";
+import { createClientRequestId, deriveSurface, initialClientState, reduceClientState, type Citation, type ToolActivity } from "../../../lib/ai/client/state";
 import { createEmotionState, emotionForSSEEvent, emotionForTransactionEvent, emotionReducer, type TransactionEmotionEvent } from "../../../lib/ai/client/emotion";
-import type { AIModel, CollectionResultsPayload } from "../../../lib/ai/contracts";
+import { parseAIStreamBlock, type AIModel, type CollectionResultsPayload } from "../../../lib/ai/contracts";
 import AIChatLauncher from "./AIChatLauncher";
 import AIChatPanel from "./AIChatPanel";
 import TransactionCopilot from "./TransactionCopilot";
@@ -57,12 +57,7 @@ export type AIChatPersistenceAPI = {
 const PersistenceContext = createContext<AIChatPersistenceAPI | null>(null);
 export function useAIChatPersistence() { const value = useContext(PersistenceContext); if (!value) throw new Error("AI chat persistence is unavailable"); return value; }
 
-function parseBlock(buffer: string) {
-  const separator = buffer.indexOf("\n\n");
-  const block = buffer.slice(0, separator);
-  const dataLine = block.split("\n").find((line) => line.startsWith("data: "));
-  return { separator, event: block.split("\n").find((line) => line.startsWith("event: "))?.slice(7), data: dataLine ? JSON.parse(dataLine.slice(6)) : {} };
-}
+
 function restoredState(loaded: LoadedChatSession) {
   const assistant = loaded.messages.filter((message) => message.role === "assistant");
   return {
@@ -72,7 +67,7 @@ function restoredState(loaded: LoadedChatSession) {
     collectionResults: assistant.map((message) => message.collectionResults).filter(Boolean).at(-1),
   };
 }
-function uid() { return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`; }
+const uid = createClientRequestId;
 
 export default function AIChatProvider({ children }: { children?: ReactNode }) {
   const pathname = usePathname();
@@ -90,12 +85,13 @@ export default function AIChatProvider({ children }: { children?: ReactNode }) {
   const [txCopilotEnabled, setTxCopilotEnabled] = useState(false);
   const [mascotVisible, setMascotVisibleState] = useState(true);
   const [reducedMotion, setReducedMotionState] = useState(false);
-  const [state, dispatch] = useReducer(reduceClientState, initialClientState("banmao.fun"));
+  const [state, dispatch] = useReducer(reduceClientState, initialClientState());
   const [emotionState, dispatchEmotion] = useReducer(emotionReducer, undefined, createEmotionState);
   const abort = useRef<AbortController | null>(null);
   const repository = useRef<Repository | null>(null);
   const channel = useRef<BroadcastChannel | null>(null);
   const currentSessionIdRef = useRef<string | null>(null);
+  const creatingInitialSession = useRef(false);
   const { address, chainId, isConnected } = useAccount();
   const surface = deriveSurface(pathname);
   const currentSession = sessions.find((session) => session.id === currentSessionId);
@@ -156,7 +152,7 @@ export default function AIChatProvider({ children }: { children?: ReactNode }) {
       let available = await refreshSessions();
       const preferred = localStorage.getItem(AI_CURRENT_SESSION_KEY);
       let selected = preferred && available.some((session) => session.id === preferred) ? preferred : available[0]?.id;
-      if (!selected) { const created = await repository.current.createSession({ locale: initialLocale, model: "banmao.fun", title: aiText(initialLocale, "newChat") }); selected = created.id; available = await refreshSessions(); }
+      if (!selected) return;
       setSessions(available); await restore(selected); setPersistenceReady(true);
     })().catch(() => { if (!cancelled) { repository.current = createSessionRepository(createMemoryPersistenceAdapter()); setPersistenceError("unavailable"); setPersistenceReady(true); } });
     return () => { cancelled = true; channel.current?.close(); window.removeEventListener("storage", onInvalidation as EventListener); };
@@ -172,8 +168,15 @@ export default function AIChatProvider({ children }: { children?: ReactNode }) {
     } catch { /* Invalid tab preferences fall back safely. */ }
     fetch("/api/ai/models", { cache: "no-store" }).then((response) => response.ok ? response.json() : Promise.reject()).then((data) => { dispatch({ type: "models", models: data.models, defaultModel: data.defaultModel }); setTxCopilotEnabled(data.capabilities?.txCopilot === true); }).catch(() => { dispatch({ type: "error", message: "MODEL_UNAVAILABLE" }); dispatchEmotion({ type: "stream-error" }); });
   // Metadata loads once; future errors are rendered from localized error codes where available.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => {
+    if (!state.model || !repository.current || currentSessionId || sessions.length || creatingInitialSession.current) return;
+    creatingInitialSession.current = true;
+    repository.current.createSession({ locale: language, model: state.model, title: aiText(language, "newChat") })
+      .then(async (created) => { await refreshSessions(); await restore(created.id); setPersistenceReady(true); })
+      .catch(() => { setPersistenceError("unavailable"); setPersistenceReady(true); })
+      .finally(() => { creatingInitialSession.current = false; });
+  }, [currentSessionId, language, refreshSessions, restore, sessions.length, state.model]);
   useEffect(() => { if (!emotionState.closeAfterAnimation) return; const timer = window.setTimeout(() => setOpen(false), reducedMotion ? 0 : getMascotAsset("goodbye").durationMs); return () => window.clearTimeout(timer); }, [emotionState.closeAfterAnimation, emotionState.sequence, reducedMotion]);
   useEffect(() => { if (emotionState.emotion !== "greeting" && emotionState.emotion !== "success") return; const timer = window.setTimeout(() => dispatchEmotion({ type: "animation-complete" }), reducedMotion || !mascotVisible ? 0 : getMascotAsset(emotionState.emotion).durationMs); return () => window.clearTimeout(timer); }, [emotionState.emotion, emotionState.sequence, mascotVisible, reducedMotion]);
 
@@ -188,51 +191,56 @@ export default function AIChatProvider({ children }: { children?: ReactNode }) {
   function txEmotion(event: TransactionEmotionEvent) { dispatchEmotion(emotionForTransactionEvent(event)); }
 
   async function send(message: string, retrying = false) {
-    if (!message) return;
+    if (!message || !state.model) return;
     if (persistenceEnabled && currentSession && currentSession.estimatedTokens + estimateStoredTokens(message) > AI_SESSION_TOKEN_CAP) { dispatch({ type: "error", message: "SESSION_QUOTA_EXCEEDED" }); return; }
     setInputState(""); dispatch(retrying ? { type: "retry" } : { type: "start", message, createdAt: Date.now() }); dispatchEmotion({ type: "send-start" });
     const loaded = persistenceEnabled && currentSessionId ? await repository.current?.loadSession(currentSessionId) : null;
     const persistedHistory = loaded ? (retrying && loaded.messages.at(-1)?.role === "user" ? loaded.messages.slice(0, -1) : loaded.messages) : [];
     const pageElements = collectPageElements();
     setPendingAction(proposePageAction(message, pageElements)); setActionNotice("");
-    const controller = new AbortController(); abort.current = controller;
+    const controller = new AbortController(); abort.current = controller; const requestId = uid();
     let receivedFirstDelta = false; let assistantText = ""; const tools: ToolActivity[] = []; const citations: Citation[] = []; let collectionResults: CollectionResultsPayload | undefined; let persisted = false;
-    const persistFinalizedTurn = async () => {
+    const persistFinalizedTurn = async (assistantStatus?: "complete" | "interrupted") => {
       if (persisted || !persistenceEnabled || !currentSessionId) return;
       persisted = true;
       const createdAt = Date.now();
-      const hasAssistantResult = Boolean(assistantText.trim() || tools.length || citations.length || collectionResults);
+      const hasAssistantResult = Boolean(assistantStatus && (assistantText.trim() || tools.length || citations.length || collectionResults));
       const additions: StoredChatMessage[] = [
         { id: uid(), sessionId: currentSessionId, role: "user", content: message, createdAt: createdAt - 1 },
-        ...(hasAssistantResult ? [{ id: uid(), sessionId: currentSessionId, role: "assistant" as const, content: assistantText, createdAt, ...(tools.length ? { tools } : {}), ...(citations.length ? { citations } : {}), ...(collectionResults ? { collectionResults } : {}) }] : []),
+        ...(hasAssistantResult ? [{ id: uid(), sessionId: currentSessionId, role: "assistant" as const, status: assistantStatus, content: assistantText, createdAt, ...(tools.length ? { tools } : {}), ...(citations.length ? { citations } : {}), ...(collectionResults ? { collectionResults } : {}) }] : []),
       ];
       if (!additions.length) return;
       try { const session = await repository.current?.appendTurn(currentSessionId, additions); await refreshSessions(); if (session) publishInvalidation(currentSessionId, session.updatedAt); }
       catch (error) { if (error instanceof SessionQuotaError) dispatch({ type: "error", message: "SESSION_QUOTA_EXCEEDED" }); else setPersistenceError("unavailable"); }
     };
     try {
-      const requestInit: RequestInit = { method: "POST", headers: { "content-type": "application/json" }, signal: controller.signal, body: JSON.stringify({ message, model: state.model, context: { pathname, surface, locale: language, pageElements }, ...(loaded ? { conversationId: loaded.session.id, history: selectRecentCompleteTurns(persistedHistory, REQUEST_CONTEXT_TOKEN_BUDGET) } : {}), ...(isConnected && address && chainId === 196 ? { wallet: { address, chainId } } : {}) }) };
+      const requestInit: RequestInit = { method: "POST", headers: { "content-type": "application/json","x-request-id":requestId }, signal: controller.signal, body: JSON.stringify({ requestId,message, model: state.model, context: { pathname, surface, locale: language, pageElements }, ...(loaded ? { conversationId: loaded.session.id, history: selectRecentCompleteTurns(persistedHistory, REQUEST_CONTEXT_TOKEN_BUDGET) } : {}), ...(isConnected && address && chainId === 196 ? { connectedWalletHint: { address, chainId } } : {}) }) };
       const { response } = await fetchWithOneRetry("/api/ai/chat", requestInit);
       if (!response.ok || !response.body) throw new Error(aiText(language, "aiUnavailable"));
-      const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = "";
+      const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = "";let doneSeen=false;let streamBytes=0;
       for (;;) {
-        const { done, value } = await reader.read(); if (done) break; buffer += decoder.decode(value, { stream: true });
+        const { done, value } = await reader.read(); if (done) break;streamBytes+=value.byteLength;if(streamBytes>1_000_000)throw new Error("STREAM_TOO_LARGE"); buffer += decoder.decode(value, { stream: true });
         for (;;) {
-          const parsed = parseBlock(buffer); if (parsed.separator < 0) break; buffer = buffer.slice(parsed.separator + 2);
-          const emotionEvent = emotionForSSEEvent(parsed.event, parsed.data, receivedFirstDelta); if (emotionEvent) dispatchEmotion(emotionEvent);
-          if (parsed.event === "delta") { receivedFirstDelta = true; assistantText += typeof parsed.data.text === "string" ? parsed.data.text : ""; dispatch({ type: "delta", text: parsed.data.text }); }
-          if (parsed.event === "tool") { tools.push(parsed.data); dispatch({ type: "tool", tool: parsed.data }); }
-          if (parsed.event === "collection_results") { collectionResults = parsed.data; dispatch({ type: "collection_results", payload: parsed.data }); }
-          if (parsed.event === "citation") { const citation = { ...parsed.data, sourcePath: parsed.data.sourcePath || "approved-project-doc" }; citations.push(citation); dispatch({ type: "citation", citation }); }
-          if (parsed.event === "error") throw new Error(parsed.data.code || aiText(language, "aiUnavailable"));
+          const parsed = parseAIStreamBlock(buffer); if (parsed.separator < 0) break; buffer = buffer.slice(parsed.separator + (buffer[parsed.separator] === "\r" ? 4 : 2));
+          if (!parsed.event) throw new Error("MALFORMED_SSE_EVENT"); const streamEvent = parsed.event;
+          if (streamEvent.data.requestId !== requestId) throw new Error("MISMATCHED_REQUEST_ID");
+          const emotionEvent = emotionForSSEEvent(streamEvent.event, streamEvent.data as { text?: unknown; status?: unknown; name?: unknown }, receivedFirstDelta); if (emotionEvent) dispatchEmotion(emotionEvent);
+          if (streamEvent.event === "meta") dispatch({ type: "rag-status", status: streamEvent.data.ragStatus });
+          if (streamEvent.event === "delta") { receivedFirstDelta = true; assistantText += streamEvent.data.text; dispatch({ type: "delta", text: streamEvent.data.text }); }
+          if (streamEvent.event === "tool") { tools.push(streamEvent.data); dispatch({ type: "tool", tool: streamEvent.data }); }
+          if (streamEvent.event === "collection_results") { collectionResults = streamEvent.data; dispatch({ type: "collection_results", payload: streamEvent.data }); }
+          if (streamEvent.event === "citation") { citations.push(streamEvent.data); dispatch({ type: "citation", citation: streamEvent.data }); }
+          if (streamEvent.event === "error") throw new Error(streamEvent.data.code || aiText(language, "aiUnavailable"));
+          if (streamEvent.event === "done" && streamEvent.data.requestId === requestId) doneSeen = true;
         }
       }
-      dispatch({ type: "stop" }); dispatchEmotion({ type: "stream-done" });
-      await persistFinalizedTurn();
+      buffer += decoder.decode();
+      if(buffer.trim()||!doneSeen)throw new Error("STREAM_INTERRUPTED");dispatch({ type: "complete" }); dispatchEmotion({ type: "stream-done" });
+      await persistFinalizedTurn("complete");
     } catch (error) {
-      await persistFinalizedTurn();
+      await persistFinalizedTurn(receivedFirstDelta ? "interrupted" : undefined);
       if (controller.signal.aborted) { dispatch({ type: "stop" }); dispatchEmotion({ type: "stream-abort" }); }
-      else { dispatch({ type: "error", message: error instanceof Error ? error.message : aiText(language, "aiUnavailable") }); dispatchEmotion({ type: "stream-error" }); }
+      else { dispatch({ type: receivedFirstDelta ? "interrupted" : "error", message: error instanceof Error ? error.message : aiText(language, "aiUnavailable") }); dispatchEmotion({ type: "stream-error" }); }
     }
   }
   async function submit(event: FormEvent) { event.preventDefault(); await send(input.trim()); }

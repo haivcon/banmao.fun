@@ -36,13 +36,14 @@ const episodicSchema = z.object({
 }).strict();
 
 const chatRequestSchema = z.object({
+  requestId: z.string().uuid(),
   conversationId: z.string().min(1).max(128).optional(),
   message: z.string().min(1).max(8000),
   model: z.enum(AI_MODELS).optional(),
   context: contextSchema,
   history: historySchema.optional(),
   episodic: episodicSchema.optional(),
-  wallet: z.object({
+  connectedWalletHint: z.object({
     address: z.custom<`0x${string}`>((value) => typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value)),
     chainId: z.literal(196),
   }).strict().optional(),
@@ -61,11 +62,13 @@ export function validateChatRequest(input: unknown, defaultModel: AIModel): Vali
     const issue = parsed.error.issues[0];
     const message = issue.code === "unrecognized_keys"
       ? "Unknown field"
-      : issue.path[0] === "model"
-        ? "Invalid model"
-        : issue.path[0] === "message" && issue.code === "too_big"
-          ? "Message is too long"
-          : "Invalid chat request";
+      : issue.path[0] === "requestId"
+        ? "Invalid requestId"
+        : issue.path[0] === "model"
+          ? "Invalid model"
+          : issue.path[0] === "message" && issue.code === "too_big"
+            ? "Message is too long"
+            : "Invalid chat request";
     throw new AIValidationError(message, parsed.error.issues);
   }
   return { ...parsed.data, model: parsed.data.model || defaultModel };

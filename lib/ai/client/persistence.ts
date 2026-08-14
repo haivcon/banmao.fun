@@ -1,5 +1,5 @@
 import type { AIModel, AIConversationTurn, CollectionResultsPayload } from "../contracts";
-import type { Citation, ToolActivity } from "./state";
+import { createClientRequestId, type Citation, type ToolActivity } from "./state";
 import type { AILocale } from "./i18n";
 
 export const AI_SESSION_DB_NAME = "banmao-ai-chat";
@@ -26,6 +26,7 @@ export type StoredChatMessage = {
   id: string;
   sessionId: string;
   role: "user" | "assistant";
+  status?: "complete" | "interrupted";
   content: string;
   createdAt: number;
   tools?: ToolActivity[];
@@ -53,12 +54,12 @@ function messageTokens(message: StoredChatMessage): number {
   return estimateStoredTokens(message.content) + (Object.keys(structured).length ? estimateStoredTokens(JSON.stringify(structured)) : 0);
 }
 
-export function selectRecentCompleteTurns(messages: readonly Pick<StoredChatMessage, "role" | "content">[], maxTokens: number, maxMessages = 12): AIConversationTurn[] {
+export function selectRecentCompleteTurns(messages: readonly Pick<StoredChatMessage, "role" | "content" | "status">[], maxTokens: number, maxMessages = 12): AIConversationTurn[] {
   const complete: AIConversationTurn[][] = [];
   for (let index = 0; index + 1 < messages.length; index += 1) {
     const user = messages[index];
     const assistant = messages[index + 1];
-    if (user.role === "user" && assistant.role === "assistant" && user.content && assistant.content) {
+    if (user.role === "user" && assistant.role === "assistant" && assistant.status !== "interrupted" && user.content && assistant.content) {
       complete.push([{ role: "user", content: user.content.slice(0, 4000) }, { role: "assistant", content: assistant.content.slice(0, 4000) }]);
       index += 1;
     }
@@ -170,7 +171,7 @@ export async function createIndexedDBPersistenceAdapter(factory: IDBFactory = in
 
 export function createSessionRepository(adapter: PersistenceAdapter, options: { now?: () => number; uuid?: () => string } = {}) {
   const now = options.now || Date.now;
-  const uuid = options.uuid || (() => crypto.randomUUID());
+  const uuid = options.uuid || createClientRequestId;
   return {
     listSessions: () => adapter.listSessions(),
     loadSession: (id: string) => adapter.loadSession(id),

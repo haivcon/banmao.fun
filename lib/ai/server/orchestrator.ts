@@ -19,6 +19,8 @@ export type OrchestratorEvent =
   | { type: "tool"; callId: string; name: string; status: "running" | "available" | "unavailable" | "error"; source: string; summary: string }
   | { type: "collection_results"; callId: string; observedAt: string; searchMode: "metadata"; results: CollectionMediaResult[] }
   | { type: "citation"; chunkId: string; sourcePath: string }
+  | { type: "usage"; inputTokens: number; outputTokens: number }
+  | { type: "finish"; finishReason: string }
   | { type: "error"; code: string };
 
 function providerToolName(name: string) {
@@ -106,9 +108,6 @@ export async function* runOrchestrator(
       : { role: "assistant", content: turn.content }),
     { role: "user", content: input.message },
   ];
-  for (const citation of input.evidence) {
-    yield { type: "citation", chunkId: citation.chunkId, sourcePath: citation.sourcePath };
-  }
 
   if (executeCollectionSearch) {
     const callId = "collection-concept-search";
@@ -186,6 +185,8 @@ export async function* runOrchestrator(
         }
         yield { type: "delta", text: pendingText };
       }
+      if (response.usage) yield { type: "usage", ...response.usage };
+      yield { type: "finish", finishReason: response.finishReason || "unknown" };
       return;
     }
     if (roundIndex >= options.maxToolRounds) {
@@ -199,6 +200,7 @@ export async function* runOrchestrator(
       function: { name: call.name, arguments: call.arguments },
     })) });
 
+    for (const call of response.toolCalls) yield { type: "tool", callId: call.id, name: internalNames.get(call.name) || call.name, status: "running", source: "banmao-ai:tool-registry", summary: "Reading approved source" };
     const results = await Promise.all(response.toolCalls.map(async (call) => {
       const internalName = internalNames.get(call.name) || call.name;
       let result: unknown;
@@ -219,7 +221,6 @@ export async function* runOrchestrator(
         return { call, internalName, result, status: "error" as const, source: "banmao-ai:tool-registry", summary: code };
       }
     }));
-    for (const call of response.toolCalls) yield { type: "tool", callId: call.id, name: internalNames.get(call.name) || call.name, status: "running", source: "banmao-ai:tool-registry", summary: "Reading approved source" };
     for (const item of results) {
       yield { type: "tool", callId: item.call.id, name: item.internalName, status: item.status, source: item.source, summary: item.summary };
       if (item.internalName === "collection.search" && item.status === "available") {
