@@ -21,7 +21,12 @@ describe("disabled route surfaces", () => {
     const { GET } = await import("../../app/api/ai/models/route");
     const response = await GET();
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ models: ["banmao.fun"], defaultModel: "banmao.fun" });
+    const metadata = await response.json();
+    expect(metadata.availableModels).toEqual(["banmao.fun"]);
+    expect(metadata.models).toEqual(["banmao.fun"]);
+    expect(metadata.defaultModel).toBe("banmao.fun");
+    expect(metadata.availableModels).not.toEqual(expect.arrayContaining(["open9", "xenon1"]));
+    expect(metadata.models).not.toEqual(expect.arrayContaining(["open9", "xenon1"]));
   });
 
   test("proof nonce is not issued when transaction copilot is off", async () => {
