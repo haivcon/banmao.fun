@@ -39,6 +39,7 @@ export function loadAIConfig(env: NodeJS.ProcessEnv = process.env) {
       gamefiCoach: enabled(env.AI_GAMEFI_COACH_ENABLED),
       collectionAdvisor: enabled(env.AI_COLLECTION_ADVISOR_ENABLED),
       marketNarrator: enabled(env.AI_MARKET_NARRATOR_ENABLED),
+      onchainosReadOnly: enabled(env.AI_ONCHAINOS_READ_ONLY_ENABLED),
     }),
   });
 }

@@ -2,8 +2,9 @@
 .banmao-ai-root {
   --ai-aura: #a855f7; --ai-aura-rgb: 168, 85, 247; --ai-bg: #090812; --ai-raised: #12101d;
   --ai-card: #181523; --ai-text: #f8f7fc; --ai-muted: #9993a8; --ai-border: rgba(255,255,255,.09);
+  --ai-root-bottom: max(20px, calc(env(safe-area-inset-bottom) + 68px));
   position: fixed; z-index: 2147483000; right: max(18px, env(safe-area-inset-right));
-  bottom: max(20px, calc(env(safe-area-inset-bottom) + 68px)); color: var(--ai-text);
+  bottom: var(--ai-root-bottom); color: var(--ai-text);
   font: 14px/1.5 var(--font-sans, system-ui, -apple-system, sans-serif); font-synthesis: none;
 }
 .banmao-ai-root *, .banmao-ai-root *::before, .banmao-ai-root *::after { box-sizing: border-box; }
@@ -51,7 +52,7 @@
 .banmao-ai-live { width:7px; height:7px; border-radius:50%; background:#39e58c; box-shadow:0 0 8px rgba(57,229,140,.65); }
 .banmao-ai-header-actions { gap:8px; }
 .banmao-ai-context { padding:5px 9px; border:1px solid rgba(var(--ai-aura-rgb),.24); border-radius:999px; background:rgba(var(--ai-aura-rgb),.08); color:color-mix(in srgb,var(--ai-aura) 76%,white); font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
-.banmao-ai-icon-button { display:grid; place-items:center; width:38px; height:38px; padding:0; border:1px solid transparent; border-radius:12px; background:transparent; color:var(--ai-muted); cursor:pointer; transition:.18s ease; }
+.banmao-ai-icon-button { display:grid; place-items:center; min-width:44px; min-height:44px; padding:0; border:1px solid transparent; border-radius:12px; background:transparent; color:var(--ai-muted); cursor:pointer; transition:.18s ease; }
 .banmao-ai-icon-button:hover { border-color:var(--ai-border); background:rgba(255,255,255,.055); color:white; }
 
 /* Local session management */
@@ -312,7 +313,7 @@
   .banmao-ai-scroll-bottom { bottom:164px; }
 }
 @media (max-height: 650px) and (min-width: 641px) {
-  .banmao-ai-panel { height:calc(100dvh - 110px); bottom:72px; }
+  .banmao-ai-panel { height:min(760px,calc(100dvh - var(--ai-root-bottom) - 72px - 20px)); bottom:72px; }
   .banmao-ai-header { min-height:64px; }
   .banmao-ai-header-mascot { width:45px; height:45px; }
 }

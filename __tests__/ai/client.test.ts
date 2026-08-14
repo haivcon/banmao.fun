@@ -69,6 +69,13 @@ describe("OpenAI-compatible client", () => {
     expect(chunks).toEqual(["Hi"]);
   });
 
+  test("retains authoritative provider usage on the terminal round", async () => {
+    const fetchImpl = jest.fn(async () => sseResponse('data: {"choices":[{"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":7,"completion_tokens":2}}\n\ndata: [DONE]\n\n'));
+    const { streamCompletion } = await import("../../lib/ai/server/client"); const rounds=[];
+    for await(const value of streamCompletion({model:"open9",messages:[{role:"user",content:"hello"}]},{config,fetchImpl})) rounds.push(value);
+    expect(rounds.at(-1)).toMatchObject({finishReason:"stop",usage:{inputTokens:7,outputTokens:2}});
+  });
+
   test.each([
     "data: not-json\n\n",
     'data: {"choices":[{"delta":{"content":"truncated"}}]}\n\n',

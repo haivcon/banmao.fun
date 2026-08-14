@@ -38,6 +38,7 @@ describe("AI server config", () => {
       gamefiCoach: false,
       collectionAdvisor: false,
       marketNarrator: false,
+      onchainosReadOnly: false,
     });
   });
 

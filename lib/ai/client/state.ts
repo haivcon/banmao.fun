@@ -1,19 +1,32 @@
-import { AI_MODELS, type AIModel, type AISurface, type CollectionResultsPayload } from "../contracts";
+import type { AIModel, AISurface, CollectionResultsPayload } from "../contracts";
 
 export type ClientMessage = { role: "user" | "assistant"; content: string; createdAt: number };
-export type ToolActivity = { callId: string; name: string; status: string; source: string; summary: string };
-export type Citation = { documentId?: string; sourcePath: string; version?: string; excerpt?: string };
+export type ToolActivity = { requestId?: string; callId: string; name: string; status: string; source: string; summary: string };
+export type Citation = { requestId?: string; documentId?: string; sourcePath: string; version?: string; excerpt?: string };
 export type ClientState = {
-  model: AIModel;
+  model: AIModel | null;
   models: AIModel[];
   messages: ClientMessage[];
   tools: ToolActivity[];
   citations: Citation[];
   collectionResults?: CollectionResultsPayload;
   lastPrompt?: string;
-  status: "idle" | "streaming" | "error";
+  status: "idle" | "streaming" | "interrupted" | "error";
   error?: string;
+  notice?: "MODEL_MIGRATED";
+  ragStatus?: "ready" | "disabled" | "degraded";
 };
+type ClientCrypto = { randomUUID?: () => string; getRandomValues?: <T extends ArrayBufferView>(array: T) => T };
+export function createClientRequestId(source: ClientCrypto | undefined = typeof crypto === "undefined" ? undefined : crypto): string {
+  if (source?.randomUUID) return source.randomUUID();
+  const bytes = new Uint8Array(16);
+  if (source?.getRandomValues) source.getRandomValues(bytes);
+  else for (let index = 0; index < bytes.length; index += 1) bytes[index] = Math.floor(Math.random() * 256);
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const value = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${value.slice(0, 8)}-${value.slice(8, 12)}-${value.slice(12, 16)}-${value.slice(16, 20)}-${value.slice(20)}`;
+}
 export function deriveSurface(pathname: string): AISurface {
   if (pathname === "/") return "landing";
   for (const surface of ["defi", "gamefi", "collection"] as const) {
@@ -47,26 +60,30 @@ export const SUGGESTED_PROMPTS: Record<AISurface, readonly string[]> = {
     "Which Collection features are live versus proposed?",
   ],
 };
-export function initialClientState(model: AIModel): ClientState { return { model, models: [model], messages: [], tools: [], citations: [], status: "idle" }; }
+export function initialClientState(model: AIModel | null = null): ClientState { return { model, models: model ? [model] : [], messages: [], tools: [], citations: [], status: "idle" }; }
 type Action =
   | { type: "models"; models: AIModel[]; defaultModel: AIModel }
   | { type: "select-model"; model: AIModel }
   | { type: "start"; message: string; createdAt?: number }
   | { type: "retry" }
   | { type: "delta"; text: string }
+  | { type: "rag-status"; status: "ready" | "disabled" | "degraded" }
   | { type: "tool"; tool: ToolActivity }
   | { type: "citation"; citation: Citation }
   | { type: "collection_results"; payload: CollectionResultsPayload }
   | { type: "restore"; state: Pick<ClientState, "messages" | "tools" | "citations" | "collectionResults">; model?: AIModel }
   | { type: "error"; message: string }
+  | { type: "interrupted"; message: string }
+  | { type: "complete" }
   | { type: "stop" }
   | { type: "clear" };
 export function reduceClientState(state: ClientState, action: Action): ClientState {
   switch (action.type) {
     case "models": {
-      const models = action.models.filter((model) => AI_MODELS.includes(model));
+      const models = Array.from(new Set(action.models.filter((model) => typeof model === "string" && model.length > 0 && model.length <= 80)));
       if (!models.length || !models.includes(action.defaultModel)) throw new Error("Invalid model metadata");
-      return { ...state, models, model: models.includes(state.model) ? state.model : action.defaultModel };
+      const migrated = state.model !== null && !models.includes(state.model);
+      return { ...state, models, model: state.model && models.includes(state.model) ? state.model : action.defaultModel, ...(migrated ? { notice: "MODEL_MIGRATED" as const } : {}) };
     }
     case "select-model":
       if (!state.models.includes(action.model)) throw new Error("Invalid model");
@@ -86,11 +103,14 @@ export function reduceClientState(state: ClientState, action: Action): ClientSta
       if (last?.role === "assistant") messages[messages.length - 1] = { ...last, content: last.content + action.text };
       return { ...state, messages };
     }
+    case "rag-status": return { ...state, ragStatus: action.status };
     case "tool": return { ...state, tools: [...state.tools, action.tool] };
     case "collection_results": return { ...state, collectionResults: { ...action.payload, results: action.payload.results.slice(0, 10) } };
     case "citation": return state.citations.some((item) => item.sourcePath === action.citation.sourcePath && item.version === action.citation.version) ? state : { ...state, citations: [...state.citations, action.citation] };
-    case "restore": return { ...state, ...action.state, ...(action.model && state.models.includes(action.model) ? { model: action.model } : {}), status: "idle", error: undefined, lastPrompt: undefined };
+    case "restore": return { ...state, ...action.state, ...(action.model ? { model: action.model } : {}), status: "idle", error: undefined, lastPrompt: undefined };
     case "error": return { ...state, status: "error", error: action.message };
+    case "interrupted": return { ...state, status: "interrupted", error: action.message };
+    case "complete": return { ...state, status: "idle", error: undefined };
     case "stop": return { ...state, status: "idle" };
     case "clear": return { ...state, messages: [], tools: [], citations: [], collectionResults: undefined, lastPrompt: undefined, status: "idle", error: undefined };
   }

@@ -6,6 +6,10 @@ export interface OkxCredentials {
   passphrase: string;
 }
 
+export interface OkxRequestPolicy {
+  paymentRequired?: "rotate-and-retry" | "return";
+}
+
 class OkxKeyManager {
   private credentials: OkxCredentials[] = [];
   private currentIndex = 0;
@@ -102,7 +106,8 @@ export async function okxFetch(
   method: string,
   requestPath: string,
   options: RequestInit = {},
-  maxRetries = 2
+  maxRetries = 2,
+  policy: OkxRequestPolicy = {}
 ): Promise<Response> {
   const url = `https://web3.okx.com${requestPath}`;
   const methodUpper = method.toUpperCase();
@@ -138,9 +143,18 @@ export async function okxFetch(
         headers,
       });
 
-      // Handle Rate Limiting (429) and Payment Required (402)
-      if (response.status === 429 || response.status === 402) {
+      // Handle Rate Limiting (429)
+      if (response.status === 429) {
         if (creds) keyManager.rotate(creds.apiKey, `HTTP ${response.status}`);
+        if (attempt < maxRetries) {
+          await new Promise(r => setTimeout(r, 500 * Math.max(1, attempt)));
+          continue; // Retry
+        }
+      }
+
+      // Existing callers retain key rotation/retry unless they explicitly return HTTP 402.
+      if (response.status === 402 && policy.paymentRequired !== "return") {
+        if (creds) keyManager.rotate(creds.apiKey, "HTTP 402");
         if (attempt < maxRetries) {
           await new Promise(r => setTimeout(r, 500 * Math.max(1, attempt)));
           continue; // Retry

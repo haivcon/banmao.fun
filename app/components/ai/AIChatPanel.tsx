@@ -23,7 +23,7 @@ type Props = {
   stop: () => void; close: () => void; retry: () => void; optIn: boolean; setOptIn: (value: boolean) => void;
   mascotVisible: boolean; setMascotVisible: (value: boolean) => void; reducedMotion: boolean;
   setReducedMotion: (value: boolean) => void; onAnimationComplete: () => void; clear: () => void;
-  exportData: () => void; selectModel: (model: ClientState["model"]) => void; children?: ReactNode;
+  exportData: () => void; selectModel: (model: NonNullable<ClientState["model"]>) => void; children?: ReactNode;
   pendingAction: AIPageAction | null; actionNotice: string; confirmAction: () => void; cancelAction: () => void; memoryTurns: number;
   persistenceReady: boolean; persistenceError?: string;
 };
@@ -43,7 +43,7 @@ export default function AIChatPanel(props: Props) {
   const prompts = aiPrompts(props.language, props.surface);
   const surfaceLabel = props.surface === "landing" ? t("ecosystem") : props.surface === "collection" ? t("collections") : props.surface === "defi" ? "DeFi" : "GameFi";
 
-  useEffect(() => { inputRef.current?.focus(); }, []);
+  useEffect(() => { const previous=document.activeElement as HTMLElement|null;const panel=document.getElementById("banmao-ai-panel");const root=document.getElementById("__next")||document.querySelector("main");if(root&&!root.contains(panel))root.setAttribute("inert","");inputRef.current?.focus();return()=>{root?.removeAttribute("inert");previous?.focus();}; }, []);
   useEffect(() => {
     const viewport = window.visualViewport;
     if (!viewport) return;
@@ -98,7 +98,7 @@ export default function AIChatPanel(props: Props) {
   }
 
 
-  return <section id="banmao-ai-panel" data-surface={props.surface} data-emotion={props.emotion} role="dialog" aria-modal="false" aria-label="BANMAO AI" className="banmao-ai-panel" onKeyDown={(event) => { if (event.key === "Escape") props.close(); }}>
+  return <section id="banmao-ai-panel" data-surface={props.surface} data-emotion={props.emotion} role="dialog" aria-modal="true" aria-label="BANMAO AI" className="banmao-ai-panel" onKeyDown={(event) => { if (event.key === "Escape") props.close(); if(event.key==="Tab"){const items=Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])'));if(!items.length)return;const first=items[0],last=items.at(-1)!;if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}} }}>
     <header className="banmao-ai-header" onPointerDown={startDrag} onPointerUp={endDrag} onPointerCancel={() => { dragStart.current = null; }}>
       <span className="banmao-ai-drag-handle" aria-hidden="true" />
       <div className="banmao-ai-brand">
@@ -123,7 +123,7 @@ export default function AIChatPanel(props: Props) {
       {!!props.state.citations.length && <aside className="banmao-ai-citations"><h3>{t("sources")} <span>{props.state.citations.length}</span></h3><div>{props.state.citations.map((citation, index) => <CitationCard citation={citation} index={index} language={props.language} key={`${citation.sourcePath}:${citation.version || ""}`} />)}</div></aside>}
       {props.pendingAction && <PageActionCard action={props.pendingAction} language={props.language} onConfirm={props.confirmAction} onCancel={props.cancelAction} />}
       {props.actionNotice && <p className="banmao-ai-action-notice" role="status">{props.actionNotice}</p>}
-      {errorText && <div className="banmao-ai-error" role="alert"><span><CircleAlert size={18} /></span><div><strong>{t("interrupted")}</strong><p>{errorText}</p>{props.state.lastPrompt && <button type="button" onClick={props.retry}>{t("again")}</button>}</div></div>}
+      {props.state.ragStatus==="degraded"&&<div className="banmao-ai-error" role="status"><span><CircleAlert size={18}/></span><div><p>{t("ragDegraded")}</p></div></div>}{props.state.notice&&<div className="banmao-ai-error" role="status"><span><CircleAlert size={18}/></span><div><p>{t("modelMigrated")}</p></div></div>}{errorText && <div className="banmao-ai-error" role="alert"><span><CircleAlert size={18} /></span><div><strong>{t("interrupted")}</strong><p>{errorText}</p>{props.state.lastPrompt && <button type="button" onClick={props.retry}>{t("again")}</button>}</div></div>}
     </div>
 
     {showScroll && <button className="banmao-ai-scroll-bottom" type="button" onClick={scrollToBottom} aria-label={t("latest")}><ArrowDown size={17} /></button>}
@@ -133,7 +133,7 @@ export default function AIChatPanel(props: Props) {
       <form className="banmao-ai-composer" onSubmit={props.submit}>
         <label htmlFor="banmao-ai-input" className="banmao-ai-sr-only">{t("message")}</label>
         <textarea ref={inputRef} id="banmao-ai-input" maxLength={8000} rows={1} required value={props.input} disabled={streaming} placeholder={streaming ? t("responding") : t("ask")} onFocus={props.onInputFocus} onKeyDown={onKeyDown} onChange={(event) => props.setInput(event.target.value)} />
-        <div className="banmao-ai-composer-bar"><ModelSelector models={props.state.models} language={props.language} value={props.state.model} onChange={props.selectModel} disabled={streaming} />{props.input.length > 7000 && <span className="banmao-ai-count">{props.input.length}/8000</span>}<span className="banmao-ai-composer-hint">{t("sendHint")}</span>{streaming ? <button className="banmao-ai-stop" type="button" onClick={props.stop} aria-label={t("stop")}><Square size={13} fill="currentColor" /></button> : <button className="banmao-ai-send" disabled={!props.input.trim()} aria-label={t("send")}><ArrowUp size={17} /></button>}</div>
+        <div className="banmao-ai-composer-bar">{props.state.model&&<ModelSelector models={props.state.models} language={props.language} value={props.state.model} onChange={props.selectModel} disabled={streaming} />}{props.input.length > 7000 && <span className="banmao-ai-count">{props.input.length}/8000</span>}<span className="banmao-ai-composer-hint">{t("sendHint")}</span>{streaming ? <button className="banmao-ai-stop" type="button" onClick={props.stop} aria-label={t("stop")}><Square size={13} fill="currentColor" /></button> : <button className="banmao-ai-send" disabled={!props.input.trim()} aria-label={t("send")}><ArrowUp size={17} /></button>}</div>
       </form>
       <p className="banmao-ai-disclaimer"><ShieldCheck size={12} /> {t("localHistory")}: {props.optIn ? `${props.memoryTurns} ${t("storedMessages")} · ${t("persistenceOn")}` : t("persistenceOff")} · {t("review")}</p>
       {props.persistenceError && <p className="banmao-ai-disclaimer" role="status"><CircleAlert size={12} /> {t("persistenceWarning")}</p>}

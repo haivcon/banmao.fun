@@ -21,6 +21,12 @@ test("recent context keeps newest complete turns within the independent request 
   expect(selectRecentCompleteTurns(messages, 100).map((item) => item.content)).toEqual(["old question", "old answer", "new question", "new answer"]);
 });
 
+test("interrupted assistant output is retained locally but excluded from future model context", () => {
+  const messages = [message("user", "question", 1), { ...message("assistant", "partial", 2), status: "interrupted" as const }];
+  expect(messages[1]).toMatchObject({ content: "partial", status: "interrupted" });
+  expect(selectRecentCompleteTurns(messages, 100)).toEqual([]);
+});
+
 test("repository CRUD restores sessions and messages after a simulated reload", async () => {
   const adapter = createMemoryPersistenceAdapter();
   const first = createSessionRepository(adapter, { now: () => 10, uuid: () => "s1" });
