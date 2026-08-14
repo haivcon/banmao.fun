@@ -14,7 +14,7 @@ import { createRateLimiter } from "../../../../lib/ai/server/security/rateLimit"
 import { createToolRegistry } from "../../../../lib/ai/server/toolRegistry";
 import { docsSearchTool } from "../../../../lib/ai/server/tools/docs";
 import { createDomainToolDescriptors } from "../../../../lib/ai/server/tools/liveAdapters";
-import { createOnchainOSReadOnlyDescriptors } from "../../../../lib/ai/server/tools/onchainosReadOnly";
+import { createOnchainOSReadOnlyDescriptors, preferOnchainOSReadOnlyTools } from "../../../../lib/ai/server/tools/onchainosReadOnly";
 
 export const runtime = "nodejs";
 const encoder = new TextEncoder();
@@ -88,7 +88,8 @@ export async function POST(request: Request) {
     return true;
   });
   const onchainosTools = createOnchainOSReadOnlyDescriptors({ enabled: config.flags.onchainosReadOnly });
-  const tools = createToolRegistry(config.flags.tools ? [...(ragStatus === "ready" ? [docsSearchTool(corpus)] : []), ...domainTools, ...onchainosTools] : []).descriptors;
+  const marketTools = preferOnchainOSReadOnlyTools(domainTools, onchainosTools);
+  const tools = createToolRegistry(config.flags.tools ? [...(ragStatus === "ready" ? [docsSearchTool(corpus)] : []), ...marketTools] : []).descriptors;
   const requestId = validated.requestId;
   const orchestrationAbort = new AbortController();
   if (request.signal.aborted) orchestrationAbort.abort(request.signal.reason);

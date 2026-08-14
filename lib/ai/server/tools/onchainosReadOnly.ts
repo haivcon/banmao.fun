@@ -32,6 +32,13 @@ export const ONCHAINOS_READ_ONLY_TOOL_NAMES = Object.freeze([
   "onchainos.tokenSecurity",
 ] as const);
 
+const LEGACY_EQUIVALENTS = new Set(["market.price", "market.tokenInfo", "market.holders"]);
+
+export function preferOnchainOSReadOnlyTools(legacy: readonly ToolDescriptor[], onchainos: readonly ToolDescriptor[]) {
+  if (!onchainos.length) return [...legacy];
+  return [...legacy.filter((tool) => !LEGACY_EQUIVALENTS.has(tool.name)), ...onchainos];
+}
+
 const ENDPOINTS = Object.freeze({
   tokenSearch: "/api/v6/dex/market/token/search",
   tokenInfo: "/api/v6/dex/market/token/basic-info",
@@ -94,6 +101,10 @@ async function readOkx(input: {
       signal: combinedSignal(input.signal, input.timeoutMs),
       ...(input.body === undefined ? {} : { body: JSON.stringify(input.body) }),
     }, 0, { paymentRequired: "return" });
+    if (response.status === 402) {
+      await response.body?.cancel();
+      return unavailable("payment-required", input.source, input.observedAt, true);
+    }
     const contentLength = Number(response.headers.get("content-length"));
     if (Number.isFinite(contentLength) && contentLength > MAX_BYTES) {
       await response.body?.cancel();
@@ -115,7 +126,6 @@ async function readOkx(input: {
       text += decoder.decode(value, { stream: true });
     }
     text += decoder.decode();
-    if (response.status === 402) return unavailable("payment-required", input.source, input.observedAt, true);
     let payload: unknown;
     try { payload = JSON.parse(text); } catch { return unavailable("malformed-response", input.source, input.observedAt); }
     const envelope = payload as { code?: unknown; data?: unknown; requestTime?: unknown; confirming?: unknown; notifications?: unknown };

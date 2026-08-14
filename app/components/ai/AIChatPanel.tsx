@@ -23,7 +23,7 @@ type Props = {
   stop: () => void; close: () => void; retry: () => void; optIn: boolean; setOptIn: (value: boolean) => void;
   mascotVisible: boolean; setMascotVisible: (value: boolean) => void; reducedMotion: boolean;
   setReducedMotion: (value: boolean) => void; onAnimationComplete: () => void; clear: () => void;
-  exportData: () => void; selectModel: (model: NonNullable<ClientState["model"]>) => void; children?: ReactNode;
+  exportData: () => void; children?: ReactNode;
   pendingAction: AIPageAction | null; actionNotice: string; confirmAction: () => void; cancelAction: () => void; memoryTurns: number;
   persistenceReady: boolean; persistenceError?: string;
 };
@@ -118,7 +118,7 @@ export default function AIChatPanel(props: Props) {
         <div className="banmao-ai-prompt-grid" aria-label={t("suggested")}>{prompts.map((prompt, index) => { const Icon = PROMPT_ICONS[index % PROMPT_ICONS.length]; return <button type="button" key={prompt} onClick={() => choosePrompt(prompt)}><Icon size={16} aria-hidden="true" /><span>{prompt}</span><ArrowUp size={14} aria-hidden="true" /></button>; })}</div>
       </div>}
       {props.state.messages.map((message, index) => <AIMessage key={`${message.role}-${message.createdAt}-${index}`} {...message} streaming={streaming && index === props.state.messages.length - 1 && message.role === "assistant"} language={props.language} />)}
-      {!!props.state.tools.length && <section className="banmao-ai-activity" aria-label={t("activity")}><h3><Sparkles size={14} /> {t("activityTitle")}</h3>{props.state.tools.map((tool) => <ToolCard tool={tool} language={props.language} key={`${tool.callId}:${tool.status}`} />)}</section>}
+      {!!props.state.tools.length && <section className="banmao-ai-activity" aria-label={t("activity")}><h3><Sparkles size={14} /> {t("activityTitle")}</h3>{props.state.tools.map((tool) => <ToolCard tool={tool} language={props.language} key={tool.callId} />)}</section>}
       {props.state.collectionResults && <CollectionResultCards payload={props.state.collectionResults} language={props.language} />}
       {!!props.state.citations.length && <aside className="banmao-ai-citations"><h3>{t("sources")} <span>{props.state.citations.length}</span></h3><div>{props.state.citations.map((citation, index) => <CitationCard citation={citation} index={index} language={props.language} key={`${citation.sourcePath}:${citation.version || ""}`} />)}</div></aside>}
       {props.pendingAction && <PageActionCard action={props.pendingAction} language={props.language} onConfirm={props.confirmAction} onCancel={props.cancelAction} />}
@@ -127,13 +127,12 @@ export default function AIChatPanel(props: Props) {
     </div>
 
     {showScroll && <button className="banmao-ai-scroll-bottom" type="button" onClick={scrollToBottom} aria-label={t("latest")}><ArrowDown size={17} /></button>}
-    {!!props.state.messages.length && <div className="banmao-ai-suggestions" aria-label={t("suggested")}>{prompts.map((prompt) => <button type="button" key={prompt} onClick={() => choosePrompt(prompt)}>{prompt}</button>)}</div>}
 
     <footer className="banmao-ai-footer">
       <form className="banmao-ai-composer" onSubmit={props.submit}>
         <label htmlFor="banmao-ai-input" className="banmao-ai-sr-only">{t("message")}</label>
         <textarea ref={inputRef} id="banmao-ai-input" maxLength={8000} rows={1} required value={props.input} disabled={streaming} placeholder={streaming ? t("responding") : t("ask")} onFocus={props.onInputFocus} onKeyDown={onKeyDown} onChange={(event) => props.setInput(event.target.value)} />
-        <div className="banmao-ai-composer-bar">{props.state.model&&<ModelSelector models={props.state.models} language={props.language} value={props.state.model} onChange={props.selectModel} disabled={streaming} />}{props.input.length > 7000 && <span className="banmao-ai-count">{props.input.length}/8000</span>}<span className="banmao-ai-composer-hint">{t("sendHint")}</span>{streaming ? <button className="banmao-ai-stop" type="button" onClick={props.stop} aria-label={t("stop")}><Square size={13} fill="currentColor" /></button> : <button className="banmao-ai-send" disabled={!props.input.trim()} aria-label={t("send")}><ArrowUp size={17} /></button>}</div>
+        <div className="banmao-ai-composer-bar">{props.state.model&&<ModelSelector language={props.language} />}{props.input.length > 7000 && <span className="banmao-ai-count">{props.input.length}/8000</span>}<span className="banmao-ai-composer-hint">{t("sendHint")}</span>{streaming ? <button className="banmao-ai-stop" type="button" onClick={props.stop} aria-label={t("stop")}><Square size={13} fill="currentColor" /></button> : <button className="banmao-ai-send" disabled={!props.input.trim()} aria-label={t("send")}><ArrowUp size={17} /></button>}</div>
       </form>
       <p className="banmao-ai-disclaimer"><ShieldCheck size={12} /> {t("localHistory")}: {props.optIn ? `${props.memoryTurns} ${t("storedMessages")} · ${t("persistenceOn")}` : t("persistenceOff")} · {t("review")}</p>
       {props.persistenceError && <p className="banmao-ai-disclaimer" role="status"><CircleAlert size={12} /> {t("persistenceWarning")}</p>}

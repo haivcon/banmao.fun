@@ -24,7 +24,7 @@ import {
   type SessionInvalidation,
   type StoredChatMessage,
 } from "../../../lib/ai/client/persistence";
-import { createClientRequestId, deriveSurface, initialClientState, reduceClientState, type Citation, type ToolActivity } from "../../../lib/ai/client/state";
+import { createClientRequestId, deriveSurface, initialClientState, migratePersistedModel, reduceClientState, type Citation, type ToolActivity } from "../../../lib/ai/client/state";
 import { createEmotionState, emotionForSSEEvent, emotionForTransactionEvent, emotionReducer, type TransactionEmotionEvent } from "../../../lib/ai/client/emotion";
 import { parseAIStreamBlock, type AIModel, type CollectionResultsPayload } from "../../../lib/ai/contracts";
 import AIChatLauncher from "./AIChatLauncher";
@@ -110,10 +110,16 @@ export default function AIChatProvider({ children }: { children?: ReactNode }) {
   const restore = useCallback(async (id: string) => {
     const loaded = await repository.current?.loadSession(id);
     if (!loaded) return;
+    const persistedModel = migratePersistedModel(loaded.session.model);
+    if (persistedModel.migrated) {
+      await repository.current?.replaceSession(id, loaded.messages, persistedModel.model);
+      await refreshSessions();
+      publishInvalidation(id);
+    }
     setCurrentSessionId(id);
     try { localStorage.setItem(AI_CURRENT_SESSION_KEY, id); } catch { /* Small pointer is optional. */ }
-    dispatch({ type: "restore", state: restoredState(loaded), model: loaded.session.model });
-  }, []);
+    dispatch({ type: "restore", state: restoredState(loaded), model: persistedModel.model, migrated: persistedModel.migrated });
+  }, [publishInvalidation, refreshSessions]);
   const listSessions = useCallback(() => refreshSessions(), [refreshSessions]);
   const createSession = useCallback(async () => {
     if (!repository.current) throw new Error("Persistence is not ready");
@@ -185,7 +191,8 @@ export default function AIChatProvider({ children }: { children?: ReactNode }) {
   function setReducedMotion(value: boolean) { setReducedMotionState(value); persistPreferences({ mascotVisible, reducedMotion: value }); }
   function setPersistenceEnabled(value: boolean) { setPersistenceEnabledState(value); try { localStorage.setItem(AI_PERSISTENCE_ENABLED_KEY, String(value)); } catch { /* In-memory chat remains available. */ } }
   function setInput(value: string) { setInputState(value); if (value) dispatchEmotion({ type: "input-change" }); }
-  function openPanel() { if (open) dispatchEmotion({ type: "panel-close" }); else { setOpen(true); dispatchEmotion({ type: "panel-open" }); } }
+  function closePanel() { if (state.status === "streaming") stop(); setOpen(false); dispatchEmotion({ type: "panel-close" }); }
+  function openPanel() { if (open) closePanel(); else { setOpen(true); dispatchEmotion({ type: "panel-open" }); } }
   useEffect(() => subscribeAIChatOpen(window, (detail) => { const requestedInput = typeof detail.input === "string" ? detail.input : ""; setOpen(true); if (requestedInput) setInput(requestedInput); dispatchEmotion({ type: "panel-open" }); }), []);
   function stop() { abort.current?.abort(); dispatch({ type: "stop" }); dispatchEmotion({ type: "stream-abort" }); }
   function txEmotion(event: TransactionEmotionEvent) { dispatchEmotion(emotionForTransactionEvent(event)); }
@@ -227,7 +234,7 @@ export default function AIChatProvider({ children }: { children?: ReactNode }) {
           const emotionEvent = emotionForSSEEvent(streamEvent.event, streamEvent.data as { text?: unknown; status?: unknown; name?: unknown }, receivedFirstDelta); if (emotionEvent) dispatchEmotion(emotionEvent);
           if (streamEvent.event === "meta") dispatch({ type: "rag-status", status: streamEvent.data.ragStatus });
           if (streamEvent.event === "delta") { receivedFirstDelta = true; assistantText += streamEvent.data.text; dispatch({ type: "delta", text: streamEvent.data.text }); }
-          if (streamEvent.event === "tool") { tools.push(streamEvent.data); dispatch({ type: "tool", tool: streamEvent.data }); }
+          if (streamEvent.event === "tool") { const existing=tools.findIndex((tool)=>tool.callId===streamEvent.data.callId); if(existing<0) tools.push(streamEvent.data); else tools[existing]=streamEvent.data; dispatch({ type: "tool", tool: streamEvent.data }); }
           if (streamEvent.event === "collection_results") { collectionResults = streamEvent.data; dispatch({ type: "collection_results", payload: streamEvent.data }); }
           if (streamEvent.event === "citation") { citations.push(streamEvent.data); dispatch({ type: "citation", citation: streamEvent.data }); }
           if (streamEvent.event === "error") throw new Error(streamEvent.data.code || aiText(language, "aiUnavailable"));
@@ -252,7 +259,7 @@ export default function AIChatProvider({ children }: { children?: ReactNode }) {
   const persistenceAPI: AIChatPersistenceAPI = { sessions, currentSessionId, persistenceReady, persistenceError, persistenceEnabled, estimatedTokens: currentSession?.estimatedTokens || 0, quotaTokens: AI_SESSION_TOKEN_CAP, listSessions, createSession, switchSession, renameSession, deleteSession, archiveSession, exportSession };
   return <PersistenceContext.Provider value={persistenceAPI}><div className="banmao-ai-root">
     <AIChatLauncher open={open} emotion={open ? emotionState.emotion : "idle"} mascotVisible={mascotVisible} reducedMotion={reducedMotion} language={language} onClick={openPanel} />
-    {open && <AIChatPanel state={state} surface={surface} emotion={emotionState.emotion} language={language} input={input} setInput={setInput} onInputFocus={() => dispatchEmotion({ type: "input-focus" })} submit={submit} stop={stop} close={openPanel} retry={() => { if (state.lastPrompt) { dispatchEmotion({ type: "retry" }); void send(state.lastPrompt, true); } }} optIn={persistenceEnabled} setOptIn={setPersistenceEnabled} mascotVisible={mascotVisible} setMascotVisible={setMascotVisible} reducedMotion={reducedMotion} setReducedMotion={setReducedMotion} onAnimationComplete={finishAnimation} clear={() => void clear()} exportData={() => void exportData()} selectModel={(model: AIModel) => dispatch({ type: "select-model", model })} pendingAction={pendingAction} actionNotice={actionNotice} confirmAction={confirmPageAction} cancelAction={() => setPendingAction(null)} memoryTurns={currentSession?.messageCount || 0} persistenceReady={persistenceReady} persistenceError={persistenceError}>{txCopilotEnabled ? <TransactionCopilot language={language} onEmotion={txEmotion} /> : null}</AIChatPanel>}
+    {open && <AIChatPanel state={state} surface={surface} emotion={emotionState.emotion} language={language} input={input} setInput={setInput} onInputFocus={() => dispatchEmotion({ type: "input-focus" })} submit={submit} stop={stop} close={closePanel} retry={() => { if (state.lastPrompt) { dispatchEmotion({ type: "retry" }); void send(state.lastPrompt, true); } }} optIn={persistenceEnabled} setOptIn={setPersistenceEnabled} mascotVisible={mascotVisible} setMascotVisible={setMascotVisible} reducedMotion={reducedMotion} setReducedMotion={setReducedMotion} onAnimationComplete={finishAnimation} clear={() => void clear()} exportData={() => void exportData()} pendingAction={pendingAction} actionNotice={actionNotice} confirmAction={confirmPageAction} cancelAction={() => setPendingAction(null)} memoryTurns={currentSession?.messageCount || 0} persistenceReady={persistenceReady} persistenceError={persistenceError}>{txCopilotEnabled ? <TransactionCopilot language={language} onEmotion={txEmotion} /> : null}</AIChatPanel>}
     {children}
   </div></PersistenceContext.Provider>;
 }

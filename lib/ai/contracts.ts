@@ -1,4 +1,4 @@
-export const AI_MODELS = ["banmao.fun", "open9", "xenon1"] as const;
+export const AI_MODELS = ["banmao.fun"] as const;
 export type AIModel = (typeof AI_MODELS)[number];
 export const AI_SURFACES = ["landing", "defi", "gamefi", "collection"] as const;
 export type AISurface = (typeof AI_SURFACES)[number];

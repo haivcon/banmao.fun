@@ -23,6 +23,7 @@ function inline(text: string): ReactNode[] {
 }
 
 function renderTextBlock(text: string, key: number): ReactNode {
+  if (/^\s{0,3}(?:-{3,}|\*{3,}|_{3,})\s*$/.test(text)) return <hr key={key} />;
   const lines = text.split("\n");
   if (lines.every((line) => /^\s*[-*+]\s+/.test(line))) {
     return <ul key={key}>{lines.map((line, index) => <li key={index}>{inline(line.replace(/^\s*[-*+]\s+/, ""))}</li>)}</ul>;
