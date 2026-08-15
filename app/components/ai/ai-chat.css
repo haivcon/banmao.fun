@@ -2,7 +2,7 @@
 .banmao-ai-root {
   --ai-aura: #a855f7; --ai-aura-rgb: 168, 85, 247; --ai-bg: #090812; --ai-raised: #12101d;
   --ai-card: #181523; --ai-text: #f8f7fc; --ai-muted: #9993a8; --ai-border: rgba(255,255,255,.09);
-  --ai-root-bottom: max(20px, calc(env(safe-area-inset-bottom) + 68px));
+  --ai-root-bottom: max(20px, calc(env(safe-area-inset-bottom) + var(--defi-bottom-nav-height, 0px) + 14px));
   position: fixed; z-index: 2147483000; right: max(18px, env(safe-area-inset-right));
   bottom: var(--ai-root-bottom); color: var(--ai-text);
   font: 14px/1.5 var(--font-sans, system-ui, -apple-system, sans-serif); font-synthesis: none;
@@ -375,7 +375,13 @@
 .banmao-ai-send, .banmao-ai-stop { flex-basis:36px; width:36px; height:36px; }
 
 @media (max-width:640px) {
-  .web2d ~ .banmao-ai-root, .banmao-ai-root { bottom:calc(env(safe-area-inset-bottom) + 84px); }
+  .web2d ~ .banmao-ai-root, .banmao-ai-root { bottom:calc(env(safe-area-inset-bottom) + var(--defi-bottom-nav-height, 0px) + 14px); }
   .banmao-ai-panel { bottom:0; padding-bottom:max(12px,env(safe-area-inset-bottom)); }
   .banmao-ai-footer { padding-bottom:max(12px,env(safe-area-inset-bottom)); }
+}
+
+body:has(.defi-app-shell) { --defi-bottom-nav-height:70px; }
+body:has(.box-page) .banmao-ai-root { transition:opacity 160ms ease,transform 160ms ease; }
+body:has(.box-form:focus-within) .banmao-ai-root:not(:has(.banmao-ai-panel)) {
+  visibility:hidden; opacity:0; pointer-events:none; transform:translateY(12px);
 }
