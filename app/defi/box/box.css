@@ -2620,29 +2620,16 @@
   }
 
   .box-dialog-backdrop {
-    align-items: end;
-    padding: 0;
+    align-items: center;
+    padding: 16px;
   }
 
   .box-dialog {
     width: 100%;
     max-height: 92dvh;
     overflow-y: auto;
-    border-radius: 20px 20px 0 0;
-    animation-name: box-sheet-in;
-    padding: 16px 14px calc(14px + env(safe-area-inset-bottom));
-  }
-
-  .box-dialog::after {
-    content: "";
-    position: absolute;
-    top: 6px;
-    left: 50%;
-    width: 36px;
-    height: 3px;
-    border-radius: 99px;
-    background: rgba(255, 255, 255, 0.16);
-    transform: translateX(-50%);
+    border-radius: 20px;
+    padding: 16px 14px;
   }
 
   .box-dialog > .box-art {
