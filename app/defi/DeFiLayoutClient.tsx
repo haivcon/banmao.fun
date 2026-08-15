@@ -9,6 +9,7 @@ import {
   Gift,
   Home,
   LockKeyhole,
+  PackageOpen,
   Rocket,
 } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { href: "/defi/staking", key: "staking", icon: LockKeyhole },
   { href: "/defi/burn", key: "burn", icon: Flame },
   { href: "/defi/airdrop", key: "airdrop", icon: Gift },
+  { href: "/defi/box", key: "box", icon: PackageOpen },
   ...(process.env.NODE_ENV === "development"
     ? [
         {
@@ -57,6 +59,7 @@ const SHELL_COPY: Record<
     staking: string;
     burn: string;
     airdrop: string;
+    box: string;
     launchpad: string;
     networkReady: string;
     networkWrong: string;
@@ -72,6 +75,7 @@ const SHELL_COPY: Record<
     staking: "Staking",
     burn: "Burn",
     airdrop: "Airdrop",
+    box: "Box",
     launchpad: "Launchpad",
     networkReady: "X Layer",
     networkWrong: "Switch to X Layer",
@@ -86,6 +90,7 @@ const SHELL_COPY: Record<
     staking: "Staking",
     burn: "Đốt",
     airdrop: "Airdrop",
+    box: "Box",
     launchpad: "Launchpad",
     networkReady: "X Layer",
     networkWrong: "Chuyển sang X Layer",
@@ -100,6 +105,7 @@ const SHELL_COPY: Record<
     staking: "质押",
     burn: "销毁",
     airdrop: "空投",
+    box: "Box",
     launchpad: "发射台",
     networkReady: "X Layer",
     networkWrong: "切换到 X Layer",
@@ -114,6 +120,7 @@ const SHELL_COPY: Record<
     staking: "스테이킹",
     burn: "소각",
     airdrop: "에어드롭",
+    box: "Box",
     launchpad: "런치패드",
     networkReady: "X Layer",
     networkWrong: "X Layer로 전환",
@@ -128,6 +135,7 @@ const SHELL_COPY: Record<
     staking: "Стейкинг",
     burn: "Сжигание",
     airdrop: "Аирдроп",
+    box: "Box",
     launchpad: "Лаунчпад",
     networkReady: "X Layer",
     networkWrong: "Переключить на X Layer",
@@ -142,6 +150,7 @@ const SHELL_COPY: Record<
     staking: "Staking",
     burn: "Bakar",
     airdrop: "Airdrop",
+    box: "Box",
     launchpad: "Launchpad",
     networkReady: "X Layer",
     networkWrong: "Beralih ke X Layer",

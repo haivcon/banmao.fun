@@ -677,7 +677,7 @@ const PRODUCTS: ProductConfig[] = [
     color: "#a855f7",
     Icon: StakingIcon,
     contractAddress: STAKING_CONTRACT_ADDRESS,
-    illustration: "/defi/banmao_staking.png",
+    illustration: "/defi/banmao_staking.webp",
   },
   {
     id: "airdrop",
@@ -688,7 +688,7 @@ const PRODUCTS: ProductConfig[] = [
     color: "#f97316",
     Icon: AirdropIcon,
     contractAddress: AIRDROP_CONTRACT_ADDRESS,
-    illustration: "/defi/banmao_airdrop.png",
+    illustration: "/defi/banmao_airdrop.webp",
   },
   {
     id: "burn",
@@ -699,7 +699,7 @@ const PRODUCTS: ProductConfig[] = [
     color: "#ef4444",
     Icon: BurnIcon,
     contractAddress: COMMUNITY_WALLET,
-    illustration: "/defi/banmao_burn.png",
+    illustration: "/defi/banmao_burn.webp",
   },
   {
     id: "box",
@@ -708,6 +708,7 @@ const PRODUCTS: ProductConfig[] = [
     color: "#ffd85a",
     Icon: Gift,
     contractAddress: BANMAO_BOX_CONTRACT_ADDRESS,
+    illustration: "/defi/banmao_box.webp",
     status: BOX_IS_LIVE ? "live" : "coming",
   },
   ...(IS_DEVELOPMENT
