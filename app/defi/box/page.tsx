@@ -19,6 +19,7 @@ import {
   PackageOpen,
   RefreshCw,
   Send,
+  ShieldAlert,
   ShieldCheck,
   Sparkles,
   Wallet,
@@ -319,6 +320,7 @@ export default function BanmaoBoxPage() {
     tokenSymbol,
     maxLockDuration,
     tokenBalance,
+    allowance,
     tokenBalanceLoading,
     tokenBalanceError,
     refetchTokenBalance,
@@ -346,6 +348,24 @@ export default function BanmaoBoxPage() {
     transactionError,
     isBusy,
   } = useBox(selectedChainId, activeBoxAddress, activeTokenAddress);
+
+  const parsedAmount = useMemo(() => {
+    try {
+      if (createMode === "batch") {
+        return batchRows.reduce(
+          (sum, row) =>
+            sum + (row.amount ? parseUnits(row.amount, tokenDecimals) : 0n),
+          0n,
+        );
+      }
+      return amount ? parseUnits(amount, tokenDecimals) : 0n;
+    } catch {
+      return 0n;
+    }
+  }, [amount, batchRows, createMode, tokenDecimals]);
+
+  const needsApproval =
+    isConnected && parsedAmount > 0n && allowance < parsedAmount;
 
   const copy = BOX_COPY[language];
   const pageCount = Math.max(1, Math.ceil(boxes.length / BOXES_PER_PAGE));
@@ -1148,13 +1168,39 @@ export default function BanmaoBoxPage() {
               </p>
             ) : null}
 
+            {isConnected && parsedAmount > 0n ? (
+              <div
+                className={`box-approval-status ${
+                  needsApproval
+                    ? "box-approval-status--needed"
+                    : "box-approval-status--ready"
+                }`}
+              >
+                {needsApproval ? (
+                  <>
+                    <ShieldAlert />
+                    <span>{copy.approvalNeeded}</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck />
+                    <span>{copy.approvalReady}</span>
+                  </>
+                )}
+              </div>
+            ) : null}
+
             <button
               type="submit"
               className="box-submit"
               disabled={!isConnected || !isDeployed || !isDeploymentValidated || isBusy}
             >
               {isBusy ? <LoaderCircle className="box-spin" /> : <Gift />}
-              {isConnected ? copy.createButton : copy.connectToCreate}
+              {isConnected
+                ? needsApproval
+                  ? copy.approveAndCreate
+                  : copy.createButton
+                : copy.connectToCreate}
               {!isBusy ? <ArrowRight /> : null}
             </button>
           </form>
@@ -1524,6 +1570,12 @@ export default function BanmaoBoxPage() {
             {createMode === "batch" ? (
               <div className="box-review__rows">
                 {batchRows.map((row, index) => <small key={index}>#{index + 1} · {row.recipient.slice(0, 8)}…{row.recipient.slice(-6)} · {row.amount} {tokenSymbol}</small>)}
+              </div>
+            ) : null}
+            {needsApproval ? (
+              <div className="box-review__approval-notice">
+                <ShieldAlert />
+                <span>{copy.reviewApprovalNotice}</span>
               </div>
             ) : null}
             <label className="box-review__ack">

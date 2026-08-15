@@ -24,6 +24,10 @@ export type BoxCopy = {
   customDaysPlaceholder: string;
   unlockPreview: string;
   createButton: string;
+  approvalNeeded: string;
+  approvalReady: string;
+  approveAndCreate: string;
+  reviewApprovalNotice: string;
   connectToCreate: string;
   notDeployedTitle: string;
   notDeployedDescription: string;
@@ -141,6 +145,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     customDaysPlaceholder: "Number of days",
     unlockPreview: "Estimated opening date",
     createButton: "Create box",
+    approvalNeeded: "Token approval required. Your wallet will ask you to approve BANMAO spending first.",
+    approvalReady: "Token spending approved. Ready to create.",
+    approveAndCreate: "Approve & create box",
+    reviewApprovalNotice: "Your wallet will first request token approval, then the box creation. Two signatures required.",
     connectToCreate: "Connect wallet to create",
     notDeployedTitle: "BanmaoBox is ready for deployment",
     notDeployedDescription:
@@ -269,6 +277,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     customDaysPlaceholder: "Số ngày",
     unlockPreview: "Ngày mở dự kiến",
     createButton: "Tạo box",
+    approvalNeeded: "Cần phê duyệt token. Ví sẽ yêu cầu bạn phê duyệt chi tiêu BANMAO trước.",
+    approvalReady: "Đã phê duyệt chi tiêu. Sẵn sàng tạo box.",
+    approveAndCreate: "Phê duyệt & tạo box",
+    reviewApprovalNotice: "Ví sẽ yêu cầu phê duyệt token trước, sau đó tạo box. Cần hai chữ ký.",
     connectToCreate: "Kết nối ví để tạo",
     notDeployedTitle: "BanmaoBox đã sẵn sàng để deploy",
     notDeployedDescription:
@@ -397,6 +409,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     customDaysPlaceholder: "天数",
     unlockPreview: "预计开启日期",
     createButton: "创建礼盒",
+    approvalNeeded: "需要代币授权。钱包将先请求您授权 BANMAO 支出。",
+    approvalReady: "代币支出已授权，可以创建。",
+    approveAndCreate: "授权并创建",
+    reviewApprovalNotice: "钱包将先请求代币授权，然后创建盒子。需要两次签名。",
     connectToCreate: "连接钱包以创建",
     notDeployedTitle: "BanmaoBox 已准备部署",
     notDeployedDescription:
@@ -521,6 +537,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     customDaysPlaceholder: "일수",
     unlockPreview: "예상 개봉일",
     createButton: "박스 만들기",
+    approvalNeeded: "토큰 승인이 필요합니다. 지갑에서 BANMAO 지출 승인을 먼저 요청합니다.",
+    approvalReady: "토큰 지출이 승인되었습니다. 생성 준비 완료.",
+    approveAndCreate: "승인 후 생성",
+    reviewApprovalNotice: "지갑에서 토큰 승인을 먼저 요청한 다음 박스를 생성합니다. 서명 두 번 필요.",
     connectToCreate: "지갑 연결",
     notDeployedTitle: "BanmaoBox 배포 준비 완료",
     notDeployedDescription:
@@ -647,6 +667,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     customDaysPlaceholder: "Количество дней",
     unlockPreview: "Расчётная дата открытия",
     createButton: "Создать бокс",
+    approvalNeeded: "Требуется одобрение токена. Кошелёк запросит разрешение на расход BANMAO.",
+    approvalReady: "Расход токена одобрен. Готово к созданию.",
+    approveAndCreate: "Одобрить и создать",
+    reviewApprovalNotice: "Кошелёк сначала запросит одобрение токена, затем создание. Потребуется две подписи.",
     connectToCreate: "Подключить кошелёк",
     notDeployedTitle: "BanmaoBox готов к развёртыванию",
     notDeployedDescription:
@@ -775,6 +799,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     customDaysPlaceholder: "Jumlah hari",
     unlockPreview: "Perkiraan tanggal buka",
     createButton: "Buat box",
+    approvalNeeded: "Perlu persetujuan token. Dompet akan meminta Anda menyetujui pengeluaran BANMAO terlebih dahulu.",
+    approvalReady: "Pengeluaran token disetujui. Siap membuat.",
+    approveAndCreate: "Setujui & buat",
+    reviewApprovalNotice: "Dompet akan meminta persetujuan token terlebih dahulu, lalu membuat box. Diperlukan dua tanda tangan.",
     connectToCreate: "Hubungkan dompet",
     notDeployedTitle: "BanmaoBox siap di-deploy",
     notDeployedDescription:
