@@ -421,17 +421,33 @@ export function useBox(
           functionName: "getBoxAssets" as const,
           args: [tokenId],
         },
+        {
+          address: boxAddress,
+          abi: BANMAO_BOX_ABI,
+          functionName: "renderSVG" as const,
+          args: [tokenId],
+        },
       ]);
       const results = (await publicClient.multicall({
         contracts,
-        allowFailure: false,
-      } as never)) as readonly unknown[];
+        allowFailure: true,
+      } as never)) as readonly {
+        status: "success" | "failure";
+        result?: unknown;
+      }[];
+      const requiredResult = (index: number) => {
+        const value = results[index];
+        if (value?.status !== "success") {
+          throw new Error("Unable to load BanmaoBox details");
+        }
+        return value.result;
+      };
       const uniqueAssetTokens = [
         ...new Set(
           results
-            .filter((_, index) => index % 3 === 2)
+            .filter((_, index) => index % 4 === 2)
             .flatMap((value) =>
-              (value as readonly BoxAsset[]).map((asset) =>
+              ((value.status === "success" ? value.result : []) as readonly BoxAsset[]).map((asset) =>
                 asset.token.toLowerCase(),
               ),
             ),
@@ -445,13 +461,14 @@ export function useBox(
       );
       const metadataByToken = new Map(metadataEntries);
       const entries = tokenIds.map((tokenId, index): BoxEntry => {
-        const details = results[index * 3] as readonly [
+        const details = requiredResult(index * 4) as readonly [
           bigint,
           Address,
           bigint,
           bigint,
         ];
-        const assets = results[index * 3 + 2] as readonly BoxAsset[];
+        const assets = requiredResult(index * 4 + 2) as readonly BoxAsset[];
+        const svgResult = results[index * 4 + 3];
         const primaryAsset = assets.find(
           (asset) => asset.token.toLowerCase() === tokenAddress.toLowerCase(),
         );
@@ -461,7 +478,11 @@ export function useBox(
           creator: details[1],
           createdAt: details[2],
           unlockTime: details[3],
-          canOpen: Boolean(results[index * 3 + 1]),
+          canOpen: Boolean(requiredResult(index * 4 + 1)),
+          svg:
+            svgResult?.status === "success" && typeof svgResult.result === "string"
+              ? svgResult.result
+              : undefined,
           assets: assets.map((asset) => ({
             ...asset,
             ...metadataByToken.get(asset.token.toLowerCase()),

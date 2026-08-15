@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Box,
   CheckCircle2,
+  ChevronDown,
   Circle,
   Clock3,
   Copy,
@@ -150,7 +151,18 @@ function BoxCard({
   return (
     <article className={`box-item ${ready ? "box-item--ready" : ""}`}>
       <div className="box-item__visual">
-        <GiftBoxArtwork ready={ready} />
+        {entry.svg ? (
+          <Image
+            className="box-svg box-item__svg"
+            src={svgImageDataUri(entry.svg)}
+            alt={`${copy.boxNumber} #${entry.tokenId.toString()}`}
+            width={400}
+            height={400}
+            unoptimized
+          />
+        ) : (
+          <GiftBoxArtwork ready={ready} />
+        )}
         <span
           className={`box-status ${
             ready ? "box-status--ready" : "box-status--locked"
@@ -307,6 +319,10 @@ export default function BanmaoBoxPage() {
   const [releaseOutcome, setReleaseOutcome] = useState<string | null>(null);
   const [activeAction, setActiveAction] = useState("Transaction");
   const [celebrationOpen, setCelebrationOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"create" | "boxes" | "explore">(
+    "create",
+  );
+  const [collectionOpen, setCollectionOpen] = useState(false);
   const collectionRequestRef = useRef(0);
 
   const chainConfig = getBoxChainConfig(selectedChainId);
@@ -879,41 +895,63 @@ export default function BanmaoBoxPage() {
       ) : null}
 
       <section className="box-collection-manager">
-        <div>
-          <strong>Collection manager</strong>
-          <span>
-            {copy.collectionHint}
-          </span>
-        </div>
-        <div className="box-collection-controls">
-          <input
-            value={collectionToken}
-            onChange={(event) => {
-              collectionRequestRef.current += 1;
-              setCollectionPending(false);
-              setCollectionError(null);
-              setCollectionToken(event.target.value.trim());
-            }}
-            placeholder="Primary ERC-20 address (0x…)"
-            spellCheck={false}
-            disabled={isBusy}
-          />
-          <button type="button" onClick={() => void handleCollection(false)} disabled={isBusy || collectionPending}>
-            {collectionPending ? copy.checking : copy.useCollection}
-          </button>
-          <button type="button" className="primary" onClick={() => void handleCollection(true)} disabled={isBusy || collectionPending || !isConnected}>
-            {collectionPending ? copy.checking : copy.createCollection}
-          </button>
-        </div>
-        {activeBoxAddress && activeTokenAddress ? (
-          <small>
-            Active: {tokenSymbol} · {activeTokenAddress.slice(0, 8)}…{activeTokenAddress.slice(-6)} · Box {activeBoxAddress.slice(0, 8)}…{activeBoxAddress.slice(-6)}
-          </small>
+        <button
+          type="button"
+          className="box-collection-toggle"
+          onClick={() => setCollectionOpen(!collectionOpen)}
+          aria-expanded={collectionOpen}
+        >
+          <strong>{copy.collectionTitle}</strong>
+          <ChevronDown className={collectionOpen ? "box-chevron-open" : ""} />
+        </button>
+        {collectionOpen ? (
+          <div className="box-collection-body">
+            <span>{copy.collectionHint}</span>
+            <div className="box-collection-controls">
+              <input
+                value={collectionToken}
+                onChange={(event) => {
+                  collectionRequestRef.current += 1;
+                  setCollectionPending(false);
+                  setCollectionError(null);
+                  setCollectionToken(event.target.value.trim());
+                }}
+                placeholder="Primary ERC-20 address (0x…)"
+                spellCheck={false}
+                disabled={isBusy}
+              />
+              <button type="button" onClick={() => void handleCollection(false)} disabled={isBusy || collectionPending}>
+                {collectionPending ? copy.checking : copy.useCollection}
+              </button>
+              <button type="button" className="primary" onClick={() => void handleCollection(true)} disabled={isBusy || collectionPending || !isConnected}>
+                {collectionPending ? copy.checking : copy.createCollection}
+              </button>
+            </div>
+            {activeBoxAddress && activeTokenAddress ? (
+              <small>
+                Active: {tokenSymbol} · {activeTokenAddress.slice(0, 8)}…{activeTokenAddress.slice(-6)} · Box {activeBoxAddress.slice(0, 8)}…{activeBoxAddress.slice(-6)}
+              </small>
+            ) : null}
+            {collectionError ? <p className="box-form-error" role="alert">{collectionError}</p> : null}
+          </div>
         ) : null}
-        {collectionError ? <p className="box-form-error" role="alert">{collectionError}</p> : null}
       </section>
 
-      <section className="box-workspace">
+      <nav className="box-tabs" role="tablist" aria-label="BanmaoBox sections">
+        <button role="tab" aria-selected={activeTab === "create"} className={activeTab === "create" ? "active" : ""} onClick={() => setActiveTab("create")}>
+          <Gift /> {copy.tabCreate}
+        </button>
+        <button role="tab" aria-selected={activeTab === "boxes"} className={activeTab === "boxes" ? "active" : ""} onClick={() => setActiveTab("boxes")}>
+          <Box /> {copy.tabMyBoxes}
+          {boxes.length > 0 ? <span className="box-tab-count">{boxes.length}</span> : null}
+        </button>
+        <button role="tab" aria-selected={activeTab === "explore"} className={activeTab === "explore" ? "active" : ""} onClick={() => setActiveTab("explore")}>
+          <Eye /> {copy.tabExplore}
+        </button>
+      </nav>
+
+      {activeTab === "create" ? (
+      <section className="box-tab-panel">
         <article className="box-panel box-create-panel">
           <div className="box-panel__heading">
             <span className="box-panel__icon">
@@ -1205,7 +1243,11 @@ export default function BanmaoBoxPage() {
             </button>
           </form>
         </article>
+      </section>
+      ) : null}
 
+      {activeTab === "boxes" ? (
+      <section className="box-tab-panel">
         <article className="box-panel box-list-panel">
           <div className="box-panel__heading box-panel__heading--list">
             <span className="box-panel__icon">
@@ -1316,8 +1358,10 @@ export default function BanmaoBoxPage() {
           )}
         </article>
       </section>
+      ) : null}
 
-      <section className="box-inspector">
+      {activeTab === "explore" ? (
+      <section className="box-tab-panel box-inspector">
         <div className="box-inspector__copy">
           <span className="box-eyebrow">
             <Eye /> {copy.onchainExplorer}
@@ -1431,6 +1475,7 @@ export default function BanmaoBoxPage() {
           )}
         </div>
       </section>
+      ) : null}
 
       {transactionMessage ? (
         <div
