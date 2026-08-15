@@ -118,6 +118,10 @@ export type BoxCopy = {
   viewExplorer: string;
   deploymentFailed: string;
   unavailable: string;
+  tabCreate: string;
+  tabMyBoxes: string;
+  tabExplore: string;
+  collectionTitle: string;
 };
 
 export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
@@ -253,6 +257,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     viewExplorer: "View on explorer",
     deploymentFailed: "Deployment validation failed",
     unavailable: "Unavailable",
+    tabCreate: "Create",
+    tabMyBoxes: "My Boxes",
+    tabExplore: "Explore",
+    collectionTitle: "Collection manager",
   },
   vi: {
     back: "Trang DeFi",
@@ -385,6 +393,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     viewExplorer: "Xem trên explorer",
     deploymentFailed: "Xác thực triển khai thất bại",
     unavailable: "Không khả dụng",
+    tabCreate: "Tạo",
+    tabMyBoxes: "Hộp của tôi",
+    tabExplore: "Khám phá",
+    collectionTitle: "Quản lý bộ sưu tập",
   },
   zh: {
     back: "DeFi 首页",
@@ -512,6 +524,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     viewExplorer: "在浏览器中查看",
     deploymentFailed: "部署验证失败",
     unavailable: "不可用",
+    tabCreate: "创建",
+    tabMyBoxes: "我的盒子",
+    tabExplore: "探索",
+    collectionTitle: "集合管理器",
   },
   ko: {
     back: "DeFi 홈",
@@ -643,6 +659,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     viewExplorer: "탐색기에서 보기",
     deploymentFailed: "배포 검증 실패",
     unavailable: "사용 불가",
+    tabCreate: "만들기",
+    tabMyBoxes: "내 박스",
+    tabExplore: "탐색",
+    collectionTitle: "컬렉션 관리",
   },
   ru: {
     back: "Главная DeFi",
@@ -774,6 +794,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     viewExplorer: "Посмотреть в обозревателе",
     deploymentFailed: "Проверка развёртывания не пройдена",
     unavailable: "Недоступно",
+    tabCreate: "Создать",
+    tabMyBoxes: "Мои боксы",
+    tabExplore: "Обзор",
+    collectionTitle: "Менеджер коллекций",
   },
   id: {
     back: "Beranda DeFi",
@@ -908,6 +932,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     viewExplorer: "Lihat di explorer",
     deploymentFailed: "Validasi deployment gagal",
     unavailable: "Tidak tersedia",
+    tabCreate: "Buat",
+    tabMyBoxes: "Kotak Saya",
+    tabExplore: "Jelajahi",
+    collectionTitle: "Pengelola koleksi",
   },
 };
 

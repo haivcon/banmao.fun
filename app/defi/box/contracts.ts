@@ -38,6 +38,7 @@ export interface BasketInput {
 export type BoxEntry = BoxInfo & {
   tokenId: bigint;
   canOpen: boolean;
+  svg?: string;
 };
 
 export type InspectedBox = BoxEntry & {
