@@ -2173,9 +2173,9 @@
   }
 
   .box-header {
-    min-height: 108px;
+    min-height: 80px;
     grid-template-columns: auto minmax(0, 1fr);
-    grid-template-rows: 56px 44px;
+    grid-template-rows: 42px 34px;
   }
 
   .box-back span,
@@ -2208,52 +2208,53 @@
   .box-hero {
     grid-template-columns: 1fr;
     gap: 0;
-    padding: 30px 0 24px;
+    padding: 18px 0 14px;
     text-align: center;
   }
 
   .box-eyebrow {
     justify-content: center;
+    font-size: 9px;
   }
 
   .box-hero__copy h1 {
-    margin: 13px 0 10px;
-    font-size: clamp(36px, 11vw, 48px);
-    letter-spacing: -0.055em;
+    margin: 8px 0 6px;
+    font-size: clamp(24px, 8vw, 34px);
+    letter-spacing: -0.045em;
   }
 
   .box-hero__copy > p {
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: 11px;
+    line-height: 1.4;
   }
 
   .box-metrics {
-    margin-top: 18px;
+    margin-top: 12px;
     text-align: center;
   }
 
   .box-metrics > div {
-    padding: 10px 5px;
+    padding: 7px 4px;
   }
 
   .box-metrics span {
-    font-size: 8px;
+    font-size: 7px;
   }
 
   .box-metrics strong {
-    margin-top: 4px;
-    font-size: 13px;
+    margin-top: 3px;
+    font-size: 11px;
   }
 
   .box-metric__loading,
   .box-metric__retry {
     gap: 3px;
-    font-size: 9px;
+    font-size: 8px;
   }
 
   .box-metric__retry {
-    min-height: 25px;
-    padding: 0 5px;
+    min-height: 22px;
+    padding: 0 4px;
   }
 
   .box-hero__art {
@@ -2271,7 +2272,8 @@
   }
 
   .box-collection-manager {
-    padding: 13px;
+    padding: 10px;
+    gap: 6px;
   }
 
   .box-collection-manager > div:first-child {
@@ -2282,20 +2284,43 @@
     white-space: normal;
   }
 
+  .box-collection-manager > div:first-child strong {
+    font-size: 11px;
+  }
+
+  .box-collection-manager span,
+  .box-collection-manager small {
+    font-size: 9px;
+  }
+
   .box-collection-controls,
   .box-basket__add,
   .box-basket__asset {
     grid-template-columns: 1fr;
   }
 
+  .box-collection-controls input,
+  .box-basket input {
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+
+  .box-collection-controls button,
+  .box-basket button {
+    padding: 7px 10px;
+    font-size: 10px;
+  }
+
   .box-mode-switch {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
   }
 
   .box-mode-switch button {
     min-width: 0;
-    padding-inline: 5px;
-    font-size: 10px;
+    min-height: 32px;
+    padding: 4px 5px;
+    font-size: 9px;
   }
 
   .box-batch__row {
@@ -2313,31 +2338,258 @@
 
   .box-workspace {
     grid-template-columns: minmax(0, 1fr);
-    gap: 14px;
+    gap: 10px;
+  }
+
+  .box-panel {
+    border-radius: 16px;
   }
 
   .box-panel__heading,
   .box-form {
-    padding: 16px;
+    padding: 12px;
+  }
+
+  .box-panel__heading h2 {
+    font-size: 14px;
+  }
+
+  .box-panel__heading p {
+    font-size: 10px;
+  }
+
+  .box-panel__icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+  }
+
+  .box-panel__icon svg {
+    width: 15px;
+  }
+
+  .box-form {
+    gap: 12px;
+  }
+
+  .box-field__label {
+    font-size: 10px;
+  }
+
+  .box-field__label small {
+    font-size: 9px;
+  }
+
+  .box-field__label small button {
+    font-size: 9px;
+  }
+
+  .box-input-wrap {
+    min-height: 42px;
+    border-radius: 10px;
+    padding: 0 10px;
+  }
+
+  .box-input-wrap input {
+    font-size: 13px;
+  }
+
+  .box-input-wrap b {
+    font-size: 9px;
+  }
+
+  .box-input-wrap--address input {
+    font-size: 10px;
+  }
+
+  .box-duration legend {
+    font-size: 10px;
+    margin-bottom: 6px;
+  }
+
+  .box-duration__options {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+  }
+
+  .box-duration__options button {
+    min-height: 34px;
+    font-size: 9px;
+    border-radius: 8px;
+  }
+
+  .box-duration__limit {
+    font-size: 8px;
+    margin-top: 5px;
+  }
+
+  .box-custom-days {
+    height: 38px;
+    margin-top: 6px;
+    border-radius: 9px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .box-unlock-preview {
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+
+  .box-unlock-preview > svg {
+    width: 15px;
+  }
+
+  .box-unlock-preview span {
+    font-size: 9px;
+  }
+
+  .box-unlock-preview strong {
+    font-size: 10px;
+    margin-top: 2px;
+  }
+
+  .box-network-note,
+  .box-form-error {
+    font-size: 9px;
+    padding: 7px 9px;
+    border-radius: 8px;
+  }
+
+  .box-submit {
+    min-height: 42px;
+    border-radius: 10px;
+    font-size: 11px;
+  }
+
+  .box-submit svg {
+    width: 15px;
+  }
+
+  .box-field__hint {
+    font-size: 8px;
   }
 
   .box-list,
   .box-skeleton-list {
     grid-template-columns: minmax(0, 1fr);
-    padding: 8px;
+    padding: 6px;
+    gap: 6px;
   }
 
   .box-item__visual {
-    min-height: 145px;
+    min-height: 110px;
   }
 
   .box-item__visual .box-art {
-    --art-scale: 0.38;
+    --art-scale: 0.3;
+  }
+
+  .box-item__content {
+    padding: 10px;
+  }
+
+  .box-item__heading {
+    gap: 6px;
+    padding-bottom: 8px;
+  }
+
+  .box-item__heading > span {
+    font-size: 9px;
+  }
+
+  .box-item__heading > strong {
+    font-size: 13px;
+  }
+
+  .box-item__details {
+    margin-bottom: 8px;
+  }
+
+  .box-item__details > div {
+    padding: 6px;
+  }
+
+  .box-item__details dt {
+    font-size: 7px;
+  }
+
+  .box-item__details dd {
+    margin-top: 3px;
+    font-size: 9px;
   }
 
   .box-item__details,
   .box-item__actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .box-item__actions {
+    gap: 5px;
+  }
+
+  .box-button {
+    min-height: 34px;
+    font-size: 8px;
+    border-radius: 8px;
+  }
+
+  .box-button svg {
+    width: 12px;
+  }
+
+  .box-assets {
+    gap: 5px;
+    margin-bottom: 8px;
+    padding: 7px;
+    border-radius: 10px;
+  }
+
+  .box-assets__heading strong {
+    font-size: 9px;
+  }
+
+  .box-assets__heading small {
+    font-size: 7px;
+  }
+
+  .box-asset {
+    padding: 6px;
+    gap: 4px;
+  }
+
+  .box-asset strong {
+    font-size: 9px;
+  }
+
+  .box-asset code {
+    font-size: 7px;
+  }
+
+  .box-asset > button {
+    min-height: 26px;
+    padding: 0 6px;
+    font-size: 7px;
+  }
+
+  .box-empty {
+    min-height: 200px;
+    gap: 8px;
+    padding: 18px;
+  }
+
+  .box-empty > svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .box-empty strong {
+    font-size: 11px;
+  }
+
+  .box-empty small {
+    font-size: 10px;
   }
 
   .box-inspector {
@@ -2374,27 +2626,109 @@
 
   .box-dialog {
     width: 100%;
-    max-height: 88dvh;
+    max-height: 92dvh;
     overflow-y: auto;
-    border-radius: 24px 24px 0 0;
+    border-radius: 20px 20px 0 0;
     animation-name: box-sheet-in;
-    padding: 25px 18px calc(20px + env(safe-area-inset-bottom));
+    padding: 16px 14px calc(14px + env(safe-area-inset-bottom));
   }
 
   .box-dialog::after {
     content: "";
     position: absolute;
-    top: 8px;
+    top: 6px;
     left: 50%;
-    width: 42px;
-    height: 4px;
+    width: 36px;
+    height: 3px;
     border-radius: 99px;
     background: rgba(255, 255, 255, 0.16);
     transform: translateX(-50%);
   }
 
-  .box-dialog__actions,
-  .box-celebration__actions,
+  .box-dialog > .box-art {
+    --art-scale: 0.3;
+    margin: -20px auto -28px;
+  }
+
+  .box-dialog h2 {
+    font-size: 16px;
+  }
+
+  .box-dialog > p {
+    margin: 5px 0 12px;
+    font-size: 10px;
+  }
+
+  .box-dialog__close {
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+  }
+
+  .box-dialog__close svg {
+    width: 14px;
+  }
+
+  .box-review {
+    width: 100%;
+  }
+
+  .box-review__shield {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 8px;
+  }
+
+  .box-review__details > div {
+    padding: 7px 9px;
+  }
+
+  .box-review__details dt {
+    font-size: 9px;
+  }
+
+  .box-review__details dd {
+    font-size: 9px;
+  }
+
+  .box-review__ack {
+    gap: 8px;
+    padding: 9px;
+    font-size: 9px;
+    border-radius: 9px;
+  }
+
+  .box-review__ack input {
+    width: 15px;
+    height: 15px;
+  }
+
+  .box-dialog__actions {
+    grid-template-columns: 0.7fr 1.3fr;
+    gap: 7px;
+    margin-top: 3px;
+  }
+
+  .box-dialog__actions .box-button {
+    min-height: 38px;
+    font-size: 10px;
+  }
+
+  .box-celebration__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .box-celebration__art {
+    height: 140px;
+  }
+
+  .box-celebration__art .box-art {
+    --art-scale: 0.45;
+    margin: -15px auto -20px;
+  }
+
   .box-skeleton {
     grid-template-columns: 1fr;
   }
