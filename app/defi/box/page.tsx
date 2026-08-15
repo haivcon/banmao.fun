@@ -16,7 +16,6 @@ import {
   ExternalLink,
   LoaderCircle,
   LockKeyhole,
-  Network,
   PackageOpen,
   RefreshCw,
   Send,
@@ -37,7 +36,6 @@ import {
   type Address,
 } from "viem";
 import { ConnectButton } from "../../components/wallet/WalletConnection";
-import { LanguageSelector } from "../LanguageSelector";
 import {
   getBoxChainConfig,
   type BasketInput,
@@ -780,6 +778,14 @@ export default function BanmaoBoxPage() {
         ? transactionError || copy.transactionError
         : copy.phase[phase];
 
+  const createDisabledReason = !isConnected
+    ? copy.connectToCreate
+    : !isDeployed || !isDeploymentValidated
+      ? deploymentError ?? copy.notDeployedDescription
+      : isBusy
+        ? transactionMessage
+        : null;
+
   return (
     <main className="box-page">
       <div className="box-orb box-orb--one" aria-hidden="true" />
@@ -798,19 +804,10 @@ export default function BanmaoBoxPage() {
           <span>BMAO-BOX</span>
         </div>
         <div className="box-header__actions">
-          <div className="box-network-switcher" aria-label="X Layer Mainnet, chain 196">
-            <Network aria-hidden="true" />
-            <span className="active">X Layer · 196</span>
-          </div>
           <Link href="/defi/box/admin" className="box-ops-link">
             <ShieldCheck />
             {copy.operations}
           </Link>
-          <LanguageSelector currentLang={language} onChangeLang={setLanguage} />
-          <ConnectButton
-            targetChainId={selectedChainId}
-            supportedChainIds={[XLAYER_CHAIN_ID]}
-          />
         </div>
       </header>
 
@@ -1232,6 +1229,7 @@ export default function BanmaoBoxPage() {
               type="submit"
               className="box-submit"
               disabled={!isConnected || !isDeployed || !isDeploymentValidated || isBusy}
+              aria-describedby={createDisabledReason ? "box-create-disabled-reason" : undefined}
             >
               {isBusy ? <LoaderCircle className="box-spin" /> : <Gift />}
               {isConnected
@@ -1241,6 +1239,11 @@ export default function BanmaoBoxPage() {
                 : copy.connectToCreate}
               {!isBusy ? <ArrowRight /> : null}
             </button>
+            {createDisabledReason ? (
+              <p className="box-submit-reason" id="box-create-disabled-reason" role="status">
+                {createDisabledReason}
+              </p>
+            ) : null}
           </form>
         </article>
       </section>

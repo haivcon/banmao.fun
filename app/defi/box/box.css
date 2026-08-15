@@ -2926,6 +2926,96 @@
   }
 }
 
+/* Responsive visual-audit fixes */
+.box-tab-panel:not(.box-inspector) { max-width: 760px; }
+.box-metrics > div { min-height: 76px; }
+.box-metrics strong,
+.box-field__label small,
+.box-batch__summary,
+.box-unlock-preview strong { font-variant-numeric: tabular-nums; }
+.box-submit-reason {
+  margin: -10px 0 0;
+  color: var(--box-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+@media (max-width: 820px) {
+  .box-page {
+    scroll-padding-block: calc(var(--defi-shell-header-height, 60px) + 16px) calc(148px + env(safe-area-inset-bottom));
+    padding-bottom: calc(148px + env(safe-area-inset-bottom));
+  }
+  .box-header { min-height: 52px; grid-template-columns: 44px minmax(0, 1fr) 44px; grid-template-rows: 52px; }
+  .box-back,
+  .box-ops-link { display: grid; place-items: center; width: 44px; min-width: 44px; height: 44px; padding: 0; }
+  .box-back span,
+  .box-ops-link { font-size: 0; }
+  .box-ops-link svg { width: 18px; }
+  .box-header__brand { justify-self: center; }
+  .box-header__actions { grid-column: 3; grid-row: 1; justify-self: end; }
+  .box-hero { padding: 12px 0 10px; }
+  .box-eyebrow { font-size: 11px; }
+  .box-hero__copy > p,
+  .box-panel__heading p { font-size: 13px; line-height: 1.5; }
+  .box-metrics { margin-top: 10px; }
+  .box-metrics > div { min-height: 64px; padding: 9px 6px; }
+  .box-metrics span,
+  .box-metric__loading,
+  .box-metric__retry { font-size: 11px; }
+  .box-metrics strong { font-size: 13px; }
+  .box-metric__retry { min-height: 44px; }
+  .box-collection-toggle,
+  .box-tabs button,
+  .box-mode-switch button,
+  .box-duration__options button,
+  .box-submit,
+  .box-button,
+  .box-collection-controls button,
+  .box-basket button,
+  .box-batch__add,
+  .box-batch__row button,
+  .box-dialog__close { min-height: 44px; }
+  .box-collection-toggle,
+  .box-tabs button,
+  .box-mode-switch button,
+  .box-duration__options button,
+  .box-submit { font-size: 12px; }
+  .box-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; }
+  .box-tabs button { justify-content: center; min-width: 0; padding: 8px 4px; white-space: normal; }
+  .box-panel__heading h2,
+  .box-field__label,
+  .box-field__label small,
+  .box-field__label small button,
+  .box-duration legend,
+  .box-duration__limit,
+  .box-unlock-preview span,
+  .box-unlock-preview strong,
+  .box-network-note,
+  .box-form-error,
+  .box-approval-status,
+  .box-field__hint,
+  .box-submit-reason,
+  .box-collection-manager span,
+  .box-collection-manager small,
+  .box-batch > small,
+  .box-token-warning { font-size: 12px; }
+  .box-input-wrap { min-height: 50px; }
+  .box-input-wrap b { font-size: 12px; }
+  .box-field__label small button { min-width: 44px; min-height: 44px; margin-block: -12px; }
+  .box-input-wrap input,
+  .box-input-wrap--address input,
+  .box-collection-controls input,
+  .box-basket input,
+  .box-batch__row input,
+  .box-custom-days { font-size: 16px; }
+  .box-duration__options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .box-submit { min-height: 56px; box-shadow: 0 16px 38px rgba(245, 158, 11, 0.28); }
+  .box-form :is(input, button) {
+    scroll-margin-block: calc(var(--defi-shell-header-height, 60px) + 16px) calc(148px + env(safe-area-inset-bottom));
+  }
+}
+
 @keyframes box-sheet-in {
   from {
     transform: translateY(100%);
