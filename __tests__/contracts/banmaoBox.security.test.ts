@@ -84,6 +84,19 @@ contract FeeOnTransferToken is ERC20 {
         super._update(from, to, amount);
     }
 }
+contract MutableFeeToken is ERC20 {
+    bool public feeEnabled;
+    constructor() ERC20("Mutable Fee", "MFEE") { _mint(msg.sender, 1_000_000 ether); }
+    function setFeeEnabled(bool value) external { feeEnabled = value; }
+    function _update(address from, address to, uint256 amount) internal override {
+        if (feeEnabled && from != address(0) && to != address(0)) {
+            uint256 fee = amount / 100;
+            super._update(from, address(0xdead), fee);
+            amount -= fee;
+        }
+        super._update(from, to, amount);
+    }
+}
 `;
 
 function compile(): Record<string, Artifact> {
@@ -306,6 +319,34 @@ describe("BanmaoBox adversarial release security", () => {
 
     expect(await feeBox.totalSupply()).toEqual(ethers.constants.Zero);
     expect(await feeToken.balanceOf(feeBox.address)).toEqual(ethers.constants.Zero);
+  });
+
+  test("keeps custody and liability when a token enables an outbound fee after deposit", async () => {
+    const mutableFee = await deploy("MutableFeeToken", owner);
+    const recipient = await owner.getAddress();
+    const primaryAmount = ethers.utils.parseEther("10");
+    const feeAmount = ethers.utils.parseEther("20");
+    await primary.approve(box.address, ethers.constants.MaxUint256);
+    await mutableFee.approve(box.address, ethers.constants.MaxUint256);
+    await box.createMultiTokenBox(
+      recipient,
+      [primary.address, mutableFee.address],
+      [primaryAmount, feeAmount],
+      1,
+    );
+    await mutableFee.setFeeEnabled(true);
+    await unlock();
+
+    const receipt = await (await box.openBox(1)).wait();
+
+    expect(receipt.events?.filter((event: { event?: string }) =>
+      event.event === "BoxAssetReleaseFailed")).toHaveLength(1);
+    expect(await box.ownerOf(1)).toBe(recipient);
+    expect((await box.boxAssetCount(1)).toString()).toBe("1");
+    expect((await box.totalLockedByToken(mutableFee.address)).toString()).toBe(feeAmount.toString());
+    expect((await mutableFee.balanceOf(box.address)).toString()).toBe(feeAmount.toString());
+    await expect(box.openAsset(1, 0)).rejects.toThrow();
+    expect((await box.totalLockedByToken(mutableFee.address)).toString()).toBe(feeAmount.toString());
   });
 
   test("decodes renderer JSON, SVG and attributes for locked, ready, basket and 100-year states", async () => {

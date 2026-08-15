@@ -77,6 +77,10 @@ export type BoxCopy = {
   previous: string;
   next: string;
   operations: string;
+  basketAssets: string;
+  primaryAsset: string;
+  releaseAsset: string;
+  releaseHint: string;
 };
 
 export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
@@ -171,6 +175,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     previous: "Previous",
     next: "Next",
     operations: "Operations",
+    basketAssets: "Assets in this box",
+    primaryAsset: "Primary",
+    releaseAsset: "Release asset",
+    releaseHint: "Assets are reloaded after every release because their indexes may change.",
   },
   vi: {
     back: "Trang DeFi",
@@ -262,6 +270,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     previous: "Trước",
     next: "Tiếp",
     operations: "Vận hành",
+    basketAssets: "Tài sản trong Box",
+    primaryAsset: "Tài sản chính",
+    releaseAsset: "Giải phóng tài sản",
+    releaseHint: "Danh sách tài sản sẽ được tải lại sau mỗi lần giải phóng vì chỉ số có thể thay đổi.",
   },
   zh: {
     back: "DeFi 首页",
@@ -348,6 +360,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     previous: "上一页",
     next: "下一页",
     operations: "运营",
+    basketAssets: "礼盒中的资产",
+    primaryAsset: "主要资产",
+    releaseAsset: "释放资产",
+    releaseHint: "每次释放后都会重新加载资产，因为资产索引可能变化。",
   },
   ko: {
     back: "DeFi 홈",
@@ -438,6 +454,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     previous: "이전",
     next: "다음",
     operations: "운영",
+    basketAssets: "박스의 자산",
+    primaryAsset: "기본 자산",
+    releaseAsset: "자산 해제",
+    releaseHint: "자산 인덱스가 바뀔 수 있으므로 해제 후 목록을 다시 불러옵니다.",
   },
   ru: {
     back: "Главная DeFi",
@@ -528,6 +548,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     previous: "Назад",
     next: "Далее",
     operations: "Операции",
+    basketAssets: "Активы в боксе",
+    primaryAsset: "Основной актив",
+    releaseAsset: "Освободить актив",
+    releaseHint: "После каждого освобождения список обновляется, поскольку индексы могут измениться.",
   },
   id: {
     back: "Beranda DeFi",
@@ -621,6 +645,10 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     previous: "Sebelumnya",
     next: "Berikutnya",
     operations: "Operasi",
+    basketAssets: "Aset di dalam box",
+    primaryAsset: "Aset utama",
+    releaseAsset: "Lepaskan aset",
+    releaseHint: "Aset dimuat ulang setelah setiap pelepasan karena indeks dapat berubah.",
   },
 };
 

@@ -1,18 +1,57 @@
 {
   "schemaVersion": 1,
+  "status": "deployed",
+  "frontendEnabled": true,
   "network": "X Layer Mainnet",
   "chainId": 196,
   "rpcUrl": "https://rpc.xlayer.tech",
   "explorerUrl": "https://web3.okx.com/explorer/x-layer/evm",
-  "status": "not-deployed",
+  "deployedAt": "2026-08-14T13:09:13.257Z",
+  "compiler": "0.8.30+commit.73712a01.Emscripten.clang",
+  "compilerInputHash": "0xca261f4b65740d2234f3296206929263c667a91b0ad71e4b0b67521d9a370ba6",
+  "optimizerRuns": 200,
+  "evmVersion": "shanghai",
+  "confirmations": 2,
+  "deployer": "0x92809f2837f708163d375960063C8A3156fCeACb",
   "contracts": {
-    "token": "0x16d91d1615fc55b76d5f92365bd60c069b46ef78",
-    "renderer": null,
-    "factory": null,
-    "box": null
+    "token": "0x16d91d1615fC55b76d5F92365BD60C069b46eF78",
+    "renderer": "0x361E1a166fC2b6AafD7D6a8dF759Df1e28430F0A",
+    "factory": "0xBE7Ac21C07A83F7c6Ca5621134fEc54FD7199195",
+    "box": "0xda626222223D41e2C4e662DE8F0f2338521575AC"
+  },
+  "transactions": {
+    "renderer": "0xcabe29e504f2c87f32f3d67f72f36a9c05a114eba9554ec73f0c89dca05313c3",
+    "factory": "0x515ce6ef6c82f255fea71857bc8df73a5cfa2b9534310bbbfc643a0aa16e90a1",
+    "createTokenBox": "0xc0fcd050e1bcae516c9f9db28ab494bf5b77b787960caea9ebb7bc70417a3523"
   },
   "tokenMetadata": {
-    "symbol": "BANMAO",
+    "symbol": "banmao",
     "decimals": 18
+  },
+  "runtime": {
+    "token": {
+      "bytes": 12619,
+      "keccak256": "0xb7da2c83c7fecd639963c3a23136c015fb02a2ff0e6e23dfa1e32dd0267e0ae7"
+    },
+    "renderer": {
+      "bytes": 13761,
+      "keccak256": "0xb5d4ee0bb7092a9207bbe87567d685bf5df76c551ac69645dc04a6c1931b06cf",
+      "normalizedKeccak256": "0xb5d4ee0bb7092a9207bbe87567d685bf5df76c551ac69645dc04a6c1931b06cf"
+    },
+    "factory": {
+      "bytes": 16790,
+      "keccak256": "0x8b9f614ea4f4eabda2678f768b927b7e93cd1fc3e21d3a3cc5d27504659987e9",
+      "normalizedKeccak256": "0xc56dac1adc40d8ad1cf4f0f72f0d06714433300cba26bf0137052fe7b634ff56"
+    },
+    "box": {
+      "bytes": 13949,
+      "keccak256": "0xbe183b43848dd89684920ca8ce0bb5672a65176b8409fd20444caa3913c9fe35",
+      "normalizedKeccak256": "0xa8ae7dbb2a1f3cd5152b3672beb6fa9c8fa4da4f96b46fdc4de0ced971157232"
+    }
+  },
+  "constants": {
+    "maxAssetsPerBox": 5,
+    "maxBatchSize": 20,
+    "maxLockDuration": 3153600000
   }
 }

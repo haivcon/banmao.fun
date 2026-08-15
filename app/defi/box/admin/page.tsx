@@ -1,13 +1,8 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import {
-  useAccount,
-  useChainId,
-  usePublicClient,
-  useSwitchChain,
-  useWriteContract,
-} from "wagmi";
+import { useAccount, usePublicClient } from "wagmi";
 import { formatUnits, isAddress, type Address } from "viem";
 import {
   Activity,
@@ -24,19 +19,18 @@ import {
   Wallet,
 } from "lucide-react";
 import { ConnectButton } from "../../../components/wallet/WalletConnection";
-import {
-  XLAYER_CHAIN_ID,
-  XLAYER_TESTNET_CHAIN_ID,
-} from "../../../lib/walletConfig";
+import { XLAYER_CHAIN_ID } from "../../../lib/walletConfig";
 import {
   BANMAO_BOX_ABI,
   BANMAO_BOX_FACTORY_ABI,
+  BANMAO_ERC20_ABI,
   getBoxChainConfig,
   type BoxAsset,
   type BoxChainId,
   type BoxEntry,
   type InspectedBox,
 } from "../contracts";
+import { svgImageDataUri } from "../safety";
 import { useBox } from "../useBox";
 import "./admin.css";
 
@@ -49,18 +43,26 @@ const metric = (v: bigint, d: number) => {
     : formatUnits(v, d);
 };
 export default function BoxOperationsPage() {
-  const [network, setNetwork] = useState<BoxChainId>(XLAYER_TESTNET_CHAIN_ID),
+  const [network] = useState<BoxChainId>(XLAYER_CHAIN_ID),
     [tokenId, setTokenId] = useState(""),
     [wallet, setWallet] = useState(""),
-    [factoryToken, setFactoryToken] = useState("");
+    [factoryToken, setFactoryToken] = useState(""),
+    [registryToken, setRegistryToken] = useState(""),
+    [registryBox, setRegistryBox] = useState("");
   const [inspected, setInspected] = useState<InspectedBox | null>(null),
     [walletBoxes, setWalletBoxes] = useState<BoxEntry[]>([]),
+    [registryResult, setRegistryResult] = useState<{
+      token: Address;
+      box: Address;
+      registeredBox: Address;
+      isRegistered: boolean;
+      totalLocked: bigint;
+      decimals: number;
+      symbol: string;
+    } | null>(null),
     [message, setMessage] = useState<string | null>(null),
     [busy, setBusy] = useState(false);
   const { address } = useAccount(),
-    chainId = useChainId(),
-    { switchChainAsync } = useSwitchChain(),
-    { writeContractAsync } = useWriteContract(),
     client = usePublicClient({ chainId: network }),
     config = getBoxChainConfig(network),
     box = useBox(network),
@@ -134,6 +136,74 @@ export default function BoxOperationsPage() {
       setBusy(false);
     }
   };
+  const lookupRegistry = async (e: FormEvent) => {
+    e.preventDefault();
+    setMessage(null);
+    setRegistryResult(null);
+    if (
+      !isAddress(registryToken) ||
+      !isAddress(registryBox) ||
+      !client ||
+      !config.factoryAddress
+    ) {
+      return setMessage("Enter valid ERC-20 and Box addresses.");
+    }
+    setBusy(true);
+    try {
+      const token = registryToken as Address;
+      const candidateBox = registryBox as Address;
+      const [registeredBox, isRegistered, decimalsResult, symbolResult] =
+        await Promise.all([
+          client.readContract({
+            address: config.factoryAddress,
+            abi: BANMAO_BOX_FACTORY_ABI,
+            functionName: "boxForToken",
+            args: [token],
+          } as never) as Promise<Address>,
+          client.readContract({
+            address: config.factoryAddress,
+            abi: BANMAO_BOX_FACTORY_ABI,
+            functionName: "isTokenBox",
+            args: [candidateBox],
+          } as never) as Promise<boolean>,
+          client
+            .readContract({
+              address: token,
+              abi: BANMAO_ERC20_ABI,
+              functionName: "decimals",
+            } as never)
+            .catch(() => 18),
+          client
+            .readContract({
+              address: token,
+              abi: BANMAO_ERC20_ABI,
+              functionName: "symbol",
+            } as never)
+            .catch(() => "TOKEN"),
+        ]);
+      const totalLocked = isRegistered
+        ? ((await client.readContract({
+            address: candidateBox,
+            abi: BANMAO_BOX_ABI,
+            functionName: "totalLockedByToken",
+            args: [token],
+          } as never)) as bigint)
+        : 0n;
+      setRegistryResult({
+        token,
+        box: candidateBox,
+        registeredBox,
+        isRegistered,
+        totalLocked,
+        decimals: Number(decimalsResult),
+        symbol: typeof symbolResult === "string" ? symbolResult : "TOKEN",
+      });
+    } catch {
+      setMessage("Unable to query the Factory registry or Box accounting.");
+    } finally {
+      setBusy(false);
+    }
+  };
   const createCollection = async (e: FormEvent) => {
     e.preventDefault();
     setMessage(null);
@@ -146,24 +216,8 @@ export default function BoxOperationsPage() {
       return setMessage("Connect a wallet and enter a valid ERC-20.");
     setBusy(true);
     try {
-      if (chainId !== network) await switchChainAsync({ chainId: network });
-      const existing = (await client.readContract({
-        address: config.factoryAddress,
-        abi: BANMAO_BOX_FACTORY_ABI,
-        functionName: "boxForToken",
-        args: [factoryToken as Address],
-      } as never)) as Address;
-      if (existing !== "0x0000000000000000000000000000000000000000")
-        throw new Error(`Collection exists: ${existing}`);
-      const hash = await writeContractAsync({
-        address: config.factoryAddress,
-        abi: BANMAO_BOX_FACTORY_ABI,
-        functionName: "createTokenBox",
-        args: [factoryToken as Address],
-        chainId: network,
-      } as never);
-      await client.waitForTransactionReceipt({ hash });
-      setMessage(`Collection created: ${hash}`);
+      const created = await box.createCollection(factoryToken as Address);
+      setMessage(`Collection ready: ${created}`);
     } catch (err) {
       setMessage(
         err instanceof Error
@@ -192,23 +246,12 @@ export default function BoxOperationsPage() {
           <span>BanmaoBox / Operations</span>
         </div>
         <div className="ops-header__actions">
-          <div className="ops-network">
-            <button
-              className={network === XLAYER_CHAIN_ID ? "active" : ""}
-              onClick={() => setNetwork(XLAYER_CHAIN_ID)}
-            >
-              Mainnet
-            </button>
-            <button
-              className={network === XLAYER_TESTNET_CHAIN_ID ? "active" : ""}
-              onClick={() => setNetwork(XLAYER_TESTNET_CHAIN_ID)}
-            >
-              Testnet
-            </button>
+          <div className="ops-network" aria-label="Active network">
+            <span className="active">X Layer Mainnet · 196</span>
           </div>
           <ConnectButton
             targetChainId={network}
-            supportedChainIds={[XLAYER_CHAIN_ID, XLAYER_TESTNET_CHAIN_ID]}
+            supportedChainIds={[XLAYER_CHAIN_ID]}
           />
         </div>
       </header>
@@ -328,7 +371,13 @@ export default function BoxOperationsPage() {
           </form>
           {inspected ? (
             <div className="ops-inspected">
-              <div dangerouslySetInnerHTML={{ __html: inspected.svg }} />
+              <Image
+                src={svgImageDataUri(inspected.svg)}
+                alt={`On-chain artwork for Box #${inspected.tokenId.toString()}`}
+                width={400}
+                height={400}
+                unoptimized
+              />
               <strong>Box #{inspected.tokenId.toString()}</strong>
               <span>
                 {metric(inspected.amount, box.tokenDecimals)} {box.tokenSymbol}
@@ -382,6 +431,59 @@ export default function BoxOperationsPage() {
             )}
           </div>
         </article>
+        <article className="ops-panel ops-registry">
+          <header>
+            <ShieldCheck />
+            <span>
+              <strong>Factory registry lookup</strong>
+              <small>boxForToken · isTokenBox · totalLockedByToken</small>
+            </span>
+          </header>
+          <form className="ops-form ops-form--stacked" onSubmit={lookupRegistry}>
+            <input
+              value={registryToken}
+              onChange={(e) => setRegistryToken(e.target.value.trim())}
+              placeholder="ERC-20 token address"
+            />
+            <input
+              value={registryBox}
+              onChange={(e) => setRegistryBox(e.target.value.trim())}
+              placeholder="Candidate Box address"
+            />
+            <button disabled={busy || !config.factoryAddress}>
+              {busy ? <LoaderCircle className="spin" /> : <Search />} Query registry
+            </button>
+          </form>
+          {registryResult ? (
+            <dl className="ops-registry__result">
+              <div>
+                <dt>boxForToken</dt>
+                <dd title={registryResult.registeredBox}>
+                  <code>{short(registryResult.registeredBox)}</code>
+                </dd>
+              </div>
+              <div>
+                <dt>isTokenBox</dt>
+                <dd className={registryResult.isRegistered ? "pass" : "fail"}>
+                  {registryResult.isRegistered ? "Registered" : "Not registered"}
+                </dd>
+              </div>
+              <div>
+                <dt>totalLockedByToken</dt>
+                <dd>
+                  {registryResult.isRegistered
+                    ? `${metric(registryResult.totalLocked, registryResult.decimals)} ${registryResult.symbol}`
+                    : "Not queried for an unregistered Box"}
+                </dd>
+              </div>
+            </dl>
+          ) : (
+            <div className="ops-placeholder">
+              <Search />
+              <span>Enter a token and candidate Box address</span>
+            </div>
+          )}
+        </article>
         <article className="ops-panel ops-factory">
           <header>
             <Factory />
@@ -400,7 +502,14 @@ export default function BoxOperationsPage() {
               onChange={(e) => setFactoryToken(e.target.value.trim())}
               placeholder="ERC-20 token address"
             />
-            <button disabled={busy || !config.factoryAddress || !address}>
+            <button
+              disabled={
+                busy ||
+                !config.factoryAddress ||
+                !address ||
+                !box.isDeploymentValidated
+              }
+            >
               {busy ? <LoaderCircle className="spin" /> : <Factory />} Create
               collection
             </button>

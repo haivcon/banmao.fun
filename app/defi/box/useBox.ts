@@ -9,7 +9,7 @@ import {
   useSwitchChain,
   useWriteContract,
 } from "wagmi";
-import { formatUnits, parseUnits, type Address, type Hash } from "viem";
+import { formatUnits, keccak256, parseUnits, type Address, type Hash } from "viem";
 import {
   BANMAO_BOX_ABI,
   BANMAO_BOX_FACTORY_ABI,
@@ -21,6 +21,12 @@ import {
   type BoxEntry,
   type InspectedBox,
 } from "./contracts";
+import {
+  isCanonicalBoxCollection,
+  normalizeTokenDecimals,
+  normalizeTokenSymbol,
+  sameAddress,
+} from "./safety";
 
 export type BoxTransactionPhase =
   | "idle"
@@ -65,6 +71,7 @@ export function useBox(
   const factoryAddress = chainConfig.factoryAddress;
   const expectedRendererAddress = chainConfig.rendererAddress;
   const tokenAddress = selectedTokenAddress ?? chainConfig.tokenAddress;
+  const expectedRuntime = chainConfig.runtime;
   const publicClient = usePublicClient({ chainId: selectedChainId });
   const { switchChainAsync } = useSwitchChain();
   const { writeContractAsync, isPending: isWalletPending } = useWriteContract();
@@ -127,7 +134,7 @@ export function useBox(
     args: address ? [address] : undefined,
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(address),
+      enabled: Boolean(address && tokenAddress),
       refetchInterval: 15_000,
     },
   });
@@ -139,7 +146,7 @@ export function useBox(
     args: address && boxAddress ? [address, boxAddress] : undefined,
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(address && boxAddress),
+      enabled: Boolean(address && boxAddress && tokenAddress),
       refetchInterval: 15_000,
     },
   });
@@ -198,6 +205,7 @@ export function useBox(
           boxCode,
           factoryCode,
           rendererCode,
+          tokenCode,
           registryBox,
           registered,
           underlying,
@@ -210,6 +218,7 @@ export function useBox(
           publicClient.getCode({ address: boxAddress }),
           publicClient.getCode({ address: factoryAddress }),
           publicClient.getCode({ address: expectedRendererAddress }),
+          publicClient.getCode({ address: tokenAddress }),
           publicClient.readContract({
             address: factoryAddress,
             abi: BANMAO_BOX_FACTORY_ABI,
@@ -253,21 +262,50 @@ export function useBox(
             functionName: "MAX_LOCK_DURATION",
           } as never) as Promise<bigint>,
         ]);
-        const same = (left: Address, right: Address) =>
-          left.toLowerCase() === right.toLowerCase();
         if (
           !boxCode ||
           boxCode === "0x" ||
           !factoryCode ||
           factoryCode === "0x" ||
           !rendererCode ||
-          rendererCode === "0x"
+          rendererCode === "0x" ||
+          !tokenCode ||
+          tokenCode === "0x"
         ) {
           throw new Error("Deployment bytecode is missing");
         }
-        if (!registered || !same(registryBox, boxAddress))
-          throw new Error("Factory registry does not match the Box manifest");
-        if (!same(underlying, tokenAddress))
+        if (!expectedRuntime) {
+          throw new Error("Verified mainnet runtime fingerprints are missing");
+        }
+        const matchesRuntime = (
+          code: `0x${string}`,
+          expected: { bytes?: number; keccak256?: string } | undefined,
+        ) =>
+          Boolean(
+            expected &&
+              expected.bytes === (code.length - 2) / 2 &&
+              expected.keccak256?.toLowerCase() === keccak256(code).toLowerCase(),
+          );
+        const canonicalCollection =
+          chainConfig.boxAddress &&
+          isCanonicalBoxCollection(
+            tokenAddress,
+            boxAddress,
+            chainConfig.tokenAddress,
+            chainConfig.boxAddress,
+          );
+        if (
+          !matchesRuntime(rendererCode, expectedRuntime.renderer) ||
+          !matchesRuntime(factoryCode, expectedRuntime.factory) ||
+          (canonicalCollection &&
+            (!matchesRuntime(tokenCode, expectedRuntime.token) ||
+              !matchesRuntime(boxCode, expectedRuntime.box)))
+        ) {
+          throw new Error("Deployment runtime does not match the verified mainnet manifest");
+        }
+        if (!registered || !sameAddress(registryBox, boxAddress))
+          throw new Error("Factory registry does not match the selected Box");
+        if (!sameAddress(underlying, tokenAddress))
           throw new Error("Box underlying token does not match the selected collection");
         if (
           maxAssets !== 5n ||
@@ -277,8 +315,8 @@ export function useBox(
           throw new Error("Collection constants do not match the production BanmaoBox release");
         }
         if (
-          !same(boxRenderer, expectedRendererAddress) ||
-          !same(factoryRenderer, expectedRendererAddress)
+          !sameAddress(boxRenderer, expectedRendererAddress) ||
+          !sameAddress(factoryRenderer, expectedRendererAddress)
         ) {
           throw new Error("Renderer invariant does not match the manifest");
         }
@@ -294,13 +332,43 @@ export function useBox(
     };
   }, [
     boxAddress,
+    chainConfig.boxAddress,
+    chainConfig.tokenAddress,
     expectedRendererAddress,
     factoryAddress,
     publicClient,
     tokenAddress,
+    expectedRuntime,
   ]);
 
   const ownedBoxCount = (ownedBoxCountQuery.data as bigint | undefined) ?? 0n;
+
+  const readAssetDisplayMetadata = useCallback(
+    async (assetToken: Address) => {
+      if (!publicClient) return { decimals: 18, symbol: "TOKEN" };
+      const [decimalsResult, symbolResult] = await Promise.allSettled([
+        publicClient.readContract({
+          address: assetToken,
+          abi: BANMAO_ERC20_ABI,
+          functionName: "decimals",
+        } as never) as Promise<number>,
+        publicClient.readContract({
+          address: assetToken,
+          abi: BANMAO_ERC20_ABI,
+          functionName: "symbol",
+        } as never) as Promise<string>,
+      ]);
+      return {
+        decimals: normalizeTokenDecimals(
+          decimalsResult.status === "fulfilled" ? decimalsResult.value : undefined,
+        ),
+        symbol: normalizeTokenSymbol(
+          symbolResult.status === "fulfilled" ? symbolResult.value : undefined,
+        ),
+      };
+    },
+    [publicClient],
+  );
 
   const loadBoxDetails = useCallback(async () => {
     if (
@@ -358,6 +426,24 @@ export function useBox(
         contracts,
         allowFailure: false,
       } as never)) as readonly unknown[];
+      const uniqueAssetTokens = [
+        ...new Set(
+          results
+            .filter((_, index) => index % 3 === 2)
+            .flatMap((value) =>
+              (value as readonly BoxAsset[]).map((asset) =>
+                asset.token.toLowerCase(),
+              ),
+            ),
+        ),
+      ];
+      const metadataEntries = await Promise.all(
+        uniqueAssetTokens.map(async (assetToken) => [
+          assetToken,
+          await readAssetDisplayMetadata(assetToken as Address),
+        ] as const),
+      );
+      const metadataByToken = new Map(metadataEntries);
       const entries = tokenIds.map((tokenId, index): BoxEntry => {
         const details = results[index * 3] as readonly [
           bigint,
@@ -365,10 +451,7 @@ export function useBox(
           bigint,
           bigint,
         ];
-        const assets = results[index * 3 + 2] as readonly {
-          token: Address;
-          amount: bigint;
-        }[];
+        const assets = results[index * 3 + 2] as readonly BoxAsset[];
         const primaryAsset = assets.find(
           (asset) => asset.token.toLowerCase() === tokenAddress.toLowerCase(),
         );
@@ -379,7 +462,10 @@ export function useBox(
           createdAt: details[2],
           unlockTime: details[3],
           canOpen: Boolean(results[index * 3 + 1]),
-          assets: assets.map((asset) => ({ ...asset })),
+          assets: assets.map((asset) => ({
+            ...asset,
+            ...metadataByToken.get(asset.token.toLowerCase()),
+          })),
         };
       });
       entries.sort((a, b) =>
@@ -399,6 +485,7 @@ export function useBox(
     isDeploymentValidated,
     ownedBoxCount,
     publicClient,
+    readAssetDisplayMetadata,
     tokenAddress,
   ]);
 
@@ -622,19 +709,8 @@ export function useBox(
       if (!publicClient) throw new Error("X Layer RPC is unavailable");
       const code = await publicClient.getCode({ address: assetToken });
       if (!code || code === "0x") throw new Error("Token contract not found");
-      const [decimals, symbol, balance] = await Promise.all([
-        publicClient.readContract({
-          address: assetToken,
-          abi: BANMAO_ERC20_ABI,
-          functionName: "decimals",
-        } as never) as Promise<number>,
-        publicClient
-          .readContract({
-            address: assetToken,
-            abi: BANMAO_ERC20_ABI,
-            functionName: "symbol",
-          } as never)
-          .catch(() => "TOKEN") as Promise<string>,
+      const [metadata, balance] = await Promise.all([
+        readAssetDisplayMetadata(assetToken),
         address
           ? (publicClient.readContract({
               address: assetToken,
@@ -644,11 +720,9 @@ export function useBox(
             } as never) as Promise<bigint>)
           : Promise.resolve(0n),
       ]);
-      if (Number(decimals) > 69) throw new Error("Token decimals exceed 69");
-      const safeSymbol = /^[A-Za-z0-9 ._-]{1,16}$/.test(symbol) ? symbol : "TOKEN";
-      return { token: assetToken, decimals: Number(decimals), symbol: safeSymbol, balance };
+      return { token: assetToken, ...metadata, balance };
     },
-    [address, publicClient],
+    [address, publicClient, readAssetDisplayMetadata],
   );
 
   const resolveCollection = useCallback(
@@ -672,6 +746,11 @@ export function useBox(
       try {
         if (!isConnected || !address || !factoryAddress || !publicClient) {
           throw new Error("Connect wallet and select a deployed factory");
+        }
+        if (!isDeploymentValidated) {
+          throw new Error(
+            deploymentError ?? "Factory deployment validation is pending",
+          );
         }
         await readAsset(primaryToken);
         if (chainId !== selectedChainId) {
@@ -704,9 +783,10 @@ export function useBox(
         throw error;
       }
     },
-    [address, chainId, factoryAddress, isConnected, publicClient, readAsset,
-      resetTransaction, resolveCollection, selectedChainId, switchChainAsync,
-      waitForHash, writeContractAsync],
+    [address, chainId, deploymentError, factoryAddress, isConnected,
+      isDeploymentValidated, publicClient, readAsset, resetTransaction,
+      resolveCollection, selectedChainId, switchChainAsync, waitForHash,
+      writeContractAsync],
   );
 
   const createMultiTokenBox = useCallback(
@@ -787,9 +867,20 @@ export function useBox(
         } as never);
         const hash = await writeContractAsync(request as never);
         await waitForHash(hash, client);
+        let remainingAssetCount: bigint | null = null;
+        try {
+          remainingAssetCount = (await client.readContract({
+            address: boxAddress,
+            abi: BANMAO_BOX_ABI,
+            functionName: "boxAssetCount",
+            args: [tokenId],
+          } as never)) as bigint;
+        } catch {
+          // The release is confirmed; a transient follow-up read must not mark it failed.
+        }
         setPhase("success");
         await refetchAll();
-        return hash;
+        return { hash, remainingAssetCount };
       } catch (error) {
         setPhase("error");
         setTransactionError(getErrorMessage(error));
@@ -820,9 +911,20 @@ export function useBox(
         } as never);
         const hash = await writeContractAsync(request as never);
         await waitForHash(hash, client);
+        let remainingAssetCount: bigint | null = null;
+        try {
+          remainingAssetCount = (await client.readContract({
+            address: boxAddress,
+            abi: BANMAO_BOX_ABI,
+            functionName: "boxAssetCount",
+            args: [tokenId],
+          } as never)) as bigint;
+        } catch {
+          // The release is confirmed; a transient follow-up read must not mark it failed.
+        }
         setPhase("success");
         await refetchAll();
-        return hash;
+        return { hash, remainingAssetCount };
       } catch (error) {
         setPhase("error");
         setTransactionError(getErrorMessage(error));
@@ -874,6 +976,12 @@ export function useBox(
       const primaryAsset = assets.find(
         (asset) => asset.token.toLowerCase() === tokenAddress.toLowerCase(),
       );
+      const hydratedAssets = await Promise.all(
+        assets.map(async (asset) => ({
+          ...asset,
+          ...(await readAssetDisplayMetadata(asset.token)),
+        })),
+      );
       return {
         tokenId,
         amount: primaryAsset?.amount ?? 0n,
@@ -883,7 +991,7 @@ export function useBox(
         canOpen: canOpenValue,
         owner,
         svg,
-        assets: assets.map((asset) => ({ ...asset })),
+        assets: hydratedAssets,
       };
     },
     [
@@ -891,6 +999,7 @@ export function useBox(
       deploymentError,
       isDeploymentValidated,
       publicClient,
+      readAssetDisplayMetadata,
       tokenAddress,
     ],
   );
@@ -964,6 +1073,16 @@ export function useBox(
     tokenSymbol,
     maxLockDuration,
     tokenBalance: (balanceQuery.data as bigint | undefined) ?? 0n,
+    tokenBalanceLoading:
+      balanceQuery.data === undefined &&
+      !balanceQuery.error &&
+      (balanceQuery.isPending || balanceQuery.isFetching),
+    tokenBalanceError: balanceQuery.error
+      ? getErrorMessage(balanceQuery.error)
+      : !tokenAddress && address
+        ? "Token address unavailable"
+        : null,
+    refetchTokenBalance: balanceQuery.refetch,
     allowance: (allowanceQuery.data as bigint | undefined) ?? 0n,
     boxes,
     boxesLoading: boxesLoading || ownedBoxCountQuery.isLoading,

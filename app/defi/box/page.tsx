@@ -1,12 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
   Box,
   CheckCircle2,
+  Circle,
   Clock3,
+  Copy,
   Gift,
   Eye,
   ExternalLink,
@@ -21,8 +24,9 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useSwitchChain } from "wagmi";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import confetti from "canvas-confetti";
+import toast from "react-hot-toast";
 import {
   formatUnits,
   getAddress,
@@ -39,16 +43,14 @@ import {
   type BoxEntry,
   type InspectedBox,
 } from "./contracts";
-import {
-  XLAYER_CHAIN_ID,
-  XLAYER_TESTNET_CHAIN_ID,
-} from "../../lib/walletConfig";
+import { XLAYER_CHAIN_ID } from "../../lib/walletConfig";
 import {
   BOX_COPY,
   getInitialBoxLanguage,
   type BoxCopy,
   type BoxLanguage,
 } from "./i18n";
+import { parseStoredCollection, svgImageDataUri } from "./safety";
 import { formatBanmao, useBox } from "./useBox";
 import "./box.css";
 
@@ -122,8 +124,10 @@ function BoxCard({
   decimals,
   busy,
   onOpen,
+  onOpenAsset,
   onTransfer,
   onRefreshMetadata,
+  primaryToken,
   tokenSymbol,
 }: {
   entry: BoxEntry;
@@ -133,8 +137,10 @@ function BoxCard({
   decimals: number;
   busy: boolean;
   onOpen: (tokenId: bigint) => void;
+  onOpenAsset: (tokenId: bigint, assetIndex: number) => void;
   onTransfer: (entry: BoxEntry) => void;
   onRefreshMetadata: (tokenId: bigint) => void;
+  primaryToken?: Address;
   tokenSymbol: string;
 }) {
   const ready =
@@ -160,6 +166,9 @@ function BoxCard({
             {copy.boxNumber} #{entry.tokenId.toString()}
             <em
               className={`box-tier box-tier--${getTier(entry.amount, decimals).toLowerCase()}`}
+              tabIndex={0}
+              title="CLASSIC < 1M · DELUXE ≥ 1M · GOLD ≥ 10M · LEGENDARY ≥ 100M tokens"
+              aria-label={`${getTier(entry.amount, decimals)} tier. Classic below 1 million, Deluxe from 1 million, Gold from 10 million, Legendary from 100 million tokens.`}
             >
               {getTier(entry.amount, decimals)}
             </em>
@@ -181,11 +190,47 @@ function BoxCard({
           </div>
           <div>
             <dt>{copy.remaining}</dt>
-            <dd className={ready ? "box-ready-text" : ""}>
+            <dd className={`${ready ? "box-ready-text" : ""} box-countdown`}>
               {getRemaining(entry.unlockTime, now, copy)}
             </dd>
           </div>
         </dl>
+
+        <div className="box-assets">
+          <div className="box-assets__heading">
+            <strong>{copy.basketAssets}</strong>
+            <small>{copy.releaseHint}</small>
+          </div>
+          <div className="box-assets__list">
+            {entry.assets.map((asset, index) => {
+              const isPrimary =
+                primaryToken?.toLowerCase() === asset.token.toLowerCase();
+              const assetDecimals = asset.decimals ?? (isPrimary ? decimals : 18);
+              const assetSymbol = asset.symbol ?? (isPrimary ? tokenSymbol : "TOKEN");
+              return (
+                <div className="box-asset" key={asset.token}>
+                  <div>
+                    <strong>
+                      {formatBanmao(asset.amount, assetDecimals)} {assetSymbol}
+                    </strong>
+                    <code title={asset.token}>
+                      {asset.token.slice(0, 8)}…{asset.token.slice(-6)}
+                    </code>
+                  </div>
+                  {isPrimary ? <span>{copy.primaryAsset}</span> : null}
+                  <button
+                    type="button"
+                    disabled={!ready || busy}
+                    onClick={() => onOpenAsset(entry.tokenId, index)}
+                    title={ready ? copy.releaseHint : copy.locked}
+                  >
+                    <PackageOpen /> {copy.releaseAsset}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         <div className="box-item__actions">
           <button
@@ -226,16 +271,15 @@ function BoxCard({
 
 export default function BanmaoBoxPage() {
   const [language, setLanguage] = useState<BoxLanguage>("en");
-  const [selectedChainId, setSelectedChainId] = useState<BoxChainId>(
-    XLAYER_CHAIN_ID,
-  );
-  const [networkError, setNetworkError] = useState<string | null>(null);
+  const selectedChainId: BoxChainId = XLAYER_CHAIN_ID;
+  const [networkError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [amount, setAmount] = useState("");
   const [activeBoxAddress, setActiveBoxAddress] = useState<Address>();
   const [activeTokenAddress, setActiveTokenAddress] = useState<Address>();
   const [collectionToken, setCollectionToken] = useState("");
   const [collectionError, setCollectionError] = useState<string | null>(null);
+  const [collectionPending, setCollectionPending] = useState(false);
   const [createMode, setCreateMode] = useState<CreateMode>("single");
   const [batchRows, setBatchRows] = useState<BatchRow[]>([
     { recipient: "", amount: "" },
@@ -259,8 +303,11 @@ export default function BanmaoBoxPage() {
   const [inspectedBox, setInspectedBox] = useState<InspectedBox | null>(null);
   const [inspectError, setInspectError] = useState<string | null>(null);
   const [inspectLoading, setInspectLoading] = useState(false);
+  const [releaseOutcome, setReleaseOutcome] = useState<string | null>(null);
+  const [activeAction, setActiveAction] = useState("Transaction");
+  const [celebrationOpen, setCelebrationOpen] = useState(false);
+  const collectionRequestRef = useRef(0);
 
-  const { switchChainAsync, isPending: isSwitchingNetwork } = useSwitchChain();
   const chainConfig = getBoxChainConfig(selectedChainId);
 
   const {
@@ -272,6 +319,9 @@ export default function BanmaoBoxPage() {
     tokenSymbol,
     maxLockDuration,
     tokenBalance,
+    tokenBalanceLoading,
+    tokenBalanceError,
+    refetchTokenBalance,
     boxes,
     boxesLoading,
     boxesError,
@@ -304,44 +354,15 @@ export default function BanmaoBoxPage() {
     [boxPage, boxes],
   );
 
-  const handleNetworkChange = async (nextChainId: BoxChainId) => {
-    setSelectedChainId(nextChainId);
-    setNetworkError(null);
-    window.localStorage.setItem("banmaobox_chain_id", String(nextChainId));
-
-    if (!isConnected) return;
-
-    try {
-      await switchChainAsync({ chainId: nextChainId });
-    } catch (error) {
-      setNetworkError(
-        error instanceof Error
-          ? error.message.split("\n")[0]
-          : "Unable to switch network",
-      );
-    }
-  };
-
   useEffect(() => {
-    const savedChainId = Number(
-      window.localStorage.getItem("banmaobox_chain_id"),
-    );
-    if (
-      savedChainId === XLAYER_CHAIN_ID ||
-      savedChainId === XLAYER_TESTNET_CHAIN_ID
-    ) {
-      setSelectedChainId(savedChainId);
-    }
-  }, []);
-
-  useEffect(() => {
-    const saved = window.localStorage.getItem(`banmaobox_collection_${selectedChainId}`);
-    const [savedToken, savedBox] = saved?.split(":") ?? [];
-    if (isAddress(savedToken ?? "") && isAddress(savedBox ?? "")) {
-      setActiveTokenAddress(getAddress(savedToken));
-      setActiveBoxAddress(getAddress(savedBox));
-      setCollectionToken(getAddress(savedToken));
+    const storageKey = `banmaobox_collection_${selectedChainId}`;
+    const saved = parseStoredCollection(window.localStorage.getItem(storageKey));
+    if (saved && saved.token !== saved.box) {
+      setActiveTokenAddress(saved.token);
+      setActiveBoxAddress(saved.box);
+      setCollectionToken(saved.token);
     } else {
+      window.localStorage.removeItem(storageKey);
       setActiveTokenAddress(chainConfig.tokenAddress);
       setActiveBoxAddress(chainConfig.boxAddress);
       setCollectionToken(chainConfig.tokenAddress ?? "");
@@ -389,6 +410,39 @@ export default function BanmaoBoxPage() {
     }
   }, [address, phase]);
 
+  useEffect(() => {
+    if (phase === "success") {
+      toast.success(`${activeAction} confirmed on X Layer`, {
+        id: "banmaobox-transaction",
+        duration: 5200,
+      });
+      if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        void confetti({
+          particleCount: 90,
+          spread: 72,
+          startVelocity: 32,
+          colors: ["#ffd85a", "#f59e0b", "#55f29a", "#ffffff"],
+          origin: { y: 0.72 },
+        });
+      }
+      return;
+    }
+    if (phase === "error") {
+      toast.error(transactionError || copy.transactionError, {
+        id: "banmaobox-transaction",
+      });
+    }
+  }, [activeAction, copy.transactionError, phase, transactionError]);
+
+  const copyToClipboard = async (value: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label} copied`, { duration: 1800 });
+    } catch {
+      toast.error("Unable to copy. Please copy it manually.");
+    }
+  };
+
   const durationDays = useMemo(() => {
     if (selectedDays !== "custom") return selectedDays;
     const parsed = Number(customDays);
@@ -414,6 +468,12 @@ export default function BanmaoBoxPage() {
   const validateCreate = () => {
     if (!isDeploymentValidated) {
       return deploymentError ?? "The selected BanmaoBox deployment is not validated yet.";
+    }
+    if (tokenBalanceLoading) {
+      return "Your token balance is still loading. Please wait a moment.";
+    }
+    if (tokenBalanceError) {
+      return "Your token balance is unavailable. Retry the balance check before creating a box.";
     }
     if (createMode === "batch") {
       if (batchRows.length === 0 || batchRows.length > MAX_BATCH_SIZE) {
@@ -479,6 +539,7 @@ export default function BanmaoBoxPage() {
     if (validationError || !lockAcknowledged) return;
 
     try {
+      setActiveAction(createMode === "batch" ? "Batch creation" : "BanmaoBox creation");
       const duration = BigInt(durationDays) * DAY_SECONDS;
       if (createMode === "batch") {
         await createBoxes(
@@ -503,6 +564,7 @@ export default function BanmaoBoxPage() {
         await createBox(getAddress(recipient), amount, duration);
       }
       setReviewOpen(false);
+      setCelebrationOpen(true);
     } catch {
       // The hook exposes a normalized transaction error.
     }
@@ -518,15 +580,19 @@ export default function BanmaoBoxPage() {
   };
 
   const handleCollection = async (create: boolean) => {
+    const requestId = ++collectionRequestRef.current;
     setCollectionError(null);
     if (!isAddress(collectionToken)) {
       setCollectionError("Enter a valid primary ERC-20 address.");
       return;
     }
     const token = getAddress(collectionToken);
+    setCollectionPending(true);
     try {
       await readAsset(token);
+      if (requestId !== collectionRequestRef.current) return;
       const existing = await resolveCollection(token);
+      if (requestId !== collectionRequestRef.current) return;
       if (existing !== "0x0000000000000000000000000000000000000000") {
         selectCollection(token, existing);
         return;
@@ -535,9 +601,14 @@ export default function BanmaoBoxPage() {
         setCollectionError("No collection exists for this token. Create it first.");
         return;
       }
-      selectCollection(token, await createCollection(token));
+      const created = await createCollection(token);
+      if (requestId === collectionRequestRef.current) selectCollection(token, created);
     } catch (error) {
-      setCollectionError(error instanceof Error ? error.message.split("\n")[0] : "Collection action failed");
+      if (requestId === collectionRequestRef.current) {
+        setCollectionError(error instanceof Error ? error.message.split("\n")[0] : "Collection action failed");
+      }
+    } finally {
+      if (requestId === collectionRequestRef.current) setCollectionPending(false);
     }
   };
 
@@ -567,22 +638,56 @@ export default function BanmaoBoxPage() {
   };
 
   const handleOpen = async (tokenId: bigint) => {
+    setReleaseOutcome(null);
+    setActiveAction(`Box #${tokenId.toString()} release`);
     try {
-      await openBox(tokenId);
+      const { remainingAssetCount } = await openBox(tokenId);
+      if (remainingAssetCount === 0n) {
+        setReleaseOutcome(
+          `Box #${tokenId.toString()} released all assets and was burned.`,
+        );
+        if (inspectedBox?.tokenId === tokenId) setInspectedBox(null);
+      } else if (remainingAssetCount !== null) {
+        setReleaseOutcome(
+          `Box #${tokenId.toString()} still contains ${remainingAssetCount.toString()} asset${remainingAssetCount === 1n ? "" : "s"}. Retry release for the remaining assets.`,
+        );
+        if (inspectedBox?.tokenId === tokenId) {
+          setInspectedBox(await inspectBox(tokenId));
+        }
+      } else {
+        setReleaseOutcome(
+          `Box #${tokenId.toString()} release was confirmed, but the final asset count could not be refreshed. Reload before retrying an asset index.`,
+        );
+      }
     } catch {
       // The hook exposes a normalized transaction error.
     }
   };
 
-  const handleOpenAsset = async (assetIndex: number) => {
-    if (!inspectedBox) return;
+  const handleOpenAsset = async (tokenId: bigint, assetIndex: number) => {
+    setReleaseOutcome(null);
+    setActiveAction(`Box #${tokenId.toString()} asset release`);
     try {
-      await openAsset(inspectedBox.tokenId, BigInt(assetIndex));
-      try {
-        setInspectedBox(await inspectBox(inspectedBox.tokenId));
-      } catch {
-        // The NFT burns after its final asset is released.
-        setInspectedBox(null);
+      const { remainingAssetCount } = await openAsset(
+        tokenId,
+        BigInt(assetIndex),
+      );
+      if (remainingAssetCount === 0n) {
+        setReleaseOutcome(
+          `Box #${tokenId.toString()} released its final asset and was burned.`,
+        );
+        if (inspectedBox?.tokenId === tokenId) setInspectedBox(null);
+      } else if (remainingAssetCount !== null) {
+        setReleaseOutcome(
+          `Asset released. Box #${tokenId.toString()} now contains ${remainingAssetCount.toString()} asset${remainingAssetCount === 1n ? "" : "s"}; indexes were reloaded.`,
+        );
+        if (inspectedBox?.tokenId === tokenId) {
+          setInspectedBox(await inspectBox(tokenId));
+        }
+      } else {
+        setReleaseOutcome(
+          `Asset release was confirmed for Box #${tokenId.toString()}, but indexes could not be refreshed. Reload before releasing another asset.`,
+        );
       }
     } catch {
       // The hook exposes a normalized transaction error.
@@ -622,6 +727,7 @@ export default function BanmaoBoxPage() {
     }
 
     try {
+      setActiveAction(`Box #${transferEntry.tokenId.toString()} transfer`);
       await transferBox(
         transferEntry.tokenId,
         getAddress(transferRecipient) as Address,
@@ -656,32 +762,9 @@ export default function BanmaoBoxPage() {
           <span>BMAO-BOX</span>
         </div>
         <div className="box-header__actions">
-          <div
-            className="box-network-switcher"
-            role="group"
-            aria-label="BanmaoBox network"
-          >
+          <div className="box-network-switcher" aria-label="X Layer Mainnet, chain 196">
             <Network aria-hidden="true" />
-            <button
-              type="button"
-              className={selectedChainId === XLAYER_CHAIN_ID ? "active" : ""}
-              onClick={() => void handleNetworkChange(XLAYER_CHAIN_ID)}
-              disabled={isSwitchingNetwork || isBusy}
-              aria-pressed={selectedChainId === XLAYER_CHAIN_ID}
-            >
-              X Layer
-            </button>
-            <button
-              type="button"
-              className={
-                selectedChainId === XLAYER_TESTNET_CHAIN_ID ? "active" : ""
-              }
-              onClick={() => void handleNetworkChange(XLAYER_TESTNET_CHAIN_ID)}
-              disabled={isSwitchingNetwork || isBusy}
-              aria-pressed={selectedChainId === XLAYER_TESTNET_CHAIN_ID}
-            >
-              Testnet
-            </button>
+            <span className="active">X Layer · 196</span>
           </div>
           <Link href="/defi/box/admin" className="box-ops-link">
             <ShieldCheck />
@@ -690,7 +773,7 @@ export default function BanmaoBoxPage() {
           <LanguageSelector currentLang={language} onChangeLang={setLanguage} />
           <ConnectButton
             targetChainId={selectedChainId}
-            supportedChainIds={[XLAYER_CHAIN_ID, XLAYER_TESTNET_CHAIN_ID]}
+            supportedChainIds={[XLAYER_CHAIN_ID]}
           />
         </div>
       </header>
@@ -717,12 +800,30 @@ export default function BanmaoBoxPage() {
               <span>{copy.activeMetric}</span>
               <strong>{isDeployed ? totalSupply.toString() : "—"}</strong>
             </div>
-            <div>
+            <div className={tokenBalanceError ? "box-metric--error" : ""}>
               <span>{copy.walletMetric}</span>
-              <strong>
-                {isConnected
-                  ? `${formatBanmao(tokenBalance, tokenDecimals, 2)} ${tokenSymbol}`
-                  : "—"}
+              <strong aria-live="polite">
+                {!isConnected ? (
+                  "—"
+                ) : tokenBalanceLoading ? (
+                  <span className="box-metric__loading">
+                    <LoaderCircle className="box-spin" aria-hidden="true" />
+                    {copy.loading}
+                  </span>
+                ) : tokenBalanceError ? (
+                  <button
+                    type="button"
+                    className="box-metric__retry"
+                    onClick={() => void refetchTokenBalance()}
+                    title={tokenBalanceError}
+                    aria-label="Balance unavailable. Retry balance check"
+                  >
+                    <RefreshCw aria-hidden="true" />
+                    {copy.retry}
+                  </button>
+                ) : (
+                  `${formatBanmao(tokenBalance, tokenDecimals, 2)} ${tokenSymbol}`
+                )}
               </strong>
             </div>
           </div>
@@ -767,16 +868,21 @@ export default function BanmaoBoxPage() {
         <div className="box-collection-controls">
           <input
             value={collectionToken}
-            onChange={(event) => setCollectionToken(event.target.value.trim())}
+            onChange={(event) => {
+              collectionRequestRef.current += 1;
+              setCollectionPending(false);
+              setCollectionError(null);
+              setCollectionToken(event.target.value.trim());
+            }}
             placeholder="Primary ERC-20 address (0x…)"
             spellCheck={false}
             disabled={isBusy}
           />
-          <button type="button" onClick={() => void handleCollection(false)} disabled={isBusy}>
-            Use collection
+          <button type="button" onClick={() => void handleCollection(false)} disabled={isBusy || collectionPending}>
+            {collectionPending ? "Checking…" : "Use collection"}
           </button>
-          <button type="button" className="primary" onClick={() => void handleCollection(true)} disabled={isBusy || !isConnected}>
-            Create if missing
+          <button type="button" className="primary" onClick={() => void handleCollection(true)} disabled={isBusy || collectionPending || !isConnected}>
+            {collectionPending ? "Checking…" : "Create if missing"}
           </button>
         </div>
         {activeBoxAddress && activeTokenAddress ? (
@@ -815,14 +921,22 @@ export default function BanmaoBoxPage() {
               <span className="box-field__label">
                 {copy.amount}
                 <small>
-                  {copy.balance}: {formatBanmao(tokenBalance, tokenDecimals)}{" "}
-                  {tokenSymbol}
+                  {copy.balance}:{" "}
+                  {tokenBalanceLoading
+                    ? copy.loading
+                    : tokenBalanceError
+                      ? "Unavailable"
+                      : `${formatBanmao(tokenBalance, tokenDecimals)} ${tokenSymbol}`}
                   <button
                     type="button"
                     onClick={() =>
                       setAmount(formatUnits(tokenBalance, tokenDecimals))
                     }
-                    disabled={!isConnected}
+                    disabled={
+                      !isConnected ||
+                      tokenBalanceLoading ||
+                      Boolean(tokenBalanceError)
+                    }
                   >
                     {copy.useMax}
                   </button>
@@ -924,7 +1038,14 @@ export default function BanmaoBoxPage() {
                 >
                   Add recipient
                 </button>
-                <small>Balance: {formatBanmao(tokenBalance, tokenDecimals)} {tokenSymbol}. The batch is atomic and uses one shared unlock date.</small>
+                <small>
+                  Balance: {tokenBalanceLoading
+                    ? copy.loading
+                    : tokenBalanceError
+                      ? "Unavailable"
+                      : `${formatBanmao(tokenBalance, tokenDecimals)} ${tokenSymbol}`}.{" "}
+                  The batch is atomic and uses one shared unlock date.
+                </small>
               </div>
             ) : (
               <label className="box-field">
@@ -1066,13 +1187,20 @@ export default function BanmaoBoxPage() {
               <strong>{copy.connectToCreate}</strong>
               <ConnectButton
                 targetChainId={selectedChainId}
-                supportedChainIds={[XLAYER_CHAIN_ID, XLAYER_TESTNET_CHAIN_ID]}
+                supportedChainIds={[XLAYER_CHAIN_ID]}
               />
             </div>
           ) : boxesLoading ? (
-            <div className="box-empty">
-              <LoaderCircle className="box-spin" />
-              <strong>{copy.loading}</strong>
+            <div className="box-skeleton-list" role="status" aria-label={copy.loading}>
+              {[0, 1, 2].map((item) => (
+                <div className="box-skeleton" key={item} aria-hidden="true">
+                  <span className="box-skeleton__art" />
+                  <span className="box-skeleton__content">
+                    <i /><i /><i /><i />
+                  </span>
+                </div>
+              ))}
+              <span className="box-sr-only">{copy.loading}</span>
             </div>
           ) : boxesError ? (
             <div className="box-empty box-empty--error">
@@ -1085,7 +1213,10 @@ export default function BanmaoBoxPage() {
             </div>
           ) : boxes.length === 0 ? (
             <div className="box-empty">
-              <Box />
+              <div className="box-empty__illustration" aria-hidden="true">
+                <GiftBoxArtwork />
+                <Sparkles />
+              </div>
               <strong>{copy.noBoxes}</strong>
               <small>{copy.noBoxesHint}</small>
             </div>
@@ -1100,9 +1231,13 @@ export default function BanmaoBoxPage() {
                     language={language}
                     now={now}
                     decimals={tokenDecimals}
+                    primaryToken={activeTokenAddress}
                     tokenSymbol={tokenSymbol}
                     busy={isBusy}
                     onOpen={(tokenId) => void handleOpen(tokenId)}
+                    onOpenAsset={(tokenId, assetIndex) =>
+                      void handleOpenAsset(tokenId, assetIndex)
+                    }
                     onTransfer={setTransferEntry}
                     onRefreshMetadata={(tokenId) =>
                       void refreshMetadata(tokenId)
@@ -1172,9 +1307,13 @@ export default function BanmaoBoxPage() {
         <div className="box-inspector__result">
           {inspectedBox ? (
             <>
-              <div
+              <Image
                 className="box-svg"
-                dangerouslySetInnerHTML={{ __html: inspectedBox.svg }}
+                src={svgImageDataUri(inspectedBox.svg)}
+                alt={`On-chain artwork for ${copy.boxNumber} #${inspectedBox.tokenId.toString()}`}
+                width={800}
+                height={800}
+                unoptimized
               />
               <div className="box-inspector__facts">
                 <strong>
@@ -1212,10 +1351,18 @@ export default function BanmaoBoxPage() {
                           : asset.token
                       }
                       disabled={!inspectedBox.canOpen || isBusy}
-                      onClick={() => void handleOpenAsset(index)}
+                      onClick={() =>
+                        void handleOpenAsset(inspectedBox.tokenId, index)
+                      }
                     >
                       <span>
-                        Asset {index + 1}: {asset.amount.toString()} base units · {asset.token.slice(0, 8)}…{asset.token.slice(-6)}
+                        {formatBanmao(asset.amount, asset.decimals ?? 18)}{" "}
+                        {asset.symbol ?? "TOKEN"}
+                        {activeTokenAddress?.toLowerCase() ===
+                        asset.token.toLowerCase()
+                          ? ` · ${copy.primaryAsset}`
+                          : ""}{" "}
+                        · {asset.token.slice(0, 8)}…{asset.token.slice(-6)}
                       </span>
                       {inspectedBox.canOpen ? <PackageOpen aria-label="Release this asset" /> : <LockKeyhole aria-label="Locked" />}
                     </button>
@@ -1251,16 +1398,34 @@ export default function BanmaoBoxPage() {
           ) : (
             <LoaderCircle className="box-spin" />
           )}
-          <div>
+          <div className="box-transaction__content">
             <strong>{transactionMessage}</strong>
+            <ol className="box-transaction__steps" aria-label="Transaction progress">
+              {["Wallet", "Broadcast", "Confirmed"].map((label, index) => {
+                const activeIndex = phase === "success" ? 2 : transactionHash ? 1 : 0;
+                const complete = index < activeIndex || phase === "success";
+                return (
+                  <li className={complete ? "complete" : index === activeIndex ? "active" : ""} key={label}>
+                    {complete ? <CheckCircle2 /> : <Circle />}
+                    <span>{label}</span>
+                  </li>
+                );
+              })}
+            </ol>
+            {releaseOutcome ? <small>{releaseOutcome}</small> : null}
             {transactionHash ? (
-              <a
-                href={`${chainConfig.chain.blockExplorers?.default.url}/tx/${transactionHash}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {transactionHash.slice(0, 10)}…{transactionHash.slice(-8)}
-              </a>
+              <span className="box-transaction__hash">
+                <a
+                  href={`${chainConfig.chain.blockExplorers?.default.url}/tx/${transactionHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View on explorer <ExternalLink />
+                </a>
+                <button type="button" onClick={() => void copyToClipboard(transactionHash, "Transaction hash")} aria-label="Copy transaction hash">
+                  <Copy />
+                </button>
+              </span>
             ) : null}
           </div>
         </div>
@@ -1308,6 +1473,32 @@ export default function BanmaoBoxPage() {
           </div>
         </aside>
       </section>
+
+      {celebrationOpen && phase === "success" ? (
+        <div className="box-dialog-backdrop box-celebration-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setCelebrationOpen(false);
+        }}>
+          <section className="box-dialog box-celebration" role="dialog" aria-modal="true" aria-labelledby="box-celebration-title">
+            <button type="button" className="box-dialog__close" onClick={() => setCelebrationOpen(false)} aria-label="Close celebration">
+              <X />
+            </button>
+            <div className="box-celebration__art"><GiftBoxArtwork ready /><Sparkles /></div>
+            <span className="box-eyebrow"><CheckCircle2 /> Confirmed on X Layer</span>
+            <h2 id="box-celebration-title">Your BanmaoBox is ready.</h2>
+            <p>The time lock is now secured on-chain. You can follow the transaction or return to your collection.</p>
+            {transactionHash ? (
+              <div className="box-celebration__actions">
+                <a className="box-button box-button--primary" href={`${chainConfig.chain.blockExplorers?.default.url}/tx/${transactionHash}`} target="_blank" rel="noreferrer">
+                  View transaction <ExternalLink />
+                </a>
+                <button className="box-button box-button--secondary" type="button" onClick={() => void copyToClipboard(transactionHash, "Transaction hash")}>
+                  <Copy /> Copy hash
+                </button>
+              </div>
+            ) : null}
+          </section>
+        </div>
+      ) : null}
 
       {reviewOpen ? (
         <div
@@ -1384,7 +1575,7 @@ export default function BanmaoBoxPage() {
             <h2 id="box-transfer-title">{copy.transferTitle}</h2>
             <p>
               {copy.boxNumber} #{transferEntry.tokenId.toString()} ·{" "}
-              {formatBanmao(transferEntry.amount, tokenDecimals)} BANMAO
+              {formatBanmao(transferEntry.amount, tokenDecimals)} {tokenSymbol}
             </p>
 
             <form onSubmit={handleTransfer}>

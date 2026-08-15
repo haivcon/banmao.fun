@@ -52,7 +52,10 @@
   border: 1px solid var(--line);
   border-radius: 11px;
 }
-.ops-network button {
+.ops-network button,
+.ops-network > span {
+  display: inline-flex;
+  align-items: center;
   padding: 7px 11px;
   border: 0;
   border-radius: 7px;
@@ -302,12 +305,9 @@
   gap: 6px;
   padding-top: 18px;
 }
-.ops-inspected > div {
-  width: 180px;
-}
-.ops-inspected svg {
+.ops-inspected > img {
   display: block;
-  width: 100%;
+  width: 180px;
   height: auto;
 }
 .ops-inspected span {
@@ -338,6 +338,50 @@
 .ops-box-list small {
   color: #55f29a;
   font-size: 9px;
+}
+.ops-form--stacked {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.ops-form--stacked button {
+  min-height: 44px;
+  grid-column: 1 / -1;
+  justify-content: center;
+}
+.ops-registry__result {
+  display: grid;
+  gap: 1px;
+  margin: 18px 0 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--line);
+}
+.ops-registry__result div {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  background: #0d111a;
+}
+.ops-registry__result dt {
+  color: #8993a4;
+  font-size: 10px;
+}
+.ops-registry__result dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  font-weight: 800;
+}
+.ops-registry__result .pass {
+  color: #55f29a;
+}
+.ops-registry__result .fail {
+  color: #fb7185;
 }
 .ops-warning {
   display: flex;
@@ -402,6 +446,14 @@
   }
   .ops-form {
     flex-direction: column;
+  }
+  .ops-form--stacked {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .ops-registry__result div {
+    grid-template-columns: 1fr;
+    gap: 5px;
   }
   .ops-form button {
     min-height: 42px;

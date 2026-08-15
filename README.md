@@ -4,7 +4,7 @@ A Web3 social, DeFi, GameFi, and AI experience built for X Layer.
 
 **Live site:** [www.banmao.fun](https://www.banmao.fun)
 
-**Network:** X Layer mainnet (`196`) and testnet (`1952`), where supported by the checked-in deployment manifests
+**Network:** X Layer mainnet (`196`)
 
 ## Overview
 
@@ -35,7 +35,7 @@ This repository contains implemented product surfaces and deployment configurati
 - Airdrop preparation, CSV processing, batching, progress tracking, and analytics
 - BanmaoBox UI for transferable, time-locked ERC-20 gift boxes
 
-BanmaoBox deployment state is chain-specific. The checked-in [X Layer testnet manifest](deployments/banmaobox-xlayer-testnet.json) records a deployment on chain `1952`; the [mainnet manifest](deployments/banmaobox-xlayer-mainnet.json) records BanmaoBox as not deployed on chain `196`. See [contracts/README.md](contracts/README.md) for contract behavior and security assumptions.
+BanmaoBox is exposed only on X Layer mainnet. The versioned [mainnet manifest](deployments/banmaobox-xlayer-mainnet.json) is the frontend source of truth for chain `196`; the UI enables write actions only after validating its deployment addresses and runtime fingerprints. See [contracts/README.md](contracts/README.md) for contract behavior and security assumptions.
 
 ### GameFi
 

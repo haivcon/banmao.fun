@@ -654,9 +654,10 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
         if (
             contractBalanceAfter > contractBalanceBefore ||
             contractBalanceBefore - contractBalanceAfter != amount ||
-            ownerBalanceAfter < ownerBalanceBefore
+            ownerBalanceAfter < ownerBalanceBefore ||
+            ownerBalanceAfter - ownerBalanceBefore != amount
         ) revert UnsupportedTokenBehavior();
-        return ownerBalanceAfter - ownerBalanceBefore;
+        return amount;
     }
 
     function _validateTokenMetadata(address tokenAddress) internal view {

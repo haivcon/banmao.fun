@@ -17,6 +17,8 @@ export {
 export type BoxAsset = {
   token: `0x${string}`;
   amount: bigint;
+  decimals?: number;
+  symbol?: string;
 };
 
 export type BoxInfo = {
