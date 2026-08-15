@@ -850,7 +850,7 @@ export default function BanmaoBoxPage() {
           <div>
             <h2>
               {deploymentError
-                ? "Deployment validation failed"
+                ? copy.deploymentFailed
                 : copy.notDeployedTitle}
             </h2>
             <p>{deploymentError ?? copy.notDeployedDescription}</p>
@@ -862,7 +862,7 @@ export default function BanmaoBoxPage() {
         <div>
           <strong>Collection manager</strong>
           <span>
-            One canonical BanmaoBox collection per primary ERC-20. Anyone can create a missing collection.
+            {copy.collectionHint}
           </span>
         </div>
         <div className="box-collection-controls">
@@ -879,10 +879,10 @@ export default function BanmaoBoxPage() {
             disabled={isBusy}
           />
           <button type="button" onClick={() => void handleCollection(false)} disabled={isBusy || collectionPending}>
-            {collectionPending ? "Checking…" : "Use collection"}
+            {collectionPending ? copy.checking : copy.useCollection}
           </button>
           <button type="button" className="primary" onClick={() => void handleCollection(true)} disabled={isBusy || collectionPending || !isConnected}>
-            {collectionPending ? "Checking…" : "Create if missing"}
+            {collectionPending ? copy.checking : copy.createCollection}
           </button>
         </div>
         {activeBoxAddress && activeTokenAddress ? (
@@ -908,13 +908,13 @@ export default function BanmaoBoxPage() {
           <form onSubmit={handleCreate} className="box-form">
             <div className="box-mode-switch" role="group" aria-label="Box creation mode">
               <button type="button" className={createMode === "single" ? "active" : ""} onClick={() => setCreateMode("single")} disabled={isBusy}>
-                Single box
+                {copy.modeSingle}
               </button>
               <button type="button" className={createMode === "batch" ? "active" : ""} onClick={() => setCreateMode("batch")} disabled={isBusy}>
-                Batch (1–20)
+                {copy.modeBatch}
               </button>
               <button type="button" className={createMode === "basket" ? "active" : ""} onClick={() => setCreateMode("basket")} disabled={isBusy}>
-                Basket (2–5 tokens)
+                {copy.modeBasket}
               </button>
             </div>
             {createMode !== "batch" ? <label className="box-field">
@@ -925,7 +925,7 @@ export default function BanmaoBoxPage() {
                   {tokenBalanceLoading
                     ? copy.loading
                     : tokenBalanceError
-                      ? "Unavailable"
+                      ? copy.unavailable
                       : `${formatBanmao(tokenBalance, tokenDecimals)} ${tokenSymbol}`}
                   <button
                     type="button"
@@ -973,7 +973,7 @@ export default function BanmaoBoxPage() {
                     disabled={isBusy || extraAssets.length >= 4}
                   />
                   <button type="button" onClick={() => void handleAddAsset()} disabled={isBusy || extraAssets.length >= 4}>
-                    Add asset
+                    {copy.addAsset}
                   </button>
                 </div>
                 {extraAssets.map((asset, index) => (
@@ -995,7 +995,7 @@ export default function BanmaoBoxPage() {
                   </div>
                 ))}
                 <p className="box-token-warning">
-                  Assets are released independently. A paused, blacklisted, rebasing or upgraded token may remain in the NFT and require a later retry, but it will not block other transferable assets. Use only trusted fixed-balance ERC-20s.
+                  {copy.basketWarning}
                 </p>
               </div>
             ) : null}
@@ -1036,15 +1036,15 @@ export default function BanmaoBoxPage() {
                   onClick={() => setBatchRows((current) => [...current, { recipient: address ?? "", amount: "" }])}
                   disabled={isBusy || batchRows.length >= MAX_BATCH_SIZE}
                 >
-                  Add recipient
+                  {copy.addRecipient}
                 </button>
                 <small>
                   Balance: {tokenBalanceLoading
                     ? copy.loading
                     : tokenBalanceError
-                      ? "Unavailable"
+                      ? copy.unavailable
                       : `${formatBanmao(tokenBalance, tokenDecimals)} ${tokenSymbol}`}.{" "}
-                  The batch is atomic and uses one shared unlock date.
+                  {copy.batchHint}
                 </small>
               </div>
             ) : (
@@ -1114,7 +1114,7 @@ export default function BanmaoBoxPage() {
                   disabled={isBusy || !isDeployed || !isDeploymentValidated}
                 />
               ) : null}
-              <small className="box-duration__limit">Maximum: 36,500 days (100 years). Locked assets cannot be opened early.</small>
+              <small className="box-duration__limit">{copy.durationLimit}</small>
             </fieldset>
 
             <div className="box-unlock-preview">
@@ -1274,7 +1274,7 @@ export default function BanmaoBoxPage() {
       <section className="box-inspector">
         <div className="box-inspector__copy">
           <span className="box-eyebrow">
-            <Eye /> On-chain explorer
+            <Eye /> {copy.onchainExplorer}
           </span>
           <h2>{copy.inspectTitle}</h2>
           <p>{copy.inspectDescription}</p>
@@ -1380,7 +1380,7 @@ export default function BanmaoBoxPage() {
           ) : (
             <div className="box-inspector__empty">
               <Gift />
-              <span>Fully on-chain SVG &amp; metadata</span>
+              <span>{copy.onchainSvg}</span>
             </div>
           )}
         </div>
@@ -1401,7 +1401,7 @@ export default function BanmaoBoxPage() {
           <div className="box-transaction__content">
             <strong>{transactionMessage}</strong>
             <ol className="box-transaction__steps" aria-label="Transaction progress">
-              {["Wallet", "Broadcast", "Confirmed"].map((label, index) => {
+              {[copy.stepWallet, copy.stepBroadcast, copy.stepConfirmed].map((label, index) => {
                 const activeIndex = phase === "success" ? 2 : transactionHash ? 1 : 0;
                 const complete = index < activeIndex || phase === "success";
                 return (
@@ -1420,7 +1420,7 @@ export default function BanmaoBoxPage() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  View on explorer <ExternalLink />
+                  {copy.viewExplorer} <ExternalLink />
                 </a>
                 <button type="button" onClick={() => void copyToClipboard(transactionHash, "Transaction hash")} aria-label="Copy transaction hash">
                   <Copy />
@@ -1483,16 +1483,16 @@ export default function BanmaoBoxPage() {
               <X />
             </button>
             <div className="box-celebration__art"><GiftBoxArtwork ready /><Sparkles /></div>
-            <span className="box-eyebrow"><CheckCircle2 /> Confirmed on X Layer</span>
-            <h2 id="box-celebration-title">Your BanmaoBox is ready.</h2>
-            <p>The time lock is now secured on-chain. You can follow the transaction or return to your collection.</p>
+            <span className="box-eyebrow"><CheckCircle2 /> {copy.confirmedOnChain}</span>
+            <h2 id="box-celebration-title">{copy.celebrationTitle}</h2>
+            <p>{copy.celebrationText}</p>
             {transactionHash ? (
               <div className="box-celebration__actions">
                 <a className="box-button box-button--primary" href={`${chainConfig.chain.blockExplorers?.default.url}/tx/${transactionHash}`} target="_blank" rel="noreferrer">
-                  View transaction <ExternalLink />
+                  {copy.viewTransaction} <ExternalLink />
                 </a>
                 <button className="box-button box-button--secondary" type="button" onClick={() => void copyToClipboard(transactionHash, "Transaction hash")}>
-                  <Copy /> Copy hash
+                  <Copy /> {copy.copyHash}
                 </button>
               </div>
             ) : null}
@@ -1513,13 +1513,13 @@ export default function BanmaoBoxPage() {
               <X />
             </button>
             <ShieldCheck className="box-review__shield" />
-            <h2 id="box-review-title">Review permanent lock</h2>
-            <p>Verify every detail before your wallet request. This lock cannot be shortened or cancelled.</p>
+            <h2 id="box-review-title">{copy.reviewTitle}</h2>
+            <p>{copy.reviewText}</p>
             <dl className="box-review__details">
-              <div><dt>Mode</dt><dd>{createMode === "batch" ? `Batch · ${batchRows.length} boxes` : createMode === "basket" ? `Basket · ${extraAssets.length + 1} tokens` : "Single box"}</dd></div>
-              <div><dt>Primary total</dt><dd>{createMode === "batch" ? formatBanmao(batchTotal, tokenDecimals) : amount} {tokenSymbol}</dd></div>
-              <div><dt>Lock duration</dt><dd>{durationDays.toLocaleString()} days</dd></div>
-              <div><dt>Estimated opening</dt><dd>{estimatedUnlock.toLocaleString(language, { dateStyle: "medium", timeStyle: "short" })}</dd></div>
+              <div><dt>{copy.reviewMode}</dt><dd>{createMode === "batch" ? copy.modeBatch : createMode === "basket" ? copy.modeBasket : copy.modeSingle}</dd></div>
+              <div><dt>{copy.reviewTotal}</dt><dd>{createMode === "batch" ? formatBanmao(batchTotal, tokenDecimals) : amount} {tokenSymbol}</dd></div>
+              <div><dt>{copy.reviewDuration}</dt><dd>{durationDays.toLocaleString()} {copy.days}</dd></div>
+              <div><dt>{copy.reviewOpening}</dt><dd>{estimatedUnlock.toLocaleString(language, { dateStyle: "medium", timeStyle: "short" })}</dd></div>
             </dl>
             {createMode === "batch" ? (
               <div className="box-review__rows">
@@ -1528,13 +1528,13 @@ export default function BanmaoBoxPage() {
             ) : null}
             <label className="box-review__ack">
               <input type="checkbox" checked={lockAcknowledged} onChange={(event) => setLockAcknowledged(event.target.checked)} disabled={isBusy} />
-              <span>I understand these assets cannot be opened before the date shown above, even if I make a mistake.</span>
+              <span>{copy.reviewAck}</span>
             </label>
             <div className="box-dialog__actions">
               <button type="button" className="box-button box-button--secondary" onClick={() => setReviewOpen(false)} disabled={isBusy}>{copy.cancel}</button>
               <button type="button" className="box-button box-button--primary" onClick={() => void confirmCreate()} disabled={isBusy || !lockAcknowledged}>
                 {isBusy ? <LoaderCircle className="box-spin" /> : <LockKeyhole />}
-                Confirm and continue
+                {copy.confirmCreate}
               </button>
             </div>
           </section>
