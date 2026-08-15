@@ -39,6 +39,12 @@ export const xLayer: Chain = {
       url: EXPLORER_URL.replace(/\/+$/, ""),
     },
   },
+  contracts: {
+    multicall3: {
+      address: "0xcA11bde05977b3631167028862bE2a173976CA11",
+      blockCreated: 47416,
+    },
+  },
 };
 
 const OKX_WALLET_EXPLORER_ID =
