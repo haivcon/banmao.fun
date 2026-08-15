@@ -94,8 +94,10 @@ ehthumbs.db
 !/scripts/deploy-banmaobox-mainnet.cjs
 !/scripts/verify-banmaobox-mainnet.cjs
 !/scripts/generate-banmaobox-abis.cjs
-/deployments/.banmaobox-mainnet-journal.json
-
+!/scripts/generate-banmaobox-release.cjs
+!/scripts/banmaobox-runtime.cjs
+/deployments/
+scripts/
 # Local-only removed games: keep source on this machine, never commit/deploy
 /local-only/
 /app/gamefi/banmaominer/
@@ -119,3 +121,5 @@ BANMAOBOX_DETAILED_PLAN_VN.md
 /WEB3D_QA_CHECKLIST.md
 ui game banmaofomo.txt
 BanmaoRPS_ABI.json
+# Generated flattened sources for manual Explorer verification
+/contracts/banmaobox/flatten/

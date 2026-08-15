@@ -11,6 +11,7 @@
     "test": "jest",
     "test:contracts": "jest __tests__/contracts/banmaoBox.security.test.ts --runInBand",
     "generate:banmaobox": "node scripts/generate-banmaobox-abis.cjs",
+    "generate:banmaobox:release": "node scripts/generate-banmaobox-release.cjs",
     "deploy:banmaobox:mainnet": "node scripts/deploy-banmaobox-mainnet.cjs",
     "verify:banmaobox:mainnet": "node scripts/verify-banmaobox-mainnet.cjs",
     "check": "npm run typecheck && npm run lint && npm test -- --runInBand --passWithNoTests"

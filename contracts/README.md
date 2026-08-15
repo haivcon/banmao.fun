@@ -21,13 +21,13 @@ A permissionless system for transferable, time-locked ERC-20 gift boxes:
 - Batch creation validates every row, pulls the aggregate primary-token amount once, and safely mints consecutive token IDs atomically. A failed ERC-20 transfer or ERC-721 receiver callback rolls back the entire batch.
 - Locks must be greater than zero and may be at most `100 * 365 days` (36,500 days). There is no early unlock or privileged recovery path, so integrations should require explicit duration review before submission.
 - Every basket's first asset must be the collection's primary token. This preserves canonical discovery and primary-token accounting while allowing up to four additional assets.
-- Deposits are exact-balance checked independently for every asset. Releases require the collection balance to decrease by the recorded amount, while `BoxAssetReleased.amountReceived` records the owner's net receipt for fee-charging tokens. The collection exposes remaining contents through `getBoxAssets(tokenId)`.
+- Deposits and releases are exact-balance checked independently for every asset. A release succeeds only when the collection balance decreases and the owner's balance increases by the full recorded amount. Tokens that begin charging an outbound fee remain in the live NFT for retry instead of silently reducing its liability. The collection exposes remaining contents through `getBoxAssets(tokenId)`.
 - After `unlockTime`, the owner or an approved ERC-721 operator may call `openBox(tokenId)`. Every transferable asset is paid to the current NFT owner; an asset that fails remains in the live NFT and can be retried without rolling back successful releases. Each batch payout has a 500,000 gas cap and copies at most 256 bytes of failure data so a hostile token cannot consume the entire basket operation with unbounded returndata.
 - `openAsset(tokenId, assetIndex)` releases one selected asset and is the recovery path when another basket token is paused, blocked, or gas-griefing. Successful removal uses swap-and-pop, so integrations must reload `getBoxAssets(tokenId)` after each release instead of caching indices.
 - The NFT is locked against transfer and burn while a payout is executing, preventing token callbacks from changing ownership mid-release. The NFT burns and its `boxDetails` are deleted only after the final remaining asset is released; historical data remains available through `BoxOpened` and per-asset events.
 - Metadata includes the snapshotted token symbol, underlying token contract address, creator wallet, and UTC start/unlock dates. The creator is permanently captured from `msg.sender` at mint and does not change when the NFT is transferred. Symbol display is sanitized and never controls custody.
 - There is no admin withdrawal, early unlock, renderer update, or collection upgrade path.
-- Deposits reject transfer discrepancies. Payout requires the collection's balance to decrease by the exact recorded amount; the owner's net increase may be lower for an outbound fee token and is emitted as `amountReceived`.
+- Deposits and payouts reject transfer discrepancies. A payout requires both the collection's decrease and the owner's net increase to equal the exact recorded amount; otherwise the asset remains locked and retryable.
 
 Security and integration assumptions:
 
@@ -71,9 +71,11 @@ underlying token, and renderer invariants have been verified.
 ### X Layer mainnet release runbook
 
 1. Freeze and independently review the exact Git commit. Run `npm ci`,
-   `npm run generate:banmaobox`, `npm run test:contracts`, `npm run typecheck`,
-   and the full application test/build checks. Confirm the generated ABI diff is
-   empty after regeneration.
+   `npm run generate:banmaobox`, `npm run generate:banmaobox:release`,
+   `npm run test:contracts`, `npm run typecheck`, and the full application
+   test/build checks. Commit and review the generated ABI plus
+   `deployments/banmaobox-release-artifacts.json`; regeneration must produce no
+   unexpected diff.
 2. Put only server-side secrets/settings in ignored `.env.deploy.local`:
    `DEPLOYER_PRIVATE_KEY`, optional `XLAYER_MAINNET_RPC_URL`,
    `BANMAOBOX_MAINNET_CONFIRM=DEPLOY_BANMAOBOX_XLAYER_196`, and optional
@@ -85,20 +87,26 @@ underlying token, and renderer invariants have been verified.
    `0x16d91d1615fc55b76d5f92365bd60c069b46ef78`.
 4. If RPC or wallet submission stops the sequence, rerun the same command. The
    ignored `.banmaobox-mainnet-journal.json` resumes confirmed Renderer/Factory/
-   Box work. Never delete a journal until its addresses and transactions have
+   Box work only after each runtime matches the committed compiler artifact
+   fingerprint. Never delete a journal until its addresses and transactions have
    been inspected; blind redeployment can create a second factory universe.
 5. After success, use a separate trusted RPC and run
-   `npm run verify:banmaobox:mainnet`. Review the resulting chain, links,
-   constants, current state, runtime byte lengths, and hashes against the
-   committed manifest. This command is read-only and uses no private key.
+   `npm run verify:banmaobox:mainnet`. The verifier recompiles the exact checkout,
+   checks the compiler-input fingerprint, normalizes only compiler-declared
+   immutable byte ranges, and compares every release runtime with its artifact
+   as well as the exact hashes in the manifest. Review the resulting chain,
+   links, constants, current state, runtime byte lengths, and hashes. This command
+   is read-only and uses no private key.
 6. Verify all three contracts on X Layer Explorer with the exact compiler shown
    in the manifest, optimizer runs `200`, EVM `shanghai`, and constructor args:
    none for Renderer, ABI-encoded Renderer address for Factory, and ABI-encoded
    production BANMAO plus Renderer for the Factory-created Box. Confirm the
    explorer's runtime bytecode matches each manifest hash.
-7. Commit the completed manifest and update/deploy the frontend only after an
-   independent reviewer confirms all checks. The frontend consumes that manifest
-   and remains fail-closed while any address, registry link, immutable, runtime
+7. The deploy script deliberately writes `frontendEnabled: false`. After an
+   independent reviewer confirms all checks, set it to `true` in the reviewed
+   manifest commit and only then update/deploy the frontend. The frontend consumes
+   that manifest and remains fail-closed while any address, registry link,
+   immutable, BANMAO/release runtime
    presence, or production constant is invalid.
 
 ## Development
