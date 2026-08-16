@@ -3,14 +3,40 @@ import { join } from "node:path";
 import ganache from "ganache";
 import { ethers } from "ethers";
 import solc from "solc";
+import sharp from "sharp";
 
-type Artifact = { abi: ethers.ContractInterface; bytecode: string };
+type Artifact = {
+  abi: ethers.ContractInterface;
+  bytecode: string;
+  runtimeBytecode: string;
+};
+
+const parseSvg = (svg: string) => {
+  expect(svg).toMatch(/^<svg[\s\S]*<\/svg>$/);
+  expect(svg.replace('xmlns="http://www.w3.org/2000/svg"', "")).not.toMatch(
+    /<script|foreignObject|\son\w+=|https?:\/\//i,
+  );
+};
+
+const symbolBytes16 = (symbol: string) => ethers.utils.hexlify(
+  ethers.utils.toUtf8Bytes(symbol),
+).padEnd(34, "0");
+
+const renderAssets = (assets: Array<[string, ethers.BigNumberish, number, string]>) =>
+  ethers.utils.hexConcat(assets.map(([token, amount, decimals, symbol]) =>
+    ethers.utils.solidityPack(
+      ["address", "uint256", "uint8", "bytes16"],
+      [token, amount, decimals, symbolBytes16(symbol)],
+    ),
+  ));
 
 const adversarialSource = `
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {BanmaoBoxRenderData, IBanmaoBoxSVGRenderer} from "contracts/banmaobox/BanmaoBoxRenderer.sol";
 interface IBox {
     function openBox(uint256 tokenId) external;
     function transferFrom(address from, address to, uint256 tokenId) external;
@@ -18,6 +44,19 @@ interface IBox {
 contract TestToken is ERC20 {
     constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {
         _mint(msg.sender, 1_000_000 ether);
+    }
+}
+contract ReplacementSVGRenderer is IBanmaoBoxSVGRenderer {
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+        return interfaceId == type(IERC165).interfaceId ||
+            interfaceId == type(IBanmaoBoxSVGRenderer).interfaceId;
+    }
+    function renderSVG(uint256 tokenId, BanmaoBoxRenderData calldata)
+        external pure returns (string memory)
+    {
+        return tokenId == 1
+            ? '<svg xmlns="http://www.w3.org/2000/svg"><text>REPLACEMENT SVG</text></svg>'
+            : '<svg xmlns="http://www.w3.org/2000/svg"></svg>';
     }
 }
 contract ReturnBombToken is ERC20 {
@@ -101,7 +140,7 @@ contract MutableFeeToken is ERC20 {
 
 function compile(): Record<string, Artifact> {
   const sources: Record<string, { content: string }> = {};
-  for (const file of ["BanmaoBox.sol", "BanmaoBoxRenderer.sol"]) {
+  for (const file of ["BanmaoBox.sol", "BanmaoBoxFactory.sol", "BanmaoBoxRenderer.sol"]) {
     sources[`contracts/banmaobox/${file}`] = {
       content: readFileSync(join(process.cwd(), "contracts", "banmaobox", file), "utf8"),
     };
@@ -111,7 +150,7 @@ function compile(): Record<string, Artifact> {
     language: "Solidity", sources,
     settings: {
       optimizer: { enabled: true, runs: 200 }, evmVersion: "shanghai",
-      outputSelection: { "*": { "*": ["abi", "evm.bytecode.object"] } },
+      outputSelection: { "*": { "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object"] } },
     },
   };
   const output = JSON.parse(solc.compile(JSON.stringify(input), {
@@ -126,9 +165,13 @@ function compile(): Record<string, Artifact> {
   if (errors.length) throw new Error(errors.map((item: { formattedMessage: string }) => item.formattedMessage).join("\n"));
 
   const artifacts: Record<string, Artifact> = {};
-  for (const contracts of Object.values(output.contracts) as Array<Record<string, { abi: ethers.ContractInterface; evm: { bytecode: { object: string } } }>>) {
+  for (const contracts of Object.values(output.contracts) as Array<Record<string, { abi: ethers.ContractInterface; evm: { bytecode: { object: string }; deployedBytecode: { object: string } } }>>) {
     for (const [name, contract] of Object.entries(contracts)) {
-      if (contract.evm.bytecode.object) artifacts[name] = { abi: contract.abi, bytecode: `0x${contract.evm.bytecode.object}` };
+      if (contract.evm.bytecode.object) artifacts[name] = {
+        abi: contract.abi,
+        bytecode: `0x${contract.evm.bytecode.object}`,
+        runtimeBytecode: `0x${contract.evm.deployedBytecode.object}`,
+      };
     }
   }
   return artifacts;
@@ -159,13 +202,70 @@ describe("BanmaoBox adversarial release security", () => {
     otherAddress = await provider.getSigner(1).getAddress();
     primary = await deploy("TestToken", owner, ["Primary", "PRI"]);
     renderer = await deploy("BanmaoBoxRenderer", owner);
-    box = await deploy("BanmaoBox", owner, [primary.address, renderer.address]);
+    box = await deploy("BanmaoBox", owner, [
+      primary.address,
+      renderer.address,
+      await owner.getAddress(),
+    ]);
   });
 
   async function unlock() {
     await provider.send("evm_increaseTime", [2]);
     await provider.send("evm_mine", []);
   }
+
+  test("lets only the immutable renderer admin replace SVG while metadata stays fixed", async () => {
+    const ownerAddress = await owner.getAddress();
+    const other = provider.getSigner(1);
+    const replacement = await deploy("ReplacementSVGRenderer", owner);
+    await primary.approve(box.address, ethers.constants.MaxUint256);
+    await box.createBox(ownerAddress, ethers.utils.parseEther("10"), 3_600);
+
+    const decodeMetadata = async () => {
+      const uri = await box.tokenURI(1);
+      return JSON.parse(Buffer.from(uri.split(",")[1], "base64").toString("utf8"));
+    };
+    const before = await decodeMetadata();
+
+    await expect(box.connect(other).setRenderer(replacement.address)).rejects.toThrow();
+    await expect(box.setRenderer(otherAddress)).rejects.toThrow();
+
+    const receipt = await (await box.setRenderer(replacement.address)).wait();
+    expect(await box.renderer()).toBe(replacement.address);
+    expect(await box.metadataRenderer()).toBe(renderer.address);
+    expect(await box.rendererAdmin()).toBe(ownerAddress);
+    expect(receipt.events?.find((event: { event?: string }) =>
+      event.event === "RendererUpdated")?.args?.newRenderer).toBe(replacement.address);
+    const refresh = receipt.events?.find((event: { event?: string }) =>
+      event.event === "BatchMetadataUpdate");
+    expect(refresh?.args?._fromTokenId.toString()).toBe("1");
+    expect(refresh?.args?._toTokenId.toString()).toBe(ethers.constants.MaxUint256.toString());
+
+    const after = await decodeMetadata();
+    const replacementSvg = Buffer.from(after.image.split(",")[1], "base64").toString("utf8");
+    expect(replacementSvg).toContain("REPLACEMENT SVG");
+    expect(Buffer.from(after.animation_url.split(",")[1], "base64").toString("utf8"))
+      .toBe(replacementSvg);
+    for (const field of ["name", "description", "external_url", "background_color", "attributes", "properties"]) {
+      expect(after[field]).toEqual(before[field]);
+    }
+  });
+
+  test("makes the Factory deployer admin of collections created by other callers", async () => {
+    const factory = await deploy("BanmaoBoxFactory", owner, [renderer.address]);
+    const other = provider.getSigner(1);
+    await factory.connect(other).createTokenBox(primary.address);
+    const deployedBox = new ethers.Contract(
+      await factory.boxForToken(primary.address),
+      artifacts.BanmaoBox.abi,
+      owner,
+    );
+
+    expect(await factory.rendererAdmin()).toBe(await owner.getAddress());
+    expect(await deployedBox.rendererAdmin()).toBe(await owner.getAddress());
+    expect(await deployedBox.renderer()).toBe(renderer.address);
+    expect(await deployedBox.metadataRenderer()).toBe(renderer.address);
+  });
 
   test("blocks ERC-721 ownership changes during token callbacks", async () => {
     const callback = await deploy("CallbackToken", owner);
@@ -224,7 +324,7 @@ describe("BanmaoBox adversarial release security", () => {
       1,
     );
     await unlock();
-    await box.openAsset(1, 0);
+    await box["openAsset(uint256,uint256)"](1, 0);
 
     const receipt = await (await box.openBox(1, { gasLimit: 1_500_000 })).wait();
 
@@ -233,6 +333,177 @@ describe("BanmaoBox adversarial release security", () => {
     expect((await box.boxAssetCount(1)).toString()).toBe("1");
     expect((await box.totalLockedByToken(bomb.address)).toString()).toBe(amount.toString());
     expect(await box.ownerOf(1)).toBe(await owner.getAddress());
+  });
+
+  test("only the current NFT owner may abandon, even when an operator is approved", async () => {
+    const ownerAddress = await owner.getAddress();
+    const amount = ethers.utils.parseEther("10");
+    await primary.approve(box.address, amount);
+    await box.createBox(ownerAddress, amount, 1);
+
+    await expect(box["abandonAsset(uint256,uint256)"](1, 0)).rejects.toThrow();
+    await unlock();
+    const operator = provider.getSigner(1);
+    await expect(box.connect(operator)["abandonAsset(uint256,uint256)"](1, 0)).rejects.toThrow();
+
+    await box.approve(otherAddress, 1);
+    await expect(box.connect(operator)["abandonAsset(uint256,uint256)"](1, 0)).rejects.toThrow();
+    await box.setApprovalForAll(otherAddress, true);
+    await expect(box.connect(operator)["abandonAsset(uint256,uint256)"](1, 0)).rejects.toThrow();
+
+    const receipt = await (await box[
+      "abandonAsset(uint256,uint256,address,uint256)"
+    ](
+      1,
+      0,
+      primary.address,
+      amount,
+    )).wait();
+    const abandoned = receipt.events?.find((event: { event?: string }) =>
+      event.event === "BoxAssetAbandoned");
+    expect(abandoned?.args?.owner).toBe(ownerAddress);
+    expect(await box.totalTokensLocked()).toEqual(ethers.constants.Zero);
+    expect(await box.totalLockedByToken(primary.address)).toEqual(amount);
+    expect(await box.recoverableAbandoned(ownerAddress, primary.address)).toEqual(amount);
+    expect(await primary.balanceOf(box.address)).toEqual(amount);
+    await expect(box.ownerOf(1)).rejects.toThrow();
+
+    await box.claimAbandonedAsset(primary.address);
+    expect(await box.recoverableAbandoned(ownerAddress, primary.address)).toEqual(ethers.constants.Zero);
+    expect(await box.totalLockedByToken(primary.address)).toEqual(ethers.constants.Zero);
+    expect(await primary.balanceOf(box.address)).toEqual(ethers.constants.Zero);
+  });
+
+  test("moves a stuck final asset into a recoverable claim, burns the NFT and reports no final primary payout", async () => {
+    const bomb = await deploy("ReturnBombToken", owner);
+    await bomb.setBox(box.address);
+    await primary.approve(box.address, ethers.constants.MaxUint256);
+    await bomb.approve(box.address, ethers.constants.MaxUint256);
+    const primaryAmount = ethers.utils.parseEther("10");
+    const bombAmount = ethers.utils.parseEther("20");
+    await box.createMultiTokenBox(
+      await owner.getAddress(),
+      [primary.address, bomb.address],
+      [primaryAmount, bombAmount],
+      1,
+    );
+    await unlock();
+
+    await box["openAsset(uint256,uint256)"](1, 0);
+    const detailsAfterPrimaryRelease = await box.boxDetails(1);
+    expect(detailsAfterPrimaryRelease.amount).toEqual(ethers.constants.Zero);
+    const receipt = await (await box[
+      "abandonAsset(uint256,uint256)"
+    ](1, 0)).wait();
+
+    const abandoned = receipt.events?.find((event: { event?: string }) =>
+      event.event === "BoxAssetAbandoned");
+    expect(abandoned?.args?.token).toBe(bomb.address);
+    expect(abandoned?.args?.owner).toBe(await owner.getAddress());
+    expect(abandoned?.args?.amount).toEqual(bombAmount);
+    const opened = receipt.events?.find((event: { event?: string }) =>
+      event.event === "BoxOpened");
+    expect(opened?.args?.amount).toEqual(ethers.constants.Zero);
+    expect(await box.totalTokensLocked()).toEqual(ethers.constants.Zero);
+    expect(await box.totalLockedByToken(bomb.address)).toEqual(bombAmount);
+    expect(await box.recoverableAbandoned(await owner.getAddress(), bomb.address)).toEqual(bombAmount);
+    expect(await bomb.balanceOf(box.address)).toEqual(bombAmount);
+    await expect(box.claimAbandonedAsset(bomb.address)).rejects.toThrow();
+    expect(await box.recoverableAbandoned(await owner.getAddress(), bomb.address)).toEqual(bombAmount);
+    expect(await box.totalLockedByToken(bomb.address)).toEqual(bombAmount);
+    await expect(box.ownerOf(1)).rejects.toThrow();
+  });
+
+  test("guarded asset APIs reject stale indexes without changing custody or liabilities", async () => {
+    const secondary = await deploy("TestToken", owner, ["Secondary", "SEC"]);
+    const third = await deploy("TestToken", owner, ["Third", "THIRD"]);
+    for (const token of [primary, secondary, third]) {
+      await token.approve(box.address, ethers.constants.MaxUint256);
+    }
+    const amounts = ["10", "20", "30"].map(ethers.utils.parseEther);
+    await box.createMultiTokenBox(
+      await owner.getAddress(),
+      [primary.address, secondary.address, third.address],
+      amounts,
+      1,
+    );
+    await unlock();
+
+    const staleToken = secondary.address;
+    const staleAmount = amounts[1];
+    await box["openAsset(uint256,uint256,address,uint256)"](
+      1,
+      1,
+      staleToken,
+      staleAmount,
+    );
+    const movedAsset = (await box.getBoxAssets(1))[1];
+    expect(movedAsset.token).toBe(third.address);
+
+    await expect(box["openAsset(uint256,uint256,address,uint256)"](
+      1,
+      1,
+      staleToken,
+      staleAmount,
+    )).rejects.toThrow();
+    await expect(box["abandonAsset(uint256,uint256,address,uint256)"](
+      1,
+      1,
+      staleToken,
+      staleAmount,
+    )).rejects.toThrow();
+    expect(await box.boxAssetCount(1)).toEqual(ethers.BigNumber.from(2));
+    expect(await box.totalLockedByToken(third.address)).toEqual(amounts[2]);
+    expect(await third.balanceOf(box.address)).toEqual(amounts[2]);
+
+    await box["abandonAsset(uint256,uint256,address,uint256)"](
+      1,
+      1,
+      movedAsset.token,
+      movedAsset.amount,
+    );
+    expect(await box.recoverableAbandoned(await owner.getAddress(), third.address)).toEqual(amounts[2]);
+  });
+
+  test("BoxOpened reports primary tokens paid by the transaction that empties the box", async () => {
+    const secondary = await deploy("TestToken", owner, ["Secondary", "SEC"]);
+    await primary.approve(box.address, ethers.constants.MaxUint256);
+    await secondary.approve(box.address, ethers.constants.MaxUint256);
+    const primaryAmount = ethers.utils.parseEther("10");
+    await box.createMultiTokenBox(
+      await owner.getAddress(),
+      [primary.address, secondary.address],
+      [primaryAmount, ethers.utils.parseEther("20")],
+      1,
+    );
+    await unlock();
+
+    await box["openAsset(uint256,uint256)"](1, 1);
+    const receipt = await (await box["openAsset(uint256,uint256)"](1, 0)).wait();
+    const opened = receipt.events?.find((event: { event?: string }) =>
+      event.event === "BoxOpened");
+    expect(opened?.args?.amount).toEqual(primaryAmount);
+    await expect(box.ownerOf(1)).rejects.toThrow();
+  });
+
+  test("openBox reports the primary amount released while emptying a basket", async () => {
+    const secondary = await deploy("TestToken", owner, ["Secondary", "SEC"]);
+    await primary.approve(box.address, ethers.constants.MaxUint256);
+    await secondary.approve(box.address, ethers.constants.MaxUint256);
+    const primaryAmount = ethers.utils.parseEther("10");
+    await box.createMultiTokenBox(
+      await owner.getAddress(),
+      [primary.address, secondary.address],
+      [primaryAmount, ethers.utils.parseEther("20")],
+      1,
+    );
+    await unlock();
+
+    const receipt = await (await box.openBox(1)).wait();
+    const opened = receipt.events?.find((event: { event?: string }) =>
+      event.event === "BoxOpened");
+    expect(opened?.args?.amount).toEqual(primaryAmount);
+    await expect(box.ownerOf(1)).rejects.toThrow();
   });
 
   test("openAsset releases a selected healthy asset and preserves accounting", async () => {
@@ -244,13 +515,13 @@ describe("BanmaoBox adversarial release security", () => {
     await box.createMultiTokenBox(await owner.getAddress(), [primary.address, bomb.address, good.address], amounts, 1);
     await unlock();
 
-    await box.openAsset(1, 2);
+    await box["openAsset(uint256,uint256)"](1, 2);
 
     expect((await good.balanceOf(box.address)).toString()).toBe("0");
     expect((await box.totalLockedByToken(good.address)).toString()).toBe("0");
     expect((await box.boxAssetCount(1)).toString()).toBe("2");
     expect(await box.ownerOf(1)).toBe(await owner.getAddress());
-    await expect(box.openAsset(1, 2)).rejects.toThrow();
+    await expect(box["openAsset(uint256,uint256)"](1, 2)).rejects.toThrow();
   });
 
   test("batch mints different amounts to recipients with consecutive IDs and exact accounting", async () => {
@@ -274,15 +545,15 @@ describe("BanmaoBox adversarial release security", () => {
     expect(await primary.balanceOf(box.address)).toEqual(total);
   });
 
-  test("supports exactly 100 years but rejects longer, empty, mismatched, oversized, zero recipient and zero amount batches", async () => {
+  test("supports the maximum 36,500-day duration but rejects longer, empty, mismatched, oversized, zero recipient and zero amount batches", async () => {
     const recipient = await owner.getAddress();
     const amount = ethers.utils.parseEther("1");
-    const hundredYears = 36500 * 86400;
+    const maximumDuration = 36_500 * 86_400;
     await primary.approve(box.address, ethers.constants.MaxUint256);
-    await box.createBoxes([recipient], [amount], hundredYears);
-    expect(await box.MAX_LOCK_DURATION()).toEqual(ethers.BigNumber.from(hundredYears));
+    await box.createBoxes([recipient], [amount], maximumDuration);
+    expect(await box.MAX_LOCK_DURATION()).toEqual(ethers.BigNumber.from(maximumDuration));
 
-    await expect(box.createBoxes([recipient], [amount], hundredYears + 1)).rejects.toThrow();
+    await expect(box.createBoxes([recipient], [amount], maximumDuration + 1)).rejects.toThrow();
     await expect(box.createBoxes([], [], 1)).rejects.toThrow();
     await expect(box.createBoxes([recipient], [], 1)).rejects.toThrow();
     await expect(box.createBoxes(Array(21).fill(recipient), Array(21).fill(amount), 1)).rejects.toThrow();
@@ -309,7 +580,11 @@ describe("BanmaoBox adversarial release security", () => {
 
   test("rejects fee-on-transfer primary deposits atomically", async () => {
     const feeToken = await deploy("FeeOnTransferToken", owner);
-    const feeBox = await deploy("BanmaoBox", owner, [feeToken.address, renderer.address]);
+    const feeBox = await deploy("BanmaoBox", owner, [
+      feeToken.address,
+      renderer.address,
+      await owner.getAddress(),
+    ]);
     const recipient = await owner.getAddress();
     await feeToken.approve(feeBox.address, ethers.constants.MaxUint256);
 
@@ -345,54 +620,150 @@ describe("BanmaoBox adversarial release security", () => {
     expect((await box.boxAssetCount(1)).toString()).toBe("1");
     expect((await box.totalLockedByToken(mutableFee.address)).toString()).toBe(feeAmount.toString());
     expect((await mutableFee.balanceOf(box.address)).toString()).toBe(feeAmount.toString());
-    await expect(box.openAsset(1, 0)).rejects.toThrow();
+    await expect(box["openAsset(uint256,uint256)"](1, 0)).rejects.toThrow();
     expect((await box.totalLockedByToken(mutableFee.address)).toString()).toBe(feeAmount.toString());
+
+    await box["abandonAsset(uint256,uint256,address,uint256)"](
+      1,
+      0,
+      mutableFee.address,
+      feeAmount,
+    );
+    const balanceBeforeClaim = await mutableFee.balanceOf(recipient);
+    const claimReceipt = await (await box.claimAbandonedAsset(mutableFee.address)).wait();
+    const expectedReceived = feeAmount.sub(feeAmount.div(100));
+    const claimed = claimReceipt.events?.find((event: { event?: string }) =>
+      event.event === "AbandonedAssetClaimed");
+
+    expect(claimed?.args?.amount).toEqual(feeAmount);
+    expect(claimed?.args?.amountReceived).toEqual(expectedReceived);
+    expect((await mutableFee.balanceOf(recipient)).sub(balanceBeforeClaim)).toEqual(expectedReceived);
+    expect(await box.recoverableAbandoned(recipient, mutableFee.address)).toEqual(ethers.constants.Zero);
+    expect(await box.totalLockedByToken(mutableFee.address)).toEqual(ethers.constants.Zero);
+    expect(await mutableFee.balanceOf(box.address)).toEqual(ethers.constants.Zero);
+    expect(await box.untrackedSurplus(mutableFee.address)).toEqual(ethers.constants.Zero);
+    await expect(box.ownerOf(1)).rejects.toThrow();
   });
 
-  test("decodes renderer JSON, SVG and attributes for locked, ready, basket and 100-year states", async () => {
+  test("decodes renderer JSON, SVG and attributes for locked, ready, basket and maximum-duration states", async () => {
     const latest = await provider.getBlock("latest");
-    const hundredYears = 36_500 * 86_400;
+    const maximumDuration = 36_500 * 86_400;
     const timestamps = ethers.BigNumber.from(latest.timestamp)
       .shl(64)
-      .or(ethers.BigNumber.from(latest.timestamp + hundredYears));
+      .or(ethers.BigNumber.from(latest.timestamp + maximumDuration));
+    const addresses = [primary.address, ...[1, 2, 3, 4].map((value) =>
+      ethers.utils.getAddress(`0x${value.toString(16).padStart(40, String(value))}`),
+    )];
+    const ledgerValues = [
+      "1234567.89 banmao / 18 decimals",
+      "0 ZERO / 0 decimals",
+      "0.1 ONE / 1 decimals",
+      "115792089.237316195423570985008687907853269984665640564039457584007913129639935 MAXIMUM-LENGTH16 / 69 decimals",
+      "1 D69 / 69 decimals",
+    ];
     const renderData = {
       token: primary.address,
-      creator: await owner.getAddress(),
       amount: ethers.utils.parseEther("1234567.89"),
       timestamps,
       tokenDecimals: 18,
       assetCount: 5,
-      tokenSymbol: "banmao",
+      tokenSymbol: symbolBytes16("banmao"),
+      renderAssets: renderAssets([
+        [addresses[0], ethers.utils.parseEther("1234567.89"), 18, "banmao"],
+        [addresses[1], 0, 0, "ZERO"],
+        [addresses[2], 1, 1, "ONE"],
+        [addresses[3], ethers.constants.MaxUint256, 69, "MAXIMUM-LENGTH16"],
+        [addresses[4], ethers.BigNumber.from(10).pow(69), 69, "D69"],
+      ]),
     };
 
-    const lockedSvg = await renderer.renderSVG(77, renderData);
+    for (let count = 1; count <= 5; count += 1) {
+      const svg = await renderer.renderSVG(count, {
+        ...renderData,
+        assetCount: count,
+        renderAssets: renderAssets([
+          [addresses[0], ethers.utils.parseEther("1234567.89"), 18, "banmao"],
+          [addresses[1], 0, 0, "ZERO"],
+          [addresses[2], 1, 1, "ONE"],
+          [addresses[3], ethers.constants.MaxUint256, 69, "MAXIMUM-LENGTH16"],
+          [addresses[4], ethers.BigNumber.from(10).pow(69), 69, "D69"],
+        ].slice(0, count) as Array<[string, ethers.BigNumberish, number, string]>),
+      });
+      for (const address of addresses.slice(0, count)) expect(svg).toContain(address.toLowerCase());
+      for (const value of ledgerValues.slice(0, count)) expect(svg).toContain(value);
+    }
+
+    const lockedSvg = await renderer.renderSVG(ethers.constants.MaxUint256, renderData);
     const attributes = JSON.parse(await renderer.renderAttributes(renderData));
+    parseSvg(lockedSvg);
+    expect(lockedSvg).toContain('<title id="title">BanmaoBox sealed treasury</title>');
+    expect(lockedSvg).toContain('<desc id="description">');
+    expect(lockedSvg).toContain('role="img"');
     expect(lockedSvg).toContain("LOCKED");
+    expect(lockedSvg).toContain("ASSET SUMMARY / 5");
+    expect(lockedSvg).toContain("ASSET LEDGER");
+    expect(lockedSvg).toContain('id="shine"');
+    expect(lockedSvg).toContain("<animate");
+    expect(lockedSvg).toContain("<animateTransform");
+    expect(lockedSvg).toContain('values="63;66;63"');
+    expect(lockedSvg).not.toContain('values="0 0;0 -3;0 0"');
     expect(lockedSvg).toContain("banmao");
     expect(lockedSvg).toContain(" UTC");
+    for (const address of addresses) expect(lockedSvg).toContain(address.toLowerCase());
+    for (const value of ledgerValues) {
+      expect(lockedSvg).toContain(value);
+    }
+    expect(lockedSvg).not.toContain("TOTAL VALUE");
+    expect(lockedSvg).not.toContain("OWNER");
     expect(attributes).toEqual(expect.arrayContaining([
       expect.objectContaining({ trait_type: "Status", value: "Locked" }),
       expect.objectContaining({ trait_type: "Token Symbol", value: "banmao" }),
       expect.objectContaining({ trait_type: "Asset Count", value: 5 }),
-      expect.objectContaining({ trait_type: "Unlock Time", value: latest.timestamp + hundredYears }),
+      expect.objectContaining({ trait_type: "Unlock Time", value: latest.timestamp + maximumDuration }),
     ]));
 
-    const uri = await renderer.tokenURI(77, renderData);
+    const uri = await renderer.tokenURI(ethers.constants.MaxUint256, renderData);
     expect(uri).toMatch(/^data:application\/json;base64,/);
     const metadata = JSON.parse(Buffer.from(uri.split(",")[1], "base64").toString("utf8"));
-    expect(metadata.name).toBe("BanmaoBox #77");
+    expect(metadata.name).toBe(`BanmaoBox #${ethers.constants.MaxUint256.toString()}`);
     expect(metadata.attributes).toEqual(attributes);
     expect(metadata.image).toMatch(/^data:image\/svg\+xml;base64,/);
+    expect(metadata.animation_url).toMatch(/^data:image\/svg\+xml;base64,/);
+    expect(metadata.external_url).toBe("https://banmao.fun/defi/box");
+    expect(metadata.properties).toEqual({
+      type: "banmaobox",
+      metadataMode: "fully-onchain",
+      renderer: "solidity-svg-split-contract",
+      chain: "X Layer",
+      chainId: 196,
+    });
     expect(Buffer.from(metadata.image.split(",")[1], "base64").toString("utf8")).toBe(lockedSvg);
+    expect(Buffer.from(metadata.animation_url.split(",")[1], "base64").toString("utf8")).toBe(lockedSvg);
+    console.info(`BanmaoBox worst SVG bytes: ${Buffer.byteLength(lockedSvg)}`);
+    console.info(`BanmaoBox worst tokenURI bytes: ${Buffer.byteLength(uri)}`);
+    console.info(`BanmaoBox renderSVG gas estimate: ${(await renderer.estimateGas.renderSVG(ethers.constants.MaxUint256, renderData)).toString()}`);
+    console.info(`BanmaoBox tokenURI gas estimate: ${(await renderer.estimateGas.tokenURI(ethers.constants.MaxUint256, renderData)).toString()}`);
+    const fixtureDir = process.env.LOCALAPPDATA ?? process.cwd();
+    for (const size of [800, 320, 210]) {
+      await sharp(Buffer.from(lockedSvg)).resize(size, size).png().toFile(join(fixtureDir, "Temp", `banmaobox-sealed-treasury-${size}.png`));
+    }
 
-    await provider.send("evm_increaseTime", [hundredYears + 1]);
+    await provider.send("evm_increaseTime", [maximumDuration + 1]);
     await provider.send("evm_mine", []);
     const readySvg = await renderer.renderSVG(77, renderData);
     const readyAttributes = JSON.parse(await renderer.renderAttributes(renderData));
-    expect(readySvg).toContain("READY TO OPEN");
+    expect(readySvg).toContain(">READY</text>");
+    expect(readySvg).toContain('values="0 0;0 -3;0 0"');
     expect(readyAttributes).toEqual(expect.arrayContaining([
       expect.objectContaining({ trait_type: "Status", value: "Ready to open" }),
     ]));
+
+    const boundary = (await provider.getBlock("latest")).timestamp;
+    const boundaryData = {
+      ...renderData,
+      timestamps: ethers.BigNumber.from(boundary - 1).shl(64).or(boundary),
+    };
+    expect(await renderer.renderSVG(78, boundaryData)).toContain("READY");
   });
 
   test("Box tokenURI serializes its live storage through the immutable renderer", async () => {
@@ -410,6 +781,45 @@ describe("BanmaoBox adversarial release security", () => {
       expect.objectContaining({ trait_type: "Token Contract", value: primary.address.toLowerCase() }),
     ]));
     expect(svg).toContain("42 PRI");
+  });
+
+  test("snapshots every asset metadata field and updates the rendered ledger after partial release", async () => {
+    const secondary = await deploy("TestToken", owner, ["Secondary", "SEC"]);
+    await primary.approve(box.address, ethers.constants.MaxUint256);
+    await secondary.approve(box.address, ethers.constants.MaxUint256);
+    await box.createMultiTokenBox(
+      await owner.getAddress(),
+      [primary.address, secondary.address],
+      [ethers.utils.parseEther("3"), ethers.utils.parseEther("7")],
+      1,
+    );
+
+    const before = await box.renderSVG(1);
+    parseSvg(before);
+    expect(before).toContain(primary.address.toLowerCase());
+    expect(before).toContain(secondary.address.toLowerCase());
+    expect(before).toContain("3 PRI / 18 decimals");
+    expect(before).toContain("7 SEC / 18 decimals");
+
+    await unlock();
+    await box["openAsset(uint256,uint256)"](1, 0);
+    const after = await box.renderSVG(1);
+    expect(after).not.toContain(primary.address.toLowerCase());
+    expect(after).toContain(secondary.address.toLowerCase());
+    expect(after).toContain("ASSET SUMMARY / 1");
+    expect(after).toContain("PRIMARY ASSET RELEASED");
+    expect(after).toContain("7 SEC");
+    expect(after).not.toContain("0 PRI");
+  });
+
+  test("keeps all production contracts below EIP-170 and renderer below 20KB", () => {
+    expect((artifacts.BanmaoBoxRenderer.runtimeBytecode.length - 2) / 2).toBeLessThan(20_000);
+    for (const name of ["BanmaoBoxRenderer", "BanmaoBox", "BanmaoBoxFactory"]) {
+      const init = (artifacts[name].bytecode.length - 2) / 2;
+      const runtime = (artifacts[name].runtimeBytecode.length - 2) / 2;
+      console.info(`${name} init/runtime/headroom bytes: ${init}/${runtime}/${24_576 - runtime}`);
+      expect(runtime).toBeLessThanOrEqual(24_576);
+    }
   });
 
   test.each([1, 5, 10, 20])("batch size %i stays within a practical gas envelope", async (size) => {

@@ -11,10 +11,41 @@ export const BANMAO_BOX_ABI = [
         "internalType": "address",
         "name": "rendererAddress",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "rendererAdminAddress",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "expectedToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "expectedAmount",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "actualToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "actualAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "AssetStateMismatch",
+    "type": "error"
   },
   {
     "inputs": [],
@@ -214,6 +245,16 @@ export const BANMAO_BOX_ABI = [
   },
   {
     "inputs": [],
+    "name": "NotRendererAdmin",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotTokenOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "OnlySelf",
     "type": "error"
   },
@@ -292,6 +333,37 @@ export const BANMAO_BOX_ABI = [
       {
         "indexed": true,
         "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amountReceived",
+        "type": "uint256"
+      }
+    ],
+    "name": "AbandonedAssetClaimed",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "approved",
         "type": "address"
       },
@@ -347,6 +419,37 @@ export const BANMAO_BOX_ABI = [
       }
     ],
     "name": "BatchMetadataUpdate",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "BoxAssetAbandoned",
     "type": "event"
   },
   {
@@ -566,6 +669,25 @@ export const BANMAO_BOX_ABI = [
       {
         "indexed": true,
         "internalType": "address",
+        "name": "previousRenderer",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newRenderer",
+        "type": "address"
+      }
+    ],
+    "name": "RendererUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
         "name": "from",
         "type": "address"
       },
@@ -661,6 +783,52 @@ export const BANMAO_BOX_ABI = [
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assetIndex",
+        "type": "uint256"
+      }
+    ],
+    "name": "abandonAsset",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assetIndex",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "expectedToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "expectedAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "abandonAsset",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -802,6 +970,19 @@ export const BANMAO_BOX_ABI = [
     "inputs": [
       {
         "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "claimAbandonedAsset",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "to",
         "type": "address"
       },
@@ -930,6 +1111,16 @@ export const BANMAO_BOX_ABI = [
             "internalType": "uint256",
             "name": "amount",
             "type": "uint256"
+          },
+          {
+            "internalType": "uint8",
+            "name": "decimals",
+            "type": "uint8"
+          },
+          {
+            "internalType": "bytes16",
+            "name": "symbol",
+            "type": "bytes16"
           }
         ],
         "internalType": "struct BanmaoBox.BoxAsset[]",
@@ -995,6 +1186,19 @@ export const BANMAO_BOX_ABI = [
   },
   {
     "inputs": [],
+    "name": "metadataRenderer",
+    "outputs": [
+      {
+        "internalType": "contract IBanmaoBoxRenderer",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
     "name": "name",
     "outputs": [
       {
@@ -1030,6 +1234,34 @@ export const BANMAO_BOX_ABI = [
         "internalType": "uint256",
         "name": "tokenId",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "assetIndex",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "expectedToken",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "expectedAmount",
+        "type": "uint256"
+      }
+    ],
+    "name": "openAsset",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "tokenId",
+        "type": "uint256"
       }
     ],
     "name": "openBox",
@@ -1051,6 +1283,30 @@ export const BANMAO_BOX_ABI = [
         "internalType": "address",
         "name": "",
         "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "recoverableAbandoned",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -1141,7 +1397,20 @@ export const BANMAO_BOX_ABI = [
     "name": "renderer",
     "outputs": [
       {
-        "internalType": "contract IBanmaoBoxRenderer",
+        "internalType": "contract IBanmaoBoxSVGRenderer",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "rendererAdmin",
+    "outputs": [
+      {
+        "internalType": "address",
         "name": "",
         "type": "address"
       }
@@ -1214,6 +1483,19 @@ export const BANMAO_BOX_ABI = [
       }
     ],
     "name": "setApprovalForAll",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newRenderer",
+        "type": "address"
+      }
+    ],
+    "name": "setRenderer",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -1431,6 +1713,25 @@ export const BANMAO_BOX_ABI = [
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "untrackedSurplus",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   }
 ] as const;
 
@@ -1566,10 +1867,28 @@ export const BANMAO_BOX_FACTORY_ABI = [
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "rendererAdmin",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   }
 ] as const;
 
 export const BANMAO_BOX_RENDERER_ABI = [
+  {
+    "inputs": [],
+    "name": "InvalidRenderAssetCount",
+    "type": "error"
+  },
   {
     "inputs": [
       {
@@ -1607,11 +1926,6 @@ export const BANMAO_BOX_RENDERER_ABI = [
             "type": "address"
           },
           {
-            "internalType": "address",
-            "name": "creator",
-            "type": "address"
-          },
-          {
             "internalType": "uint256",
             "name": "amount",
             "type": "uint256"
@@ -1632,9 +1946,14 @@ export const BANMAO_BOX_RENDERER_ABI = [
             "type": "uint8"
           },
           {
-            "internalType": "string",
+            "internalType": "bytes16",
             "name": "tokenSymbol",
-            "type": "string"
+            "type": "bytes16"
+          },
+          {
+            "internalType": "bytes",
+            "name": "renderAssets",
+            "type": "bytes"
           }
         ],
         "internalType": "struct BanmaoBoxRenderData",
@@ -1668,11 +1987,6 @@ export const BANMAO_BOX_RENDERER_ABI = [
             "type": "address"
           },
           {
-            "internalType": "address",
-            "name": "creator",
-            "type": "address"
-          },
-          {
             "internalType": "uint256",
             "name": "amount",
             "type": "uint256"
@@ -1693,9 +2007,14 @@ export const BANMAO_BOX_RENDERER_ABI = [
             "type": "uint8"
           },
           {
-            "internalType": "string",
+            "internalType": "bytes16",
             "name": "tokenSymbol",
-            "type": "string"
+            "type": "bytes16"
+          },
+          {
+            "internalType": "bytes",
+            "name": "renderAssets",
+            "type": "bytes"
           }
         ],
         "internalType": "struct BanmaoBoxRenderData",
@@ -1748,11 +2067,6 @@ export const BANMAO_BOX_RENDERER_ABI = [
             "type": "address"
           },
           {
-            "internalType": "address",
-            "name": "creator",
-            "type": "address"
-          },
-          {
             "internalType": "uint256",
             "name": "amount",
             "type": "uint256"
@@ -1773,9 +2087,14 @@ export const BANMAO_BOX_RENDERER_ABI = [
             "type": "uint8"
           },
           {
-            "internalType": "string",
+            "internalType": "bytes16",
             "name": "tokenSymbol",
-            "type": "string"
+            "type": "bytes16"
+          },
+          {
+            "internalType": "bytes",
+            "name": "renderAssets",
+            "type": "bytes"
           }
         ],
         "internalType": "struct BanmaoBoxRenderData",

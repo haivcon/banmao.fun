@@ -5,19 +5,22 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
 import {BanmaoBox} from "./BanmaoBox.sol";
-import {IBanmaoBoxRenderer} from "./BanmaoBoxRenderer.sol";
+import {
+    IBanmaoBoxRenderer,
+    IBanmaoBoxSVGRenderer
+} from "./BanmaoBoxRenderer.sol";
 
 /**
  * @title BanmaoBoxFactory
- * @notice Permissionlessly deploys one immutable BanmaoBox collection per ERC-20.
- * @dev The factory has no owner, upgrade path, custody, or authority over boxes.
- *      Each collection is a full non-proxy deployment permanently bound to its
- *      underlying token and the immutable renderer configured here.
+ * @notice Permissionlessly deploys one BanmaoBox collection per ERC-20.
+ * @dev The factory deployer is the immutable renderer admin for every collection.
+ *      It has no custody, withdrawal, pause, or token-upgrade authority.
  */
 contract BanmaoBoxFactory is ReentrancyGuard {
     using ERC165Checker for address;
 
     IBanmaoBoxRenderer public immutable renderer;
+    address public immutable rendererAdmin;
 
     mapping(address token => address box) public boxForToken;
     mapping(address box => bool registered) public isTokenBox;
@@ -38,11 +41,15 @@ contract BanmaoBoxFactory is ReentrancyGuard {
             rendererAddress.code.length == 0 ||
             !rendererAddress.supportsInterface(
                 type(IBanmaoBoxRenderer).interfaceId
+            ) ||
+            !rendererAddress.supportsInterface(
+                type(IBanmaoBoxSVGRenderer).interfaceId
             )
         ) {
             revert InvalidRenderer();
         }
         renderer = IBanmaoBoxRenderer(rendererAddress);
+        rendererAdmin = msg.sender;
     }
 
     /**
@@ -57,7 +64,9 @@ contract BanmaoBoxFactory is ReentrancyGuard {
         address existing = boxForToken[token];
         if (existing != address(0)) revert TokenBoxAlreadyExists(existing);
 
-        box = address(new BanmaoBox(token, address(renderer)));
+        box = address(
+            new BanmaoBox(token, address(renderer), rendererAdmin)
+        );
         boxForToken[token] = box;
         isTokenBox[box] = true;
 

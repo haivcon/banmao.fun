@@ -6,6 +6,7 @@ const crypto = require("node:crypto");
 const solc = require("solc");
 const { ethers } = require("ethers");
 const { artifactFingerprint, assertArtifactRuntime } = require("./banmaobox-runtime.cjs");
+const { publishExplorerVerification } = require("./publish-banmaobox-explorer.cjs");
 
 const CHAIN_ID = 196;
 const TOKEN = ethers.utils.getAddress("0x16d91d1615fc55b76d5f92365bd60c069b46ef78");
@@ -21,6 +22,7 @@ const factoryAbi = [
 ];
 const boxAbi = [
   "function underlyingToken() view returns (address)", "function renderer() view returns (address)",
+  "function metadataRenderer() view returns (address)", "function rendererAdmin() view returns (address)",
   "function tokenDecimals() view returns (uint8)", "function tokenSymbol() view returns (string)",
   "function MAX_ASSETS_PER_BOX() view returns (uint256)", "function MAX_BATCH_SIZE() view returns (uint256)",
   "function MAX_LOCK_DURATION() view returns (uint256)", "function totalSupply() view returns (uint256)",
@@ -47,14 +49,26 @@ async function retryRead(label, operation, attempts = 5) {
   const detail = lastError?.error?.message || lastError?.reason || lastError?.message || String(lastError);
   fail(`${label} RPC read failed after ${attempts} attempts: ${detail}`);
 }
-function resolveImport(importPath) {
-  for (const candidate of [importPath, path.join("node_modules", importPath), path.join(SOURCE_DIR, importPath.replace(/^\.\//, ""))]) {
-    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return { contents: fs.readFileSync(candidate, "utf8") };
-  }
-  return { error: `Import not found: ${importPath}` };
+function collectSources(entryNames) {
+  const collected = {};
+  const visit = (sourceName) => {
+    if (collected[sourceName]) return;
+    const file = sourceName.startsWith("@") ? path.join("node_modules", sourceName) : sourceName;
+    if (!fs.existsSync(file)) fail(`Import not found: ${sourceName}`);
+    const content = fs.readFileSync(file, "utf8");
+    collected[sourceName] = { content };
+    for (const match of content.matchAll(/import\s+(?:[^"']*?from\s+)?["']([^"']+)["']\s*;/g)) {
+      const imported = match[1].startsWith(".")
+        ? path.posix.normalize(path.posix.join(path.posix.dirname(sourceName), match[1]))
+        : match[1];
+      visit(imported);
+    }
+  };
+  entryNames.forEach(visit);
+  return collected;
 }
 function compile() {
-  const sources = Object.fromEntries(SOURCES.map((file) => [`${SOURCE_DIR}/${file}`, { content: fs.readFileSync(path.join(SOURCE_DIR, file), "utf8") }]));
+  const sources = collectSources(SOURCES.map((file) => `${SOURCE_DIR}/${file}`));
   const input = {
     language: "Solidity", sources,
     settings: {
@@ -63,7 +77,7 @@ function compile() {
       outputSelection: { "*": { "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object", "evm.deployedBytecode.immutableReferences"] } },
     },
   };
-  const output = JSON.parse(solc.compile(JSON.stringify(input), { import: resolveImport }));
+  const output = JSON.parse(solc.compile(JSON.stringify(input)));
   const errors = (output.errors || []).filter((item) => item.severity === "error");
   if (errors.length) fail(errors.map((item) => item.formattedMessage).join("\n"));
   const artifact = (file, name) => output.contracts[`${SOURCE_DIR}/${file}`][name];
@@ -113,7 +127,10 @@ async function main() {
   const registryBox = await read("Factory boxForToken", () => factoryContract.boxForToken(TOKEN));
   const registered = await read("Factory isTokenBox", () => factoryContract.isTokenBox(box));
   const underlying = await read("Box underlyingToken", () => boxContract.underlyingToken());
-  const boxRenderer = await read("Box renderer", () => boxContract.renderer());
+  const boxRenderer = await read("Box SVG renderer", () => boxContract.renderer());
+  const metadataRenderer = await read("Box metadata renderer", () => boxContract.metadataRenderer());
+  const rendererAdmin = await read("Box renderer admin", () => boxContract.rendererAdmin());
+  await read("Active SVG renderer runtime", () => runtime(provider, boxRenderer, "Active SVG renderer"));
   const decimals = await read("Box tokenDecimals", () => boxContract.tokenDecimals());
   const symbol = await read("Box tokenSymbol", () => boxContract.tokenSymbol());
   const maxAssets = await read("Box MAX_ASSETS_PER_BOX", () => boxContract.MAX_ASSETS_PER_BOX());
@@ -121,7 +138,8 @@ async function main() {
   const maxLock = await read("Box MAX_LOCK_DURATION", () => boxContract.MAX_LOCK_DURATION());
   const supply = await read("Box totalSupply", () => boxContract.totalSupply());
   const locked = await read("Box totalTokensLocked", () => boxContract.totalTokensLocked());
-  if (!same(factoryRenderer, renderer) || !same(boxRenderer, renderer)) fail("Renderer links are invalid");
+  if (!same(factoryRenderer, renderer) || !same(metadataRenderer, renderer)) fail("Immutable metadata renderer links are invalid");
+  if (!same(rendererAdmin, manifest.deployer)) fail("Renderer admin does not match the deployment manifest");
   if (!same(registryBox, box) || !registered || !same(underlying, TOKEN)) fail("Factory/underlying registry is invalid");
   if (Number(decimals) !== 18 || !maxAssets.eq(5) || !maxBatch.eq(20) || !maxLock.eq(3_153_600_000)) fail("Metadata/constants mismatch");
   const runtimeCodes = [
@@ -144,6 +162,17 @@ async function main() {
       maxAssetsPerBox: maxAssets.toNumber(), maxBatchSize: maxBatch.toNumber(), maxLockDuration: maxLock.toNumber(),
     }, currentState: { totalSupply: supply.toString(), totalTokensLocked: locked.toString() }, runtime: observed,
     artifactRuntime }, null, 2));
+
+  if (process.argv.includes("--runtime-only")) {
+    console.log("Runtime-only verification completed; OKX Explorer API publishing was skipped.");
+    return;
+  }
+  console.log("\nRuntime checks passed. Starting OKX Explorer API verification...");
+  await publishExplorerVerification({ manifest });
 }
 
-main().catch((error) => { console.error(`Mainnet verification failed: ${error.reason || error.message}`); process.exitCode = 1; });
+main().catch((error) => {
+  console.error(`Mainnet verification failed: ${error.reason || error.message}`);
+  if (error.cause?.message) console.error(`Cause: ${error.cause.message}`);
+  process.exitCode = 1;
+});

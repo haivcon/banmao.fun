@@ -13,6 +13,9 @@
     "incremental": true,
     "module": "esnext",
     "esModuleInterop": true,
+    "types": [
+      "jest"
+    ],
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,

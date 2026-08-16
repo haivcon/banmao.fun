@@ -9,7 +9,7 @@ import {
   useSwitchChain,
   useWriteContract,
 } from "wagmi";
-import { formatUnits, keccak256, parseUnits, type Address, type Hash } from "viem";
+import { decodeEventLog, keccak256, parseUnits, type Address, type Hash } from "viem";
 import {
   BANMAO_BOX_ABI,
   BANMAO_BOX_FACTORY_ABI,
@@ -20,6 +20,7 @@ import {
   type BoxChainId,
   type BoxEntry,
   type InspectedBox,
+  normalizeBoxAssets,
 } from "./contracts";
 import {
   isCanonicalBoxCollection,
@@ -48,15 +49,38 @@ function getErrorMessage(error: unknown): string {
   return "Transaction failed";
 }
 
-export function formatBanmao(
-  value: bigint | undefined,
-  decimals = 18,
-  maximumFractionDigits = 4,
-): string {
-  if (value === undefined) return "0";
-  const number = Number(formatUnits(value, decimals));
-  if (!Number.isFinite(number)) return formatUnits(value, decimals);
-  return number.toLocaleString(undefined, { maximumFractionDigits });
+function assertLockDuration(lockDurationSec: bigint) {
+  if (lockDurationSec < 1n || lockDurationSec > 3_153_600_000n) {
+    throw new Error("Lock duration must be from 1 second to 36,500 days");
+  }
+}
+
+export type BoxReleaseResult = {
+  hash: Hash;
+  remainingAssetCount: bigint | null;
+  releasedAssetCount: number;
+  failedAssetCount: number;
+};
+
+function releaseEventCounts(
+  logs: readonly { address: Address; data: `0x${string}`; topics?: readonly `0x${string}`[] }[],
+  boxAddress: Address,
+) {
+  let releasedAssetCount = 0;
+  let failedAssetCount = 0;
+  for (const log of logs) {
+    if (log.address.toLowerCase() !== boxAddress.toLowerCase() || !log.topics?.length) continue;
+    try {
+      const topics = [...log.topics] as [`0x${string}`, ...`0x${string}`[]];
+      const event = decodeEventLog({ abi: BANMAO_BOX_ABI, data: log.data, topics });
+      if (typeof event !== "object" || event === null || !("eventName" in event)) continue;
+      if (event.eventName === "BoxAssetReleased") releasedAssetCount += 1;
+      if (event.eventName === "BoxAssetReleaseFailed") failedAssetCount += 1;
+    } catch {
+      // Ignore unrelated events emitted by the Box or token callbacks.
+    }
+  }
+  return { releasedAssetCount, failedAssetCount };
 }
 
 export function useBox(
@@ -210,6 +234,7 @@ export function useBox(
           registered,
           underlying,
           boxRenderer,
+          metadataRenderer,
           factoryRenderer,
           maxAssets,
           maxBatchSize,
@@ -242,6 +267,11 @@ export function useBox(
             functionName: "renderer",
           } as never) as Promise<Address>,
           publicClient.readContract({
+            address: boxAddress,
+            abi: BANMAO_BOX_ABI,
+            functionName: "metadataRenderer",
+          } as never) as Promise<Address>,
+          publicClient.readContract({
             address: factoryAddress,
             abi: BANMAO_BOX_FACTORY_ABI,
             functionName: "renderer",
@@ -262,6 +292,9 @@ export function useBox(
             functionName: "MAX_LOCK_DURATION",
           } as never) as Promise<bigint>,
         ]);
+        const activeRendererCode = await publicClient.getCode({
+          address: boxRenderer,
+        });
         if (
           !boxCode ||
           boxCode === "0x" ||
@@ -269,6 +302,8 @@ export function useBox(
           factoryCode === "0x" ||
           !rendererCode ||
           rendererCode === "0x" ||
+          !activeRendererCode ||
+          activeRendererCode === "0x" ||
           !tokenCode ||
           tokenCode === "0x"
         ) {
@@ -315,10 +350,10 @@ export function useBox(
           throw new Error("Collection constants do not match the production BanmaoBox release");
         }
         if (
-          !sameAddress(boxRenderer, expectedRendererAddress) ||
+          !sameAddress(metadataRenderer, expectedRendererAddress) ||
           !sameAddress(factoryRenderer, expectedRendererAddress)
         ) {
-          throw new Error("Renderer invariant does not match the manifest");
+          throw new Error("Immutable metadata renderer does not match the manifest");
         }
         if (!cancelled) setIsDeploymentValidated(true);
       } catch (error) {
@@ -370,6 +405,19 @@ export function useBox(
     [publicClient],
   );
 
+  const readBoxAssets = useCallback(
+    async (tokenId: bigint): Promise<BoxAsset[]> => {
+      if (!publicClient || !boxAddress) return [];
+      return normalizeBoxAssets(await publicClient.readContract({
+        address: boxAddress,
+        abi: BANMAO_BOX_ABI,
+        functionName: "getBoxAssets",
+        args: [tokenId],
+      } as never));
+    },
+    [boxAddress, publicClient],
+  );
+
   const loadBoxDetails = useCallback(async () => {
     if (
       !boxAddress ||
@@ -415,26 +463,26 @@ export function useBox(
           functionName: "canOpen" as const,
           args: [tokenId],
         },
-        {
-          address: boxAddress,
-          abi: BANMAO_BOX_ABI,
-          functionName: "getBoxAssets" as const,
-          args: [tokenId],
-        },
-        {
-          address: boxAddress,
-          abi: BANMAO_BOX_ABI,
-          functionName: "renderSVG" as const,
-          args: [tokenId],
-        },
       ]);
-      const results = (await publicClient.multicall({
-        contracts,
-        allowFailure: true,
-      } as never)) as readonly {
-        status: "success" | "failure";
-        result?: unknown;
-      }[];
+      const [results, svgResults] = await Promise.all([
+        publicClient.multicall({
+          contracts,
+          allowFailure: true,
+        } as never) as Promise<readonly {
+          status: "success" | "failure";
+          result?: unknown;
+        }[]>,
+        Promise.allSettled(
+          tokenIds.map((tokenId) =>
+            publicClient.readContract({
+              address: boxAddress,
+              abi: BANMAO_BOX_ABI,
+              functionName: "renderSVG",
+              args: [tokenId],
+            } as never) as Promise<string>,
+          ),
+        ),
+      ]);
       const requiredResult = (index: number) => {
         const value = results[index];
         if (value?.status !== "success") {
@@ -442,15 +490,12 @@ export function useBox(
         }
         return value.result;
       };
+      const assetsByTokenId = await Promise.all(tokenIds.map(readBoxAssets));
       const uniqueAssetTokens = [
         ...new Set(
-          results
-            .filter((_, index) => index % 4 === 2)
-            .flatMap((value) =>
-              ((value.status === "success" ? value.result : []) as readonly BoxAsset[]).map((asset) =>
-                asset.token.toLowerCase(),
-              ),
-            ),
+          assetsByTokenId.flatMap((assets) =>
+            assets.map((asset) => asset.token.toLowerCase()),
+          ),
         ),
       ];
       const metadataEntries = await Promise.all(
@@ -461,14 +506,14 @@ export function useBox(
       );
       const metadataByToken = new Map(metadataEntries);
       const entries = tokenIds.map((tokenId, index): BoxEntry => {
-        const details = requiredResult(index * 4) as readonly [
+        const details = requiredResult(index * 2) as readonly [
           bigint,
           Address,
           bigint,
           bigint,
         ];
-        const assets = requiredResult(index * 4 + 2) as readonly BoxAsset[];
-        const svgResult = results[index * 4 + 3];
+        const assets = assetsByTokenId[index];
+        const svgResult = svgResults[index];
         const primaryAsset = assets.find(
           (asset) => asset.token.toLowerCase() === tokenAddress.toLowerCase(),
         );
@@ -478,15 +523,19 @@ export function useBox(
           creator: details[1],
           createdAt: details[2],
           unlockTime: details[3],
-          canOpen: Boolean(requiredResult(index * 4 + 1)),
+          canOpen: Boolean(requiredResult(index * 2 + 1)),
           svg:
-            svgResult?.status === "success" && typeof svgResult.result === "string"
-              ? svgResult.result
+            svgResult?.status === "fulfilled" && typeof svgResult.value === "string"
+              ? svgResult.value
               : undefined,
-          assets: assets.map((asset) => ({
-            ...asset,
-            ...metadataByToken.get(asset.token.toLowerCase()),
-          })),
+          assets: assets.map((asset) => {
+            const fallback = metadataByToken.get(asset.token.toLowerCase());
+            return {
+              ...asset,
+              decimals: asset.decimals ?? fallback?.decimals,
+              symbol: asset.symbol ?? fallback?.symbol,
+            };
+          }),
         };
       });
       entries.sort((a, b) =>
@@ -507,6 +556,7 @@ export function useBox(
     ownedBoxCount,
     publicClient,
     readAssetDisplayMetadata,
+    readBoxAssets,
     tokenAddress,
   ]);
 
@@ -596,9 +646,7 @@ export function useBox(
         if (amountBaseUnits <= 0n) {
           throw new Error("Amount must be greater than zero");
         }
-        if (lockDurationSec <= 0n) {
-          throw new Error("Lock duration must be greater than zero");
-        }
+        assertLockDuration(lockDurationSec);
 
         let currentAllowance =
           (allowanceQuery.data as bigint | undefined) ?? 0n;
@@ -671,9 +719,7 @@ export function useBox(
         if (amounts.some((value) => value <= 0n)) {
           throw new Error("Every amount must be greater than zero");
         }
-        if (lockDurationSec <= 0n) {
-          throw new Error("Lock duration must be greater than zero");
-        }
+        assertLockDuration(lockDurationSec);
         const totalAmount = amounts.reduce((sum, value) => sum + value, 0n);
 
         let currentAllowance = (allowanceQuery.data as bigint | undefined) ?? 0n;
@@ -780,7 +826,7 @@ export function useBox(
         }
         const existing = await resolveCollection(primaryToken);
         if (existing !== "0x0000000000000000000000000000000000000000") {
-          return existing;
+          return { address: existing, txHash: undefined };
         }
         setPhase("creating");
         const { request } = await publicClient.simulateContract({
@@ -797,7 +843,7 @@ export function useBox(
           throw new Error("Factory did not register the new collection");
         }
         setPhase("success");
-        return created;
+        return { address: created, txHash: hash };
       } catch (error) {
         setPhase("error");
         setTransactionError(getErrorMessage(error));
@@ -818,6 +864,7 @@ export function useBox(
         if (assets.length < 2 || assets.length > 5) {
           throw new Error("A basket must contain 2 to 5 assets");
         }
+        assertLockDuration(lockDurationSec);
         const tokens = assets.map((asset) => asset.token);
         if (new Set(tokens.map((token) => token.toLowerCase())).size !== tokens.length) {
           throw new Error("Basket tokens must be unique");
@@ -887,7 +934,8 @@ export function useBox(
           args: [tokenId],
         } as never);
         const hash = await writeContractAsync(request as never);
-        await waitForHash(hash, client);
+        const receipt = await waitForHash(hash, client);
+        const counts = releaseEventCounts(receipt.logs, boxAddress);
         let remainingAssetCount: bigint | null = null;
         try {
           remainingAssetCount = (await client.readContract({
@@ -897,11 +945,13 @@ export function useBox(
             args: [tokenId],
           } as never)) as bigint;
         } catch {
-          // The release is confirmed; a transient follow-up read must not mark it failed.
+          if (counts.releasedAssetCount > 0 && counts.failedAssetCount === 0) {
+            remainingAssetCount = 0n;
+          }
         }
         setPhase("success");
         await refetchAll();
-        return { hash, remainingAssetCount };
+        return { hash, remainingAssetCount, ...counts } satisfies BoxReleaseResult;
       } catch (error) {
         setPhase("error");
         setTransactionError(getErrorMessage(error));
@@ -918,7 +968,12 @@ export function useBox(
   );
 
   const openAsset = useCallback(
-    async (tokenId: bigint, assetIndex: bigint) => {
+    async (
+      tokenId: bigint,
+      assetIndex: bigint,
+      expectedToken: Address,
+      expectedAmount: bigint,
+    ) => {
       resetTransaction();
       try {
         const { account, boxAddress, client } = await ensureReady();
@@ -928,10 +983,11 @@ export function useBox(
           address: boxAddress,
           abi: BANMAO_BOX_ABI,
           functionName: "openAsset",
-          args: [tokenId, assetIndex],
+          args: [tokenId, assetIndex, expectedToken, expectedAmount],
         } as never);
         const hash = await writeContractAsync(request as never);
-        await waitForHash(hash, client);
+        const receipt = await waitForHash(hash, client);
+        const counts = releaseEventCounts(receipt.logs, boxAddress);
         let remainingAssetCount: bigint | null = null;
         try {
           remainingAssetCount = (await client.readContract({
@@ -941,11 +997,11 @@ export function useBox(
             args: [tokenId],
           } as never)) as bigint;
         } catch {
-          // The release is confirmed; a transient follow-up read must not mark it failed.
+          // One release event does not prove the Box is empty; preserve unknown state.
         }
         setPhase("success");
         await refetchAll();
-        return { hash, remainingAssetCount };
+        return { hash, remainingAssetCount, ...counts } satisfies BoxReleaseResult;
       } catch (error) {
         setPhase("error");
         setTransactionError(getErrorMessage(error));
@@ -987,21 +1043,20 @@ export function useBox(
           functionName: "renderSVG",
           args: [tokenId],
         } as never) as Promise<string>,
-        publicClient.readContract({
-          address: boxAddress,
-          abi: BANMAO_BOX_ABI,
-          functionName: "getBoxAssets",
-          args: [tokenId],
-        } as never) as Promise<readonly BoxAsset[]>,
+        readBoxAssets(tokenId),
       ]);
       const primaryAsset = assets.find(
         (asset) => asset.token.toLowerCase() === tokenAddress.toLowerCase(),
       );
       const hydratedAssets = await Promise.all(
-        assets.map(async (asset) => ({
-          ...asset,
-          ...(await readAssetDisplayMetadata(asset.token)),
-        })),
+        assets.map(async (asset) => {
+          const fallback = await readAssetDisplayMetadata(asset.token);
+          return {
+            ...asset,
+            decimals: asset.decimals ?? fallback.decimals,
+            symbol: asset.symbol ?? fallback.symbol,
+          };
+        }),
       );
       return {
         tokenId,
@@ -1021,6 +1076,7 @@ export function useBox(
       isDeploymentValidated,
       publicClient,
       readAssetDisplayMetadata,
+      readBoxAssets,
       tokenAddress,
     ],
   );

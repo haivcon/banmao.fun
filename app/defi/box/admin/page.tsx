@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import { useAccount, usePublicClient } from "wagmi";
-import { formatUnits, isAddress, type Address } from "viem";
+import { isAddress, type Address } from "viem";
 import {
   Activity,
   ArrowLeft,
@@ -32,16 +32,13 @@ import {
 } from "../contracts";
 import { svgImageDataUri } from "../safety";
 import { useBox } from "../useBox";
+import { requestBanmaoBoxVerification } from "../requestVerification";
+import { formatExactTokenAmount } from "../amountFormat";
 import "./admin.css";
 
 const short = (v?: string) =>
   v ? `${v.slice(0, 8)}…${v.slice(-6)}` : "Not deployed";
-const metric = (v: bigint, d: number) => {
-  const n = Number(formatUnits(v, d));
-  return Number.isFinite(n)
-    ? n.toLocaleString(undefined, { maximumFractionDigits: 2 })
-    : formatUnits(v, d);
-};
+const metric = (v: bigint, d: number) => formatExactTokenAmount(v, d, "en");
 export default function BoxOperationsPage() {
   const [network] = useState<BoxChainId>(XLAYER_CHAIN_ID),
     [tokenId, setTokenId] = useState(""),
@@ -217,7 +214,8 @@ export default function BoxOperationsPage() {
     setBusy(true);
     try {
       const created = await box.createCollection(factoryToken as Address);
-      setMessage(`Collection ready: ${created}`);
+      setMessage(`Collection ready: ${created.address}`);
+      if (created.txHash) void requestBanmaoBoxVerification(created.txHash);
     } catch (err) {
       setMessage(
         err instanceof Error

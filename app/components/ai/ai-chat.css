@@ -2,7 +2,7 @@
 .banmao-ai-root {
   --ai-aura: #a855f7; --ai-aura-rgb: 168, 85, 247; --ai-bg: #090812; --ai-raised: #12101d;
   --ai-card: #181523; --ai-text: #f8f7fc; --ai-muted: #9993a8; --ai-border: rgba(255,255,255,.09);
-  --ai-root-bottom: max(20px, calc(env(safe-area-inset-bottom) + var(--defi-bottom-nav-height, 0px) + 14px));
+  --ai-root-bottom: max(20px, calc(env(safe-area-inset-bottom) + var(--defi-bottom-nav-height, 54px) + 14px));
   position: fixed; z-index: 2147483000; right: max(18px, env(safe-area-inset-right));
   bottom: var(--ai-root-bottom); color: var(--ai-text);
   font: 14px/1.5 var(--font-sans, system-ui, -apple-system, sans-serif); font-synthesis: none;
