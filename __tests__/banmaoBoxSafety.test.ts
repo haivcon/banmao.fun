@@ -1,3 +1,5 @@
+jest.mock("../app/defi/box/registry", () => ({}));
+
 import {
   isCanonicalBoxCollection,
   normalizeTokenDecimals,
@@ -6,6 +8,13 @@ import {
   sameAddress,
   svgImageDataUri,
 } from "../app/defi/box/safety";
+import {
+  MAX_LOCK_DURATION_SECONDS,
+  addAddressHistoryEntry,
+  durationPartsToSeconds,
+  normalizeBoxAssets,
+  parseAddressHistory,
+} from "../app/defi/box/contracts";
 
 const address = (digit: string) => `0x${digit.repeat(40)}` as `0x${string}`;
 
@@ -41,5 +50,46 @@ describe("BanmaoBox frontend safety helpers", () => {
     expect(uri).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
     expect(uri).not.toContain("<script>");
     expect(decodeURIComponent(svgImageDataUri("not svg"))).toContain("Artwork unavailable");
+  });
+
+  test("converts exact mixed integer duration fields and enforces bounds", () => {
+    expect(durationPartsToSeconds({ days: "0", hours: "0", minutes: "0", seconds: "0" })).toBe(0n);
+    expect(durationPartsToSeconds({ days: "0", hours: "0", minutes: "0", seconds: "1" })).toBe(1n);
+    expect(durationPartsToSeconds({ days: "36500", hours: "0", minutes: "0", seconds: "0" })).toBe(MAX_LOCK_DURATION_SECONDS);
+    expect(durationPartsToSeconds({ days: "36500", hours: "0", minutes: "0", seconds: "1" })).toBe(MAX_LOCK_DURATION_SECONDS + 1n);
+    expect(durationPartsToSeconds({ days: "2", hours: "3", minutes: "4", seconds: "5" })).toBe(183_845n);
+    expect(durationPartsToSeconds({ days: "1.5", hours: "0", minutes: "0", seconds: "0" })).toBeNull();
+    expect(durationPartsToSeconds({ days: "", hours: "", minutes: "", seconds: "" })).toBe(0n);
+  });
+
+  test("parses, checksums, deduplicates, caps, and tolerates malformed address history", () => {
+    expect(parseAddressHistory("not json")).toEqual([]);
+    expect(parseAddressHistory(JSON.stringify([address("1"), "bad", 7, address("1").toUpperCase()]))).toEqual([address("1")]);
+
+    let history: `0x${string}`[] = [];
+    for (let digit = 1; digit <= 11; digit += 1) {
+      history = addAddressHistoryEntry(history, `0x${digit.toString(16).padStart(40, "0")}`);
+    }
+    expect(history).toHaveLength(10);
+    expect(history[0]).toBe("0x000000000000000000000000000000000000000b");
+    expect(addAddressHistoryEntry(history, history[5])[0]).toBe(history[5]);
+  });
+
+  test("normalizes every old and new asset tuple without relying on the primary token", () => {
+    const primary = address("1");
+    const secondary = address("2");
+    const oldTuple = [primary, 0n] as const;
+    const newTuple = Object.assign([secondary, 1_234_567n, 6, "USDC"], {
+      token: secondary,
+      amount: 1_234_567n,
+      decimals: 6,
+      symbol: "USDC",
+    });
+    expect(normalizeBoxAssets([oldTuple, newTuple])).toEqual([
+      { token: primary, amount: 0n },
+      { token: secondary, amount: 1_234_567n, decimals: 6, symbol: "USDC" },
+    ]);
+    expect(normalizeBoxAssets([])).toEqual([]);
+    expect(normalizeBoxAssets([["bad", 1n], [secondary, "bad"]])).toEqual([]);
   });
 });

@@ -1,4 +1,7 @@
 import {
+  CANONICAL_BANMAO_BOX_ADDRESS,
+  CANONICAL_BANMAO_BOX_FACTORY_ADDRESS,
+  CANONICAL_BANMAO_BOX_RENDERER_ADDRESS,
   CANONICAL_BANMAO_MAINNET_ADDRESS,
   isVerifiedMainnetManifest,
   validDeploymentAddress,
@@ -10,12 +13,11 @@ const hash = (digit: string) => `0x${digit.repeat(64)}`;
 function manifest(status = "deployed") {
   return {
     status,
-    frontendEnabled: true,
     contracts: {
       token: CANONICAL_BANMAO_MAINNET_ADDRESS,
-      renderer: address("2"),
-      factory: address("3"),
-      box: address("4"),
+      renderer: CANONICAL_BANMAO_BOX_RENDERER_ADDRESS,
+      factory: CANONICAL_BANMAO_BOX_FACTORY_ADDRESS,
+      box: CANONICAL_BANMAO_BOX_ADDRESS,
     },
     runtime: {
       token: { bytes: 50, keccak256: hash("d") },
@@ -37,13 +39,18 @@ describe("BanmaoBox mainnet registry gates", () => {
     expect(isVerifiedMainnetManifest(manifest())).toBe(true);
     expect(isVerifiedMainnetManifest(manifest("not-deployed"))).toBe(false);
 
-    const disabled = manifest();
-    disabled.frontendEnabled = false;
-    expect(isVerifiedMainnetManifest(disabled)).toBe(false);
+    const candidate = manifest("release-candidate");
+    expect(isVerifiedMainnetManifest(candidate)).toBe(false);
 
     const wrongToken = manifest();
     wrongToken.contracts.token = address("9");
     expect(isVerifiedMainnetManifest(wrongToken)).toBe(false);
+
+    for (const contract of ["renderer", "factory", "box"] as const) {
+      const retiredDeployment = manifest();
+      retiredDeployment.contracts[contract] = address("9");
+      expect(isVerifiedMainnetManifest(retiredDeployment)).toBe(false);
+    }
 
     const missingRuntime = manifest();
     delete missingRuntime.runtime.box;

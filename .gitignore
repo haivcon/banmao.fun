@@ -91,13 +91,9 @@ ehthumbs.db
 
 # Local-only scripts. Keep the audited BanmaoBox release tooling versioned.
 /scripts/*
-!/scripts/deploy-banmaobox-mainnet.cjs
-!/scripts/verify-banmaobox-mainnet.cjs
-!/scripts/generate-banmaobox-abis.cjs
-!/scripts/generate-banmaobox-release.cjs
-!/scripts/banmaobox-runtime.cjs
+!/scripts/publish-banmaobox-explorer.cjs
 /deployments/
-scripts/
+/docs/BANMAOBOX_MANUAL_DEPLOY.md
 # Local-only removed games: keep source on this machine, never commit/deploy
 /local-only/
 /app/gamefi/banmaominer/

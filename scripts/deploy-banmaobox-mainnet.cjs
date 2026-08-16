@@ -15,9 +15,11 @@ const EXPLORER_URL = "https://web3.okx.com/explorer/x-layer/evm";
 const MANIFEST = path.resolve("deployments/banmaobox-xlayer-mainnet.json");
 const JOURNAL = path.resolve("deployments/.banmaobox-mainnet-journal.json");
 const RELEASE = path.resolve("deployments/banmaobox-release-artifacts.json");
+const DEPLOYMENT_HISTORY = path.resolve("deployments/banmaobox-mainnet-history");
 const SOURCE_DIR = "contracts/banmaobox";
 const SOURCES = ["BanmaoBoxRenderer.sol", "BanmaoBox.sol", "BanmaoBoxFactory.sol"];
 const CONFIRMATION = "DEPLOY_BANMAOBOX_XLAYER_196";
+const REPLACEMENT_CONFIRMATION = "REPLACE_BANMAOBOX_XLAYER_196";
 const CONFIRMATIONS = Number(process.env.BANMAOBOX_DEPLOY_CONFIRMATIONS || 2);
 const GAS_BUFFER_PERCENT = 125;
 
@@ -33,7 +35,7 @@ function sha256(value) { return `0x${crypto.createHash("sha256").update(value).d
 function keccakCode(code) { return ethers.utils.keccak256(code); }
 function loadJson(file) { return JSON.parse(fs.readFileSync(file, "utf8")); }
 function sleep(milliseconds) { return new Promise((resolve) => setTimeout(resolve, milliseconds)); }
-async function retryRead(label, operation, attempts = 5) {
+async function retryRead(label, operation, attempts = 10) {
   let lastError;
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
@@ -41,7 +43,7 @@ async function retryRead(label, operation, attempts = 5) {
     } catch (error) {
       lastError = error;
       if (attempt === attempts) break;
-      const delay = attempt * 1_000;
+      const delay = Math.min(attempt * 2_000, 20_000);
       console.warn(`${label} RPC read failed (${attempt}/${attempts}); retrying in ${delay}ms...`);
       await sleep(delay);
     }
@@ -50,15 +52,27 @@ async function retryRead(label, operation, attempts = 5) {
   fail(`${label} RPC read failed after ${attempts} attempts: ${detail}`);
 }
 
-function resolveImport(importPath) {
-  for (const candidate of [importPath, path.join("node_modules", importPath), path.join(SOURCE_DIR, importPath.replace(/^\.\//, ""))]) {
-    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) return { contents: fs.readFileSync(candidate, "utf8") };
-  }
-  return { error: `Import not found: ${importPath}` };
+function collectSources(entryNames) {
+  const collected = {};
+  const visit = (sourceName) => {
+    if (collected[sourceName]) return;
+    const file = sourceName.startsWith("@") ? path.join("node_modules", sourceName) : sourceName;
+    if (!fs.existsSync(file)) fail(`Import not found: ${sourceName}`);
+    const content = fs.readFileSync(file, "utf8");
+    collected[sourceName] = { content };
+    for (const match of content.matchAll(/import\s+(?:[^"']*?from\s+)?["']([^"']+)["']\s*;/g)) {
+      const imported = match[1].startsWith(".")
+        ? path.posix.normalize(path.posix.join(path.posix.dirname(sourceName), match[1]))
+        : match[1];
+      visit(imported);
+    }
+  };
+  entryNames.forEach(visit);
+  return collected;
 }
 
 function compile() {
-  const sources = Object.fromEntries(SOURCES.map((file) => [`${SOURCE_DIR}/${file}`, { content: fs.readFileSync(path.join(SOURCE_DIR, file), "utf8") }]));
+  const sources = collectSources(SOURCES.map((file) => `${SOURCE_DIR}/${file}`));
   const input = {
     language: "Solidity", sources,
     settings: {
@@ -67,7 +81,7 @@ function compile() {
       outputSelection: { "*": { "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object", "evm.deployedBytecode.immutableReferences"] } },
     },
   };
-  const output = JSON.parse(solc.compile(JSON.stringify(input), { import: resolveImport }));
+  const output = JSON.parse(solc.compile(JSON.stringify(input)));
   const errors = (output.errors || []).filter((item) => item.severity === "error");
   if (errors.length) fail(errors.map((item) => item.formattedMessage).join("\n"));
   const artifact = (file, name) => output.contracts[`${SOURCE_DIR}/${file}`][name];
@@ -143,18 +157,36 @@ async function deployContract(provider, signer, artifact, args, label, journal, 
 async function validate(provider, artifacts, addresses) {
   const factory = new ethers.Contract(addresses.factory, artifacts.factory.abi, provider);
   const box = new ethers.Contract(addresses.box, artifacts.box.abi, provider);
-  const values = await Promise.all([
-    code(provider, addresses.renderer, "Renderer"), code(provider, addresses.factory, "Factory"),
-    code(provider, addresses.box, "Box"), code(provider, TOKEN, "BANMAO"),
-    factory.renderer(), factory.boxForToken(TOKEN), factory.isTokenBox(addresses.box),
-    box.underlyingToken(), box.renderer(), box.tokenDecimals(), box.tokenSymbol(),
-    box.MAX_ASSETS_PER_BOX(), box.MAX_BATCH_SIZE(), box.MAX_LOCK_DURATION(),
-    box.totalSupply(), box.totalTokensLocked(),
-  ]);
-  const [rendererCode, factoryCode, boxCode, tokenCode, factoryRenderer, registryBox,
-    registered, underlying, boxRenderer, decimals, symbol, maxAssets, maxBatch,
-    maxLock, supply, locked] = values;
-  if (!same(factoryRenderer, addresses.renderer) || !same(boxRenderer, addresses.renderer)) fail("Renderer immutable invariant failed");
+  const read = (label, operation) => retryRead(`Deployment invariant: ${label}`, operation);
+
+  // Keep validation reads sequential. The public X Layer RPC may reset
+  // connections when a large group of eth_call requests arrives concurrently.
+  const rendererCode = await read("Renderer bytecode", () => code(provider, addresses.renderer, "Renderer"));
+  const factoryCode = await read("Factory bytecode", () => code(provider, addresses.factory, "Factory"));
+  const boxCode = await read("Box bytecode", () => code(provider, addresses.box, "Box"));
+  const tokenCode = await read("BANMAO bytecode", () => code(provider, TOKEN, "BANMAO"));
+  const factoryRenderer = await read("Factory renderer", () => factory.renderer());
+  const registryBox = await read("Factory boxForToken", () => factory.boxForToken(TOKEN));
+  const registered = await read("Factory isTokenBox", () => factory.isTokenBox(addresses.box));
+  const underlying = await read("Box underlyingToken", () => box.underlyingToken());
+  const boxRenderer = await read("Box renderer", () => box.renderer());
+  const metadataRenderer = await read("Box metadata renderer", () => box.metadataRenderer());
+  const rendererAdmin = await read("Box renderer admin", () => box.rendererAdmin());
+  const factoryAdmin = await read("Factory renderer admin", () => factory.rendererAdmin());
+  const decimals = await read("Box tokenDecimals", () => box.tokenDecimals());
+  const symbol = await read("Box tokenSymbol", () => box.tokenSymbol());
+  const maxAssets = await read("Box MAX_ASSETS_PER_BOX", () => box.MAX_ASSETS_PER_BOX());
+  const maxBatch = await read("Box MAX_BATCH_SIZE", () => box.MAX_BATCH_SIZE());
+  const maxLock = await read("Box MAX_LOCK_DURATION", () => box.MAX_LOCK_DURATION());
+  const supply = await read("Box totalSupply", () => box.totalSupply());
+  const locked = await read("Box totalTokensLocked", () => box.totalTokensLocked());
+
+  if (
+    !same(factoryRenderer, addresses.renderer) ||
+    !same(metadataRenderer, addresses.renderer) ||
+    !same(boxRenderer, addresses.renderer)
+  ) fail("Initial renderer invariant failed");
+  if (!same(rendererAdmin, addresses.deployer) || !same(factoryAdmin, addresses.deployer)) fail("Renderer admin invariant failed");
   if (!same(registryBox, addresses.box) || !registered) fail("Factory registry invariant failed");
   if (!same(underlying, TOKEN)) fail("Underlying token invariant failed");
   if (Number(decimals) !== 18) fail(`Expected BANMAO decimals 18, received ${decimals.toString()}`);
@@ -183,7 +215,13 @@ async function main() {
   if (!Number.isInteger(CONFIRMATIONS) || CONFIRMATIONS < 1) fail("BANMAOBOX_DEPLOY_CONFIRMATIONS must be a positive integer");
   const currentManifest = loadJson(MANIFEST);
   if (currentManifest.chainId !== CHAIN_ID || !same(currentManifest.contracts.token, TOKEN)) fail("Mainnet manifest chain/token preflight failed");
-  if (currentManifest.status === "deployed") fail("Mainnet manifest is already deployed; refusing a duplicate deployment");
+  const replacingDeployment = currentManifest.status === "deployed";
+  if (replacingDeployment && (
+    !process.argv.includes("--replace-deployment") ||
+    process.env.BANMAOBOX_REPLACE_CONFIRM !== REPLACEMENT_CONFIRMATION
+  )) {
+    fail(`A mainnet deployment already exists. Replacement requires --replace-deployment and BANMAOBOX_REPLACE_CONFIRM=${REPLACEMENT_CONFIRMATION}`);
+  }
 
   console.log("Compiling production sources (optimizer=200, EVM=Shanghai)...");
   const { artifacts, compilerInputHash } = compile();
@@ -254,16 +292,29 @@ async function main() {
   assertArtifactRuntime(boxCode, artifacts.box, "BanmaoBox");
   const validated = await retryRead(
     "Deployment invariants",
-    () => validate(provider, artifacts, { renderer: renderer.address, factory: factory.address, box: boxAddress }),
+    () => validate(provider, artifacts, {
+      renderer: renderer.address,
+      factory: factory.address,
+      box: boxAddress,
+      deployer: journal.deployer,
+    }),
   );
   const deployment = {
-    schemaVersion: 1, status: "deployed", frontendEnabled: false, network: "X Layer Mainnet", chainId: CHAIN_ID,
+    schemaVersion: 1, status: "deployed", network: "X Layer Mainnet", chainId: CHAIN_ID,
     rpcUrl: RPC_URL, explorerUrl: EXPLORER_URL, deployedAt: new Date().toISOString(),
     compiler: solc.version(), compilerInputHash, optimizerRuns: 200, evmVersion: "shanghai",
     confirmations: CONFIRMATIONS, deployer: journal.deployer,
     contracts: { token: TOKEN, renderer: renderer.address, factory: factory.address, box: boxAddress },
     transactions: journal.transactions, ...validated,
   };
+  if (replacingDeployment) {
+    const previousBox = String(currentManifest.contracts.box).toLowerCase().replace(/^0x/, "");
+    const previousHash = String(currentManifest.compilerInputHash || "unknown").replace(/^0x/, "");
+    const archive = path.join(DEPLOYMENT_HISTORY, `${previousBox}-${previousHash}.json`);
+    if (fs.existsSync(archive)) fail(`Previous deployment archive already exists: ${archive}`);
+    atomicWrite(archive, currentManifest);
+    console.log(`Archived previous deployment manifest: ${archive}`);
+  }
   atomicWrite(MANIFEST, deployment);
   fs.rmSync(JOURNAL, { force: true });
   console.log(`\nDeployment validated and saved atomically: ${MANIFEST}`);

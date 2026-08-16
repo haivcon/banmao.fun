@@ -165,7 +165,7 @@ Deployment notes:
 
 ## Security
 
-Never commit private keys, seed phrases, API credentials, session secrets, production databases, or user data. Verify the chain ID, contract bytecode, registry relationships, token, and renderer invariants before enabling Web3 writes. Testnet contracts and mock tokens have no production value.
+Never commit private keys, seed phrases, API credentials, session secrets, production databases, or user data. Verify the chain ID, contract bytecode, registry relationships, token, immutable metadata renderer/admin, and active SVG renderer before enabling Web3 writes. Testnet contracts and mock tokens have no production value.
 
 Report vulnerabilities privately as described in the [security policy](.github/SECURITY.md). Do not disclose exploitable issues in a public issue.
 
