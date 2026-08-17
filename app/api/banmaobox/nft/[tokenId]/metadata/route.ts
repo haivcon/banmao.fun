@@ -80,10 +80,20 @@ export async function GET(
       throw new Error("BanmaoBox tokenURI is not base64 JSON");
     }
 
-    const metadata = JSON.parse(
+    const metadata: unknown = JSON.parse(
       Buffer.from(tokenUri.slice(prefix.length), "base64").toString("utf8"),
-    ) as Record<string, unknown>;
-    metadata.image = `https://www.banmao.fun/api/banmaobox/nft/${tokenId}/image.svg`;
+    );
+    if (
+      typeof metadata !== "object" ||
+      metadata === null ||
+      Array.isArray(metadata) ||
+      typeof (metadata as Record<string, unknown>).image !== "string" ||
+      !/^data:image\/svg\+xml;base64,[A-Za-z0-9+/]+={0,2}$/.test(
+        (metadata as Record<string, unknown>).image as string,
+      )
+    ) {
+      throw new Error("BanmaoBox metadata image is not base64 SVG");
+    }
 
     return NextResponse.json(metadata, {
       headers: { "Cache-Control": CACHE_CONTROL },
