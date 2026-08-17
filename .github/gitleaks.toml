@@ -4,6 +4,12 @@ useDefault = true
 [allowlist]
 paths = [
   '''__tests__/''',
+  # Deployment manifests contain only public addresses, transaction hashes, and runtime hashes.
+  '''^deployments/banmaobox-(?:xlayer-(?:mainnet|testnet)|mainnet-history/.*)[.]json$''',
+]
+regexes = [
+  # Public EVM address fallback in the audited testnet deployment script (40 hex chars, not a key).
+  '''^0x[a-fA-F0-9]{40}$''',
 ]
 commits = [
   # Public X Layer token address and deployment transaction hash
