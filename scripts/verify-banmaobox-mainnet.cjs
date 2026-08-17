@@ -17,6 +17,8 @@ const SOURCE_DIR = "contracts/banmaobox";
 const SOURCES = ["BanmaoBoxRenderer.sol", "BanmaoBox.sol", "BanmaoBoxFactory.sol"];
 const factoryAbi = [
   "function renderer() view returns (address)",
+  "function defaultRenderer() view returns (address)",
+  "function previousFactory() view returns (address)",
   "function boxForToken(address) view returns (address)",
   "function isTokenBox(address) view returns (bool)",
 ];
@@ -124,6 +126,10 @@ async function main() {
   const factoryRuntime = await read("Factory runtime", () => runtime(provider, factory, "Factory"));
   const boxRuntime = await read("Box runtime", () => runtime(provider, box, "Box"));
   const factoryRenderer = await read("Factory renderer", () => factoryContract.renderer());
+  const defaultRenderer = await read("Factory default renderer", () => factoryContract.defaultRenderer());
+  await read("Factory default renderer runtime", () => runtime(provider, defaultRenderer, "Factory default renderer"));
+  const previousFactory = await read("Factory predecessor", () => factoryContract.previousFactory());
+  const expectedPreviousFactory = manifest.contracts.previousFactory || ethers.constants.AddressZero;
   const registryBox = await read("Factory boxForToken", () => factoryContract.boxForToken(TOKEN));
   const registered = await read("Factory isTokenBox", () => factoryContract.isTokenBox(box));
   const underlying = await read("Box underlyingToken", () => boxContract.underlyingToken());
@@ -138,7 +144,11 @@ async function main() {
   const maxLock = await read("Box MAX_LOCK_DURATION", () => boxContract.MAX_LOCK_DURATION());
   const supply = await read("Box totalSupply", () => boxContract.totalSupply());
   const locked = await read("Box totalTokensLocked", () => boxContract.totalTokensLocked());
-  if (!same(factoryRenderer, renderer) || !same(metadataRenderer, renderer)) fail("Immutable metadata renderer links are invalid");
+  if (
+    !same(factoryRenderer, renderer) ||
+    !same(previousFactory, expectedPreviousFactory) ||
+    !same(metadataRenderer, renderer)
+  ) fail("Factory migration or immutable metadata renderer links are invalid");
   if (!same(rendererAdmin, manifest.deployer)) fail("Renderer admin does not match the deployment manifest");
   if (!same(registryBox, box) || !registered || !same(underlying, TOKEN)) fail("Factory/underlying registry is invalid");
   if (Number(decimals) !== 18 || !maxAssets.eq(5) || !maxBatch.eq(20) || !maxLock.eq(3_153_600_000)) fail("Metadata/constants mismatch");

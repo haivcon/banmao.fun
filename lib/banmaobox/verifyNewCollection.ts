@@ -17,7 +17,7 @@ const factoryAbi = parseAbi([
   "event TokenBoxCreated(address indexed token, address indexed box, address indexed creator)",
   "function boxForToken(address token) view returns (address)",
   "function isTokenBox(address box) view returns (bool)",
-  "function renderer() view returns (address)",
+  "function defaultRenderer() view returns (address)",
 ]);
 const boxAbi = parseAbi([
   "function underlyingToken() view returns (address)",
@@ -120,7 +120,6 @@ async function validateTransaction(txHash: Hex) {
   if (events.length !== 1) throw new Error("Receipt must contain exactly one TokenBoxCreated event");
   const tokenAddress = getAddress(events[0].token);
   const boxAddress = getAddress(events[0].box);
-  const expectedRenderer = getAddress(manifest.contracts.renderer);
   const [
     registeredBox,
     registered,
@@ -134,7 +133,12 @@ async function validateTransaction(txHash: Hex) {
   ] = await Promise.all([
     client.readContract({ address: factoryAddress, abi: factoryAbi, functionName: "boxForToken", args: [tokenAddress] } as never) as Promise<Address>,
     client.readContract({ address: factoryAddress, abi: factoryAbi, functionName: "isTokenBox", args: [boxAddress] } as never) as Promise<boolean>,
-    client.readContract({ address: factoryAddress, abi: factoryAbi, functionName: "renderer" } as never) as Promise<Address>,
+    client.readContract({
+      address: factoryAddress,
+      abi: factoryAbi,
+      functionName: "defaultRenderer",
+      blockNumber: receipt.blockNumber,
+    } as never) as Promise<Address>,
     client.readContract({ address: boxAddress, abi: boxAbi, functionName: "underlyingToken" } as never) as Promise<Address>,
     client.readContract({ address: boxAddress, abi: boxAbi, functionName: "renderer" } as never) as Promise<Address>,
     client.readContract({ address: boxAddress, abi: boxAbi, functionName: "metadataRenderer" } as never) as Promise<Address>,
@@ -143,9 +147,8 @@ async function validateTransaction(txHash: Hex) {
   ]);
   if (!registered || !sameAddress(registeredBox, boxAddress)) throw new Error("Factory registry does not contain the emitted Box");
   if (
-    !sameAddress(factoryRenderer, expectedRenderer) ||
-    !sameAddress(metadataRenderer, expectedRenderer) ||
-    !sameAddress(boxRenderer, expectedRenderer)
+    !sameAddress(metadataRenderer, factoryRenderer) ||
+    !sameAddress(boxRenderer, factoryRenderer)
   ) throw new Error("Initial renderer invariant does not match the deployed Factory");
   if (!sameAddress(rendererAdmin, manifest.deployer)) throw new Error("Renderer admin does not match the deployment manifest");
   if (!sameAddress(underlying, tokenAddress)) throw new Error("Box underlying token does not match TokenBoxCreated");
@@ -157,7 +160,7 @@ async function validateTransaction(txHash: Hex) {
   return {
     tokenAddress,
     boxAddress,
-    renderer: expectedRenderer,
+    renderer: getAddress(factoryRenderer),
     rendererAdmin,
     blockTimeMs: Number(block.timestamp) * 1000,
   };

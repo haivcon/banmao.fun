@@ -776,21 +776,38 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
             bytes(renderer.renderSVG(tokenId, data))
         );
         bytes memory metadata = abi.encodePacked(
-            '{"name":"BanmaoBox #', tokenId.toString(),
-            '","description":"A transferable time-sealed treasury backed by up to five ERC-20 assets on X Layer. Ledger amounts are exact base units.",',
-            '"image":"data:image/svg+xml;base64,', image,
-            '","animation_url":"data:image/svg+xml;base64,', image,
-            '","external_url":"https://banmao.fun/defi/box",',
-            '"background_color":"08090D","attributes":',
-            metadataRenderer.renderAttributes(data),
-            ',"properties":{"type":"banmaobox","metadataMode":"fully-onchain",',
-            '"renderer":"solidity-svg-split-contract","chain":"X Layer","chainId":196}}'
+            _renderMetadataHead(tokenId, image),
+            _renderMetadataTail(data)
         );
         return string(
             abi.encodePacked(
                 "data:application/json;base64,",
                 Base64.encode(metadata)
             )
+        );
+    }
+
+    function _renderMetadataHead(
+        uint256 tokenId,
+        string memory image
+    ) private pure returns (bytes memory) {
+        return abi.encodePacked(
+            '{"name":"BanmaoBox #', tokenId.toString(),
+            '","description":"A transferable time-sealed treasury backed by up to five ERC-20 assets on X Layer. Ledger amounts are compact display values; on-chain balances remain exact.",',
+            '"image":"data:image/svg+xml;base64,', image,
+            '","external_url":"https://banmao.fun/defi/box",',
+            '"background_color":"08090D","attributes":'
+        );
+    }
+
+    function _renderMetadataTail(
+        BanmaoBoxRenderData memory data
+    ) private view returns (bytes memory) {
+        return abi.encodePacked(
+            metadataRenderer.renderAttributes(data),
+            ',"properties":{"type":"banmaobox","metadataMode":"fully-onchain",',
+            '"renderer":"solidity-svg-split-contract","chain":"X Layer","chainId":',
+            block.chainid.toString(), '}}'
         );
     }
 

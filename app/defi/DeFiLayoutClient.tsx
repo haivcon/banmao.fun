@@ -16,7 +16,12 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Toaster } from "react-hot-toast";
 import { useAccount, useSwitchChain } from "wagmi";
 import { ConnectButton } from "../components/wallet/WalletConnection";
-import { XLAYER_CHAIN_ID } from "../lib/walletConfig";
+import {
+  BANMAOBOX_TESTNET_UI_ENABLED,
+  XLAYER_CHAIN_ID,
+  XLAYER_SUPPORTED_CHAIN_IDS,
+  XLAYER_TESTNET_CHAIN_ID,
+} from "../lib/walletConfig";
 import {
   getBrowserLanguage,
   type Language,
@@ -183,7 +188,12 @@ function NetworkStatus({
 }) {
   const { chainId, isConnected } = useAccount();
   const { switchChain, isPending } = useSwitchChain();
-  const supportedChain = chainId === XLAYER_CHAIN_ID;
+  const boxRoute = usePathname().startsWith("/defi/box");
+  const supportedChain =
+    chainId === XLAYER_CHAIN_ID ||
+    (BANMAOBOX_TESTNET_UI_ENABLED &&
+      boxRoute &&
+      chainId === XLAYER_TESTNET_CHAIN_ID);
   const wrongNetwork = isConnected && !supportedChain;
 
   if (wrongNetwork) {
@@ -338,7 +348,11 @@ function PublicDeFiShell({
                 showBalance={false}
                 chainStatus="icon"
                 accountStatus="avatar"
-                supportedChainIds={[XLAYER_CHAIN_ID]}
+                supportedChainIds={
+                  BANMAOBOX_TESTNET_UI_ENABLED && pathname.startsWith("/defi/box")
+                    ? [...XLAYER_SUPPORTED_CHAIN_IDS]
+                    : [XLAYER_CHAIN_ID]
+                }
               />
             </span>
           </div>
@@ -391,7 +405,23 @@ export default function DeFiLayoutClient({
           {children}
         </PublicDeFiShell>
       )}
-      <Toaster position="top-center" reverseOrder={false} />
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        containerStyle={{ top: 20, zIndex: 10000 }}
+        toastOptions={{
+          duration: 4800,
+          style: {
+            maxWidth: "min(520px, calc(100vw - 32px))",
+            border: "1px solid rgba(255, 216, 90, 0.28)",
+            borderRadius: "14px",
+            background: "rgba(15, 18, 27, 0.98)",
+            color: "#f8fafc",
+            boxShadow: "0 20px 55px rgba(0, 0, 0, 0.48)",
+            padding: "13px 16px",
+          },
+        }}
+      />
     </>
   );
 }

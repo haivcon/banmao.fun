@@ -236,6 +236,7 @@ export function useBox(
           boxRenderer,
           metadataRenderer,
           factoryRenderer,
+          defaultRenderer,
           maxAssets,
           maxBatchSize,
           maxLockDurationValue,
@@ -277,6 +278,11 @@ export function useBox(
             functionName: "renderer",
           } as never) as Promise<Address>,
           publicClient.readContract({
+            address: factoryAddress,
+            abi: BANMAO_BOX_FACTORY_ABI,
+            functionName: "defaultRenderer",
+          } as never) as Promise<Address>,
+          publicClient.readContract({
             address: boxAddress,
             abi: BANMAO_BOX_ABI,
             functionName: "MAX_ASSETS_PER_BOX",
@@ -292,9 +298,10 @@ export function useBox(
             functionName: "MAX_LOCK_DURATION",
           } as never) as Promise<bigint>,
         ]);
-        const activeRendererCode = await publicClient.getCode({
-          address: boxRenderer,
-        });
+        const [activeRendererCode, defaultRendererCode] = await Promise.all([
+          publicClient.getCode({ address: boxRenderer }),
+          publicClient.getCode({ address: defaultRenderer }),
+        ]);
         if (
           !boxCode ||
           boxCode === "0x" ||
@@ -304,13 +311,15 @@ export function useBox(
           rendererCode === "0x" ||
           !activeRendererCode ||
           activeRendererCode === "0x" ||
+          !defaultRendererCode ||
+          defaultRendererCode === "0x" ||
           !tokenCode ||
           tokenCode === "0x"
         ) {
           throw new Error("Deployment bytecode is missing");
         }
         if (!expectedRuntime) {
-          throw new Error("Verified mainnet runtime fingerprints are missing");
+          throw new Error("Verified deployment runtime fingerprints are missing");
         }
         const matchesRuntime = (
           code: `0x${string}`,
@@ -336,7 +345,7 @@ export function useBox(
             (!matchesRuntime(tokenCode, expectedRuntime.token) ||
               !matchesRuntime(boxCode, expectedRuntime.box)))
         ) {
-          throw new Error("Deployment runtime does not match the verified mainnet manifest");
+          throw new Error("Deployment runtime does not match the verified manifest");
         }
         if (!registered || !sameAddress(registryBox, boxAddress))
           throw new Error("Factory registry does not match the selected Box");

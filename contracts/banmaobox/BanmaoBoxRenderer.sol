@@ -42,6 +42,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
 
     error UnsupportedTokenDecimals(uint8 decimals);
     error InvalidRenderAssetCount();
+    error InvalidRenderTimestamps();
 
     function supportsInterface(bytes4 interfaceId) external pure override returns (bool) {
         return
@@ -55,15 +56,15 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         string memory image = Base64.encode(bytes(_renderSVG(tokenId, data)));
         bytes memory head = abi.encodePacked(
             '{"name":"BanmaoBox #', tokenId.toString(),
-            '","description":"A transferable time-sealed treasury backed by up to five ERC-20 assets on X Layer. Ledger amounts are exact base units.",'
+            '","description":"A transferable time-sealed treasury backed by up to five ERC-20 assets on X Layer. Ledger amounts are compact display values; on-chain balances remain exact.",'
         );
         bytes memory tail = abi.encodePacked(
             '"image":"data:image/svg+xml;base64,', image,
-            '","animation_url":"data:image/svg+xml;base64,', image,
             '","external_url":"https://banmao.fun/defi/box",',
             '"background_color":"08090D","attributes":', _renderAttributes(data),
             ',"properties":{"type":"banmaobox","metadataMode":"fully-onchain",',
-            '"renderer":"solidity-svg-split-contract","chain":"X Layer","chainId":196}}'
+            '"renderer":"solidity-svg-split-contract","chain":"X Layer","chainId":',
+            block.chainid.toString(), '}}'
         );
         return string(
             abi.encodePacked(
@@ -89,6 +90,12 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
             data.assetCount > MAX_ASSETS ||
             data.renderAssets.length != uint256(data.assetCount) * 69
         ) revert InvalidRenderAssetCount();
+        if (_unlockTime(data) < _createdAt(data)) revert InvalidRenderTimestamps();
+
+        for (uint256 i; i < data.assetCount; ++i) {
+            (, , uint8 decimals, ) = _renderAssetAt(data.renderAssets, i);
+            if (decimals > MAX_SUPPORTED_DECIMALS) revert UnsupportedTokenDecimals(decimals);
+        }
     }
 
     function _renderSVG(uint256 tokenId, BanmaoBoxRenderData calldata data) internal view returns (string memory) {
@@ -116,7 +123,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         string memory gold
     ) internal pure returns (string memory) {
         bytes memory accessible = abi.encodePacked(
-            '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 800 800" role="img" aria-labelledby="title description">',
+            '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title description">',
             '<title id="title">BanmaoBox sealed treasury</title><desc id="description">',
             ready ? "Ready" : "Locked", " time-sealed treasury containing ",
             uint256(assetCount).toString(), " assets.</desc>"
@@ -125,7 +132,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
     }
 
     function _defs() internal pure returns (string memory) {
-        return '<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#15130E"/><stop offset=".55" stop-color="#090A0D"/><stop offset="1" stop-color="#050609"/></linearGradient><linearGradient id="shine" x1="0" x2="1"><stop stop-color="#F4EEDC"/><stop offset=".45" stop-color="#F4EEDC"/><stop offset=".5" stop-color="#F2D98D"/><stop offset=".55" stop-color="#F4EEDC"/><stop offset="1" stop-color="#F4EEDC"/><animateTransform attributeName="gradientTransform" type="translate" values="-1 0;1 0;-1 0" keyTimes="0;.45;1" dur="8s" repeatCount="indefinite"/></linearGradient></defs><style>.brand{font-family:Arial,sans-serif;font-weight:900;letter-spacing:4px}.label{font-family:Arial,sans-serif;font-weight:700;letter-spacing:2px}.mono{font-family:monospace}.gold{fill:#D8B565}.muted{fill:#817967}.white{fill:#F4EEDC}</style>';
+        return '<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#15130E"/><stop offset=".55" stop-color="#090A0D"/><stop offset="1" stop-color="#050609"/></linearGradient><linearGradient id="shine" x1="0" x2="1"><stop stop-color="#F4EEDC"/><stop offset=".5" stop-color="#F2D98D"/><stop offset="1" stop-color="#F4EEDC"/></linearGradient></defs><style>.brand{font-family:Arial,sans-serif;font-weight:900;letter-spacing:4px}.label{font-family:Arial,sans-serif;font-weight:700;letter-spacing:2px}.mono{font-family:monospace}.gold{fill:#D8B565}.muted{fill:#817967}.white{fill:#F4EEDC}</style>';
     }
 
     function _background(string memory gold) internal pure returns (string memory) {
@@ -176,7 +183,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
             '<g><text class="mono white" y="', (43 + index * 40).toString(),
             '" font-size="24" font-weight="700"',
             bytes(value).length > 14 ? ' textLength="225" lengthAdjust="spacingAndGlyphs"' : "",
-            '>', value, _pulse(index), '</text>'
+            '>', value, '</text>'
         ));
     }
 
@@ -184,7 +191,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         return string(abi.encodePacked(
             '<text class="mono" x="704" y="', (43 + index * 40).toString(),
             '" text-anchor="end" fill="', gold, '" font-size="22" font-weight="700">',
-            _formatDisplayAmount(amount, decimals), _pulse(index), '</text>'
+            _formatDisplayAmount(amount, decimals), '</text>'
         ));
     }
 
@@ -193,10 +200,6 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
             '<path d="M0 ', (51 + index * 40).toString(),
             'H704" stroke="', gold, '" stroke-opacity=".1"/></g>'
         ));
-    }
-
-    function _pulse(uint256 index) internal pure returns (string memory) {
-        return string(abi.encodePacked('<animate attributeName="opacity" values="1;.72;1" dur="5s" begin="', (index * 400).toString(), 'ms" repeatCount="indefinite"/>'));
     }
 
     function _timeline(BanmaoBoxRenderData calldata data, bool ready, string memory gold) internal pure returns (string memory) {
@@ -272,7 +275,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         return string(abi.encodePacked(
             '<g><text class="mono white" x="48" y="', (654 + index * 25).toString(),
             '" font-size="15" font-weight="700" textLength="390" lengthAdjust="spacingAndGlyphs">',
-            token.toHexString(), _pulse(index), '</text>'
+            token.toHexString(), '</text>'
         ));
     }
 
@@ -280,7 +283,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         return string(abi.encodePacked(
             '<text class="mono white" x="560" y="', (654 + index * 25).toString(),
             '" text-anchor="end" font-size="14" font-weight="700">',
-            _formatDisplayAmount(amount, decimals), _pulse(index), '</text>'
+            _formatDisplayAmount(amount, decimals), '</text>'
         ));
     }
 
@@ -288,7 +291,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         return string(abi.encodePacked(
             '<text class="mono white" x="752" y="', (654 + index * 25).toString(),
             '" text-anchor="end" font-size="13">', _symbol(symbol), ' / d',
-            uint256(decimals).toString(), _pulse(index), '</text>'
+            uint256(decimals).toString(), '</text>'
         ));
     }
 
@@ -359,33 +362,21 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         uint256 length;
         while (length < 16 && value[length] != 0) ++length;
         if (length == 0) return "TOKEN";
+
         bytes memory out = new bytes(length);
-        for (uint256 i; i < length; ++i) out[i] = value[i];
-        return string(out);
-    }
-
-    function _formatExactAmount(uint256 amount, uint8 decimals) internal pure returns (string memory) {
-        if (decimals == 0) return amount.toString();
-        uint256 unit = 10 ** uint256(decimals);
-        uint256 whole = amount / unit;
-        uint256 remainder = amount % unit;
-        if (remainder == 0) return whole.toString();
-
-        bytes memory fraction = bytes(_leftPad(remainder.toString(), decimals));
-        uint256 length = fraction.length;
-        while (length != 0 && fraction[length - 1] == "0") --length;
-        bytes memory trimmed = new bytes(length);
-        for (uint256 i; i < length; ++i) trimmed[i] = fraction[i];
-        return string(abi.encodePacked(whole.toString(), ".", trimmed));
-    }
-
-    function _leftPad(string memory value, uint256 length) internal pure returns (string memory) {
-        bytes memory source = bytes(value);
-        if (source.length >= length) return value;
-        bytes memory out = new bytes(length);
-        uint256 offset = length - source.length;
-        for (uint256 i; i < offset; ++i) out[i] = "0";
-        for (uint256 i; i < source.length; ++i) out[offset + i] = source[i];
+        for (uint256 i; i < length; ++i) {
+            bytes1 char = value[i];
+            bool allowed =
+                (char >= 0x30 && char <= 0x39) ||
+                (char >= 0x41 && char <= 0x5A) ||
+                (char >= 0x61 && char <= 0x7A) ||
+                char == 0x20 ||
+                char == 0x2D ||
+                char == 0x2E ||
+                char == 0x5F;
+            if (!allowed) return "TOKEN";
+            out[i] = char;
+        }
         return string(out);
     }
 
@@ -408,8 +399,8 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         uint256 fraction = remainder / (10 ** uint256(decimals - 2));
         if (fraction == 0) {
             return whole == 0
-                ? string(abi.encodePacked("<0.01"))
-                : string(abi.encodePacked(_withCommas(whole), " + <0.01"));
+                ? string(abi.encodePacked("&lt;0.01"))
+                : string(abi.encodePacked(_withCommas(whole), " + &lt;0.01"));
         }
         return string(abi.encodePacked(_withCommas(whole), ".", fraction < 10 ? "0" : "", fraction.toString()));
     }

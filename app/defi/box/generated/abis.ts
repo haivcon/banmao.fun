@@ -1742,6 +1742,11 @@ export const BANMAO_BOX_FACTORY_ABI = [
         "internalType": "address",
         "name": "rendererAddress",
         "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "previousFactoryAddress",
+        "type": "address"
       }
     ],
     "stateMutability": "nonpayable",
@@ -1749,7 +1754,17 @@ export const BANMAO_BOX_FACTORY_ABI = [
   },
   {
     "inputs": [],
+    "name": "InvalidPreviousFactory",
+    "type": "error"
+  },
+  {
+    "inputs": [],
     "name": "InvalidRenderer",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "NotRendererAdmin",
     "type": "error"
   },
   {
@@ -1772,6 +1787,25 @@ export const BANMAO_BOX_FACTORY_ABI = [
     "inputs": [],
     "name": "ZeroAddress",
     "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousRenderer",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newRenderer",
+        "type": "address"
+      }
+    ],
+    "name": "DefaultRendererUpdated",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -1837,6 +1871,19 @@ export const BANMAO_BOX_FACTORY_ABI = [
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "defaultRenderer",
+    "outputs": [
+      {
+        "internalType": "contract IBanmaoBoxRenderer",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -1848,8 +1895,21 @@ export const BANMAO_BOX_FACTORY_ABI = [
     "outputs": [
       {
         "internalType": "bool",
-        "name": "registered",
+        "name": "",
         "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "previousFactory",
+    "outputs": [
+      {
+        "internalType": "contract BanmaoBoxFactory",
+        "name": "",
+        "type": "address"
       }
     ],
     "stateMutability": "view",
@@ -1880,6 +1940,19 @@ export const BANMAO_BOX_FACTORY_ABI = [
     ],
     "stateMutability": "view",
     "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newRenderer",
+        "type": "address"
+      }
+    ],
+    "name": "setDefaultRenderer",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ] as const;
 
@@ -1887,6 +1960,11 @@ export const BANMAO_BOX_RENDERER_ABI = [
   {
     "inputs": [],
     "name": "InvalidRenderAssetCount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "InvalidRenderTimestamps",
     "type": "error"
   },
   {

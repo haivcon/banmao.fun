@@ -15,7 +15,12 @@ import {
   useSwitchChain,
 } from "wagmi";
 import { WalletConnectionProvider } from "./components/wallet/WalletConnection";
-import { XLAYER_CHAIN_ID, walletConfig } from "./lib/walletConfig";
+import {
+  BANMAOBOX_TESTNET_UI_ENABLED,
+  XLAYER_CHAIN_ID,
+  XLAYER_TESTNET_CHAIN_ID,
+  walletConfig,
+} from "./lib/walletConfig";
 
 const SharedProvidersBoundary = createContext(false);
 
@@ -51,7 +56,11 @@ function AutoChainSwitch({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (!chainId || chainId === XLAYER_CHAIN_ID) {
+    const boxSupportsTestnet =
+      BANMAOBOX_TESTNET_UI_ENABLED &&
+      pathname.startsWith("/defi/box") &&
+      chainId === XLAYER_TESTNET_CHAIN_ID;
+    if (!chainId || chainId === XLAYER_CHAIN_ID || boxSupportsTestnet) {
       attemptedChainId.current = undefined;
       return;
     }

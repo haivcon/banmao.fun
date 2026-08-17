@@ -166,6 +166,8 @@ async function validate(provider, artifacts, addresses) {
   const boxCode = await read("Box bytecode", () => code(provider, addresses.box, "Box"));
   const tokenCode = await read("BANMAO bytecode", () => code(provider, TOKEN, "BANMAO"));
   const factoryRenderer = await read("Factory renderer", () => factory.renderer());
+  const defaultRenderer = await read("Factory default renderer", () => factory.defaultRenderer());
+  const previousFactory = await read("Factory predecessor", () => factory.previousFactory());
   const registryBox = await read("Factory boxForToken", () => factory.boxForToken(TOKEN));
   const registered = await read("Factory isTokenBox", () => factory.isTokenBox(addresses.box));
   const underlying = await read("Box underlyingToken", () => box.underlyingToken());
@@ -183,6 +185,8 @@ async function validate(provider, artifacts, addresses) {
 
   if (
     !same(factoryRenderer, addresses.renderer) ||
+    !same(defaultRenderer, addresses.renderer) ||
+    !same(previousFactory, addresses.previousFactory) ||
     !same(metadataRenderer, addresses.renderer) ||
     !same(boxRenderer, addresses.renderer)
   ) fail("Initial renderer invariant failed");
@@ -254,12 +258,26 @@ async function main() {
   const deployerBalance = await retryRead("Deployer balance", () => signer.getBalance());
   console.log(`Balance: ${ethers.utils.formatEther(deployerBalance)} OKB`);
 
+  // A metadata release replacement must deploy a fresh collection. Linking the
+  // previous Factory would make boxForToken(TOKEN) inherit the immutable old Box
+  // and createTokenBox(TOKEN) revert with TokenBoxAlreadyExists. Likewise, never
+  // seed a new release journal with old runtime addresses: resume is valid only
+  // for contracts deployed from this exact compiler input.
+  const previousFactory = ethers.constants.AddressZero;
   const journal = fs.existsSync(JOURNAL) ? loadJson(JOURNAL) : {
     schemaVersion: 1, chainId: CHAIN_ID, token: TOKEN, deployer, compilerInputHash,
-    contracts: {}, transactions: {}, startedAt: new Date().toISOString(),
+    previousFactory,
+    contracts: {},
+    transactions: {},
+    startedAt: new Date().toISOString(),
   };
-  if (journal.chainId !== CHAIN_ID || !same(journal.token, TOKEN) || journal.compilerInputHash !== compilerInputHash) {
-    fail(`Existing journal does not match this chain/token/source. Inspect or remove ${JOURNAL}`);
+  if (
+    journal.chainId !== CHAIN_ID ||
+    !same(journal.token, TOKEN) ||
+    journal.compilerInputHash !== compilerInputHash ||
+    !same(journal.previousFactory || ethers.constants.AddressZero, previousFactory)
+  ) {
+    fail(`Existing journal does not match this chain/token/source/predecessor. Inspect or remove ${JOURNAL}`);
   }
   const journalComplete = Boolean(
     journal.contracts.renderer && journal.contracts.factory && journal.contracts.box &&
@@ -271,7 +289,15 @@ async function main() {
   }
 
   const renderer = await deployContract(provider, signer, artifacts.renderer, [], "BanmaoBoxRenderer", journal, "renderer");
-  const factory = await deployContract(provider, signer, artifacts.factory, [renderer.address], "BanmaoBoxFactory", journal, "factory");
+  const factory = await deployContract(
+    provider,
+    signer,
+    artifacts.factory,
+    [renderer.address, previousFactory],
+    "BanmaoBoxFactory",
+    journal,
+    "factory",
+  );
   let boxAddress = journal.contracts.box;
   if (!boxAddress) {
     const existing = await factory.boxForToken(TOKEN);
@@ -297,6 +323,7 @@ async function main() {
       factory: factory.address,
       box: boxAddress,
       deployer: journal.deployer,
+      previousFactory,
     }),
   );
   const deployment = {
@@ -304,7 +331,13 @@ async function main() {
     rpcUrl: RPC_URL, explorerUrl: EXPLORER_URL, deployedAt: new Date().toISOString(),
     compiler: solc.version(), compilerInputHash, optimizerRuns: 200, evmVersion: "shanghai",
     confirmations: CONFIRMATIONS, deployer: journal.deployer,
-    contracts: { token: TOKEN, renderer: renderer.address, factory: factory.address, box: boxAddress },
+    contracts: {
+      token: TOKEN,
+      renderer: renderer.address,
+      factory: factory.address,
+      previousFactory,
+      box: boxAddress,
+    },
     transactions: journal.transactions, ...validated,
   };
   if (replacingDeployment) {

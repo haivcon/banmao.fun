@@ -19,37 +19,59 @@ import {
 contract BanmaoBoxFactory is ReentrancyGuard {
     using ERC165Checker for address;
 
+    /// @notice Renderer configured when this Factory was deployed.
     IBanmaoBoxRenderer public immutable renderer;
+    /// @notice Renderer assigned to collections created after the latest update.
+    IBanmaoBoxRenderer public defaultRenderer;
     address public immutable rendererAdmin;
+    /// @notice Optional predecessor whose registry remains discoverable here.
+    BanmaoBoxFactory public immutable previousFactory;
 
-    mapping(address token => address box) public boxForToken;
-    mapping(address box => bool registered) public isTokenBox;
+    mapping(address token => address box) private _boxForToken;
+    mapping(address box => bool registered) private _isTokenBox;
 
     event TokenBoxCreated(
         address indexed token,
         address indexed box,
         address indexed creator
     );
+    event DefaultRendererUpdated(
+        address indexed previousRenderer,
+        address indexed newRenderer
+    );
 
     error ZeroAddress();
     error InvalidRenderer();
+    error InvalidPreviousFactory();
+    error NotRendererAdmin();
     error TokenBoxAlreadyExists(address box);
 
-    constructor(address rendererAddress) {
+    constructor(address rendererAddress, address previousFactoryAddress) {
         if (rendererAddress == address(0)) revert ZeroAddress();
+        _validateRenderer(rendererAddress);
         if (
-            rendererAddress.code.length == 0 ||
-            !rendererAddress.supportsInterface(
-                type(IBanmaoBoxRenderer).interfaceId
-            ) ||
-            !rendererAddress.supportsInterface(
-                type(IBanmaoBoxSVGRenderer).interfaceId
-            )
-        ) {
-            revert InvalidRenderer();
-        }
+            previousFactoryAddress != address(0) &&
+            previousFactoryAddress.code.length == 0
+        ) revert InvalidPreviousFactory();
+
         renderer = IBanmaoBoxRenderer(rendererAddress);
+        defaultRenderer = IBanmaoBoxRenderer(rendererAddress);
         rendererAdmin = msg.sender;
+        previousFactory = BanmaoBoxFactory(previousFactoryAddress);
+    }
+
+    /**
+     * @notice Changes the full renderer assigned to subsequently created collections.
+     * @dev Existing collections are unchanged. Their SVG renderer can still be
+     *      changed individually through BanmaoBox.setRenderer.
+     */
+    function setDefaultRenderer(address newRenderer) external {
+        if (msg.sender != rendererAdmin) revert NotRendererAdmin();
+        _validateRenderer(newRenderer);
+
+        address previousRenderer = address(defaultRenderer);
+        defaultRenderer = IBanmaoBoxRenderer(newRenderer);
+        emit DefaultRendererUpdated(previousRenderer, newRenderer);
     }
 
     /**
@@ -61,15 +83,43 @@ contract BanmaoBoxFactory is ReentrancyGuard {
     ) external nonReentrant returns (address box) {
         if (token == address(0)) revert ZeroAddress();
 
-        address existing = boxForToken[token];
+        address existing = boxForToken(token);
         if (existing != address(0)) revert TokenBoxAlreadyExists(existing);
 
         box = address(
-            new BanmaoBox(token, address(renderer), rendererAdmin)
+            new BanmaoBox(token, address(defaultRenderer), rendererAdmin)
         );
-        boxForToken[token] = box;
-        isTokenBox[box] = true;
+        _boxForToken[token] = box;
+        _isTokenBox[box] = true;
 
         emit TokenBoxCreated(token, box, msg.sender);
+    }
+
+    /** Returns the local collection or falls back through the predecessor chain. */
+    function boxForToken(address token) public view returns (address box) {
+        box = _boxForToken[token];
+        if (box == address(0) && address(previousFactory) != address(0)) {
+            box = previousFactory.boxForToken(token);
+        }
+    }
+
+    /** Returns local registration or falls back through the predecessor chain. */
+    function isTokenBox(address box) public view returns (bool) {
+        if (_isTokenBox[box]) return true;
+        return
+            address(previousFactory) != address(0) &&
+            previousFactory.isTokenBox(box);
+    }
+
+    function _validateRenderer(address rendererAddress) private view {
+        if (
+            rendererAddress.code.length == 0 ||
+            !rendererAddress.supportsInterface(
+                type(IBanmaoBoxRenderer).interfaceId
+            ) ||
+            !rendererAddress.supportsInterface(
+                type(IBanmaoBoxSVGRenderer).interfaceId
+            )
+        ) revert InvalidRenderer();
     }
 }
