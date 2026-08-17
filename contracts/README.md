@@ -39,13 +39,14 @@ Security and integration assumptions:
 - `ERC721Enumerable` enables bounded `getBoxesByOwner(owner, offset, limit)` reads but adds storage gas to mint, transfer, and burn.
 - The Factory's initial and replacement default renderers must advertise both `IBanmaoBoxRenderer` and `IBanmaoBoxSVGRenderer` through ERC-165. The Factory deployer may call `setDefaultRenderer(newRenderer)` to affect only future collections; it emits `DefaultRendererUpdated` and never mutates existing collections. A collection's initial metadata/attribute renderer is immutable, while the same admin may call `BanmaoBox.setRenderer(newRenderer)` with a contract advertising `IBanmaoBoxSVGRenderer`. This changes the SVG returned by `renderSVG(tokenId)` and `image`, and emits `RendererUpdated` plus ERC-4906 `BatchMetadataUpdate`; all other metadata fields and attributes remain controlled by the collection and initial renderer.
 - Multi-token support adds `assetCount` to the renderer payload and therefore changes the renderer ERC-165 interface ID. Pre-basket renderer/factory/collection deployments are intentionally incompatible and must not be mixed with this release.
+- Factory runtime includes the `BanmaoBox` creation bytecode used by `createTokenBox`, so any Box bytecode change also changes the Factory artifact even when `BanmaoBoxFactory.sol` itself is unchanged. An unchanged deployed Renderer may be reused by replacement tooling only after its exact runtime matches the current Renderer artifact.
 - `unlockTime` is stored as `uint64`; lock duration is capped at exactly `100 * 365 days` (36,500 days).
 
 Deployment order:
 
 1. Compile with optimizer enabled (`runs: 200`) and the Shanghai EVM target.
 2. For testnet only, deploy `MockBanmao` from `contracts/banmaobox/MockBanmao.sol`.
-3. Deploy `BanmaoBoxRenderer` (no constructor arguments).
+3. Deploy `BanmaoBoxRenderer` (no constructor arguments). For a replacement whose Renderer artifact is unchanged, reuse the current manifest Renderer only after exact runtime verification.
 4. Deploy `BanmaoBoxFactory(rendererAddress, previousFactoryAddress)`. Use the zero address for the first Factory and the current Factory address for a registry-preserving replacement.
 5. Call `createTokenBox(tokenAddress)` for each token not already present anywhere in the predecessor chain, or let any community member do so permissionlessly.
 6. Read `boxForToken(tokenAddress)` and verify all source and addresses on X Layer Explorer.
@@ -90,10 +91,12 @@ underlying token, immutable metadata renderer/admin, and active SVG renderer byt
    `0x16d91d1615fc55b76d5f92365bd60c069b46ef78`.
 4. To replace an immutable collection with a new metadata release, additionally
    set `BANMAOBOX_REPLACE_CONFIRM=REPLACE_BANMAOBOX_XLAYER_196` and pass
-   `--replace-deployment`. A replacement deploys a fresh Renderer, standalone
-   Factory (`previousFactory = address(0)`), and Box; it never reuses the old
-   collection because its `tokenURI()` bytecode is immutable. The prior manifest
-   is archived only after the new deployment passes every invariant.
+   `--replace-deployment`. A metadata-only replacement verifies and reuses the
+   unchanged Renderer from the current manifest, then deploys a fresh standalone
+   Factory (`previousFactory = address(0)`) and calls `createTokenBox(BANMAO)` for
+   a fresh Box. The Factory must be redeployed because its runtime embeds the Box
+   creation bytecode. The prior manifest is archived only after the new deployment
+   passes every invariant.
 5. If RPC or wallet submission stops the sequence, rerun the exact same command,
    including replacement flags when applicable. The ignored
    `.banmaobox-mainnet-journal.json` resumes only contracts deployed from the same
