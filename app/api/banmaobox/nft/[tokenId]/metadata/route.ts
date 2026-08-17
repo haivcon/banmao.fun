@@ -1,0 +1,88 @@
+import { NextResponse } from "next/server";
+import {
+  BaseError,
+  ContractFunctionRevertedError,
+  createPublicClient,
+  http,
+} from "viem";
+import { BANMAO_BOX_ABI } from "@/app/defi/box/generated/abis";
+import { BOX_CHAIN_CONFIG } from "@/app/defi/box/registry";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const chainConfig = BOX_CHAIN_CONFIG[196];
+const client = createPublicClient({
+  chain: chainConfig.chain,
+  transport: http("https://xlayerrpc.okx.com"),
+});
+const boxAddress = chainConfig.boxAddress;
+const MAX_UINT256 = (1n << 256n) - 1n;
+const CACHE_CONTROL = "public, s-maxage=60, stale-while-revalidate=300";
+
+function parseTokenId(value: string) {
+  if (!/^\d+$/.test(value)) return null;
+  const tokenId = BigInt(value);
+  return tokenId <= MAX_UINT256 ? tokenId : null;
+}
+
+function isNonexistentToken(error: unknown) {
+  return (
+    error instanceof BaseError &&
+    Boolean(error.walk((cause) => cause instanceof ContractFunctionRevertedError))
+  );
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ tokenId: string }> },
+) {
+  const { tokenId: tokenIdParam } = await params;
+  const tokenId = parseTokenId(tokenIdParam);
+  if (tokenId === null) {
+    return NextResponse.json(
+      { error: "tokenId must be a uint256 decimal integer" },
+      { status: 400 },
+    );
+  }
+  if (!boxAddress) {
+    return NextResponse.json(
+      { error: "BanmaoBox contract is not configured" },
+      { status: 500 },
+    );
+  }
+
+  try {
+    const tokenUri = (await client.readContract({
+      address: boxAddress,
+      abi: BANMAO_BOX_ABI,
+      functionName: "tokenURI",
+      args: [tokenId],
+    } as never)) as string;
+    const prefix = "data:application/json;base64,";
+    if (!tokenUri.startsWith(prefix)) {
+      throw new Error("BanmaoBox tokenURI is not base64 JSON");
+    }
+
+    const metadata = JSON.parse(
+      Buffer.from(tokenUri.slice(prefix.length), "base64").toString("utf8"),
+    ) as Record<string, unknown>;
+    const host = request.headers.get("host");
+    if (!host) throw new Error("Request host is missing");
+    const protocol =
+      request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ||
+      "https";
+    metadata.image = `${protocol}://${host}/api/banmaobox/nft/${tokenId}/image.svg`;
+
+    return NextResponse.json(metadata, {
+      headers: { "Cache-Control": CACHE_CONTROL },
+    });
+  } catch (error) {
+    const status = isNonexistentToken(error) ? 404 : 502;
+    console.error("[BanmaoBox metadata proxy]", error);
+    return NextResponse.json(
+      { error: status === 404 ? "BanmaoBox token not found" : "Unable to load BanmaoBox metadata" },
+      { status },
+    );
+  }
+}
