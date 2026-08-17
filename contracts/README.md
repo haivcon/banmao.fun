@@ -58,6 +58,19 @@ guards, estimates every transaction with a gas buffer, journals partial progress
 locally for safe resume, and writes the production manifest only after all
 post-deployment invariants pass. Never commit private keys or the local journal.
 
+An existing collection's SVG-only compatibility release uses the separately
+versioned `scripts/deploy-banmaobox-renderer-mainnet.cjs` workflow. Generate and
+review its renderer-only fingerprint with
+`npm run generate:banmaobox:renderer:release`; this intentionally does not
+replace the active deployment manifest. The update script deploys only a new
+`BanmaoBoxRenderer`, then calls `setRenderer` on the existing collection. It
+requires an explicit aggregate OKB fee cap, persists transaction hashes before
+waiting so an interrupted run can resume without rebroadcasting, verifies both
+receipts and runtime bytecode, and requires the `BatchMetadataUpdate` emitted by
+`setRenderer` instead of sending a redundant metadata refresh. Any later
+rollback is a separate, explicitly approved `setRenderer(previousRenderer)`
+transaction.
+
 ```text
 BANMAO: 0x16d91d1615fc55b76d5f92365bd60c069b46ef78
 BanmaoBoxFactory constructor: (BanmaoBoxRenderer, previousFactory)

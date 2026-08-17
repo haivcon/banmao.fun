@@ -808,10 +808,11 @@ describe("BanmaoBox adversarial release security", () => {
     const lockedSvg = await renderer.renderSVG(ethers.constants.MaxUint256, renderData);
     const attributes = JSON.parse(await renderer.renderAttributes(renderData));
     parseSvg(lockedSvg);
-    expect(lockedSvg).toContain('<title id="title">BanmaoBox sealed treasury</title>');
-    expect(lockedSvg).toContain('<desc id="description">');
-    expect(lockedSvg).toContain('width="600" height="600" viewBox="0 0 800 800"');
-    expect(lockedSvg).toContain('role="img"');
+    expect(lockedSvg).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid meet" role="img" aria-label="BanmaoBox sealed treasury">/);
+    expect(lockedSvg.slice(0, lockedSvg.indexOf(">") + 1)).not.toMatch(/\s(?:width|height|aria-labelledby)=/);
+    expect(lockedSvg).not.toMatch(/<(?:title|desc)\b/);
+    expect(lockedSvg).toContain('<g transform="scale(0.75)"><rect width="800" height="800"');
+    expect(lockedSvg).toContain('</g></svg>');
     expect(lockedSvg).toContain("TIME-SEALED");
     expect(lockedSvg).toContain("ASSET PORTFOLIO / 5");
     expect(lockedSvg).toContain("ASSET LEDGER");
@@ -835,8 +836,8 @@ describe("BanmaoBox adversarial release security", () => {
     expect(lockedSvg).toContain('font-size="24" font-weight="700"');
     expect(lockedSvg).toContain('font-size="22" font-weight="700"');
     expect(lockedSvg).toContain('font-size="18" font-weight="700">');
-    expect(lockedSvg).toContain('font-size="15" font-weight="700" textLength="390"');
-    expect(lockedSvg).not.toContain('textLength="684" lengthAdjust="spacingAndGlyphs"');
+    expect(lockedSvg).toContain('font-size="12" font-weight="700">');
+    expect(lockedSvg).not.toMatch(/\b(?:textLength|lengthAdjust)=/);
     for (const address of addresses) {
       const full = address.toLowerCase();
       expect(lockedSvg).toContain(full);
@@ -883,11 +884,17 @@ describe("BanmaoBox adversarial release security", () => {
     writeFileSync(join(previewDir, "banmaobox-locked-basket.svg"), lockedSvg);
     const fixtureDir = mkdtempSync(join(tmpdir(), "banmaobox-render-"));
     try {
+      const intrinsic = await sharp(Buffer.from(lockedSvg), { density: 72 }).metadata();
+      expect(intrinsic.width).toBe(600);
+      expect(intrinsic.height).toBe(600);
       for (const size of [600, 320, 210]) {
-        await sharp(Buffer.from(lockedSvg))
+        const rendered = sharp(Buffer.from(lockedSvg), { density: 72 })
           .resize(size, size)
-          .png()
-          .toFile(join(fixtureDir, `sealed-treasury-${size}.png`));
+          .png();
+        await rendered.toFile(join(fixtureDir, `sealed-treasury-${size}.png`));
+        const raster = await rendered.toBuffer({ resolveWithObject: true });
+        expect(raster.info.width).toBe(size);
+        expect(raster.info.height).toBe(size);
       }
     } finally {
       rmSync(fixtureDir, { recursive: true, force: true });

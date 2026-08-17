@@ -113,7 +113,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
             _svgHead(data.assetCount, ready, gold),
             hero,
             details,
-            "</svg>"
+            "</g></svg>"
         ));
     }
 
@@ -122,13 +122,14 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         bool ready,
         string memory gold
     ) internal pure returns (string memory) {
-        bytes memory accessible = abi.encodePacked(
-            '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title description">',
-            '<title id="title">BanmaoBox sealed treasury</title><desc id="description">',
-            ready ? "Ready" : "Locked", " time-sealed treasury containing ",
-            uint256(assetCount).toString(), " assets.</desc>"
-        );
-        return string(abi.encodePacked(accessible, _defs(), _background(gold)));
+        assetCount;
+        ready;
+        return string(abi.encodePacked(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid meet" role="img" aria-label="BanmaoBox sealed treasury">',
+            _defs(),
+            '<g transform="scale(0.75)">',
+            _background(gold)
+        ));
     }
 
     function _defs() internal pure returns (string memory) {
@@ -181,8 +182,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         string memory value = _symbol(symbol);
         return string(abi.encodePacked(
             '<g><text class="mono white" y="', (43 + index * 40).toString(),
-            '" font-size="24" font-weight="700"',
-            bytes(value).length > 14 ? ' textLength="225" lengthAdjust="spacingAndGlyphs"' : "",
+            '" font-size="', bytes(value).length > 14 ? "20" : "24", '" font-weight="700"',
             '>', value, '</text>'
         ));
     }
@@ -274,7 +274,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
     function _ledgerAddress(address token, uint256 index) internal pure returns (string memory) {
         return string(abi.encodePacked(
             '<g><text class="mono white" x="48" y="', (654 + index * 25).toString(),
-            '" font-size="15" font-weight="700" textLength="390" lengthAdjust="spacingAndGlyphs">',
+            '" font-size="12" font-weight="700">',
             token.toHexString(), '</text>'
         ));
     }
