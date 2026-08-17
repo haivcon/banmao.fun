@@ -1,6 +1,10 @@
 "use strict";
 
-const { ethers } = require("ethers");
+const { keccak_256 } = require("js-sha3");
+
+function keccak256(code) {
+  return `0x${keccak_256(Buffer.from(code.slice(2), "hex"))}`;
+}
 
 function immutableRanges(artifact) {
   return Object.values(artifact.evm.deployedBytecode.immutableReferences || {}).flat();
@@ -28,8 +32,8 @@ function runtimeFingerprint(code, artifact) {
   const normalized = normalizeRuntime(code, artifact);
   return {
     bytes: (code.length - 2) / 2,
-    keccak256: ethers.utils.keccak256(code),
-    normalizedKeccak256: ethers.utils.keccak256(normalized),
+    keccak256: keccak256(code),
+    normalizedKeccak256: keccak256(normalized),
   };
 }
 
