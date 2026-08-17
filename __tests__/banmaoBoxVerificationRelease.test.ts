@@ -12,7 +12,13 @@ describe("BanmaoBox verification release", () => {
     expect(input.language).toBe("Solidity");
     expect(input.settings.optimizer).toEqual({ enabled: true, runs: 200 });
     expect(input.settings.evmVersion).toBe("shanghai");
-    expect(Object.keys(input.sources)).toContain("contracts/banmaobox/BanmaoBox.sol");
+    expect(Object.keys(input.sources)).toEqual(
+      expect.arrayContaining([
+        "contracts/banmaobox/BanmaoBoxRenderer.sol",
+        "contracts/banmaobox/BanmaoBox.sol",
+        "contracts/banmaobox/BanmaoBoxFactory.sol",
+      ]),
+    );
     expect(Object.keys(input.sources).some((name) => name.startsWith("@openzeppelin/"))).toBe(true);
 
     const output = JSON.parse(solc.compile(release.standardInput));

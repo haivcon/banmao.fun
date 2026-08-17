@@ -1926,6 +1926,11 @@ export const BANMAO_BOX_RENDERER_ABI = [
             "type": "address"
           },
           {
+            "internalType": "address",
+            "name": "creator",
+            "type": "address"
+          },
+          {
             "internalType": "uint256",
             "name": "amount",
             "type": "uint256"
@@ -1984,6 +1989,11 @@ export const BANMAO_BOX_RENDERER_ABI = [
           {
             "internalType": "address",
             "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "creator",
             "type": "address"
           },
           {
@@ -2064,6 +2074,11 @@ export const BANMAO_BOX_RENDERER_ABI = [
           {
             "internalType": "address",
             "name": "token",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "creator",
             "type": "address"
           },
           {

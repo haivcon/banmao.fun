@@ -94,6 +94,7 @@ ehthumbs.db
 !/scripts/publish-banmaobox-explorer.cjs
 /deployments/
 /docs/BANMAOBOX_MANUAL_DEPLOY.md
+/deployments
 # Local-only removed games: keep source on this machine, never commit/deploy
 /local-only/
 /app/gamefi/banmaominer/
@@ -102,7 +103,7 @@ ehthumbs.db
 /app/gamefi/admin/components/MinerTab.tsx
 /contracts/BanMaoMiner.sol
 /contracts/WorldCupYieldWars.sol
-
+/preview/
 # Local-only DeFi Launchpad (dev only, never deploy)
 /app/defi/launchpad/
 /app/api/launchpad/

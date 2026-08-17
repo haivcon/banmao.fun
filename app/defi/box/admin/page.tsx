@@ -372,8 +372,8 @@ export default function BoxOperationsPage() {
               <Image
                 src={svgImageDataUri(inspected.svg)}
                 alt={`On-chain artwork for Box #${inspected.tokenId.toString()}`}
-                width={400}
-                height={400}
+                width={600}
+                height={600}
                 unoptimized
               />
               <strong>Box #{inspected.tokenId.toString()}</strong>

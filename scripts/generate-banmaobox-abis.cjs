@@ -7,7 +7,6 @@ const SOURCES = [
   "BanmaoBox.sol",
   "BanmaoBoxFactory.sol",
   "BanmaoBoxRenderer.sol",
-  "MockBanmao.sol",
 ];
 const OUTPUT = "app/defi/box/generated/abis.ts";
 

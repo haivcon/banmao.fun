@@ -318,7 +318,7 @@ async function main() {
   atomicWrite(MANIFEST, deployment);
   fs.rmSync(JOURNAL, { force: true });
   console.log(`\nDeployment validated and saved atomically: ${MANIFEST}`);
-  console.log("Run npm run verify:banmaobox:mainnet before enabling frontend writes.");
+  console.log("Run npm run verify:banmaobox:mainnet before using the deployment in production.");
 }
 
 main().catch((error) => {

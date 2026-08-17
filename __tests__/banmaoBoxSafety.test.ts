@@ -49,7 +49,9 @@ describe("BanmaoBox frontend safety helpers", () => {
     const uri = svgImageDataUri('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
     expect(uri).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
     expect(uri).not.toContain("<script>");
-    expect(decodeURIComponent(svgImageDataUri("not svg"))).toContain("Artwork unavailable");
+    const fallback = decodeURIComponent(svgImageDataUri("not svg"));
+    expect(fallback).toContain("Artwork unavailable");
+    expect(fallback).toContain('width="600" height="600" viewBox="0 0 600 600"');
   });
 
   test("converts exact mixed integer duration fields and enforces bounds", () => {
