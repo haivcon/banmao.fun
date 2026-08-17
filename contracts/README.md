@@ -28,7 +28,7 @@ A permissionless system for transferable, time-locked ERC-20 gift boxes:
 - `openAsset(tokenId, assetIndex)` releases one selected asset and is the recovery path when another basket token is paused, blocked, or gas-griefing. The owner or an approved ERC-721 operator may release, but only the current NFT owner—not an approved address or operator—may call `abandonAsset(tokenId, assetIndex)`. Abandonment detaches a stuck asset without attempting a transfer and records the amount in `recoverableAbandoned(owner, token)` while `totalLockedByToken` continues to include that claim. The same owner can use `claimAbandonedAsset(token)` as a last-resort payout: the collection must lose the full recorded amount, but an outbound fee is accepted if the owner receives a positive amount. `AbandonedAssetClaimed` reports both the liability settled and the amount actually received. Both removal paths use swap-and-pop. Integrations should use the guarded four-argument overloads `openAsset(tokenId, assetIndex, expectedToken, expectedAmount)` and `abandonAsset(tokenId, assetIndex, expectedToken, expectedAmount)`, which revert with `AssetStateMismatch` if a cached index now identifies another asset.
 - The NFT is locked against transfer and burn while a payout is executing, preventing token callbacks from changing ownership mid-release. The NFT burns and its `boxDetails` are deleted only after the final remaining asset is released or moved into its owner's recoverable claim. Releasing or abandoning the primary asset immediately clears `boxDetails[tokenId].amount`. `BoxOpened.amount` reports primary tokens paid in the transaction that emptied the box, so it is zero when the primary asset was released earlier or abandoned; historical release, abandonment, and claim data remains available through events.
 - ERC-20 transfers sent directly to a collection cannot be attributed safely because standard ERC-20 transfers provide no receiver callback or authenticated sender record to the recipient contract. `untrackedSurplus(token)` exposes balances above all live-box and recoverable-claim liabilities, but the immutable no-admin design deliberately provides no sweep authority that could seize an accidental transfer.
-- Metadata includes the snapshotted token symbol, underlying token contract address, creator wallet, and UTC start/unlock dates. The creator is permanently captured from `msg.sender` at mint and does not change when the NFT is transferred. Symbol display is sanitized and never controls custody. `onchainTokenURI(tokenId)` preserves canonical fully on-chain base64 JSON and SVG, while standard ERC-721 `tokenURI(tokenId)` returns the fixed production HTTPS metadata proxy URL so marketplace crawlers can fetch the metadata. The proxy reads `onchainTokenURI`, validates the decoded JSON and embedded base64 SVG image, and preserves that canonical image unchanged. The raw on-chain SVG also remains available through `renderSVG(tokenId)` and the separate HTTPS SVG route remains an alternative renderer endpoint.
+- Metadata includes the snapshotted token symbol, underlying token contract address, creator wallet, and UTC start/unlock dates. The creator is permanently captured from `msg.sender` at mint and does not change when the NFT is transferred. Symbol display is sanitized and never controls custody. Standard ERC-721 `tokenURI(tokenId)` is canonical and returns fully on-chain base64 JSON containing an embedded base64 SVG image. The read-only HTTPS metadata proxy decodes and validates that URI for crawler compatibility; it is optional and does not replace the canonical on-chain URI. The raw on-chain SVG also remains available through `renderSVG(tokenId)` and the separate HTTPS SVG route remains an optional renderer endpoint.
 - There is no admin withdrawal, early unlock, or collection upgrade path. Only the SVG renderer is replaceable as described below.
 - Deposits and payouts reject transfer discrepancies. A payout requires both the collection's decrease and the owner's net increase to equal the exact recorded amount; otherwise the asset remains locked and retryable.
 
@@ -68,6 +68,12 @@ The frontend reads canonical per-chain addresses from versioned JSON manifests i
 `deployments/`. Per-chain `NEXT_PUBLIC_BANMAO_*` variables are optional local
 overrides only; never use an unscoped address fallback across chains.
 
+The active X Layer mainnet manifest points to the original fully-on-chain
+collection: Renderer `0xE880e364f4a71be047cF49767313381715d57db0`, Factory
+`0xA6bC56E67253E13554D629579A3c018871D21F9E`, and BanmaoBox
+`0x95c83831a283cDC41cd552374aD1279b2375a4ee`. Replacement deployment records
+remain archived under `deployments/banmaobox-mainnet-history/` for auditability.
+
 Do not enable the public write interface until the deployed source has been
 independently reviewed and the runtime bytecode, chain ID, Factory registry,
 underlying token, immutable metadata renderer/admin, and active SVG renderer bytecode have been verified.
@@ -89,10 +95,10 @@ underlying token, immutable metadata renderer/admin, and active SVG renderer byt
    `npm run deploy:banmaobox:mainnet -- --confirm-mainnet`. The script refuses
    any chain except `196`, never deploys `MockBanmao`, and only targets
    `0x16d91d1615fc55b76d5f92365bd60c069b46ef78`.
-4. To replace an immutable collection with a new metadata release, additionally
+4. To replace an immutable collection with a new metadata release in the future, additionally
    set `BANMAOBOX_REPLACE_CONFIRM=REPLACE_BANMAOBOX_XLAYER_196` and pass
    `--replace-deployment`. A metadata-only replacement verifies and reuses the
-   unchanged Renderer from the current manifest, then deploys a fresh standalone
+   unchanged Renderer from the then-current manifest, then deploys a fresh standalone
    Factory (`previousFactory = address(0)`) and calls `createTokenBox(BANMAO)` for
    a fresh Box. The Factory must be redeployed because its runtime embeds the Box
    creation bytecode. The prior manifest is archived only after the new deployment

@@ -764,29 +764,12 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
     }
 
     /**
-     * @notice Standard ERC-721 metadata URL served by the production HTTPS proxy.
-     * @dev The proxy reads canonical JSON from onchainTokenURI and only rewrites image.
+     * @notice Fully on-chain metadata with a replaceable SVG.
+     * @dev All non-SVG metadata remains fixed by this collection release.
      */
     function tokenURI(
         uint256 tokenId
     ) public view override returns (string memory) {
-        _requireOwned(tokenId);
-        return string(
-            abi.encodePacked(
-                "https://www.banmao.fun/api/banmaobox/nft/",
-                tokenId.toString(),
-                "/metadata"
-            )
-        );
-    }
-
-    /**
-     * @notice Fully on-chain metadata with a replaceable SVG.
-     * @dev All non-SVG metadata remains fixed by this collection release.
-     */
-    function onchainTokenURI(
-        uint256 tokenId
-    ) public view returns (string memory) {
         _requireOwned(tokenId);
         BanmaoBoxRenderData memory data = _renderData(tokenId);
         string memory image = Base64.encode(

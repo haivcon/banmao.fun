@@ -3,11 +3,11 @@
   "status": "deployed",
   "network": "X Layer Mainnet",
   "chainId": 196,
-  "rpcUrl": "https://xlayerrpc.okx.com",
+  "rpcUrl": "https://rpc.xlayer.tech",
   "explorerUrl": "https://web3.okx.com/explorer/x-layer/evm",
-  "deployedAt": "2026-08-17T12:59:06.968Z",
+  "deployedAt": "2026-08-17T08:15:15.563Z",
   "compiler": "0.8.30+commit.73712a01.Emscripten.clang",
-  "compilerInputHash": "0x6d5c19a5b8c0e5c1abaa80671a785816b35df8ef46c2c13480f67d07e364ce7f",
+  "compilerInputHash": "0x3e5eb0615ee65c691c00e87c565fdb4de364b76c54070ddc4fe105746642d37c",
   "optimizerRuns": 200,
   "evmVersion": "shanghai",
   "confirmations": 2,
@@ -15,21 +15,14 @@
   "contracts": {
     "token": "0x16d91d1615fC55b76d5F92365BD60C069b46eF78",
     "renderer": "0xE880e364f4a71be047cF49767313381715d57db0",
-    "factory": "0x866d42274eCdFEa617352483B7AcaBAcF9ed1614",
+    "factory": "0xA6bC56E67253E13554D629579A3c018871D21F9E",
     "previousFactory": "0x0000000000000000000000000000000000000000",
-    "box": "0x0Eb3614140eFa198C0Fc2954086Ec54cd2801762"
+    "box": "0x95c83831a283cDC41cd552374aD1279b2375a4ee"
   },
   "transactions": {
-    "factory": "0x52ba9d75e1e151080c9d05210e49586b03ded8cf971e6256ca169a1b95a9a5d1",
-    "createTokenBox": "0x3e1b0a27f6456c7090a46c7f19e77977d6de7da39aa5be190fdc3272e325776c"
-  },
-  "reusedContracts": {
-    "renderer": {
-      "address": "0xE880e364f4a71be047cF49767313381715d57db0",
-      "sourceManifest": "deployments/banmaobox-xlayer-mainnet.json",
-      "sourceCompilerInputHash": "0x3e5eb0615ee65c691c00e87c565fdb4de364b76c54070ddc4fe105746642d37c",
-      "sourceTransactionHash": "0x6b8d9763299e3cd8d2f80eb19f5baeeed3904c996d75eeb6960d66d8bfabb7c1"
-    }
+    "renderer": "0x6b8d9763299e3cd8d2f80eb19f5baeeed3904c996d75eeb6960d66d8bfabb7c1",
+    "factory": "0x053271b2120fe414c8e89ea3e5607509579f0fb63a97f747a51c3938e48087ea",
+    "createTokenBox": "0x0837694787357009071874788a330cda5d988faf8b30bc5b082a0eeff6bacb59"
   },
   "tokenMetadata": {
     "symbol": "banmao",
@@ -46,14 +39,14 @@
       "normalizedKeccak256": "0xc66b482d9ef781d179c79ebcec20a19c141e611cedcb07a3c6a2a7cfa3b8d3e5"
     },
     "factory": {
-      "bytes": 24384,
-      "keccak256": "0x80fc268b96b99a27b9d944a9c86d2fab55b626de2e0b03b360f862b7f553b6ab",
-      "normalizedKeccak256": "0x89afd740aa095f0b55a5247eeedacaaf375d60223c4cb4aab9d0843917b505e1"
+      "bytes": 24197,
+      "keccak256": "0xb9032d68e13b551e150415cf747b29fd9563317de7d1011e1e7cfcac965447ed",
+      "normalizedKeccak256": "0x18b43571766c6761a66632b264a5fc96320bb04d5548f61142f0c4ed9a3cfe59"
     },
     "box": {
-      "bytes": 20242,
-      "keccak256": "0x7ecc599d027cb4e2d3bc3c02504ed740e085210d9ffb19a7b137c3ad302ed6cb",
-      "normalizedKeccak256": "0x6ab8d39f69d3ed14002ee98507439c663a43b07984597088f4f2d8e03aa026b5"
+      "bytes": 20055,
+      "keccak256": "0xdb6355c03df9a9c01cd52207b2e0aca65010f11c45e25c00f5e5162b79625e13",
+      "normalizedKeccak256": "0xf22c2afc3fdb1446647d5c6a5167e497f52b57dd32015a30b7fdb514af263b23"
     }
   },
   "constants": {

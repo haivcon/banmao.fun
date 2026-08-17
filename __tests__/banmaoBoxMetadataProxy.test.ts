@@ -63,7 +63,7 @@ describe("BanmaoBox metadata proxy", () => {
     jest.restoreAllMocks();
   });
 
-  test("returns the exact embedded SVG image from onchainTokenURI", async () => {
+  test("returns the exact embedded SVG image from tokenURI", async () => {
     mockReadContract.mockResolvedValueOnce(metadataUri());
 
     const response = await requestToken();
@@ -72,7 +72,7 @@ describe("BanmaoBox metadata proxy", () => {
     await expect(response.json()).resolves.toMatchObject({ image: embeddedImage });
     expect(mockReadContract).toHaveBeenCalledTimes(1);
     expect(mockReadContract.mock.calls[0][0]).toMatchObject({
-      functionName: "onchainTokenURI",
+      functionName: "tokenURI",
       args: [BigInt(1)],
     });
   });
@@ -91,17 +91,12 @@ describe("BanmaoBox metadata proxy", () => {
     });
   });
 
-  test("falls back to legacy tokenURI when onchainTokenURI is unavailable", async () => {
-    mockReadContract
-      .mockRejectedValueOnce(new Error("function unavailable"))
-      .mockResolvedValueOnce(metadataUri());
+  test("does not attempt the replacement-only onchainTokenURI function", async () => {
+    mockReadContract.mockResolvedValueOnce(metadataUri());
 
-    const response = await requestToken();
+    await requestToken();
 
-    expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({ image: embeddedImage });
     expect(mockReadContract.mock.calls.map(([call]) => call.functionName)).toEqual([
-      "onchainTokenURI",
       "tokenURI",
     ]);
   });

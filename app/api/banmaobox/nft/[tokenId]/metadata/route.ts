@@ -33,25 +33,13 @@ function isNonexistentToken(error: unknown) {
   );
 }
 
-async function readOnchainTokenUri(tokenId: bigint) {
-  try {
-    return (await client.readContract({
-      address: boxAddress,
-      abi: BANMAO_BOX_ABI,
-      functionName: "onchainTokenURI",
-      args: [tokenId],
-    } as never)) as string;
-  } catch {
-    // The deployed manifest remains on the immutable pre-release collection until
-    // a separately approved replacement deployment. Remove this fallback only
-    // after the manifest points at a release that implements onchainTokenURI.
-    return (await client.readContract({
-      address: boxAddress,
-      abi: BANMAO_BOX_ABI,
-      functionName: "tokenURI",
-      args: [tokenId],
-    } as never)) as string;
-  }
+async function readTokenUri(tokenId: bigint) {
+  return (await client.readContract({
+    address: boxAddress,
+    abi: BANMAO_BOX_ABI,
+    functionName: "tokenURI",
+    args: [tokenId],
+  } as never)) as string;
 }
 
 export async function GET(
@@ -74,7 +62,7 @@ export async function GET(
   }
 
   try {
-    const tokenUri = await readOnchainTokenUri(tokenId);
+    const tokenUri = await readTokenUri(tokenId);
     const prefix = "data:application/json;base64,";
     if (!tokenUri.startsWith(prefix)) {
       throw new Error("BanmaoBox tokenURI is not base64 JSON");
