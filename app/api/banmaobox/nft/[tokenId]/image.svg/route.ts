@@ -5,18 +5,18 @@ import {
   createPublicClient,
   http,
 } from "viem";
+import { xLayer } from "viem/chains";
 import { BANMAO_BOX_ABI } from "@/app/defi/box/generated/abis";
-import { BOX_CHAIN_CONFIG } from "@/app/defi/box/registry";
+import deployment from "@/deployments/banmaobox-xlayer-mainnet.json";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const chainConfig = BOX_CHAIN_CONFIG[196];
 const client = createPublicClient({
-  chain: chainConfig.chain,
+  chain: xLayer,
   transport: http("https://xlayerrpc.okx.com"),
 });
-const boxAddress = chainConfig.boxAddress;
+const boxAddress = deployment.contracts.box as `0x${string}`;
 const MAX_UINT256 = (1n << 256n) - 1n;
 const CACHE_CONTROL = "public, s-maxage=60, stale-while-revalidate=300";
 
