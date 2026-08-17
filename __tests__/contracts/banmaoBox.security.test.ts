@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import ganache from "ganache";
 import { ethers } from "ethers";
@@ -265,6 +265,48 @@ describe("BanmaoBox adversarial release security", () => {
     expect(await deployedBox.rendererAdmin()).toBe(await owner.getAddress());
     expect(await deployedBox.renderer()).toBe(renderer.address);
     expect(await deployedBox.metadataRenderer()).toBe(renderer.address);
+  });
+
+  test("uses Transfer for mint discovery and permits explicit locked ERC-4906 refreshes", async () => {
+    const recipient = await owner.getAddress();
+    const other = provider.getSigner(1);
+    const secondary = await deploy("TestToken", owner, ["Secondary", "SEC"]);
+    await primary.approve(box.address, ethers.constants.MaxUint256);
+    await secondary.approve(box.address, ethers.constants.MaxUint256);
+
+    const assertMintEvents = (receipt: { events?: Array<{ event?: string }> }, count: number) => {
+      expect(receipt.events?.filter((event) => event.event === "Transfer")).toHaveLength(count);
+      expect(receipt.events?.filter((event) => event.event === "MetadataUpdate")).toHaveLength(0);
+    };
+
+    const singleReceipt = await (
+      await box.createBox(recipient, ethers.utils.parseEther("1"), 86_400)
+    ).wait();
+    assertMintEvents(singleReceipt, 1);
+
+    const batchReceipt = await (
+      await box.createBoxes(
+        [recipient, recipient],
+        [ethers.utils.parseEther("2"), ethers.utils.parseEther("3")],
+        86_400,
+      )
+    ).wait();
+    assertMintEvents(batchReceipt, 2);
+
+    const basketReceipt = await (
+      await box.createMultiTokenBox(
+        recipient,
+        [primary.address, secondary.address],
+        [ethers.utils.parseEther("4"), ethers.utils.parseEther("5")],
+        86_400,
+      )
+    ).wait();
+    assertMintEvents(basketReceipt, 1);
+
+    const lockedRefreshReceipt = await (await box.connect(other).refreshMetadata(1)).wait();
+    expect(lockedRefreshReceipt.events?.find((event: { event?: string }) =>
+      event.event === "MetadataUpdate")?.args?._tokenId.toString()).toBe("1");
+    await expect(box.connect(other).refreshMetadata(999)).rejects.toThrow();
   });
 
   test("blocks ERC-721 ownership changes during token callbacks", async () => {
@@ -654,15 +696,12 @@ describe("BanmaoBox adversarial release security", () => {
     const addresses = [primary.address, ...[1, 2, 3, 4].map((value) =>
       ethers.utils.getAddress(`0x${value.toString(16).padStart(40, String(value))}`),
     )];
-    const ledgerValues = [
-      "1234567.89 banmao / 18 decimals",
-      "0 ZERO / 0 decimals",
-      "0.1 ONE / 1 decimals",
-      "115792089.237316195423570985008687907853269984665640564039457584007913129639935 MAXIMUM-LENGTH16 / 69 decimals",
-      "1 D69 / 69 decimals",
-    ];
+    const ledgerAmounts = ["1,234,567.89", "0", "0.1", "115,792,089.23", "1"];
+    const ledgerTokens = ["banmao / d18", "ZERO / d0", "ONE / d1", "MAXIMUM-LENGTH16 / d69", "D69 / d69"];
+    const mintingWallet = await owner.getAddress();
     const renderData = {
       token: primary.address,
+      creator: mintingWallet,
       amount: ethers.utils.parseEther("1234567.89"),
       timestamps,
       tokenDecimals: 18,
@@ -690,7 +729,8 @@ describe("BanmaoBox adversarial release security", () => {
         ].slice(0, count) as Array<[string, ethers.BigNumberish, number, string]>),
       });
       for (const address of addresses.slice(0, count)) expect(svg).toContain(address.toLowerCase());
-      for (const value of ledgerValues.slice(0, count)) expect(svg).toContain(value);
+      for (const value of ledgerAmounts.slice(0, count)) expect(svg).toContain(value);
+      for (const value of ledgerTokens.slice(0, count)) expect(svg).toContain(value);
     }
 
     const lockedSvg = await renderer.renderSVG(ethers.constants.MaxUint256, renderData);
@@ -698,27 +738,49 @@ describe("BanmaoBox adversarial release security", () => {
     parseSvg(lockedSvg);
     expect(lockedSvg).toContain('<title id="title">BanmaoBox sealed treasury</title>');
     expect(lockedSvg).toContain('<desc id="description">');
+    expect(lockedSvg).toContain('width="600" height="600" viewBox="0 0 800 800"');
     expect(lockedSvg).toContain('role="img"');
-    expect(lockedSvg).toContain("LOCKED");
-    expect(lockedSvg).toContain("ASSET SUMMARY / 5");
+    expect(lockedSvg).toContain("TIME-SEALED");
+    expect(lockedSvg).toContain("ASSET PORTFOLIO / 5");
     expect(lockedSvg).toContain("ASSET LEDGER");
     expect(lockedSvg).toContain('id="shine"');
     expect(lockedSvg).toContain("<animate");
     expect(lockedSvg).toContain("<animateTransform");
-    expect(lockedSvg).toContain('values="63;66;63"');
+    expect(lockedSvg).not.toContain('values="63;66;63"');
+    expect(lockedSvg).not.toContain('url(#metal)');
     expect(lockedSvg).not.toContain('values="0 0;0 -3;0 0"');
+    expect(lockedSvg).not.toContain('M216 325v-15');
+    expect(lockedSvg).not.toContain('M209 323H251V359H209Z');
+    expect(lockedSvg).not.toContain('M228 341H232V351H228Z');
     expect(lockedSvg).toContain("banmao");
     expect(lockedSvg).toContain(" UTC");
-    for (const address of addresses) expect(lockedSvg).toContain(address.toLowerCase());
-    for (const value of ledgerValues) {
-      expect(lockedSvg).toContain(value);
+    expect(lockedSvg).toContain("MINTED BY");
+    expect(lockedSvg).toContain(mintingWallet.toLowerCase());
+    expect(lockedSvg).not.toContain(`${mintingWallet.toLowerCase().slice(0, 10)}...${mintingWallet.toLowerCase().slice(-8)}`);
+    expect(lockedSvg).toContain("NFT TOKEN ID");
+    expect(lockedSvg).toContain("#1157920...9639935");
+    expect(lockedSvg).toContain('font-size="30" font-weight="700">#1157920...9639935</text>');
+    expect(lockedSvg).toContain('font-size="24" font-weight="700"');
+    expect(lockedSvg).toContain('font-size="22" font-weight="700"');
+    expect(lockedSvg).toContain('font-size="18" font-weight="700">');
+    expect(lockedSvg).toContain('font-size="15" font-weight="700" textLength="390"');
+    expect(lockedSvg).not.toContain('textLength="684" lengthAdjust="spacingAndGlyphs"');
+    for (const address of addresses) {
+      const full = address.toLowerCase();
+      expect(lockedSvg).toContain(full);
+      expect(lockedSvg).not.toContain(`${full.slice(0, 10)}...${full.slice(-8)}`);
     }
+    for (const value of [...ledgerAmounts, ...ledgerTokens]) expect(lockedSvg).toContain(value);
+    expect(lockedSvg).toContain('x="48" y="632" font-size="12">TOKEN CONTRACT</text>');
+    expect(lockedSvg).toContain('x="560" y="632" text-anchor="end" font-size="12">AMOUNT</text>');
+    expect(lockedSvg).toContain('x="752" y="632" text-anchor="end" font-size="12">SYMBOL / DECIMALS</text>');
     expect(lockedSvg).not.toContain("TOTAL VALUE");
     expect(lockedSvg).not.toContain("OWNER");
     expect(attributes).toEqual(expect.arrayContaining([
       expect.objectContaining({ trait_type: "Status", value: "Locked" }),
       expect.objectContaining({ trait_type: "Token Symbol", value: "banmao" }),
       expect.objectContaining({ trait_type: "Asset Count", value: 5 }),
+      expect.objectContaining({ trait_type: "Minting Wallet", value: mintingWallet.toLowerCase() }),
       expect.objectContaining({ trait_type: "Unlock Time", value: latest.timestamp + maximumDuration }),
     ]));
 
@@ -743,8 +805,11 @@ describe("BanmaoBox adversarial release security", () => {
     console.info(`BanmaoBox worst tokenURI bytes: ${Buffer.byteLength(uri)}`);
     console.info(`BanmaoBox renderSVG gas estimate: ${(await renderer.estimateGas.renderSVG(ethers.constants.MaxUint256, renderData)).toString()}`);
     console.info(`BanmaoBox tokenURI gas estimate: ${(await renderer.estimateGas.tokenURI(ethers.constants.MaxUint256, renderData)).toString()}`);
+    const previewDir = join(process.cwd(), "preview", "banmaobox");
+    mkdirSync(previewDir, { recursive: true });
+    writeFileSync(join(previewDir, "banmaobox-locked-basket.svg"), lockedSvg);
     const fixtureDir = process.env.LOCALAPPDATA ?? process.cwd();
-    for (const size of [800, 320, 210]) {
+    for (const size of [600, 320, 210]) {
       await sharp(Buffer.from(lockedSvg)).resize(size, size).png().toFile(join(fixtureDir, "Temp", `banmaobox-sealed-treasury-${size}.png`));
     }
 
@@ -752,8 +817,9 @@ describe("BanmaoBox adversarial release security", () => {
     await provider.send("evm_mine", []);
     const readySvg = await renderer.renderSVG(77, renderData);
     const readyAttributes = JSON.parse(await renderer.renderAttributes(renderData));
-    expect(readySvg).toContain(">READY</text>");
-    expect(readySvg).toContain('values="0 0;0 -3;0 0"');
+    expect(readySvg).toContain("READY TO OPEN");
+    expect(readySvg).not.toContain('values="0 0;0 -3;0 0"');
+    expect(readySvg).not.toContain('M216 325v-15');
     expect(readyAttributes).toEqual(expect.arrayContaining([
       expect.objectContaining({ trait_type: "Status", value: "Ready to open" }),
     ]));
@@ -780,7 +846,13 @@ describe("BanmaoBox adversarial release security", () => {
       expect.objectContaining({ trait_type: "Asset Count", value: 1 }),
       expect.objectContaining({ trait_type: "Token Contract", value: primary.address.toLowerCase() }),
     ]));
-    expect(svg).toContain("42 PRI");
+    expect(svg).toContain("42");
+    expect(svg).toContain("PRI / d18");
+    expect(svg).toContain("MINTED BY");
+    expect(svg).toContain(recipient.toLowerCase());
+    expect(metadata.attributes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ trait_type: "Minting Wallet", value: recipient.toLowerCase() }),
+    ]));
   });
 
   test("snapshots every asset metadata field and updates the rendered ledger after partial release", async () => {
@@ -798,18 +870,21 @@ describe("BanmaoBox adversarial release security", () => {
     parseSvg(before);
     expect(before).toContain(primary.address.toLowerCase());
     expect(before).toContain(secondary.address.toLowerCase());
-    expect(before).toContain("3 PRI / 18 decimals");
-    expect(before).toContain("7 SEC / 18 decimals");
+    expect(before).toContain("3");
+    expect(before).toContain("PRI / d18");
+    expect(before).toContain("7");
+    expect(before).toContain("SEC / d18");
 
     await unlock();
     await box["openAsset(uint256,uint256)"](1, 0);
     const after = await box.renderSVG(1);
     expect(after).not.toContain(primary.address.toLowerCase());
     expect(after).toContain(secondary.address.toLowerCase());
-    expect(after).toContain("ASSET SUMMARY / 1");
+    expect(after).toContain("ASSET PORTFOLIO / 1");
     expect(after).toContain("PRIMARY ASSET RELEASED");
-    expect(after).toContain("7 SEC");
-    expect(after).not.toContain("0 PRI");
+    expect(after).toContain(">7<animate");
+    expect(after).toContain("SEC / d18");
+    expect(after).not.toContain("PRI / d18");
   });
 
   test("keeps all production contracts below EIP-170 and renderer below 20KB", () => {

@@ -1,11 +1,10 @@
 import {
-  CANONICAL_BANMAO_BOX_ADDRESS,
-  CANONICAL_BANMAO_BOX_FACTORY_ADDRESS,
-  CANONICAL_BANMAO_BOX_RENDERER_ADDRESS,
   CANONICAL_BANMAO_MAINNET_ADDRESS,
   isVerifiedMainnetManifest,
   validDeploymentAddress,
+  type BoxDeploymentManifest,
 } from "../app/defi/box/address";
+import mainnetManifest from "../deployments/banmaobox-xlayer-mainnet.json";
 
 const address = (digit: string) => `0x${digit.repeat(40)}`;
 const hash = (digit: string) => `0x${digit.repeat(64)}`;
@@ -15,9 +14,9 @@ function manifest(status = "deployed") {
     status,
     contracts: {
       token: CANONICAL_BANMAO_MAINNET_ADDRESS,
-      renderer: CANONICAL_BANMAO_BOX_RENDERER_ADDRESS,
-      factory: CANONICAL_BANMAO_BOX_FACTORY_ADDRESS,
-      box: CANONICAL_BANMAO_BOX_ADDRESS,
+      renderer: address("1"),
+      factory: address("2"),
+      box: address("3"),
     },
     runtime: {
       token: { bytes: 50, keccak256: hash("d") },
@@ -29,6 +28,13 @@ function manifest(status = "deployed") {
 }
 
 describe("BanmaoBox mainnet registry gates", () => {
+  test("accepts the verified replacement deployment in the production manifest", () => {
+    expect(isVerifiedMainnetManifest(mainnetManifest as BoxDeploymentManifest)).toBe(true);
+    expect(mainnetManifest.contracts.renderer).toBe("0x29cf18F1AB3009303d023dbA6c4b4e0fC4312f60");
+    expect(mainnetManifest.contracts.factory).toBe("0xD1552040a290e6AB8dfED12Dd5A7345d6b0FfB44");
+    expect(mainnetManifest.contracts.box).toBe("0x6007479c7C7013C15bbfB46Fa1F0D0706b4e02Ce");
+  });
+
   test("accepts only non-zero EVM deployment addresses", () => {
     expect(validDeploymentAddress(address("1"))).toBe(address("1"));
     expect(validDeploymentAddress("0x0000000000000000000000000000000000000000")).toBeUndefined();
@@ -47,9 +53,10 @@ describe("BanmaoBox mainnet registry gates", () => {
     expect(isVerifiedMainnetManifest(wrongToken)).toBe(false);
 
     for (const contract of ["renderer", "factory", "box"] as const) {
-      const retiredDeployment = manifest();
-      retiredDeployment.contracts[contract] = address("9");
-      expect(isVerifiedMainnetManifest(retiredDeployment)).toBe(false);
+      const invalidDeployment = manifest();
+      invalidDeployment.contracts[contract] =
+        "0x0000000000000000000000000000000000000000";
+      expect(isVerifiedMainnetManifest(invalidDeployment)).toBe(false);
     }
 
     const missingRuntime = manifest();

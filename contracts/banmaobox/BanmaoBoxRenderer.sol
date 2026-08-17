@@ -10,6 +10,7 @@ import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 ///      address(20) | amount base units(32) | decimals(1) | symbol(16).
 struct BanmaoBoxRenderData {
     address token;
+    address creator;
     uint256 amount;
     uint128 timestamps;
     uint8 tokenDecimals;
@@ -95,21 +96,18 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         string memory gold = _tierGold(_tier(data.amount, data.tokenDecimals));
         bytes memory hero = abi.encodePacked(
             _header(tokenId, ready, gold),
-            _treasury(ready, gold, data)
+            _assetSummary(data, gold)
         );
         bytes memory details = abi.encodePacked(
-            _assetSummary(data, gold),
-            _timeline(data, ready, gold)
+            _timeline(data, ready, gold),
+            _ledger(data)
         );
-        return string(
-            abi.encodePacked(
-                _svgHead(data.assetCount, ready, gold),
-                hero,
-                details,
-                _ledger(data),
-                "</svg>"
-            )
-        );
+        return string(abi.encodePacked(
+            _svgHead(data.assetCount, ready, gold),
+            hero,
+            details,
+            "</svg>"
+        ));
     }
 
     function _svgHead(
@@ -118,7 +116,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         string memory gold
     ) internal pure returns (string memory) {
         bytes memory accessible = abi.encodePacked(
-            '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800" role="img" aria-labelledby="title description">',
+            '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 800 800" role="img" aria-labelledby="title description">',
             '<title id="title">BanmaoBox sealed treasury</title><desc id="description">',
             ready ? "Ready" : "Locked", " time-sealed treasury containing ",
             uint256(assetCount).toString(), " assets.</desc>"
@@ -127,70 +125,22 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
     }
 
     function _defs() internal pure returns (string memory) {
-        return '<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#15130E"/><stop offset=".55" stop-color="#090A0D"/><stop offset="1" stop-color="#050609"/></linearGradient><linearGradient id="metal" x2="0" y2="1"><stop stop-color="#29251A"/><stop offset=".48" stop-color="#121216"/><stop offset="1" stop-color="#08090C"/></linearGradient><linearGradient id="shine" x1="0" x2="1"><stop stop-color="#F4EEDC"/><stop offset=".45" stop-color="#F4EEDC"/><stop offset=".5" stop-color="#F2D98D"/><stop offset=".55" stop-color="#F4EEDC"/><stop offset="1" stop-color="#F4EEDC"/><animateTransform attributeName="gradientTransform" type="translate" values="-1 0;1 0;-1 0" keyTimes="0;.45;1" dur="8s" repeatCount="indefinite"/></linearGradient></defs><style>.brand{font-family:Arial,sans-serif;font-weight:900;letter-spacing:4px}.label{font-family:Arial,sans-serif;font-weight:700;letter-spacing:2px}.mono{font-family:monospace}.gold{fill:#D8B565}.muted{fill:#817967}.white{fill:#F4EEDC}</style>';
+        return '<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#15130E"/><stop offset=".55" stop-color="#090A0D"/><stop offset="1" stop-color="#050609"/></linearGradient><linearGradient id="shine" x1="0" x2="1"><stop stop-color="#F4EEDC"/><stop offset=".45" stop-color="#F4EEDC"/><stop offset=".5" stop-color="#F2D98D"/><stop offset=".55" stop-color="#F4EEDC"/><stop offset="1" stop-color="#F4EEDC"/><animateTransform attributeName="gradientTransform" type="translate" values="-1 0;1 0;-1 0" keyTimes="0;.45;1" dur="8s" repeatCount="indefinite"/></linearGradient></defs><style>.brand{font-family:Arial,sans-serif;font-weight:900;letter-spacing:4px}.label{font-family:Arial,sans-serif;font-weight:700;letter-spacing:2px}.mono{font-family:monospace}.gold{fill:#D8B565}.muted{fill:#817967}.white{fill:#F4EEDC}</style>';
     }
 
     function _background(string memory gold) internal pure returns (string memory) {
-        return string(abi.encodePacked('<rect width="800" height="800" fill="url(#bg)"/><rect x="18" y="18" width="764" height="764" rx="34" fill="none" stroke="', gold, '" stroke-opacity=".38"/><path d="M42 112H758M42 552H758" stroke="#D8B565" stroke-opacity=".22"/>'));
+        return string(abi.encodePacked('<rect width="800" height="800" fill="url(#bg)"/><rect x="18" y="18" width="764" height="764" rx="34" fill="none" stroke="', gold, '" stroke-opacity=".38"/><path d="M42 112H758M42 386H758M42 466H758M42 580H758" stroke="#D8B565" stroke-opacity=".22"/>'));
     }
 
     function _header(uint256 tokenId, bool ready, string memory gold) internal pure returns (string memory) {
-        bytes memory out = abi.encodePacked(
-            '<text class="brand" x="50" y="68" font-size="32" fill="url(#shine)">BANMAOBOX</text>',
-            '<text class="mono muted" x="50" y="92" font-size="7">SEALED TREASURY / #', tokenId.toString(), '</text>'
-        );
-        out = abi.encodePacked(
-            out,
-            '<g transform="translate(610 42)"><path d="M0 0H140L154 14V50H14L0 36Z" fill="#111116" stroke="', gold,
-            '"/><circle cx="24" cy="25" r="7" fill="none" stroke="', gold, '" stroke-width="3"/>'
-        );
-        out = abi.encodePacked(
-            out,
-            '<path d="M21 25h6v10h-6Z" fill="', gold,
-            '"/><text class="label" x="88" y="31" text-anchor="middle" fill="', gold,
-            '" font-size="14">', ready ? "READY" : "LOCKED", '</text></g>'
-        );
-        return string(out);
-    }
-
-    function _treasury(bool ready, string memory gold, BanmaoBoxRenderData calldata data) internal pure returns (string memory) {
-        bytes memory pills;
-        bytes memory notches;
-        for (uint256 i; i < MAX_ASSETS; ++i) {
-            notches = abi.encodePacked(notches, '<rect x="', (244 + i * 30).toString(), '" y="496" width="18" height="7" rx="2" fill="', gold, '" fill-opacity="', i < data.assetCount ? "1" : ".14", '"/>');
-            if (i < data.assetCount) pills = abi.encodePacked(pills, _assetPill(data.renderAssets, i, gold));
-        }
-        return string(abi.encodePacked(_vaultShell(gold), _vaultLock(ready, gold), pills, notches, '</g>'));
-    }
-
-    function _vaultShell(string memory gold) internal pure returns (string memory) {
-        bytes memory shell = abi.encodePacked(
-            '<g><path d="M90 205L190 138H414L514 205V461L476 512H128L90 461Z" fill="url(#metal)" stroke="', gold, '" stroke-width="3"/>',
-            '<path d="M118 217L204 163H400L486 217M118 443L148 479H456L486 443" fill="none" stroke="', gold, '" stroke-opacity=".45"/>'
-        );
-        bytes memory rings = abi.encodePacked(
-            '<path d="M230 151V490M106 327H498" stroke="', gold, '" stroke-opacity=".18"/>',
-            '<circle cx="230" cy="327" r="63" fill="#090A0D" stroke="', gold, '" stroke-opacity=".35"><animate attributeName="r" values="63;66;63" dur="5s" repeatCount="indefinite"/></circle>'
-        );
-        return string(abi.encodePacked(shell, rings, '<circle cx="230" cy="327" r="49" fill="none" stroke="', gold, '" stroke-width="2"/><circle cx="230" cy="327" r="37" fill="none" stroke="', gold, '" stroke-dasharray="4 7"/>'));
-    }
-
-    function _vaultLock(bool ready, string memory gold) internal pure returns (string memory) {
-        bytes memory shackle = abi.encodePacked(
-            '<g><path d="M216 325v-15a14 14 0 0 1 ', ready ? "26-9" : "28 0", 'v15" fill="none" stroke="', gold, '" stroke-width="6" stroke-linecap="round"/>',
-            ready ? '<animateTransform attributeName="transform" type="translate" values="0 0;0 -3;0 0" dur="3s" repeatCount="indefinite"/>' : "", '</g>'
-        );
-        bytes memory body = abi.encodePacked('<path d="M209 323H251V359H209Z" fill="#15130E" stroke="', gold, '" stroke-width="2"/>');
-        return string(abi.encodePacked(shackle, body, '<circle cx="230" cy="337" r="4" fill="', gold, '"><animate attributeName="opacity" values="1;.55;1" dur="2.8s" repeatCount="indefinite"/></circle><path d="M228 341H232V351H228Z" fill="', gold, '"/>'));
-    }
-
-    function _assetPill(bytes calldata packed, uint256 index, string memory gold) internal pure returns (string memory) {
-        (,,, bytes16 symbol) = _renderAssetAt(packed, index);
-        uint256 y = 232 + index * 40;
-        string memory baseline = (y + 19).toString();
-        bytes memory pill = abi.encodePacked('<g><rect x="322" y="', y.toString(), '" width="154" height="30" rx="15" fill="#090A0D" stroke="', gold, '" stroke-opacity=".4"/>');
-        pill = abi.encodePacked(pill, '<circle cx="338" cy="', (y + 15).toString(), '" r="4" fill="', gold, '"/><text class="label white" x="350" y="', baseline, '" font-size="10">');
-        return string(abi.encodePacked(pill, _symbol(symbol), '</text></g>'));
+        return string(abi.encodePacked(
+            '<text class="brand" x="50" y="68" font-size="34" fill="url(#shine)">BANMAOBOX</text>',
+            '<text class="label muted" x="50" y="96" font-size="13">SEALED TREASURY  /  ',
+            ready ? "READY TO OPEN" : "TIME-SEALED", '</text>',
+            '<text class="label muted" x="750" y="48" text-anchor="end" font-size="11">NFT TOKEN ID</text>',
+            '<text class="mono" x="750" y="84" text-anchor="end" fill="', gold,
+            '" font-size="30" font-weight="700">#', _abbreviate(tokenId.toString(), 7, 7), '</text>'
+        ));
     }
 
     function _assetSummary(BanmaoBoxRenderData calldata data, string memory gold) internal pure returns (string memory) {
@@ -198,20 +148,51 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         for (uint256 i; i < data.assetCount; ++i) {
             rows = abi.encodePacked(rows, _summaryRow(data.renderAssets, i, gold));
         }
+        bytes memory heading = abi.encodePacked(
+            '<g transform="translate(48 146)"><text class="label gold" font-size="19">ASSET PORTFOLIO / ',
+            uint256(data.assetCount).toString(), '</text>',
+            '<text class="label muted" x="704" text-anchor="end" font-size="12">AVAILABLE AMOUNT</text>'
+        );
         return string(abi.encodePacked(
-            '<g transform="translate(548 168)"><text class="label muted" font-size="12">ASSET SUMMARY / ', uint256(data.assetCount).toString(), '</text>', rows,
-            data.amount == 0 && data.assetCount != 0 ? '<text class="label gold" y="174" font-size="9">PRIMARY ASSET RELEASED</text>' : "", '</g>'
+            heading,
+            rows,
+            data.amount == 0 && data.assetCount != 0 ? '<text class="label gold" x="704" y="224" text-anchor="end" font-size="13">PRIMARY ASSET RELEASED</text>' : "",
+            '</g>'
         ));
     }
 
     function _summaryRow(bytes calldata packed, uint256 index, string memory gold) internal pure returns (string memory) {
         (, uint256 amount, uint8 decimals, bytes16 symbol) = _renderAssetAt(packed, index);
-        string memory y = (31 + index * 29).toString();
-        bytes memory symbolText = abi.encodePacked(
-            '<g><text class="label white" y="', y, '" font-size="10">', _symbol(symbol), _pulse(index), '</text>'
-        );
-        bytes memory amountText = abi.encodePacked(symbolText, '<text class="mono" x="202" y="', y, '" text-anchor="end" fill="', gold, '" font-size="10">');
-        return string(abi.encodePacked(amountText, _formatDisplayAmount(amount, decimals), _pulse(index), '</text></g>'));
+        return string(abi.encodePacked(
+            _summarySymbol(symbol, index),
+            _summaryAmount(amount, decimals, index, gold),
+            _summaryDivider(index, gold)
+        ));
+    }
+
+    function _summarySymbol(bytes16 symbol, uint256 index) internal pure returns (string memory) {
+        string memory value = _symbol(symbol);
+        return string(abi.encodePacked(
+            '<g><text class="mono white" y="', (43 + index * 40).toString(),
+            '" font-size="24" font-weight="700"',
+            bytes(value).length > 14 ? ' textLength="225" lengthAdjust="spacingAndGlyphs"' : "",
+            '>', value, _pulse(index), '</text>'
+        ));
+    }
+
+    function _summaryAmount(uint256 amount, uint8 decimals, uint256 index, string memory gold) internal pure returns (string memory) {
+        return string(abi.encodePacked(
+            '<text class="mono" x="704" y="', (43 + index * 40).toString(),
+            '" text-anchor="end" fill="', gold, '" font-size="22" font-weight="700">',
+            _formatDisplayAmount(amount, decimals), _pulse(index), '</text>'
+        ));
+    }
+
+    function _summaryDivider(uint256 index, string memory gold) internal pure returns (string memory) {
+        return string(abi.encodePacked(
+            '<path d="M0 ', (51 + index * 40).toString(),
+            'H704" stroke="', gold, '" stroke-opacity=".1"/></g>'
+        ));
     }
 
     function _pulse(uint256 index) internal pure returns (string memory) {
@@ -219,26 +200,48 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
     }
 
     function _timeline(BanmaoBoxRenderData calldata data, bool ready, string memory gold) internal pure returns (string memory) {
-        bytes memory out = abi.encodePacked(
-            '<g transform="translate(548 350)"><text class="label muted" font-size="10">',
+        return string(abi.encodePacked(
+            _unlockPanel(data, ready),
+            _provenance(data, gold)
+        ));
+    }
+
+    function _unlockPanel(BanmaoBoxRenderData calldata data, bool ready) internal pure returns (string memory) {
+        return string(abi.encodePacked(
+            '<g transform="translate(48 414)"><text class="label gold" font-size="15">',
             ready ? "UNLOCKED AT" : "UNLOCKS",
-            '</text><text class="mono white" y="27" font-size="14">',
-            _formatDateTime(_unlockTime(data)), '</text>'
+            '</text><text class="mono white" x="704" text-anchor="end" font-size="20" font-weight="700">',
+            _formatDateTime(_unlockTime(data)), '</text></g>'
+        ));
+    }
+
+    function _provenance(BanmaoBoxRenderData calldata data, string memory gold) internal pure returns (string memory) {
+        bytes memory identity = abi.encodePacked(
+            '<g transform="translate(48 492)"><text class="label gold" font-size="14">MINTED BY</text>',
+            '<text class="mono white" y="27" font-size="18" font-weight="700">', data.creator.toHexString(), '</text>'
         );
-        out = abi.encodePacked(
-            out,
-            '<text class="label muted" y="64" font-size="10">CREATED</text>',
-            '<text class="mono white" y="91" font-size="14">',
+        return string(abi.encodePacked(
+            identity,
+            _createdPanel(data),
+            _durationPanel(data, gold),
+            '</g>'
+        ));
+    }
+
+    function _createdPanel(BanmaoBoxRenderData calldata data) internal pure returns (string memory) {
+        return string(abi.encodePacked(
+            '<text class="label muted" y="60" font-size="12">CREATED</text>',
+            '<text class="mono white" x="92" y="60" font-size="16">',
             _formatDateTime(_createdAt(data)), '</text>'
-        );
-        out = abi.encodePacked(
-            out,
-            '<path d="M0 116H202" stroke="', gold,
-            '" stroke-opacity=".35"/><text class="label muted" y="143" font-size="10">TIME SEAL</text>',
-            '<text class="mono" y="169" fill="', gold, '" font-size="13">',
-            _duration(data), '</text></g>'
-        );
-        return string(out);
+        ));
+    }
+
+    function _durationPanel(BanmaoBoxRenderData calldata data, string memory gold) internal pure returns (string memory) {
+        return string(abi.encodePacked(
+            '<text class="label muted" x="472" y="60" font-size="12">TIME SEAL</text>',
+            '<text class="mono" x="704" y="60" text-anchor="end" fill="', gold,
+            '" font-size="17" font-weight="700">', _duration(data), '</text>'
+        ));
     }
 
     function _ledger(BanmaoBoxRenderData calldata data) internal pure returns (string memory) {
@@ -247,29 +250,52 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
             rows = abi.encodePacked(rows, _ledgerRow(data.renderAssets, i));
         }
         return string(abi.encodePacked(
-            '<text class="label gold" x="58" y="571" font-size="11">ASSET LEDGER</text>',
-            '<text class="label muted" x="742" y="571" text-anchor="end" font-size="9">FULL CONTRACT / HUMAN AMOUNT / DECIMALS</text>',
+            '<text class="label gold" x="48" y="608" font-size="19">ASSET LEDGER</text>',
+            '<text class="label muted" x="48" y="632" font-size="12">TOKEN CONTRACT</text>',
+            '<text class="label muted" x="560" y="632" text-anchor="end" font-size="12">AMOUNT</text>',
+            '<text class="label muted" x="752" y="632" text-anchor="end" font-size="12">SYMBOL / DECIMALS</text>',
             rows
         ));
     }
 
     function _ledgerRow(bytes calldata packed, uint256 index) internal pure returns (string memory) {
         (address token, uint256 amount, uint8 decimals, bytes16 symbol) = _renderAssetAt(packed, index);
-        uint256 y = 594 + index * 38;
-        bytes memory row = abi.encodePacked(
-            '<g><text class="mono muted" x="58" y="', y.toString(), '" font-size="11">',
-            token.toHexString(), _pulse(index), '</text>'
-        );
-        row = abi.encodePacked(
-            row,
-            '<text class="mono white" x="742" y="', (y + 17).toString(),
-            '" text-anchor="end" font-size="10">', _formatExactAmount(amount, decimals),
-            ' ', _symbol(symbol), ' / ', uint256(decimals).toString(), ' decimals', _pulse(index), '</text>'
-        );
         return string(abi.encodePacked(
-            row,
-            '<path d="M58 ', (y + 25).toString(),
-            'H742" stroke="#D8B565" stroke-opacity=".12"/></g>'
+            _ledgerAddress(token, index),
+            _ledgerAmount(amount, decimals, index),
+            _ledgerToken(symbol, decimals, index),
+            _ledgerDivider(index)
+        ));
+    }
+
+    function _ledgerAddress(address token, uint256 index) internal pure returns (string memory) {
+        return string(abi.encodePacked(
+            '<g><text class="mono white" x="48" y="', (654 + index * 25).toString(),
+            '" font-size="15" font-weight="700" textLength="390" lengthAdjust="spacingAndGlyphs">',
+            token.toHexString(), _pulse(index), '</text>'
+        ));
+    }
+
+    function _ledgerAmount(uint256 amount, uint8 decimals, uint256 index) internal pure returns (string memory) {
+        return string(abi.encodePacked(
+            '<text class="mono white" x="560" y="', (654 + index * 25).toString(),
+            '" text-anchor="end" font-size="14" font-weight="700">',
+            _formatDisplayAmount(amount, decimals), _pulse(index), '</text>'
+        ));
+    }
+
+    function _ledgerToken(bytes16 symbol, uint8 decimals, uint256 index) internal pure returns (string memory) {
+        return string(abi.encodePacked(
+            '<text class="mono white" x="752" y="', (654 + index * 25).toString(),
+            '" text-anchor="end" font-size="13">', _symbol(symbol), ' / d',
+            uint256(decimals).toString(), _pulse(index), '</text>'
+        ));
+    }
+
+    function _ledgerDivider(uint256 index) internal pure returns (string memory) {
+        return string(abi.encodePacked(
+            '<path d="M48 ', (662 + index * 25).toString(),
+            'H752" stroke="#D8B565" stroke-opacity=".12"/></g>'
         ));
     }
 
@@ -287,13 +313,20 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
     }
 
     function _renderAttributes(BanmaoBoxRenderData calldata data) internal view returns (string memory) {
-        return string(abi.encodePacked(
+        bytes memory identity = abi.encodePacked(
             '[{"trait_type":"Status","value":"',
             block.timestamp >= uint256(_unlockTime(data)) ? "Ready to open" : "Locked",
             '"},{"trait_type":"Token Symbol","value":"', _symbol(data.tokenSymbol),
             '"},{"display_type":"number","trait_type":"Asset Count","value":',
-            uint256(data.assetCount).toString(),
-            '},{"trait_type":"Token Contract","value":"', data.token.toHexString(), '"',
+            uint256(data.assetCount).toString()
+        );
+        bytes memory provenance = abi.encodePacked(
+            '},{"trait_type":"Token Contract","value":"', data.token.toHexString(),
+            '"},{"trait_type":"Minting Wallet","value":"', data.creator.toHexString(), '"'
+        );
+        return string(abi.encodePacked(
+            identity,
+            provenance,
             '},{"display_type":"date","trait_type":"Unlock Time","value":',
             uint256(_unlockTime(data)).toString(),
             '},{"trait_type":"Metadata Mode","value":"Fully On-Chain"}]'
@@ -392,6 +425,16 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         bytes memory source = bytes(value);
         bytes memory out = new bytes(source.length - start);
         for (uint256 i; i < out.length; ++i) out[i] = source[i + start];
+        return string(out);
+    }
+
+    function _abbreviate(string memory value, uint256 head, uint256 tail) internal pure returns (string memory) {
+        bytes memory source = bytes(value);
+        if (source.length <= head + tail + 3) return value;
+        bytes memory out = new bytes(head + tail + 3);
+        for (uint256 i; i < head; ++i) out[i] = source[i];
+        out[head] = "."; out[head + 1] = "."; out[head + 2] = ".";
+        for (uint256 i; i < tail; ++i) out[head + 3 + i] = source[source.length - tail + i];
         return string(out);
     }
 

@@ -55,6 +55,6 @@ export function parseStoredCollection(
 export function svgImageDataUri(svg: string): string {
   const artwork = /^\s*<svg(?:\s|>)/i.test(svg)
     ? svg
-    : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><rect width="400" height="400" fill="#0b0d12"/><text x="200" y="205" fill="#ffd85a" font-family="sans-serif" font-size="18" text-anchor="middle">Artwork unavailable</text></svg>';
+    : '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" fill="#0b0d12"/><text x="300" y="307" fill="#ffd85a" font-family="sans-serif" font-size="18" text-anchor="middle">Artwork unavailable</text></svg>';
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(artwork)}`;
 }

@@ -187,8 +187,8 @@ function BoxCard({
             className="box-svg box-item__svg"
             src={svgImageDataUri(entry.svg)}
             alt={`${copy.boxNumber} #${entry.tokenId.toString()}`}
-            width={400}
-            height={400}
+            width={600}
+            height={600}
             unoptimized
           />
         ) : (
@@ -299,18 +299,16 @@ function BoxCard({
             <Send />
             {copy.transfer}
           </button>
-          {ready ? (
-            <button
-              type="button"
-              className="box-button box-button--ghost"
-              disabled={busy}
-              onClick={() => onRefreshMetadata(entry.tokenId)}
-              title={copy.refreshMetadata}
-            >
-              <RefreshCw />
-              {copy.refreshMetadata}
-            </button>
-          ) : null}
+          <button
+            type="button"
+            className="box-button box-button--ghost"
+            disabled={busy}
+            onClick={() => onRefreshMetadata(entry.tokenId)}
+            title={copy.refreshMetadata}
+          >
+            <RefreshCw />
+            {copy.refreshMetadata}
+          </button>
         </div>
       </div>
     </article>
@@ -1566,8 +1564,8 @@ export default function BanmaoBoxPage() {
                 className="box-svg"
                 src={svgImageDataUri(inspectedBox.svg)}
                 alt={`On-chain artwork for ${copy.boxNumber} #${inspectedBox.tokenId.toString()}`}
-                width={800}
-                height={800}
+                width={600}
+                height={600}
                 unoptimized
               />
               <div className="box-inspector__facts">

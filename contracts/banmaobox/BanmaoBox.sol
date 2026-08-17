@@ -680,16 +680,12 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
     }
 
     /**
-     * @notice Emits an ERC-4906 refresh signal for an unlocked, live box.
+     * @notice Emits an ERC-4906 refresh signal for a live box.
      * @dev Permissionless because this function changes no box state or funds.
      *      Marketplaces may use the event to refresh time-dependent metadata.
      */
     function refreshMetadata(uint256 tokenId) external {
         _requireOwned(tokenId);
-        uint256 unlockTime = uint256(boxDetails[tokenId].unlockTime);
-        if (block.timestamp < unlockTime) {
-            revert BoxStillLocked(unlockTime);
-        }
         emit MetadataUpdate(tokenId);
     }
 
@@ -986,6 +982,7 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
         return
             BanmaoBoxRenderData({
                 token: address(underlyingToken),
+                creator: box.creator,
                 amount: primaryAmount,
                 timestamps: (uint128(box.createdAt) << 64) |
                     uint128(box.unlockTime),
