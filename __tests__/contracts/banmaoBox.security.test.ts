@@ -223,7 +223,7 @@ describe("BanmaoBox adversarial release security", () => {
     await box.createBox(ownerAddress, ethers.utils.parseEther("10"), 3_600);
 
     const decodeMetadata = async () => {
-      const uri = await box.tokenURI(1);
+      const uri = await box.onchainTokenURI(1);
       return JSON.parse(Buffer.from(uri.split(",")[1], "base64").toString("utf8"));
     };
     const before = await decodeMetadata();
@@ -985,12 +985,16 @@ describe("BanmaoBox adversarial release security", () => {
     expect(await renderer.renderSVG(1, equalTimestamps)).toContain("0 MINUTES");
   });
 
-  test("Box tokenURI serializes its live storage through the immutable renderer", async () => {
+  test("Box exposes HTTPS tokenURI and fully on-chain metadata for live storage", async () => {
     const recipient = await owner.getAddress();
     await primary.approve(box.address, ethers.utils.parseEther("42"));
     await box.createBox(recipient, ethers.utils.parseEther("42"), 1);
 
-    const uri = await box.tokenURI(1);
+    expect(await box.tokenURI(1)).toBe(
+      "https://www.banmao.fun/api/banmaobox/nft/1/metadata",
+    );
+    const uri = await box.onchainTokenURI(1);
+    expect(uri).toMatch(/^data:application\/json;base64,/);
     const metadata = JSON.parse(Buffer.from(uri.split(",")[1], "base64").toString("utf8"));
     const svg = await box.renderSVG(1);
     expect(metadata.name).toBe("BanmaoBox #1");
@@ -1010,6 +1014,8 @@ describe("BanmaoBox adversarial release security", () => {
     expect(metadata.attributes).toEqual(expect.arrayContaining([
       expect.objectContaining({ trait_type: "Minting Wallet", value: recipient.toLowerCase() }),
     ]));
+    await expect(box.tokenURI(999)).rejects.toThrow();
+    await expect(box.onchainTokenURI(999)).rejects.toThrow();
   });
 
   test("snapshots every asset metadata field and updates the rendered ledger after partial release", async () => {
