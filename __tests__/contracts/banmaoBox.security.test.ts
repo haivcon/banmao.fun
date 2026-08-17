@@ -1,4 +1,5 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import ganache from "ganache";
 import { ethers } from "ethers";
@@ -880,9 +881,16 @@ describe("BanmaoBox adversarial release security", () => {
     const previewDir = join(process.cwd(), "preview", "banmaobox");
     mkdirSync(previewDir, { recursive: true });
     writeFileSync(join(previewDir, "banmaobox-locked-basket.svg"), lockedSvg);
-    const fixtureDir = process.env.LOCALAPPDATA ?? process.cwd();
-    for (const size of [600, 320, 210]) {
-      await sharp(Buffer.from(lockedSvg)).resize(size, size).png().toFile(join(fixtureDir, "Temp", `banmaobox-sealed-treasury-${size}.png`));
+    const fixtureDir = mkdtempSync(join(tmpdir(), "banmaobox-render-"));
+    try {
+      for (const size of [600, 320, 210]) {
+        await sharp(Buffer.from(lockedSvg))
+          .resize(size, size)
+          .png()
+          .toFile(join(fixtureDir, `sealed-treasury-${size}.png`));
+      }
+    } finally {
+      rmSync(fixtureDir, { recursive: true, force: true });
     }
 
     await provider.send("evm_increaseTime", [maximumDuration + 1]);
