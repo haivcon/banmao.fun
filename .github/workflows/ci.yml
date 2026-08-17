@@ -26,7 +26,8 @@ jobs:
           npm run generate:banmaobox
           npm run generate:banmaobox:release
           git diff --exit-code -- app/defi/box/generated/abis.ts deployments/banmaobox-release-artifacts.json deployments/banmaobox-releases lib/banmaobox/verification-release.json
-          test -f "deployments/banmaobox-releases/$(node -p \"require('./deployments/banmaobox-release-artifacts.json').compilerInputHash.slice(2)\").json"
+          release_hash="$(node -p 'require("./deployments/banmaobox-release-artifacts.json").compilerInputHash.slice(2)')"
+          test -f "deployments/banmaobox-releases/${release_hash}.json"
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test -- --runInBand --passWithNoTests
