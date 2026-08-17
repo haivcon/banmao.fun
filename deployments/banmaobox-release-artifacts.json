@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "compiler": "0.8.30+commit.73712a01.Emscripten.clang",
+  "compilerInputHash": "0x3e5eb0615ee65c691c00e87c565fdb4de364b76c54070ddc4fe105746642d37c",
+  "optimizerRuns": 200,
+  "evmVersion": "shanghai",
+  "runtime": {
+    "renderer": {
+      "bytes": 16647,
+      "keccak256": "0xc66b482d9ef781d179c79ebcec20a19c141e611cedcb07a3c6a2a7cfa3b8d3e5",
+      "normalizedKeccak256": "0xc66b482d9ef781d179c79ebcec20a19c141e611cedcb07a3c6a2a7cfa3b8d3e5"
+    },
+    "factory": {
+      "bytes": 24197,
+      "keccak256": "0x18b43571766c6761a66632b264a5fc96320bb04d5548f61142f0c4ed9a3cfe59",
+      "normalizedKeccak256": "0x18b43571766c6761a66632b264a5fc96320bb04d5548f61142f0c4ed9a3cfe59"
+    },
+    "box": {
+      "bytes": 20055,
+      "keccak256": "0xf22c2afc3fdb1446647d5c6a5167e497f52b57dd32015a30b7fdb514af263b23",
+      "normalizedKeccak256": "0xf22c2afc3fdb1446647d5c6a5167e497f52b57dd32015a30b7fdb514af263b23"
+    }
+  }
+}
