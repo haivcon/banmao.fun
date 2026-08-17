@@ -13,6 +13,18 @@ export function validDeploymentAddress(
 
 export const CANONICAL_BANMAO_MAINNET_ADDRESS =
   "0x16d91d1615fc55b76d5f92365bd60c069b46ef78";
+export const XLAYER_MULTICALL3_ADDRESS =
+  "0xcA11bde05977b3631167028862bE2a173976CA11" as Address;
+
+export function boxNftExplorerUrl(
+  explorerBaseUrl: string,
+  collectionAddress: string | null | undefined,
+  tokenId: bigint,
+): string | undefined {
+  const collection = validDeploymentAddress(collectionAddress);
+  if (!collection || tokenId < 0n) return undefined;
+  return `${explorerBaseUrl.replace(/\/+$/, "")}/token/${collection}?a=${tokenId.toString()}`;
+}
 
 function hasCanonicalMainnetToken(
   contracts: Record<string, string | null | undefined>,

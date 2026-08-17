@@ -6,6 +6,7 @@ const manifest = {
     token: "0x16d91d1615fC55b76d5F92365BD60C069b46eF78",
     renderer: "0x262A8c66990F7A651D545F65645E2A045ff1a728",
     factory: "0xCBF869A6C50aB86129BfA92D63CD6A74e7992b1e",
+    previousFactory: "0x1111111111111111111111111111111111111111",
     box: "0x0488cF5D6e44719A98BF6F676826e94f026587eC",
   },
 };
@@ -20,7 +21,10 @@ describe("BanmaoBox Explorer publisher", () => {
     const [renderer, factory, box] = buildTargets(manifest, release);
     expect(renderer).toMatchObject({ key: "renderer", constructorArguments: "" });
     expect(factory.contractName).toBe("contracts/banmaobox/BanmaoBoxFactory.sol:BanmaoBoxFactory");
-    expect(factory.constructorArguments).toBe("000000000000000000000000262a8c66990f7a651d545f65645e2a045ff1a728");
+    expect(factory.constructorArguments).toBe(
+      "000000000000000000000000262a8c66990f7a651d545f65645e2a045ff1a728" +
+      "0000000000000000000000001111111111111111111111111111111111111111",
+    );
     expect(box.contractName).toBe("contracts/banmaobox/BanmaoBox.sol:BanmaoBox");
     expect(box.constructorArguments).toBe(
       "00000000000000000000000016d91d1615fc55b76d5f92365bd60c069b46ef78" +

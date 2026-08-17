@@ -26,6 +26,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useSwitchChain } from "wagmi";
 import confetti from "canvas-confetti";
 import toast from "react-hot-toast";
 import {
@@ -48,14 +49,21 @@ import {
   durationPartsToSeconds,
   parseAddressHistory,
 } from "./contracts";
-import { XLAYER_CHAIN_ID } from "../../lib/walletConfig";
+import {
+  BANMAOBOX_TESTNET_UI_ENABLED,
+  XLAYER_CHAIN_ID,
+  XLAYER_SUPPORTED_CHAIN_IDS,
+  XLAYER_TESTNET_CHAIN_ID,
+} from "../../lib/walletConfig";
 import {
   BOX_COPY,
   getInitialBoxLanguage,
   type BoxCopy,
   type BoxLanguage,
 } from "./i18n";
+import { boxNftExplorerUrl } from "./address";
 import { svgImageDataUri } from "./safety";
+import { requestBanmaoBoxVerification } from "./requestVerification";
 import { useBox } from "./useBox";
 import { formatExactTokenAmount, tokenAmountInWords } from "./amountFormat";
 import "./box.css";
@@ -160,6 +168,7 @@ function BoxCard({
   onOpenAsset,
   onTransfer,
   onRefreshMetadata,
+  explorerUrl,
   primaryToken,
   tokenSymbol,
 }: {
@@ -173,6 +182,7 @@ function BoxCard({
   onOpenAsset: (tokenId: bigint, assetIndex: number, asset: BoxAsset) => void;
   onTransfer: (entry: BoxEntry) => void;
   onRefreshMetadata: (tokenId: bigint) => void;
+  explorerUrl?: string;
   primaryToken?: Address;
   tokenSymbol: string;
 }) {
@@ -309,6 +319,18 @@ function BoxCard({
             <RefreshCw />
             {copy.refreshMetadata}
           </button>
+          {explorerUrl ? (
+            <a
+              className="box-button box-button--explorer"
+              href={explorerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={`${copy.viewExplorer}: ${copy.boxNumber} #${entry.tokenId.toString()}`}
+            >
+              <ExternalLink />
+              {copy.viewExplorer}
+            </a>
+          ) : null}
         </div>
       </div>
     </article>
@@ -317,8 +339,10 @@ function BoxCard({
 
 export default function BanmaoBoxPage() {
   const [language, setLanguage] = useState<BoxLanguage>("en");
-  const selectedChainId: BoxChainId = XLAYER_CHAIN_ID;
-  const [networkError] = useState<string | null>(null);
+  const [selectedChainId, setSelectedChainId] =
+    useState<BoxChainId>(XLAYER_CHAIN_ID);
+  const [networkError, setNetworkError] = useState<string | null>(null);
+  const { switchChainAsync } = useSwitchChain();
   const [now, setNow] = useState(() => Date.now());
   const [amount, setAmount] = useState("");
   const [activeBoxAddress, setActiveBoxAddress] = useState<Address>();
@@ -574,6 +598,33 @@ export default function BanmaoBoxPage() {
     );
   };
 
+  const handleNetworkChange = async (nextChainId: BoxChainId) => {
+    if (
+      nextChainId === selectedChainId ||
+      (nextChainId === XLAYER_TESTNET_CHAIN_ID && !BANMAOBOX_TESTNET_UI_ENABLED)
+    ) return;
+    setNetworkError(null);
+    setSelectedChainId(nextChainId);
+    setActiveTokenAddress(undefined);
+    setActiveBoxAddress(undefined);
+    setCollectionToken("");
+    setCollectionError(null);
+    setExtraAssets([]);
+    setBoxPage(0);
+    collectionRequestRef.current += 1;
+
+    if (!isConnected) return;
+    try {
+      await switchChainAsync({ chainId: nextChainId });
+    } catch (error) {
+      setNetworkError(
+        error instanceof Error
+          ? error.message.split("\n")[0]
+          : "Unable to switch wallet network.",
+      );
+    }
+  };
+
   const handleCollection = async (createIfMissing: boolean) => {
     const requestId = ++collectionRequestRef.current;
     setCollectionError(null);
@@ -592,7 +643,37 @@ export default function BanmaoBoxPage() {
           throw new Error("No collection exists for this token on the canonical Factory.");
         }
         setActiveAction("Collection creation");
-        box = (await createCollection(token)).address;
+        toast.loading("Creating collection on-chain…", {
+          id: "banmaobox-collection-verification",
+        });
+        const created = await createCollection(token);
+        box = created.address;
+        if (selectedChainId === XLAYER_CHAIN_ID && created.txHash) {
+          toast.loading("Collection created. Requesting OKX Explorer verification…", {
+            id: "banmaobox-collection-verification",
+          });
+          void requestBanmaoBoxVerification(created.txHash, (update) => {
+            if (update.status === "verified" || update.status === "already-verified") {
+              toast.success("Collection contract verified on OKX Explorer.", {
+                id: "banmaobox-collection-verification",
+                duration: 6500,
+              });
+            } else if (update.status === "pending" || update.status === "waiting-for-indexer") {
+              toast.loading("OKX Explorer is indexing the collection contract…", {
+                id: "banmaobox-collection-verification",
+              });
+            } else {
+              toast.error(
+                `Collection created successfully, but Explorer verification could not finish${update.error ? `: ${update.error}` : "."}`,
+                { id: "banmaobox-collection-verification", duration: 9000 },
+              );
+            }
+          });
+        } else {
+          toast.success("Collection created on X Layer Testnet.", {
+            id: "banmaobox-collection-verification",
+          });
+        }
       }
       if (requestId !== collectionRequestRef.current) return;
       selectCollection(token, getAddress(box));
@@ -920,12 +1001,41 @@ export default function BanmaoBoxPage() {
           <span>BMAO-BOX</span>
         </div>
         <div className="box-header__actions">
+          <div className="box-network-switcher" aria-label="BanmaoBox network">
+            <Wallet aria-hidden="true" />
+            <button
+              type="button"
+              className={selectedChainId === XLAYER_CHAIN_ID ? "active" : ""}
+              onClick={() => void handleNetworkChange(XLAYER_CHAIN_ID)}
+            >
+              Mainnet
+            </button>
+            {BANMAOBOX_TESTNET_UI_ENABLED ? (
+              <button
+                type="button"
+                className={selectedChainId === XLAYER_TESTNET_CHAIN_ID ? "active" : ""}
+                onClick={() => void handleNetworkChange(XLAYER_TESTNET_CHAIN_ID)}
+              >
+                Testnet
+              </button>
+            ) : null}
+          </div>
           <Link href="/defi/box/admin" className="box-ops-link">
             <ShieldCheck />
             {copy.operations}
           </Link>
         </div>
       </header>
+
+      {networkError ? (
+        <div className="box-network-error" role="alert">
+          <ShieldAlert />
+          <span>{networkError}</span>
+          <button type="button" onClick={() => setNetworkError(null)} aria-label="Dismiss network error">
+            <X />
+          </button>
+        </div>
+      ) : null}
 
       <section className="box-hero">
         <div className="box-hero__copy">
@@ -1438,7 +1548,7 @@ export default function BanmaoBoxPage() {
               <strong>{copy.connectToCreate}</strong>
               <ConnectButton
                 targetChainId={selectedChainId}
-                supportedChainIds={[XLAYER_CHAIN_ID]}
+                supportedChainIds={[...XLAYER_SUPPORTED_CHAIN_IDS]}
               />
             </div>
           ) : boxesLoading ? (
@@ -1493,6 +1603,11 @@ export default function BanmaoBoxPage() {
                     onRefreshMetadata={(tokenId) =>
                       void refreshMetadata(tokenId)
                     }
+                    explorerUrl={boxNftExplorerUrl(
+                      chainConfig.chain.blockExplorers.default.url,
+                      activeBoxAddress ?? chainConfig.boxAddress,
+                      entry.tokenId,
+                    )}
                   />
                 ))}
               </div>
@@ -1619,7 +1734,11 @@ export default function BanmaoBoxPage() {
                   ))}
                 </div>
                 <a
-                  href={`${chainConfig.chain.blockExplorers?.default.url}/token/${activeBoxAddress ?? chainConfig.boxAddress}?a=${inspectedBox.tokenId}`}
+                  href={boxNftExplorerUrl(
+                    chainConfig.chain.blockExplorers.default.url,
+                    activeBoxAddress ?? chainConfig.boxAddress,
+                    inspectedBox.tokenId,
+                  )}
                   target="_blank"
                   rel="noreferrer"
                 >
@@ -1724,6 +1843,39 @@ export default function BanmaoBoxPage() {
           </div>
         </aside>
       </section>
+
+      <footer className="box-contract-footer">
+        <div className="box-contract-footer__heading">
+          <div>
+            <span>Verified deployment details</span>
+            <strong>{chainConfig.chain.name}</strong>
+          </div>
+          <small>Chain ID {selectedChainId}</small>
+        </div>
+        <div className="box-contract-footer__grid">
+          {[
+            ["Token", chainConfig.tokenAddress],
+            ["BanmaoBox", activeBoxAddress ?? chainConfig.boxAddress],
+            ["Factory", chainConfig.factoryAddress],
+            ["Renderer", chainConfig.rendererAddress],
+            ["Deployer", chainConfig.manifest.deployer],
+          ].map(([label, contractAddress]) =>
+            contractAddress ? (
+              <a
+                key={label}
+                href={`${chainConfig.chain.blockExplorers?.default.url}/address/${contractAddress}`}
+                target="_blank"
+                rel="noreferrer"
+                title={`${label}: ${contractAddress}`}
+              >
+                <span>{label}</span>
+                <code>{contractAddress}</code>
+                <ExternalLink aria-hidden="true" />
+              </a>
+            ) : null,
+          )}
+        </div>
+      </footer>
 
       {celebrationOpen && phase === "success" ? (
         <div className="box-dialog-backdrop box-celebration-backdrop" role="presentation" onMouseDown={(event) => {

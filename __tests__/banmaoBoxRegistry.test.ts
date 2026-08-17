@@ -1,10 +1,13 @@
 import {
   CANONICAL_BANMAO_MAINNET_ADDRESS,
+  XLAYER_MULTICALL3_ADDRESS,
+  boxNftExplorerUrl,
   isVerifiedMainnetManifest,
   validDeploymentAddress,
   type BoxDeploymentManifest,
 } from "../app/defi/box/address";
 import mainnetManifest from "../deployments/banmaobox-xlayer-mainnet.json";
+import testnetManifest from "../deployments/banmaobox-xlayer-testnet.json";
 
 const address = (digit: string) => `0x${digit.repeat(40)}`;
 const hash = (digit: string) => `0x${digit.repeat(64)}`;
@@ -27,44 +30,104 @@ function manifest(status = "deployed") {
   };
 }
 
-describe("BanmaoBox mainnet registry gates", () => {
-  test("accepts the verified replacement deployment in the production manifest", () => {
-    expect(isVerifiedMainnetManifest(mainnetManifest as BoxDeploymentManifest)).toBe(true);
-    expect(mainnetManifest.contracts.renderer).toBe("0x29cf18F1AB3009303d023dbA6c4b4e0fC4312f60");
-    expect(mainnetManifest.contracts.factory).toBe("0xD1552040a290e6AB8dfED12Dd5A7345d6b0FfB44");
-    expect(mainnetManifest.contracts.box).toBe("0x6007479c7C7013C15bbfB46Fa1F0D0706b4e02Ce");
-  });
-
-  test("accepts only non-zero EVM deployment addresses", () => {
-    expect(validDeploymentAddress(address("1"))).toBe(address("1"));
-    expect(validDeploymentAddress("0x0000000000000000000000000000000000000000")).toBeUndefined();
-    expect(validDeploymentAddress("not-an-address")).toBeUndefined();
-  });
-
-  test("requires deployed status, all contracts, and all runtime fingerprints", () => {
-    expect(isVerifiedMainnetManifest(manifest())).toBe(true);
-    expect(isVerifiedMainnetManifest(manifest("not-deployed"))).toBe(false);
-
-    const candidate = manifest("release-candidate");
-    expect(isVerifiedMainnetManifest(candidate)).toBe(false);
-
-    const wrongToken = manifest();
-    wrongToken.contracts.token = address("9");
-    expect(isVerifiedMainnetManifest(wrongToken)).toBe(false);
-
-    for (const contract of ["renderer", "factory", "box"] as const) {
-      const invalidDeployment = manifest();
-      invalidDeployment.contracts[contract] =
-        "0x0000000000000000000000000000000000000000";
-      expect(isVerifiedMainnetManifest(invalidDeployment)).toBe(false);
+describe("BanmaoBox chain registry", () => {
+  test("keeps complete X Layer mainnet and testnet deployment manifests", () => {
+    expect(mainnetManifest.chainId).toBe(196);
+    expect(testnetManifest.chainId).toBe(1952);
+    expect(testnetManifest.status).toBe("deployed");
+    expect(XLAYER_MULTICALL3_ADDRESS).toBe(
+      "0xcA11bde05977b3631167028862bE2a173976CA11",
+    );
+    expect(testnetManifest.contracts.renderer).toBe(
+      "0x35459B8152ae379bEF1041fD501Bc4CE8C96d215",
+    );
+    expect(testnetManifest.contracts.factory).toBe(
+      "0x0b39f8E7e0040AC144F89229c6b294f379Fa5856",
+    );
+    expect(testnetManifest.contracts.box).toBe(
+      "0xCE6dAA64Fa861a02B405d8ac56ae4752e4dAB4eB",
+    );
+    for (const contractAddress of Object.values(testnetManifest.contracts)) {
+      expect(validDeploymentAddress(contractAddress)).toBe(contractAddress);
     }
+  });
 
-    const missingRuntime = manifest();
-    delete missingRuntime.runtime.box;
-    expect(isVerifiedMainnetManifest(missingRuntime)).toBe(false);
+  test("builds per-NFT explorer links for mainnet and testnet", () => {
+    expect(
+      boxNftExplorerUrl(
+        "https://www.okx.com/web3/explorer/xlayer/",
+        mainnetManifest.contracts.box,
+        42n,
+      ),
+    ).toBe(
+      `https://www.okx.com/web3/explorer/xlayer/token/${mainnetManifest.contracts.box}?a=42`,
+    );
+    expect(
+      boxNftExplorerUrl(
+        "https://www.okx.com/web3/explorer/xlayer-test",
+        testnetManifest.contracts.box,
+        7n,
+      ),
+    ).toBe(
+      `https://www.okx.com/web3/explorer/xlayer-test/token/${testnetManifest.contracts.box}?a=7`,
+    );
+    expect(boxNftExplorerUrl("https://example.com", undefined, 1n)).toBeUndefined();
+  });
 
-    const invalidHash = manifest();
-    invalidHash.runtime.factory.keccak256 = "0x1234";
-    expect(isVerifiedMainnetManifest(invalidHash)).toBe(false);
+  describe("mainnet registry gates", () => {
+    test("accepts the verified replacement deployment in the production manifest", () => {
+      expect(
+        isVerifiedMainnetManifest(mainnetManifest as BoxDeploymentManifest),
+      ).toBe(true);
+      expect(mainnetManifest.contracts.renderer).toBe(
+        "0xE880e364f4a71be047cF49767313381715d57db0",
+      );
+      expect(mainnetManifest.contracts.factory).toBe(
+        "0xA6bC56E67253E13554D629579A3c018871D21F9E",
+      );
+      expect(mainnetManifest.contracts.previousFactory).toBe(
+        "0x0000000000000000000000000000000000000000",
+      );
+      expect(mainnetManifest.contracts.box).toBe(
+        "0x95c83831a283cDC41cd552374aD1279b2375a4ee",
+      );
+    });
+
+    test("accepts only non-zero EVM deployment addresses", () => {
+      expect(validDeploymentAddress(address("1"))).toBe(address("1"));
+      expect(
+        validDeploymentAddress(
+          "0x0000000000000000000000000000000000000000",
+        ),
+      ).toBeUndefined();
+      expect(validDeploymentAddress("not-an-address")).toBeUndefined();
+    });
+
+    test("requires deployed status, all contracts, and all runtime fingerprints", () => {
+      expect(isVerifiedMainnetManifest(manifest())).toBe(true);
+      expect(isVerifiedMainnetManifest(manifest("not-deployed"))).toBe(false);
+
+      const candidate = manifest("release-candidate");
+      expect(isVerifiedMainnetManifest(candidate)).toBe(false);
+
+      const wrongToken = manifest();
+      wrongToken.contracts.token = address("9");
+      expect(isVerifiedMainnetManifest(wrongToken)).toBe(false);
+
+      for (const contract of ["renderer", "factory", "box"] as const) {
+        const invalidDeployment = manifest();
+        invalidDeployment.contracts[contract] =
+          "0x0000000000000000000000000000000000000000";
+        expect(isVerifiedMainnetManifest(invalidDeployment)).toBe(false);
+      }
+
+      const missingRuntime = manifest();
+      delete missingRuntime.runtime.box;
+      expect(isVerifiedMainnetManifest(missingRuntime)).toBe(false);
+
+      const invalidHash = manifest();
+      invalidHash.runtime.factory.keccak256 = "0x1234";
+      expect(isVerifiedMainnetManifest(invalidHash)).toBe(false);
+    });
   });
 });

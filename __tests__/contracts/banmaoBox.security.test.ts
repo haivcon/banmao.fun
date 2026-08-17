@@ -14,7 +14,7 @@ type Artifact = {
 const parseSvg = (svg: string) => {
   expect(svg).toMatch(/^<svg[\s\S]*<\/svg>$/);
   expect(svg.replace('xmlns="http://www.w3.org/2000/svg"', "")).not.toMatch(
-    /<script|foreignObject|\son\w+=|https?:\/\//i,
+    /<script|foreignObject|<animate(?:Transform)?\b|\son\w+=|https?:\/\//i,
   );
 };
 
@@ -244,15 +244,18 @@ describe("BanmaoBox adversarial release security", () => {
     const after = await decodeMetadata();
     const replacementSvg = Buffer.from(after.image.split(",")[1], "base64").toString("utf8");
     expect(replacementSvg).toContain("REPLACEMENT SVG");
-    expect(Buffer.from(after.animation_url.split(",")[1], "base64").toString("utf8"))
-      .toBe(replacementSvg);
+    expect(await box.renderSVG(1)).toBe(replacementSvg);
+    expect(after).not.toHaveProperty("animation_url");
     for (const field of ["name", "description", "external_url", "background_color", "attributes", "properties"]) {
       expect(after[field]).toEqual(before[field]);
     }
   });
 
   test("makes the Factory deployer admin of collections created by other callers", async () => {
-    const factory = await deploy("BanmaoBoxFactory", owner, [renderer.address]);
+    const factory = await deploy("BanmaoBoxFactory", owner, [
+      renderer.address,
+      ethers.constants.AddressZero,
+    ]);
     const other = provider.getSigner(1);
     await factory.connect(other).createTokenBox(primary.address);
     const deployedBox = new ethers.Contract(
@@ -262,9 +265,77 @@ describe("BanmaoBox adversarial release security", () => {
     );
 
     expect(await factory.rendererAdmin()).toBe(await owner.getAddress());
+    expect(await factory.renderer()).toBe(renderer.address);
+    expect(await factory.defaultRenderer()).toBe(renderer.address);
+    expect(await factory.previousFactory()).toBe(ethers.constants.AddressZero);
     expect(await deployedBox.rendererAdmin()).toBe(await owner.getAddress());
     expect(await deployedBox.renderer()).toBe(renderer.address);
     expect(await deployedBox.metadataRenderer()).toBe(renderer.address);
+  });
+
+  test("lets only the Factory renderer admin update the full default renderer", async () => {
+    const factory = await deploy("BanmaoBoxFactory", owner, [
+      renderer.address,
+      ethers.constants.AddressZero,
+    ]);
+    const replacement = await deploy("BanmaoBoxRenderer", owner);
+    const other = provider.getSigner(1);
+
+    await expect(factory.connect(other).setDefaultRenderer(replacement.address)).rejects.toThrow();
+    await expect(factory.setDefaultRenderer(ethers.constants.AddressZero)).rejects.toThrow();
+    await expect(factory.setDefaultRenderer(otherAddress)).rejects.toThrow();
+    const svgOnly = await deploy("ReplacementSVGRenderer", owner);
+    await expect(factory.setDefaultRenderer(svgOnly.address)).rejects.toThrow();
+
+    const receipt = await (await factory.setDefaultRenderer(replacement.address)).wait();
+    expect(await factory.renderer()).toBe(renderer.address);
+    expect(await factory.defaultRenderer()).toBe(replacement.address);
+    expect(receipt.events?.find((event: { event?: string }) =>
+      event.event === "DefaultRendererUpdated")?.args).toMatchObject({
+      previousRenderer: renderer.address,
+      newRenderer: replacement.address,
+    });
+
+    const secondary = await deploy("TestToken", owner, ["Secondary", "SEC"]);
+    await factory.createTokenBox(secondary.address);
+    const deployedBox = new ethers.Contract(
+      await factory.boxForToken(secondary.address),
+      artifacts.BanmaoBox.abi,
+      owner,
+    );
+    expect(await deployedBox.renderer()).toBe(replacement.address);
+    expect(await deployedBox.metadataRenderer()).toBe(replacement.address);
+    expect(await deployedBox.rendererAdmin()).toBe(await owner.getAddress());
+  });
+
+  test("inherits predecessor discovery and prevents duplicate token collections", async () => {
+    const previous = await deploy("BanmaoBoxFactory", owner, [
+      renderer.address,
+      ethers.constants.AddressZero,
+    ]);
+    await previous.createTokenBox(primary.address);
+    const inheritedBox = await previous.boxForToken(primary.address);
+    await expect(deploy("BanmaoBoxFactory", owner, [
+      renderer.address,
+      otherAddress,
+    ])).rejects.toThrow();
+    const successor = await deploy("BanmaoBoxFactory", owner, [
+      renderer.address,
+      previous.address,
+    ]);
+
+    expect(await successor.previousFactory()).toBe(previous.address);
+    expect(await successor.boxForToken(primary.address)).toBe(inheritedBox);
+    expect(await successor.isTokenBox(inheritedBox)).toBe(true);
+    await expect(successor.createTokenBox(primary.address)).rejects.toThrow();
+
+    const secondary = await deploy("TestToken", owner, ["Secondary", "SEC"]);
+    await successor.createTokenBox(secondary.address);
+    const successorBox = await successor.boxForToken(secondary.address);
+    expect(successorBox).not.toBe(ethers.constants.AddressZero);
+    expect(await successor.isTokenBox(successorBox)).toBe(true);
+    expect(await previous.boxForToken(secondary.address)).toBe(ethers.constants.AddressZero);
+    expect(await previous.isTokenBox(successorBox)).toBe(false);
   });
 
   test("uses Transfer for mint discovery and permits explicit locked ERC-4906 refreshes", async () => {
@@ -744,8 +815,8 @@ describe("BanmaoBox adversarial release security", () => {
     expect(lockedSvg).toContain("ASSET PORTFOLIO / 5");
     expect(lockedSvg).toContain("ASSET LEDGER");
     expect(lockedSvg).toContain('id="shine"');
-    expect(lockedSvg).toContain("<animate");
-    expect(lockedSvg).toContain("<animateTransform");
+    expect(lockedSvg).not.toMatch(/<animate(?:Transform)?\b/);
+    expect(lockedSvg).not.toContain('repeatCount="indefinite"');
     expect(lockedSvg).not.toContain('values="63;66;63"');
     expect(lockedSvg).not.toContain('url(#metal)');
     expect(lockedSvg).not.toContain('values="0 0;0 -3;0 0"');
@@ -786,21 +857,22 @@ describe("BanmaoBox adversarial release security", () => {
 
     const uri = await renderer.tokenURI(ethers.constants.MaxUint256, renderData);
     expect(uri).toMatch(/^data:application\/json;base64,/);
-    const metadata = JSON.parse(Buffer.from(uri.split(",")[1], "base64").toString("utf8"));
+    const metadataJson = Buffer.from(uri.split(",")[1], "base64").toString("utf8");
+    const metadata = JSON.parse(metadataJson);
     expect(metadata.name).toBe(`BanmaoBox #${ethers.constants.MaxUint256.toString()}`);
     expect(metadata.attributes).toEqual(attributes);
     expect(metadata.image).toMatch(/^data:image\/svg\+xml;base64,/);
-    expect(metadata.animation_url).toMatch(/^data:image\/svg\+xml;base64,/);
+    expect(metadata).not.toHaveProperty("animation_url");
+    expect(Buffer.from(metadata.image.split(",")[1], "base64").toString("utf8")).toBe(lockedSvg);
+    expect(metadata.description).toContain("compact display values; on-chain balances remain exact");
     expect(metadata.external_url).toBe("https://banmao.fun/defi/box");
     expect(metadata.properties).toEqual({
       type: "banmaobox",
       metadataMode: "fully-onchain",
       renderer: "solidity-svg-split-contract",
       chain: "X Layer",
-      chainId: 196,
+      chainId: (await provider.getNetwork()).chainId,
     });
-    expect(Buffer.from(metadata.image.split(",")[1], "base64").toString("utf8")).toBe(lockedSvg);
-    expect(Buffer.from(metadata.animation_url.split(",")[1], "base64").toString("utf8")).toBe(lockedSvg);
     console.info(`BanmaoBox worst SVG bytes: ${Buffer.byteLength(lockedSvg)}`);
     console.info(`BanmaoBox worst tokenURI bytes: ${Buffer.byteLength(uri)}`);
     console.info(`BanmaoBox renderSVG gas estimate: ${(await renderer.estimateGas.renderSVG(ethers.constants.MaxUint256, renderData)).toString()}`);
@@ -832,6 +904,79 @@ describe("BanmaoBox adversarial release security", () => {
     expect(await renderer.renderSVG(78, boundaryData)).toContain("READY");
   });
 
+  test("keeps adversarial renderer data valid for XML and JSON and rejects unsafe numeric fields", async () => {
+    const latest = await provider.getBlock("latest");
+    const timestamps = ethers.BigNumber.from(latest.timestamp)
+      .shl(64)
+      .or(latest.timestamp + 60);
+    const baseData = {
+      token: primary.address,
+      creator: await owner.getAddress(),
+      amount: 1,
+      timestamps,
+      tokenDecimals: 18,
+      assetCount: 1,
+      tokenSymbol: symbolBytes16('BAD<&"'),
+      renderAssets: renderAssets([
+        [primary.address, 1, 18, 'BAD<&"'],
+      ]),
+    };
+
+    const tinySvg = await renderer.renderSVG(1, baseData);
+    parseSvg(tinySvg);
+    expect(tinySvg).toContain("&lt;0.01");
+    expect(tinySvg).not.toContain(">\u003c0.01");
+    expect(tinySvg).toContain("TOKEN / d18");
+    expect(tinySvg).not.toContain('BAD<&"');
+
+    const amountWithTinyRemainder = ethers.constants.WeiPerEther.add(1);
+    const mixedSvg = await renderer.renderSVG(2, {
+      ...baseData,
+      amount: amountWithTinyRemainder,
+      tokenSymbol: symbolBytes16("SAFE"),
+      renderAssets: renderAssets([
+        [primary.address, amountWithTinyRemainder, 18, "SAFE"],
+      ]),
+    });
+    expect(mixedSvg).toContain("1 + &lt;0.01");
+    expect(mixedSvg).not.toContain("1 + <0.01");
+
+    const attributes = JSON.parse(await renderer.renderAttributes(baseData));
+    expect(attributes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ trait_type: "Token Symbol", value: "TOKEN" }),
+    ]));
+    const uri = await renderer.tokenURI(1, baseData);
+    expect(() => JSON.parse(Buffer.from(uri.split(",")[1], "base64").toString("utf8"))).not.toThrow();
+
+    const excessiveDecimals = {
+      ...baseData,
+      renderAssets: renderAssets([
+        [primary.address, 1, 70, "BAD"],
+      ]),
+    };
+    await expect(renderer.renderSVG(1, excessiveDecimals)).rejects.toThrow();
+    await expect(renderer.renderAttributes(excessiveDecimals)).rejects.toThrow();
+    await expect(renderer.tokenURI(1, excessiveDecimals)).rejects.toThrow();
+
+    const reversedTimestamps = {
+      ...baseData,
+      timestamps: ethers.BigNumber.from(latest.timestamp + 1)
+        .shl(64)
+        .or(latest.timestamp),
+    };
+    await expect(renderer.renderSVG(1, reversedTimestamps)).rejects.toThrow();
+    await expect(renderer.renderAttributes(reversedTimestamps)).rejects.toThrow();
+    await expect(renderer.tokenURI(1, reversedTimestamps)).rejects.toThrow();
+
+    const equalTimestamps = {
+      ...baseData,
+      timestamps: ethers.BigNumber.from(latest.timestamp)
+        .shl(64)
+        .or(latest.timestamp),
+    };
+    expect(await renderer.renderSVG(1, equalTimestamps)).toContain("0 MINUTES");
+  });
+
   test("Box tokenURI serializes its live storage through the immutable renderer", async () => {
     const recipient = await owner.getAddress();
     await primary.approve(box.address, ethers.utils.parseEther("42"));
@@ -839,8 +984,12 @@ describe("BanmaoBox adversarial release security", () => {
 
     const uri = await box.tokenURI(1);
     const metadata = JSON.parse(Buffer.from(uri.split(",")[1], "base64").toString("utf8"));
-    const svg = Buffer.from(metadata.image.split(",")[1], "base64").toString("utf8");
+    const svg = await box.renderSVG(1);
     expect(metadata.name).toBe("BanmaoBox #1");
+    expect(metadata.image).toMatch(/^data:image\/svg\+xml;base64,/);
+    expect(metadata).not.toHaveProperty("animation_url");
+    expect(Buffer.from(metadata.image.split(",")[1], "base64").toString("utf8")).toBe(svg);
+    expect(metadata.description).toContain("compact display values; on-chain balances remain exact");
     expect(metadata.attributes).toEqual(expect.arrayContaining([
       expect.objectContaining({ trait_type: "Token Symbol", value: "PRI" }),
       expect.objectContaining({ trait_type: "Asset Count", value: 1 }),
@@ -882,7 +1031,8 @@ describe("BanmaoBox adversarial release security", () => {
     expect(after).toContain(secondary.address.toLowerCase());
     expect(after).toContain("ASSET PORTFOLIO / 1");
     expect(after).toContain("PRIMARY ASSET RELEASED");
-    expect(after).toContain(">7<animate");
+    expect(after).toContain(">7</text>");
+    expect(after).not.toMatch(/<animate(?:Transform)?\b/);
     expect(after).toContain("SEC / d18");
     expect(after).not.toContain("PRI / d18");
   });

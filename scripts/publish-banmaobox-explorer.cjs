@@ -22,10 +22,13 @@ function buildTargets(manifest, release) {
   const token = ethers.utils.getAddress(manifest.contracts.token);
   const box = ethers.utils.getAddress(manifest.contracts.box);
   const rendererAdmin = ethers.utils.getAddress(manifest.deployer);
+  const previousFactory = ethers.utils.getAddress(
+    manifest.contracts.previousFactory || ethers.constants.AddressZero,
+  );
   const shared = { sourceCode: release.standardInput, compilerVersion: compilerVersion(release.compiler) };
   return [
     { key: "renderer", contractAddress: renderer, contractName: "contracts/banmaobox/BanmaoBoxRenderer.sol:BanmaoBoxRenderer", constructorArguments: "", ...shared },
-    { key: "factory", contractAddress: factory, contractName: "contracts/banmaobox/BanmaoBoxFactory.sol:BanmaoBoxFactory", constructorArguments: encodeConstructorArguments(["address"], [renderer]), ...shared },
+    { key: "factory", contractAddress: factory, contractName: "contracts/banmaobox/BanmaoBoxFactory.sol:BanmaoBoxFactory", constructorArguments: encodeConstructorArguments(["address", "address"], [renderer, previousFactory]), ...shared },
     { key: "box", contractAddress: box, contractName: "contracts/banmaobox/BanmaoBox.sol:BanmaoBox", constructorArguments: encodeConstructorArguments(["address", "address", "address"], [token, renderer, rendererAdmin]), ...shared },
   ];
 }

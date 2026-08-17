@@ -91,10 +91,8 @@ ehthumbs.db
 
 # Local-only scripts. Keep the audited BanmaoBox release tooling versioned.
 /scripts/*
-!/scripts/publish-banmaobox-explorer.cjs
+!/scripts/deploy-banmaobox-testnet.cjs
 /deployments/
-/docs/BANMAOBOX_MANUAL_DEPLOY.md
-/deployments
 # Local-only removed games: keep source on this machine, never commit/deploy
 /local-only/
 /app/gamefi/banmaominer/
@@ -118,5 +116,6 @@ BANMAOBOX_DETAILED_PLAN_VN.md
 /WEB3D_QA_CHECKLIST.md
 ui game banmaofomo.txt
 BanmaoRPS_ABI.json
+docs/BANMAOBOX_MANUAL_DEPLOY.md
 # Generated flattened sources for manual Explorer verification
 /contracts/banmaobox/flatten/

@@ -13,6 +13,7 @@
     "generate:banmaobox": "node scripts/generate-banmaobox-abis.cjs",
     "generate:banmaobox:release": "node scripts/generate-banmaobox-release.cjs",
     "deploy:banmaobox:mainnet": "node scripts/deploy-banmaobox-mainnet.cjs",
+    "deploy:banmaobox:testnet": "node scripts/deploy-banmaobox-testnet.cjs",
     "verify:banmaobox:mainnet": "node scripts/verify-banmaobox-mainnet.cjs",
     "publish:banmaobox:explorer": "node scripts/publish-banmaobox-explorer.cjs",
     "check": "npm run typecheck && npm run lint && npm test -- --runInBand --passWithNoTests"
