@@ -154,6 +154,85 @@ async function deployContract(provider, signer, artifact, args, label, journal, 
   return new ethers.Contract(address, artifact.abi, signer);
 }
 
+function journalComplete(journal, replacingDeployment) {
+  const rendererReady = replacingDeployment
+    ? journal.reusedContracts?.renderer &&
+      same(journal.reusedContracts.renderer.address, journal.contracts.renderer)
+    : journal.transactions.renderer;
+  return Boolean(
+    journal.contracts.renderer && journal.contracts.factory && journal.contracts.box &&
+    rendererReady && journal.transactions.factory && journal.transactions.createTokenBox
+  );
+}
+
+function replacementSource(currentManifest) {
+  return {
+    renderer: ethers.utils.getAddress(currentManifest.contracts.renderer),
+    factory: ethers.utils.getAddress(currentManifest.contracts.factory),
+    box: ethers.utils.getAddress(currentManifest.contracts.box),
+    compilerInputHash: currentManifest.compilerInputHash,
+  };
+}
+
+function journalMatchesReplacementSource(journal, currentManifest) {
+  if (!journal.replacementSource) return false;
+  const expected = replacementSource(currentManifest);
+  return (
+    same(journal.replacementSource.renderer, expected.renderer) &&
+    same(journal.replacementSource.factory, expected.factory) &&
+    same(journal.replacementSource.box, expected.box) &&
+    journal.replacementSource.compilerInputHash === expected.compilerInputHash
+  );
+}
+
+async function prepareRenderer({
+  replacingDeployment,
+  currentManifest,
+  provider,
+  signer,
+  artifact,
+  journal,
+  deployContract: deploy = deployContract,
+}) {
+  if (!replacingDeployment) {
+    return deploy(provider, signer, artifact, [], "BanmaoBoxRenderer", journal, "renderer");
+  }
+
+  const address = ethers.utils.getAddress(currentManifest.contracts.renderer);
+  if (journal.contracts.renderer && !same(journal.contracts.renderer, address)) {
+    fail("Existing journal Renderer does not match the current deployed manifest");
+  }
+  if (journal.transactions.renderer) {
+    fail("Replacement journal must not contain a Renderer deployment transaction");
+  }
+  if (journal.reusedContracts?.renderer) {
+    const reused = journal.reusedContracts.renderer;
+    if (
+      !same(reused.address, address) ||
+      reused.sourceManifest !== "deployments/banmaobox-xlayer-mainnet.json" ||
+      reused.sourceCompilerInputHash !== currentManifest.compilerInputHash ||
+      reused.sourceTransactionHash !== currentManifest.transactions?.renderer
+    ) fail("Existing journal Renderer provenance does not match the current deployed manifest");
+  }
+  const runtimeCode = await retryRead(
+    "Reused BanmaoBoxRenderer bytecode",
+    () => code(provider, address, "Reused BanmaoBoxRenderer"),
+  );
+  assertArtifactRuntime(runtimeCode, artifact, "Reused BanmaoBoxRenderer");
+  journal.contracts.renderer = address;
+  journal.reusedContracts = {
+    ...(journal.reusedContracts || {}),
+    renderer: {
+      address,
+      sourceManifest: "deployments/banmaobox-xlayer-mainnet.json",
+      sourceCompilerInputHash: currentManifest.compilerInputHash,
+      sourceTransactionHash: currentManifest.transactions?.renderer,
+    },
+  };
+  console.log(`Reusing verified BanmaoBoxRenderer from current manifest: ${address}`);
+  return new ethers.Contract(address, artifact.abi, signer);
+}
+
 async function validate(provider, artifacts, addresses) {
   const factory = new ethers.Contract(addresses.factory, artifacts.factory.abi, provider);
   const box = new ethers.Contract(addresses.box, artifacts.box.abi, provider);
@@ -266,6 +345,8 @@ async function main() {
   const previousFactory = ethers.constants.AddressZero;
   const journal = fs.existsSync(JOURNAL) ? loadJson(JOURNAL) : {
     schemaVersion: 1, chainId: CHAIN_ID, token: TOKEN, deployer, compilerInputHash,
+    deploymentMode: replacingDeployment ? "replacement" : "initial",
+    ...(replacingDeployment ? { replacementSource: replacementSource(currentManifest) } : {}),
     previousFactory,
     contracts: {},
     transactions: {},
@@ -275,20 +356,27 @@ async function main() {
     journal.chainId !== CHAIN_ID ||
     !same(journal.token, TOKEN) ||
     journal.compilerInputHash !== compilerInputHash ||
+    journal.deploymentMode !== (replacingDeployment ? "replacement" : "initial") ||
+    (replacingDeployment && !journalMatchesReplacementSource(journal, currentManifest)) ||
     !same(journal.previousFactory || ethers.constants.AddressZero, previousFactory)
   ) {
     fail(`Existing journal does not match this chain/token/source/predecessor. Inspect or remove ${JOURNAL}`);
   }
-  const journalComplete = Boolean(
-    journal.contracts.renderer && journal.contracts.factory && journal.contracts.box &&
-    journal.transactions.renderer && journal.transactions.factory && journal.transactions.createTokenBox
-  );
+  const completeJournal = journalComplete(journal, replacingDeployment);
   if (!same(journal.deployer, deployer)) {
-    if (!journalComplete) fail(`Existing incomplete journal belongs to a different deployer. Restore that key; do not remove ${JOURNAL}`);
+    if (!completeJournal) fail(`Existing incomplete journal belongs to a different deployer. Restore that key; do not remove ${JOURNAL}`);
     console.warn(`Current signer differs from original deployer ${journal.deployer}; performing read-only finalization of the complete journal.`);
   }
 
-  const renderer = await deployContract(provider, signer, artifacts.renderer, [], "BanmaoBoxRenderer", journal, "renderer");
+  const renderer = await prepareRenderer({
+    replacingDeployment,
+    currentManifest,
+    provider,
+    signer,
+    artifact: artifacts.renderer,
+    journal,
+  });
+  if (replacingDeployment) atomicWrite(JOURNAL, journal);
   const factory = await deployContract(
     provider,
     signer,
@@ -338,7 +426,9 @@ async function main() {
       previousFactory,
       box: boxAddress,
     },
-    transactions: journal.transactions, ...validated,
+    transactions: journal.transactions,
+    ...(journal.reusedContracts ? { reusedContracts: journal.reusedContracts } : {}),
+    ...validated,
   };
   if (replacingDeployment) {
     const previousBox = String(currentManifest.contracts.box).toLowerCase().replace(/^0x/, "");
@@ -354,7 +444,16 @@ async function main() {
   console.log("Run npm run verify:banmaobox:mainnet before using the deployment in production.");
 }
 
-main().catch((error) => {
-  console.error(`\nMainnet deployment stopped: ${error.reason || error.message}`);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(`\nMainnet deployment stopped: ${error.reason || error.message}`);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = {
+  journalComplete,
+  journalMatchesReplacementSource,
+  prepareRenderer,
+  replacementSource,
+};
