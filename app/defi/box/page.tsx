@@ -8,7 +8,6 @@ import {
   Box,
   CheckCircle2,
   ChevronDown,
-  Circle,
   Clock3,
   Copy,
   Gift,
@@ -25,7 +24,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useSwitchChain } from "wagmi";
 import confetti from "canvas-confetti";
 import toast from "react-hot-toast";
@@ -35,7 +34,9 @@ import {
   isAddress,
   parseUnits,
   type Address,
+  type Hash,
 } from "viem";
+
 import { ConnectButton } from "../../components/wallet/WalletConnection";
 import {
   getBoxChainConfig,
@@ -63,7 +64,12 @@ import {
 } from "./i18n";
 import { boxNftExplorerUrl } from "./address";
 import { svgImageDataUri } from "./safety";
-import { requestBanmaoBoxVerification } from "./requestVerification";
+import { requestBanmaoBoxVerification, type BanmaoBoxVerificationRequest } from "./requestVerification";
+import { classifyTransactionError, transactionProgressIndex } from "./transactionPresentation";
+import { ExplorerValueRow } from "./ExplorerValueRow";
+import {
+  getCollectionLifecycleFixture,
+} from "./collectionLifecycleFixture";
 import { useBox } from "./useBox";
 import { formatExactTokenAmount, tokenAmountInWords } from "./amountFormat";
 import "./box.css";
@@ -76,6 +82,25 @@ type CreateMode = "single" | "batch" | "basket";
 type BatchRow = { recipient: string; amount: string };
 type DurationField = "days" | "hours" | "minutes" | "seconds";
 type AddressHistoryType = "asset" | "collection";
+type CollectionLifecycleStatus =
+  | "wallet"
+  | "submitted"
+  | "confirmed"
+  | "verifying"
+  | "indexing"
+  | "ready"
+  | "rejected"
+  | "replaced"
+  | "timeout"
+  | "failed";
+type CollectionLifecycleDetails = {
+  status: CollectionLifecycleStatus;
+  tokenAddress: Address;
+  boxAddress?: Address;
+  factoryAddress?: Address;
+  rendererAddress?: Address;
+  transactionHash?: Hash;
+};
 
 function getTier(amount: bigint, decimals: number): string {
   const unit = 10n ** BigInt(decimals);
@@ -351,7 +376,11 @@ export default function BanmaoBoxPage() {
   const [collectionError, setCollectionError] = useState<string | null>(null);
   const [collectionPending, setCollectionPending] = useState(false);
   const [collectionOpen, setCollectionOpen] = useState(false);
+  const [collectionLifecycle, setCollectionLifecycle] =
+    useState<CollectionLifecycleDetails | null>(null);
   const collectionRequestRef = useRef(0);
+  const verificationRequestRef = useRef<BanmaoBoxVerificationRequest | undefined>(undefined);
+  const collectionFixtureToastShownRef = useRef(false);
   const [createMode, setCreateMode] = useState<CreateMode>("single");
   const [batchRows, setBatchRows] = useState<BatchRow[]>([
     { recipient: "", amount: "" },
@@ -388,6 +417,8 @@ export default function BanmaoBoxPage() {
     "create",
   );
   const chainConfig = getBoxChainConfig(selectedChainId);
+  const copy = BOX_COPY[language];
+  const explorerBaseUrl = chainConfig.chain.blockExplorers.default.url;
 
   const {
     address,
@@ -425,7 +456,7 @@ export default function BanmaoBoxPage() {
     transactionHash,
     transactionError,
     isBusy,
-  } = useBox(selectedChainId, activeBoxAddress, activeTokenAddress);
+  } = useBox(selectedChainId, activeBoxAddress, activeTokenAddress, copy.genericToken);
 
   const parsedAmount = useMemo(() => {
     try {
@@ -445,7 +476,6 @@ export default function BanmaoBoxPage() {
   const needsApproval =
     isConnected && parsedAmount > 0n && allowance < parsedAmount;
 
-  const copy = BOX_COPY[language];
   const pageCount = Math.max(1, Math.ceil(boxes.length / BOXES_PER_PAGE));
   const visibleBoxes = useMemo(
     () => boxes.slice(boxPage * BOXES_PER_PAGE, (boxPage + 1) * BOXES_PER_PAGE),
@@ -453,6 +483,7 @@ export default function BanmaoBoxPage() {
   );
 
   useEffect(() => {
+    if (getCollectionLifecycleFixture(window.location.search)) return;
     let cancelled = false;
     const requestId = ++collectionRequestRef.current;
     const storageKey = `banmaobox_collection_token_${selectedChainId}`;
@@ -528,9 +559,21 @@ export default function BanmaoBoxPage() {
   }, []);
 
   useEffect(() => {
+    const fixture = getCollectionLifecycleFixture(window.location.search);
+    if (!fixture) return;
+    setCollectionOpen(true);
+    setActiveTokenAddress(fixture.tokenAddress);
+    setActiveBoxAddress(fixture.boxAddress);
+    setCollectionToken(fixture.tokenAddress);
+    setCollectionLifecycle((current) => current ?? fixture);
+  }, []);
+
+  useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => () => verificationRequestRef.current?.cancel(), []);
 
   useEffect(() => {
     if (address && !recipient) setRecipient(address);
@@ -549,12 +592,63 @@ export default function BanmaoBoxPage() {
     }
   }, [address, phase]);
 
-  useEffect(() => {
+  const showTransactionToast = useCallback(() => {
+    const toastId = "banmaobox-transaction";
+    if (phase === "idle") {
+      toast.dismiss(toastId);
+      return;
+    }
+    const errorKind = classifyTransactionError(transactionError, Boolean(transactionHash)).kind;
+    const localizedError = errorKind === "rejected" ? copy.transactionRejected
+      : errorKind === "replaced" ? copy.transactionReplaced
+      : errorKind === "timeout" ? copy.transactionTimeout
+      : errorKind === "disconnected" ? copy.connectWalletError
+      : errorKind === "wrong-chain" ? copy.wrongNetworkError
+      : copy.transactionFailed;
+    const message = phase === "success"
+      ? copy.transactionConfirmed(activeAction)
+      : phase === "error"
+        ? localizedError
+        : copy.phase[phase];
+    const detail = releaseOutcome ? `${message} ${releaseOutcome}` : message;
+    const options = { id: toastId, duration: phase === "success" ? 6500 : phase === "error" ? 9000 : Infinity };
+    const activeIndex = transactionProgressIndex(phase, Boolean(transactionHash));
+    const renderToast = () => toast.custom((toastState) => (
+      <div
+        className={`box-toast box-toast--${phase} ${toastState.visible ? "is-visible" : ""}`}
+        role={phase === "error" ? "alert" : "status"}
+      >
+        <span className="box-toast__icon" aria-hidden="true">
+          {phase === "success" ? <CheckCircle2 /> : phase === "error" ? <X /> : <LoaderCircle className="box-spin" />}
+        </span>
+        <div className="box-toast__content">
+          <strong>{detail}</strong>
+          <ol className="box-toast__steps" aria-label={copy.transactionProgressLabel}>
+            {[copy.stepWallet, copy.stepBroadcast, copy.stepConfirmed].map((label, index) => (
+              <li className={index < activeIndex || phase === "success" ? "complete" : index === activeIndex ? "active" : ""} key={label}>
+                <span aria-hidden="true" />{label}
+              </li>
+            ))}
+          </ol>
+          {transactionHash ? (
+            <div className="box-toast__actions">
+              <ExplorerValueRow
+                label={copy.creatorTransactionLabel}
+                value={transactionHash}
+                kind="tx"
+                explorerBaseUrl={explorerBaseUrl}
+                copyLabel={copy.copyTransactionHash}
+                onCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })}
+                onCopyFailed={() => toast.error(copy.copyFailed)}
+              />
+            </div>
+          ) : null}
+        </div>
+        <button type="button" className="box-toast__dismiss" aria-label={copy.dismissNotification} onClick={() => toast.dismiss(toastId)}><X /></button>
+      </div>
+    ), options);
     if (phase === "success") {
-      toast.success(copy.transactionConfirmed(activeAction), {
-        id: "banmaobox-transaction",
-        duration: 5200,
-      });
+      renderToast();
       if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         void confetti({
           particleCount: 90,
@@ -567,11 +661,89 @@ export default function BanmaoBoxPage() {
       return;
     }
     if (phase === "error") {
-      toast.error(transactionError || copy.transactionError, {
-        id: "banmaobox-transaction",
-      });
+      renderToast();
+      return;
     }
-  }, [activeAction, copy, phase, transactionError]);
+    renderToast();
+  }, [activeAction, copy, explorerBaseUrl, phase, releaseOutcome, transactionError, transactionHash]);
+
+  const showVerificationToast = useCallback((
+    message: string,
+    status: "loading" | "success" | "error",
+    details: CollectionLifecycleDetails,
+  ) => {
+    const id = "banmaobox-collection-verification";
+    setCollectionLifecycle(details);
+    const explorerRow = (
+      label: string,
+      value: Address | Hash | undefined,
+      kind: "address" | "tx",
+      copyLabel: string,
+    ) => value ? (
+      <ExplorerValueRow
+        key={label}
+        label={label}
+        value={value}
+        kind={kind}
+        explorerBaseUrl={explorerBaseUrl}
+        copyLabel={copyLabel}
+        onCopied={(copiedLabel) => toast.success(copy.copied(copiedLabel), { duration: 1800 })}
+        onCopyFailed={() => toast.error(copy.copyFailed)}
+      />
+    ) : null;
+    toast.custom((toastState) => (
+      <div className={`box-toast box-toast--${status} ${toastState.visible ? "is-visible" : ""}`} role={status === "error" ? "alert" : "status"}>
+        <span className="box-toast__icon" aria-hidden="true">
+          {status === "success" ? <CheckCircle2 /> : status === "error" ? <X /> : <LoaderCircle className="box-spin" />}
+        </span>
+        <div className="box-toast__content">
+          <strong>{message}</strong>
+          <div className="box-toast__values">
+            {explorerRow(copy.tokenAddressLabel, details.tokenAddress, "address", copy.copyTokenAddress)}
+            {explorerRow(copy.collectionAddressLabel, details.boxAddress, "address", copy.copyCollectionAddress)}
+            {explorerRow(copy.factoryAddressLabel, details.factoryAddress, "address", copy.copyFactoryAddress)}
+            {explorerRow(copy.rendererAddressLabel, details.rendererAddress, "address", copy.copyRendererAddress)}
+            {explorerRow(copy.creatorTransactionLabel, details.transactionHash, "tx", copy.copyTransactionHash)}
+            <span>{copy.networkLabel}: {chainConfig.chain.name}</span>
+            <span>{copy.chainIdLabel}: {selectedChainId}</span>
+          </div>
+          <ol className="box-collection-lifecycle" aria-label={copy.collectionLifecycleLabel}>
+            <li className="complete">{copy.collectionWalletRequest}</li>
+            <li className={details.transactionHash ? "complete" : "active"}>{copy.collectionSubmitted}</li>
+            <li className={details.boxAddress ? "complete" : ""}>{copy.collectionReceiptConfirmed}</li>
+            <li className={details.status === "ready" ? "complete" : details.status === "verifying" ? "active" : ""}>{copy.collectionBytecodeVerified}</li>
+            <li className={details.status === "ready" ? "complete" : ""}>{copy.collectionRegistryVerified}</li>
+            <li className={details.status === "ready" ? "complete" : ""}>{copy.collectionUnderlyingVerified}</li>
+            <li className={details.status === "ready" ? "complete" : ""}>{copy.collectionRendererVerified}</li>
+            <li className={details.status === "indexing" ? "active" : details.status === "ready" ? "complete" : ""}>{copy.collectionIndexing}</li>
+            <li className={details.status === "ready" ? "complete" : ""}>{copy.collectionReady}</li>
+          </ol>
+        </div>
+        <button type="button" className="box-toast__dismiss" aria-label={copy.dismissNotification} onClick={() => toast.dismiss(id)}><X /></button>
+      </div>
+    ), { id, duration: status === "loading" ? Infinity : status === "success" ? 12_000 : 9000 });
+  }, [chainConfig.chain.name, copy, explorerBaseUrl, selectedChainId]);
+
+  useEffect(() => {
+    if (collectionFixtureToastShownRef.current || !collectionLifecycle) return;
+    if (!getCollectionLifecycleFixture(window.location.search)) return;
+    collectionFixtureToastShownRef.current = true;
+    showVerificationToast(copy.collectionReady, "success", collectionLifecycle);
+  }, [collectionLifecycle, copy.collectionReady, showVerificationToast]);
+
+  useEffect(() => {
+    if (!collectionLifecycle || !transactionHash) return;
+    if (collectionLifecycle.status !== "wallet") return;
+    showVerificationToast(copy.collectionSubmitted, "loading", {
+      ...collectionLifecycle,
+      status: "submitted",
+      transactionHash,
+    });
+  }, [collectionLifecycle, copy.collectionSubmitted, showVerificationToast, transactionHash]);
+
+  useEffect(() => {
+    showTransactionToast();
+  }, [showTransactionToast]);
 
   const copyToClipboard = async (value: string, label: string) => {
     try {
@@ -612,6 +784,7 @@ export default function BanmaoBoxPage() {
     setExtraAssets([]);
     setBoxPage(0);
     collectionRequestRef.current += 1;
+    verificationRequestRef.current?.cancel();
 
     if (!isConnected) return;
     try {
@@ -627,6 +800,8 @@ export default function BanmaoBoxPage() {
 
   const handleCollection = async (createIfMissing: boolean) => {
     const requestId = ++collectionRequestRef.current;
+    verificationRequestRef.current?.cancel();
+    verificationRequestRef.current = undefined;
     setCollectionError(null);
     if (!isAddress(collectionToken)) {
       setCollectionError("Enter a valid primary ERC-20 address.");
@@ -634,6 +809,7 @@ export default function BanmaoBoxPage() {
     }
 
     const token = getAddress(collectionToken);
+    let lifecycleDetails: CollectionLifecycleDetails | null = null;
     setCollectionPending(true);
     try {
       await readAsset(token);
@@ -643,35 +819,62 @@ export default function BanmaoBoxPage() {
           throw new Error("No collection exists for this token on the canonical Factory.");
         }
         setActiveAction("Collection creation");
-        toast.loading("Creating collection on-chain…", {
-          id: "banmaobox-collection-verification",
-        });
+        const baseDetails: CollectionLifecycleDetails = {
+          status: "wallet",
+          tokenAddress: token,
+          factoryAddress: chainConfig.factoryAddress,
+          rendererAddress: chainConfig.rendererAddress,
+        };
+        lifecycleDetails = baseDetails;
+        showVerificationToast(copy.collectionWalletRequest, "loading", baseDetails);
         const created = await createCollection(token);
         box = created.address;
+        const confirmedDetails: CollectionLifecycleDetails = {
+          ...baseDetails,
+          status: "confirmed",
+          boxAddress: getAddress(created.address),
+          transactionHash: created.txHash,
+        };
+        lifecycleDetails = confirmedDetails;
+        showVerificationToast(copy.collectionReceiptConfirmed, "loading", confirmedDetails);
         if (selectedChainId === XLAYER_CHAIN_ID && created.txHash) {
-          toast.loading("Collection created. Requesting OKX Explorer verification…", {
-            id: "banmaobox-collection-verification",
+          showVerificationToast(copy.collectionVerificationRequest, "loading", {
+            ...confirmedDetails,
+            status: "verifying",
           });
-          void requestBanmaoBoxVerification(created.txHash, (update) => {
+          verificationRequestRef.current?.cancel();
+          verificationRequestRef.current = requestBanmaoBoxVerification(created.txHash, (update) => {
+            const verificationDetails: CollectionLifecycleDetails = {
+              ...confirmedDetails,
+              boxAddress: update.boxAddress && isAddress(update.boxAddress)
+                ? getAddress(update.boxAddress)
+                : confirmedDetails.boxAddress,
+            };
             if (update.status === "verified" || update.status === "already-verified") {
-              toast.success("Collection contract verified on OKX Explorer.", {
-                id: "banmaobox-collection-verification",
-                duration: 6500,
+              showVerificationToast(copy.collectionReady, "success", {
+                ...verificationDetails,
+                status: "ready",
               });
-            } else if (update.status === "pending" || update.status === "waiting-for-indexer") {
-              toast.loading("OKX Explorer is indexing the collection contract…", {
-                id: "banmaobox-collection-verification",
+            } else if (
+              update.status === "pending" ||
+              update.status === "waiting-for-indexer" ||
+              update.status === "transient-unavailable"
+            ) {
+              showVerificationToast(copy.collectionIndexing, "loading", {
+                ...verificationDetails,
+                status: "indexing",
               });
             } else {
-              toast.error(
-                `Collection created successfully, but Explorer verification could not finish${update.error ? `: ${update.error}` : "."}`,
-                { id: "banmaobox-collection-verification", duration: 9000 },
-              );
+              showVerificationToast(copy.collectionVerificationFailure, "error", {
+                ...verificationDetails,
+                status: "failed",
+              });
             }
           });
         } else {
-          toast.success("Collection created on X Layer Testnet.", {
-            id: "banmaobox-collection-verification",
+          showVerificationToast(copy.collectionReady, "success", {
+            ...confirmedDetails,
+            status: "ready",
           });
         }
       }
@@ -679,6 +882,23 @@ export default function BanmaoBoxPage() {
       selectCollection(token, getAddress(box));
     } catch (error) {
       if (requestId !== collectionRequestRef.current) return;
+      if (lifecycleDetails) {
+        const classification = classifyTransactionError(error, Boolean(transactionHash));
+        const lifecycleStatus: CollectionLifecycleStatus =
+          classification.kind === "rejected" ? "rejected"
+          : classification.kind === "replaced" ? "replaced"
+          : classification.kind === "timeout" ? "timeout"
+          : "failed";
+        const lifecycleMessage = classification.kind === "rejected" ? copy.transactionRejected
+          : classification.kind === "replaced" ? copy.transactionReplaced
+          : classification.kind === "timeout" ? copy.transactionTimeout
+          : copy.transactionFailed;
+        showVerificationToast(lifecycleMessage, "error", {
+          ...lifecycleDetails,
+          status: lifecycleStatus,
+          transactionHash: transactionHash ?? lifecycleDetails.transactionHash,
+        });
+      }
       setCollectionError(
         error instanceof Error
           ? error.message.split("\n")[0]
@@ -1135,6 +1355,7 @@ export default function BanmaoBoxPage() {
                 value={collectionToken}
                 onChange={(event) => {
                   collectionRequestRef.current += 1;
+                  verificationRequestRef.current?.cancel();
                   setCollectionPending(false);
                   setCollectionError(null);
                   setCollectionToken(event.target.value.trim());
@@ -1172,9 +1393,40 @@ export default function BanmaoBoxPage() {
               </div>
             ) : null}
             {activeBoxAddress && activeTokenAddress ? (
-              <small>
-                Active: {tokenSymbol} · {activeTokenAddress.slice(0, 8)}…{activeTokenAddress.slice(-6)} · Box {activeBoxAddress.slice(0, 8)}…{activeBoxAddress.slice(-6)}
-              </small>
+              <div className="box-collection-details" aria-label={copy.collectionLifecycleLabel}>
+                <strong>{tokenSymbol}</strong>
+                <ExplorerValueRow
+                  label={copy.tokenAddressLabel}
+                  value={activeTokenAddress}
+                  kind="address"
+                  explorerBaseUrl={explorerBaseUrl}
+                  copyLabel={copy.copyTokenAddress}
+                  onCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })}
+                  onCopyFailed={() => toast.error(copy.copyFailed)}
+                />
+                <ExplorerValueRow
+                  label={copy.collectionAddressLabel}
+                  value={activeBoxAddress}
+                  kind="address"
+                  explorerBaseUrl={explorerBaseUrl}
+                  copyLabel={copy.copyCollectionAddress}
+                  onCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })}
+                  onCopyFailed={() => toast.error(copy.copyFailed)}
+                />
+                {collectionLifecycle?.transactionHash ? (
+                  <ExplorerValueRow
+                    label={copy.creatorTransactionLabel}
+                    value={collectionLifecycle.transactionHash}
+                    kind="tx"
+                    explorerBaseUrl={explorerBaseUrl}
+                    copyLabel={copy.copyTransactionHash}
+                    onCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })}
+                    onCopyFailed={() => toast.error(copy.copyFailed)}
+                  />
+                ) : null}
+                <span>{copy.networkLabel}: {chainConfig.chain.name}</span>
+                <span>{copy.chainIdLabel}: {selectedChainId}</span>
+              </div>
             ) : null}
             {collectionError ? <p className="box-form-error" role="alert">{collectionError}</p> : null}
           </div>
@@ -1756,50 +2008,6 @@ export default function BanmaoBoxPage() {
       </section>
       ) : null}
 
-      {transactionMessage ? (
-        <div
-          className={`box-transaction box-transaction--${phase}`}
-          role={phase === "error" ? "alert" : "status"}
-        >
-          {phase === "success" ? (
-            <CheckCircle2 />
-          ) : phase === "error" ? (
-            <X />
-          ) : (
-            <LoaderCircle className="box-spin" />
-          )}
-          <div className="box-transaction__content">
-            <strong>{transactionMessage}</strong>
-            <ol className="box-transaction__steps" aria-label="Transaction progress">
-              {[copy.stepWallet, copy.stepBroadcast, copy.stepConfirmed].map((label, index) => {
-                const activeIndex = phase === "success" ? 2 : transactionHash ? 1 : 0;
-                const complete = index < activeIndex || phase === "success";
-                return (
-                  <li className={complete ? "complete" : index === activeIndex ? "active" : ""} key={label}>
-                    {complete ? <CheckCircle2 /> : <Circle />}
-                    <span>{label}</span>
-                  </li>
-                );
-              })}
-            </ol>
-            {releaseOutcome ? <small>{releaseOutcome}</small> : null}
-            {transactionHash ? (
-              <span className="box-transaction__hash">
-                <a
-                  href={`${chainConfig.chain.blockExplorers?.default.url}/tx/${transactionHash}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {copy.viewExplorer} <ExternalLink />
-                </a>
-                <button type="button" onClick={() => void copyToClipboard(transactionHash, "Transaction hash")} aria-label="Copy transaction hash">
-                  <Copy />
-                </button>
-              </span>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
 
       <section className="box-how">
         <div className="box-how__heading">
@@ -1854,24 +2062,22 @@ export default function BanmaoBoxPage() {
         </div>
         <div className="box-contract-footer__grid">
           {[
-            ["Token", chainConfig.tokenAddress],
-            ["BanmaoBox", activeBoxAddress ?? chainConfig.boxAddress],
-            ["Factory", chainConfig.factoryAddress],
-            ["Renderer", chainConfig.rendererAddress],
-            ["Deployer", chainConfig.manifest.deployer],
-          ].map(([label, contractAddress]) =>
+            [copy.tokenAddressLabel, chainConfig.tokenAddress, copy.copyTokenAddress],
+            [copy.collectionAddressLabel, activeBoxAddress ?? chainConfig.boxAddress, copy.copyCollectionAddress],
+            [copy.factoryAddressLabel, chainConfig.factoryAddress, copy.copyFactoryAddress],
+            [copy.rendererAddressLabel, chainConfig.rendererAddress, copy.copyRendererAddress],
+          ].map(([label, contractAddress, copyLabel]) =>
             contractAddress ? (
-              <a
+              <ExplorerValueRow
                 key={label}
-                href={`${chainConfig.chain.blockExplorers?.default.url}/address/${contractAddress}`}
-                target="_blank"
-                rel="noreferrer"
-                title={`${label}: ${contractAddress}`}
-              >
-                <span>{label}</span>
-                <code>{contractAddress}</code>
-                <ExternalLink aria-hidden="true" />
-              </a>
+                label={label}
+                value={contractAddress as Address}
+                kind="address"
+                explorerBaseUrl={explorerBaseUrl}
+                copyLabel={copyLabel}
+                onCopied={(copiedLabel) => toast.success(copy.copied(copiedLabel), { duration: 1800 })}
+                onCopyFailed={() => toast.error(copy.copyFailed)}
+              />
             ) : null,
           )}
         </div>
@@ -1891,6 +2097,15 @@ export default function BanmaoBoxPage() {
             <p>{copy.celebrationText}</p>
             {transactionHash ? (
               <div className="box-celebration__actions">
+                <ExplorerValueRow
+                  label={copy.creatorTransactionLabel}
+                  value={transactionHash}
+                  kind="tx"
+                  explorerBaseUrl={explorerBaseUrl}
+                  copyLabel={copy.copyTransactionHash}
+                  onCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })}
+                  onCopyFailed={() => toast.error(copy.copyFailed)}
+                />
                 <a className="box-button box-button--primary" href={`${chainConfig.chain.blockExplorers?.default.url}/tx/${transactionHash}`} target="_blank" rel="noreferrer">
                   {copy.viewTransaction} <ExternalLink />
                 </a>

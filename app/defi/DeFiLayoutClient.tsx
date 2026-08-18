@@ -408,11 +408,19 @@ export default function DeFiLayoutClient({
       <Toaster
         position="top-center"
         reverseOrder={false}
-        containerStyle={{ top: 20, zIndex: 10000 }}
+        containerClassName="banmao-toast-region"
+        containerStyle={{
+          top: "max(12px, env(safe-area-inset-top))",
+          left: "max(12px, env(safe-area-inset-left))",
+          right: "max(12px, env(safe-area-inset-right))",
+          zIndex: 2147483647,
+        }}
         toastOptions={{
           duration: 4800,
+          ariaProps: { role: "status", "aria-live": "polite" },
           style: {
-            maxWidth: "min(520px, calc(100vw - 32px))",
+            width: "min(520px, calc(100vw - 24px))",
+            maxWidth: "100%",
             border: "1px solid rgba(255, 216, 90, 0.28)",
             borderRadius: "14px",
             background: "rgba(15, 18, 27, 0.98)",

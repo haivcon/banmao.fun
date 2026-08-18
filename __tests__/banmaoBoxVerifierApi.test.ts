@@ -7,9 +7,8 @@ describe("X Layer verifier API adapter", () => {
     ["Fail", "failed"],
     ["Fail - constructor arguments mismatch", "failed"],
     ["Pending", "pending"],
-    [undefined, "pending"],
   ])("maps %s safely", (value, expected) => {
-    expect(parsePollStatus(value === undefined ? [] : [value])).toBe(expected);
+    expect(parsePollStatus([value])).toBe(expected);
   });
 
   it("submits Standard JSON with the probed camelCase schema", async () => {

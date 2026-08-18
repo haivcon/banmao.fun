@@ -38,6 +38,9 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
 
     uint256 private constant MAX_SUPPORTED_DECIMALS = 69;
     uint256 private constant MAX_ASSETS = 5;
+    uint256 private constant SYMBOL_CALL_GAS = 50_000;
+    uint256 private constant MAX_SYMBOL_INPUT_BYTES = 64;
+    uint256 private constant MAX_SYMBOL_DISPLAY_BYTES = 32;
 
     error UnsupportedTokenDecimals(uint8 decimals);
     error InvalidRenderAssetCount();
@@ -73,12 +76,12 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         );
     }
 
-    function renderSVG(uint256 tokenId, BanmaoBoxRenderData calldata data) external pure override returns (string memory) {
+    function renderSVG(uint256 tokenId, BanmaoBoxRenderData calldata data) external view override returns (string memory) {
         _validate(data);
         return _renderSVG(tokenId, data);
     }
 
-    function renderAttributes(BanmaoBoxRenderData calldata data) external pure override returns (string memory) {
+    function renderAttributes(BanmaoBoxRenderData calldata data) external view override returns (string memory) {
         _validate(data);
         return _renderAttributes(data);
     }
@@ -97,7 +100,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         }
     }
 
-    function _renderSVG(uint256 tokenId, BanmaoBoxRenderData calldata data) internal pure returns (string memory) {
+    function _renderSVG(uint256 tokenId, BanmaoBoxRenderData calldata data) internal view returns (string memory) {
         string memory gold = _tierGold(_tier(data.amount, data.tokenDecimals));
         bytes memory hero = abi.encodePacked(
             _header(tokenId, gold),
@@ -143,7 +146,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         ));
     }
 
-    function _assetSummary(BanmaoBoxRenderData calldata data, string memory gold) internal pure returns (string memory) {
+    function _assetSummary(BanmaoBoxRenderData calldata data, string memory gold) internal view returns (string memory) {
         bytes memory rows;
         for (uint256 i; i < data.assetCount; ++i) {
             rows = abi.encodePacked(rows, _summaryRow(data.renderAssets, i, gold));
@@ -161,17 +164,16 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         ));
     }
 
-    function _summaryRow(bytes calldata packed, uint256 index, string memory gold) internal pure returns (string memory) {
-        (, uint256 amount, uint8 decimals, bytes16 symbol) = _renderAssetAt(packed, index);
+    function _summaryRow(bytes calldata packed, uint256 index, string memory gold) internal view returns (string memory) {
+        (address token, uint256 amount, uint8 decimals, bytes16 symbol) = _renderAssetAt(packed, index);
         return string(abi.encodePacked(
-            _summarySymbol(symbol, index),
+            _summarySymbol(_xmlEscapeString(_displaySymbol(token, symbol)), index),
             _summaryAmount(amount, decimals, index, gold),
             _summaryDivider(index, gold)
         ));
     }
 
-    function _summarySymbol(bytes16 symbol, uint256 index) internal pure returns (string memory) {
-        string memory value = _symbol(symbol);
+    function _summarySymbol(string memory value, uint256 index) internal pure returns (string memory) {
         return string(abi.encodePacked(
             '<g><text class="mono white" y="', (43 + index * 40).toString(),
             '" font-size="', bytes(value).length > 14 ? "20" : "24", '" font-weight="700"',
@@ -239,7 +241,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         ));
     }
 
-    function _ledger(BanmaoBoxRenderData calldata data) internal pure returns (string memory) {
+    function _ledger(BanmaoBoxRenderData calldata data) internal view returns (string memory) {
         bytes memory rows;
         for (uint256 i; i < data.assetCount; ++i) {
             rows = abi.encodePacked(rows, _ledgerRow(data.renderAssets, i));
@@ -253,12 +255,12 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         ));
     }
 
-    function _ledgerRow(bytes calldata packed, uint256 index) internal pure returns (string memory) {
+    function _ledgerRow(bytes calldata packed, uint256 index) internal view returns (string memory) {
         (address token, uint256 amount, uint8 decimals, bytes16 symbol) = _renderAssetAt(packed, index);
         return string(abi.encodePacked(
             _ledgerAddress(token, index),
             _ledgerAmount(amount, decimals, index),
-            _ledgerToken(symbol, decimals, index),
+            _ledgerToken(_xmlEscapeString(_displaySymbol(token, symbol)), decimals, index),
             _ledgerDivider(index)
         ));
     }
@@ -279,10 +281,10 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         ));
     }
 
-    function _ledgerToken(bytes16 symbol, uint8 decimals, uint256 index) internal pure returns (string memory) {
+    function _ledgerToken(string memory symbol, uint8 decimals, uint256 index) internal pure returns (string memory) {
         return string(abi.encodePacked(
             '<text class="mono white" x="752" y="', (654 + index * 25).toString(),
-            '" text-anchor="end" font-size="13">', _symbol(symbol), ' / d',
+            '" text-anchor="end" font-size="13">', symbol, ' / d',
             uint256(decimals).toString(), '</text>'
         ));
     }
@@ -307,11 +309,11 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         }
     }
 
-    function _renderAttributes(BanmaoBoxRenderData calldata data) internal pure returns (string memory) {
+    function _renderAttributes(BanmaoBoxRenderData calldata data) internal view returns (string memory) {
         bytes memory identity = abi.encodePacked(
             '[{"trait_type":"Status","value":"',
             'Sealed',
-            '"},{"trait_type":"Token Symbol","value":"', _symbol(data.tokenSymbol),
+            '"},{"trait_type":"Token Symbol","value":"', _jsonEscape(_displaySymbol(data.token, data.tokenSymbol)),
             '"},{"display_type":"number","trait_type":"Asset Count","value":',
             uint256(data.assetCount).toString()
         );
@@ -373,6 +375,157 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
             if (!allowed) return "TOKEN";
             out[i] = char;
         }
+        return string(out);
+    }
+
+    function _displaySymbol(address token, bytes16 snapshot) internal view returns (string memory) {
+        if (snapshot != bytes16("TOKEN")) return _symbol(snapshot);
+        (bool ok, bytes memory raw) = _readLiveSymbol(token);
+        if (!ok) return _symbolFallback(token);
+        uint256 displayLength;
+        (ok, displayLength) = _validUtf8Length(raw);
+        if (!ok) return _symbolFallback(token);
+        bytes memory bounded = new bytes(displayLength);
+        for (uint256 i; i < displayLength; ++i) bounded[i] = raw[i];
+        return string(bounded);
+    }
+
+    function _readLiveSymbol(address token) internal view returns (bool ok, bytes memory raw) {
+        bytes4 selector = 0x95d89b41;
+        uint256 returnSize;
+        bytes memory encoded = new bytes(128);
+        assembly ("memory-safe") {
+            mstore(0, selector)
+            ok := staticcall(SYMBOL_CALL_GAS, token, 0, 4, add(encoded, 0x20), 128)
+            returnSize := returndatasize()
+        }
+        if (!ok || returnSize < 96 || returnSize > 128) return (false, raw);
+
+        uint256 offset;
+        uint256 length;
+        assembly ("memory-safe") {
+            offset := mload(add(encoded, 0x20))
+            length := mload(add(encoded, 0x40))
+        }
+        if (
+            offset != 32 ||
+            length == 0 ||
+            length > MAX_SYMBOL_INPUT_BYTES
+        ) return (false, raw);
+        uint256 paddedLength = (length + 31) & ~uint256(31);
+        if (returnSize != 64 + paddedLength) return (false, raw);
+
+        raw = new bytes(length);
+        for (uint256 i; i < length; ++i) raw[i] = encoded[64 + i];
+        for (uint256 i = length; i < paddedLength; ++i) {
+            if (encoded[64 + i] != 0) return (false, raw);
+        }
+        return (true, raw);
+    }
+
+    function _validUtf8Length(bytes memory raw) internal pure returns (bool, uint256 displayLength) {
+        uint256 i;
+        while (i < raw.length) {
+            uint256 first = uint8(raw[i]);
+            uint256 width;
+            uint256 codepoint;
+            if (first <= 0x7f) {
+                width = 1;
+                codepoint = first;
+            } else if (first >= 0xc2 && first <= 0xdf) {
+                width = 2;
+                codepoint = first & 0x1f;
+            } else if (first >= 0xe0 && first <= 0xef) {
+                width = 3;
+                codepoint = first & 0x0f;
+            } else if (first >= 0xf0 && first <= 0xf4) {
+                width = 4;
+                codepoint = first & 0x07;
+            } else {
+                return (false, 0);
+            }
+            if (i + width > raw.length) return (false, 0);
+            for (uint256 j = 1; j < width; ++j) {
+                uint256 continuation = uint8(raw[i + j]);
+                if (continuation < 0x80 || continuation > 0xbf) return (false, 0);
+                codepoint = (codepoint << 6) | (continuation & 0x3f);
+            }
+            if (
+                (width == 3 && codepoint < 0x800) ||
+                (width == 4 && codepoint < 0x10000) ||
+                codepoint > 0x10ffff ||
+                (codepoint >= 0xd800 && codepoint <= 0xdfff) ||
+                _unsafeCodepoint(codepoint)
+            ) return (false, 0);
+            if (i + width <= MAX_SYMBOL_DISPLAY_BYTES) displayLength = i + width;
+            i += width;
+        }
+        return (displayLength != 0, displayLength);
+    }
+
+    function _unsafeCodepoint(uint256 codepoint) internal pure returns (bool) {
+        return
+            codepoint <= 0x1f ||
+            (codepoint >= 0x7f && codepoint <= 0x9f) ||
+            codepoint == 0xfffe ||
+            codepoint == 0xffff ||
+            codepoint == 0x2028 ||
+            codepoint == 0x2029 ||
+            (codepoint >= 0x202a && codepoint <= 0x202e) ||
+            (codepoint >= 0x2066 && codepoint <= 0x2069) ||
+            codepoint == 0x061c ||
+            codepoint == 0x200e ||
+            codepoint == 0x200f;
+    }
+
+    function _xmlEscape(bytes memory raw, uint256 length) internal pure returns (bytes memory out) {
+        uint256 escapedLength;
+        for (uint256 i; i < length; ++i) {
+            bytes1 char = raw[i];
+            escapedLength += char == "&" ? 5 : char == "<" || char == ">" ? 4 : char == '"' || char == "'" ? 6 : 1;
+        }
+        out = new bytes(escapedLength);
+        uint256 cursor;
+        for (uint256 i; i < length; ++i) {
+            bytes memory replacement;
+            bytes1 char = raw[i];
+            if (char == "&") replacement = bytes("&amp;");
+            else if (char == "<") replacement = bytes("&lt;");
+            else if (char == ">") replacement = bytes("&gt;");
+            else if (char == '"') replacement = bytes("&quot;");
+            else if (char == "'") replacement = bytes("&apos;");
+            else out[cursor++] = char;
+            for (uint256 j; j < replacement.length; ++j) out[cursor++] = replacement[j];
+        }
+    }
+
+    function _xmlEscapeString(string memory value) internal pure returns (string memory) {
+        bytes memory raw = bytes(value);
+        return string(_xmlEscape(raw, raw.length));
+    }
+
+    function _jsonEscape(string memory value) internal pure returns (string memory) {
+        bytes memory raw = bytes(value);
+        uint256 extra;
+        for (uint256 i; i < raw.length; ++i) if (raw[i] == '"' || raw[i] == "\\") ++extra;
+        bytes memory out = new bytes(raw.length + extra);
+        uint256 cursor;
+        for (uint256 i; i < raw.length; ++i) {
+            if (raw[i] == '"' || raw[i] == "\\") out[cursor++] = "\\";
+            out[cursor++] = raw[i];
+        }
+        return string(out);
+    }
+
+    function _symbolFallback(address token) internal pure returns (string memory) {
+        string memory full = token.toHexString();
+        return string(abi.encodePacked("TOKEN ", _sliceRange(full, 0, 8), "...", _sliceRange(full, 38, 42)));
+    }
+
+    function _sliceRange(string memory value, uint256 start, uint256 end) internal pure returns (string memory) {
+        bytes memory source = bytes(value);
+        bytes memory out = new bytes(end - start);
+        for (uint256 i; i < out.length; ++i) out[i] = source[start + i];
         return string(out);
     }
 

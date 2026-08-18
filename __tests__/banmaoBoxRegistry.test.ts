@@ -80,7 +80,7 @@ describe("BanmaoBox chain registry", () => {
         isVerifiedMainnetManifest(mainnetManifest as BoxDeploymentManifest),
       ).toBe(true);
       expect(mainnetManifest.contracts.renderer).toBe(
-        "0xE19c875dBfa80171819E443e46Fc7839a9290769",
+        "0x479365c028A1FA633b16BBef95e8691D4f37B21F",
       );
       expect(mainnetManifest.contracts.factory).toBe(
         "0x01E03F6eb085f4934A3A7946545b00341B95d9E9",

@@ -8,10 +8,20 @@ type Fetcher = typeof okxFetch;
 
 export type VerifyPollStatus = "pending" | "verified" | "failed";
 
-async function call(fetcher: Fetcher, method: string, path: string, body?: unknown) {
-  const response = await fetcher(method, path, body === undefined ? {} : {
-    body: JSON.stringify(body),
-  });
+export class OkxVerifierAmbiguousError extends Error {}
+
+async function call(
+  fetcher: Fetcher,
+  method: string,
+  path: string,
+  body?: unknown,
+  maxRetries = 2,
+) {
+  const response = await fetcher(method, path, {
+    cache: "no-store",
+    signal: AbortSignal.timeout(15_000),
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  }, maxRetries);
   let envelope: OkxEnvelope;
   try {
     envelope = await response.json() as OkxEnvelope;
@@ -39,7 +49,10 @@ export function parsePollStatus(data: unknown): VerifyPollStatus {
   if (["fail", "failed"].some(
     (status) => value === status || value?.startsWith(`${status} -`),
   )) return "failed";
-  return "pending";
+  if (["pending", "in progress", "in-progress"].some(
+    (status) => value === status || value?.startsWith(`${status} -`),
+  )) return "pending";
+  throw new OkxVerifierAmbiguousError("OKX verifier returned an ambiguous poll result");
 }
 
 export class OkxXLayerVerifierApi {
@@ -73,7 +86,7 @@ export class OkxXLayerVerifierApi {
       contractName: input.contractName,
       compilerVersion: input.compilerVersion,
       constructorArguments: input.constructorArguments,
-    });
+    }, 0);
     const guid = firstString(data);
     if (!guid) throw new Error("OKX verifier did not return a GUID");
     return guid;

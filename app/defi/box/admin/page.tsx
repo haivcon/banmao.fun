@@ -1,15 +1,14 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useAccount, usePublicClient } from "wagmi";
-import { isAddress, type Address } from "viem";
+import { isAddress, type Address, type Hash } from "viem";
 import {
   Activity,
   ArrowLeft,
   Box,
   CheckCircle2,
-  ExternalLink,
   Factory,
   Gift,
   LoaderCircle,
@@ -34,10 +33,12 @@ import { svgImageDataUri } from "../safety";
 import { useBox } from "../useBox";
 import { requestBanmaoBoxVerification } from "../requestVerification";
 import { formatExactTokenAmount } from "../amountFormat";
+import { resolveStoredAssetSymbol } from "../transactionPresentation";
+import { ExplorerValueRow } from "../ExplorerValueRow";
+import { getAdminCreationFixture } from "../adminCreationFixture";
+import type { BanmaoBoxVerificationRequest } from "../requestVerification";
 import "./admin.css";
 
-const short = (v?: string) =>
-  v ? `${v.slice(0, 8)}…${v.slice(-6)}` : "Not deployed";
 const metric = (v: bigint, d: number) => formatExactTokenAmount(v, d, "en");
 export default function BoxOperationsPage() {
   const [network] = useState<BoxChainId>(XLAYER_CHAIN_ID),
@@ -46,6 +47,19 @@ export default function BoxOperationsPage() {
     [factoryToken, setFactoryToken] = useState(""),
     [registryToken, setRegistryToken] = useState(""),
     [registryBox, setRegistryBox] = useState("");
+  const [createdCollection, setCreatedCollection] = useState<{
+    token: Address;
+    box: Address;
+    txHash?: Hash;
+    factory?: Address;
+    renderer?: Address;
+  } | null>(null);
+  const verificationRequestRef = useRef<BanmaoBoxVerificationRequest | undefined>(undefined);
+  useEffect(() => () => verificationRequestRef.current?.cancel(), []);
+  useEffect(() => {
+    const fixture = getAdminCreationFixture(window.location.search);
+    if (fixture) setCreatedCollection(fixture);
+  }, []);
   const [inspected, setInspected] = useState<InspectedBox | null>(null),
     [walletBoxes, setWalletBoxes] = useState<BoxEntry[]>([]),
     [registryResult, setRegistryResult] = useState<{
@@ -193,7 +207,7 @@ export default function BoxOperationsPage() {
         isRegistered,
         totalLocked,
         decimals: Number(decimalsResult),
-        symbol: typeof symbolResult === "string" ? symbolResult : "TOKEN",
+        symbol: resolveStoredAssetSymbol("TOKEN", symbolResult, token, "TOKEN"),
       });
     } catch {
       setMessage("Unable to query the Factory registry or Box accounting.");
@@ -203,6 +217,8 @@ export default function BoxOperationsPage() {
   };
   const createCollection = async (e: FormEvent) => {
     e.preventDefault();
+    verificationRequestRef.current?.cancel();
+    verificationRequestRef.current = undefined;
     setMessage(null);
     if (
       !address ||
@@ -214,8 +230,17 @@ export default function BoxOperationsPage() {
     setBusy(true);
     try {
       const created = await box.createCollection(factoryToken as Address);
+      setCreatedCollection({
+        token: factoryToken as Address,
+        box: created.address,
+        txHash: created.txHash,
+        factory: config.factoryAddress,
+        renderer: config.rendererAddress,
+      });
       setMessage(`Collection ready: ${created.address}`);
-      if (created.txHash) void requestBanmaoBoxVerification(created.txHash);
+      if (created.txHash) {
+        verificationRequestRef.current = requestBanmaoBoxVerification(created.txHash);
+      }
     } catch (err) {
       setMessage(
         err instanceof Error
@@ -234,6 +259,7 @@ export default function BoxOperationsPage() {
     ] as const,
     healthy =
       box.isDeployed && box.isDeploymentValidated && !box.deploymentError;
+  const displayedCollection = createdCollection;
   return (
     <main className="box-ops">
       <header className="ops-header">
@@ -332,19 +358,18 @@ export default function BoxOperationsPage() {
           </div>
           <div className="ops-addresses">
             {addresses.map(([name, value]) => (
-              <div key={name}>
-                <span>{name}</span>
-                <code title={value}>{short(value)}</code>
-                {value ? (
-                  <a
-                    href={`${explorer}/address/${value}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <ExternalLink />
-                  </a>
-                ) : null}
-              </div>
+              value && explorer ? (
+                <ExplorerValueRow
+                  key={name}
+                  label={name}
+                  value={value}
+                  kind="address"
+                  explorerBaseUrl={explorer}
+                  copyLabel={`Copy ${name} address`}
+                  onCopied={(label) => setMessage(`${label} copied.`)}
+                  onCopyFailed={() => setMessage("Unable to copy address.")}
+                />
+              ) : null
             ))}
           </div>
         </article>
@@ -380,7 +405,7 @@ export default function BoxOperationsPage() {
               <span>
                 {metric(inspected.amount, box.tokenDecimals)} {box.tokenSymbol}
               </span>
-              <code>{short(inspected.owner)}</code>
+              <code>{inspected.owner}</code>
             </div>
           ) : (
             <div className="ops-placeholder">
@@ -456,8 +481,18 @@ export default function BoxOperationsPage() {
             <dl className="ops-registry__result">
               <div>
                 <dt>boxForToken</dt>
-                <dd title={registryResult.registeredBox}>
-                  <code>{short(registryResult.registeredBox)}</code>
+                <dd>
+                  {explorer ? (
+                    <ExplorerValueRow
+                      label="Registered Box"
+                      value={registryResult.registeredBox}
+                      kind="address"
+                      explorerBaseUrl={explorer}
+                      copyLabel="Copy registered Box address"
+                      onCopied={(label) => setMessage(`${label} copied.`)}
+                      onCopyFailed={() => setMessage("Unable to copy address.")}
+                    />
+                  ) : <code>{registryResult.registeredBox}</code>}
                 </dd>
               </div>
               <div>
@@ -512,6 +547,15 @@ export default function BoxOperationsPage() {
               collection
             </button>
           </form>
+          {displayedCollection && explorer ? (
+            <div className="ops-created-collection">
+              <ExplorerValueRow label="ERC-20 token" value={displayedCollection.token} kind="address" explorerBaseUrl={explorer} copyLabel="Copy ERC-20 token address" onCopied={(label) => setMessage(`${label} copied.`)} onCopyFailed={() => setMessage("Unable to copy value.")} />
+              <ExplorerValueRow label="Collection" value={displayedCollection.box} kind="address" explorerBaseUrl={explorer} copyLabel="Copy collection address" onCopied={(label) => setMessage(`${label} copied.`)} onCopyFailed={() => setMessage("Unable to copy value.")} />
+              {displayedCollection.txHash ? <ExplorerValueRow label="Creation transaction" value={displayedCollection.txHash} kind="tx" explorerBaseUrl={explorer} copyLabel="Copy creation transaction hash" onCopied={(label) => setMessage(`${label} copied.`)} onCopyFailed={() => setMessage("Unable to copy value.")} /> : null}
+              {displayedCollection.factory ? <ExplorerValueRow label="Factory" value={displayedCollection.factory} kind="address" explorerBaseUrl={explorer} copyLabel="Copy Factory address" onCopied={(label) => setMessage(`${label} copied.`)} onCopyFailed={() => setMessage("Unable to copy value.")} /> : null}
+              {displayedCollection.renderer ? <ExplorerValueRow label="Renderer" value={displayedCollection.renderer} kind="address" explorerBaseUrl={explorer} copyLabel="Copy Renderer address" onCopied={(label) => setMessage(`${label} copied.`)} onCopyFailed={() => setMessage("Unable to copy value.")} /> : null}
+            </div>
+          ) : null}
         </article>
       </section>
     </main>

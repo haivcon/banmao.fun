@@ -12,9 +12,10 @@
 .banmao-ai-root button { color: inherit; }
 .banmao-ai-sr-only, .banmao-ai-sr-status { position:absolute!important; width:1px!important; height:1px!important; padding:0!important; margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; white-space:nowrap!important; border:0!important; }
 
-.banmao-ai-launcher { position:relative; isolation:isolate; display:flex; align-items:center; gap:10px; min-height:64px; padding:6px 16px 6px 6px; border:1px solid rgba(255,255,255,.14); border-radius:999px; background:linear-gradient(145deg,rgba(27,23,39,.97),rgba(10,9,17,.98)); box-shadow:0 16px 42px rgba(0,0,0,.48),0 0 0 1px rgba(var(--ai-aura-rgb),.1); cursor:pointer; transition:transform 220ms var(--bm-ease),border-color 220ms ease,box-shadow 220ms ease; }
+.banmao-ai-launcher { position:relative; isolation:isolate; display:flex; align-items:center; gap:10px; min-height:64px; padding:6px 16px 6px 6px; border:1px solid rgba(255,255,255,.14); border-radius:999px; background:linear-gradient(145deg,rgba(27,23,39,.97),rgba(10,9,17,.98)); box-shadow:0 16px 42px rgba(0,0,0,.48),0 0 0 1px rgba(var(--ai-aura-rgb),.1); cursor:grab; touch-action:none; user-select:none; transition:transform 220ms var(--bm-ease),border-color 220ms ease,box-shadow 220ms ease; }
 .banmao-ai-launcher:hover { transform:translateY(-3px); border-color:rgba(var(--ai-aura-rgb),.48); box-shadow:0 20px 48px rgba(0,0,0,.55),0 0 28px rgba(var(--ai-aura-rgb),.2); }
 .banmao-ai-launcher:active { transform:translateY(-1px) scale(.98); }
+.banmao-ai-launcher.is-dragging { cursor:grabbing; transform:none; transition:none; }
 .banmao-ai-launcher-glow { position:absolute; z-index:-1; inset:8px; border-radius:inherit; background:rgba(var(--ai-aura-rgb),.3); filter:blur(18px); opacity:.5; }
 .banmao-ai-orb, .banmao-ai-launcher-icon { position:relative; display:grid; place-items:center; flex:0 0 52px; width:52px; height:52px; overflow:hidden; border:1px solid rgba(var(--ai-aura-rgb),.35); border-radius:50%; background:radial-gradient(circle at 50% 35%,rgba(var(--ai-aura-rgb),.22),#09070e 72%); }
 .banmao-ai-orb > i { position:absolute; right:2px; bottom:4px; width:10px; height:10px; border:2px solid #0c0a12; border-radius:50%; background:#39e58c; box-shadow:0 0 8px rgba(57,229,140,.7); }
