@@ -17,10 +17,10 @@ A permissionless system for transferable, time-locked ERC-20 gift boxes:
 
 - Anyone may call `BanmaoBoxFactory.createTokenBox(token)` to deploy the canonical collection for an ERC-20. Each token can have only one collection across the Factory's full `previousFactory` registry chain.
 - A replacement Factory keeps its predecessor registry discoverable through `boxForToken(token)` and `isTokenBox(box)`. The fallback is read-only: predecessor entries are not copied into the replacement Factory's storage.
-- Collections are full, non-proxy deployments permanently bound to one **primary** token. The Factory deployer is the immutable renderer admin for every collection. It may update the Factory's `defaultRenderer` for subsequently created collections and may replace only the SVG renderer of an existing collection; it has no token upgrade, withdrawal, pause, custody, or metadata-attribute authority.
+- Collections are full, non-proxy deployments permanently bound to one **primary** token. The Factory deployer is the immutable renderer admin for every collection. It may update the Factory's `defaultRenderer` for subsequently created collections and replace an existing collection's full metadata renderer; it has no token upgrade, withdrawal, pause, or custody authority.
 - A creator may call `createBox(recipient, amount, lockDurationSec)` for one primary-token-only NFT, `createBoxes(recipients, amounts, lockDurationSec)` for 1–20 primary-token NFTs sharing one duration, or `createMultiTokenBox(recipient, tokens, amounts, lockDurationSec)` for a basket of 2–5 distinct ERC-20s.
 - Batch creation validates every row, pulls the aggregate primary-token amount once, and safely mints consecutive token IDs atomically. A failed ERC-20 transfer or ERC-721 receiver callback rolls back the entire batch.
-- Successful mints use the ERC-721 `Transfer` event for initial NFT discovery and do not emit a redundant `MetadataUpdate`; ERC-4906 recommends omitting that event during mint. `refreshMetadata(tokenId)` remains permissionless for every live box, including while locked, so an indexer can explicitly recrawl time-dependent metadata without changing custody or box state.
+- Successful mints use the ERC-721 `Transfer` event for initial NFT discovery and do not emit a redundant `MetadataUpdate`; ERC-4906 recommends omitting that event during mint. `refreshMetadata(tokenId)` remains permissionless for every live box and changes no custody or box state.
 - Locks must be greater than zero and may be at most `100 * 365 days` (36,500 days, slightly less than 100 Gregorian years because leap days are not included). There is no early unlock or privileged recovery path, so integrations should require explicit duration review before submission.
 - Every basket's first asset must be the collection's primary token. This preserves canonical discovery and primary-token accounting while allowing up to four additional assets.
 - Deposits and releases are exact-balance checked independently for every asset. A release succeeds only when the collection balance decreases and the owner's balance increases by the full recorded amount. Tokens that begin charging an outbound fee remain in the live NFT for retry instead of silently reducing its liability. The collection exposes remaining contents through `getBoxAssets(tokenId)`.
@@ -28,8 +28,8 @@ A permissionless system for transferable, time-locked ERC-20 gift boxes:
 - `openAsset(tokenId, assetIndex)` releases one selected asset and is the recovery path when another basket token is paused, blocked, or gas-griefing. The owner or an approved ERC-721 operator may release, but only the current NFT owner—not an approved address or operator—may call `abandonAsset(tokenId, assetIndex)`. Abandonment detaches a stuck asset without attempting a transfer and records the amount in `recoverableAbandoned(owner, token)` while `totalLockedByToken` continues to include that claim. The same owner can use `claimAbandonedAsset(token)` as a last-resort payout: the collection must lose the full recorded amount, but an outbound fee is accepted if the owner receives a positive amount. `AbandonedAssetClaimed` reports both the liability settled and the amount actually received. Both removal paths use swap-and-pop. Integrations should use the guarded four-argument overloads `openAsset(tokenId, assetIndex, expectedToken, expectedAmount)` and `abandonAsset(tokenId, assetIndex, expectedToken, expectedAmount)`, which revert with `AssetStateMismatch` if a cached index now identifies another asset.
 - The NFT is locked against transfer and burn while a payout is executing, preventing token callbacks from changing ownership mid-release. The NFT burns and its `boxDetails` are deleted only after the final remaining asset is released or moved into its owner's recoverable claim. Releasing or abandoning the primary asset immediately clears `boxDetails[tokenId].amount`. `BoxOpened.amount` reports primary tokens paid in the transaction that emptied the box, so it is zero when the primary asset was released earlier or abandoned; historical release, abandonment, and claim data remains available through events.
 - ERC-20 transfers sent directly to a collection cannot be attributed safely because standard ERC-20 transfers provide no receiver callback or authenticated sender record to the recipient contract. `untrackedSurplus(token)` exposes balances above all live-box and recoverable-claim liabilities, but the immutable no-admin design deliberately provides no sweep authority that could seize an accidental transfer.
-- Metadata includes the snapshotted token symbol, underlying token contract address, creator wallet, and UTC start/unlock dates. The creator is permanently captured from `msg.sender` at mint and does not change when the NFT is transferred. Symbol display is sanitized and never controls custody. Standard ERC-721 `tokenURI(tokenId)` is canonical and returns fully on-chain base64 JSON containing an embedded base64 SVG image. The read-only HTTPS metadata proxy decodes and validates that URI for crawler compatibility; it is optional and does not replace the canonical on-chain URI. The raw on-chain SVG also remains available through `renderSVG(tokenId)` and the separate HTTPS SVG route remains an optional renderer endpoint.
-- There is no admin withdrawal, early unlock, or collection upgrade path. Only the SVG renderer is replaceable as described below.
+- The full renderer supplies `tokenURI`, SVG, and attributes from bounded `BanmaoBoxRenderData`. The bundled renderer uses one temporally stable neutral `Status = Sealed` and neutral `SEALED` SVG wording for every extant NFT while retaining factual created time, unlock time, and duration. Unlock enforcement remains exclusively in `BanmaoBox.openBox`/asset release paths. The creator is permanently captured from `msg.sender`; symbol display is sanitized and never controls custody. The read-only HTTPS metadata proxy remains optional.
+- There is no admin withdrawal, early unlock, or collection upgrade path. Renderer replacement can change or break metadata, but cannot transfer, approve, mint, burn, release, or otherwise control locked assets.
 - Deposits and payouts reject transfer discrepancies. A payout requires both the collection's decrease and the owner's net increase to equal the exact recorded amount; otherwise the asset remains locked and retryable.
 
 Security and integration assumptions:
@@ -37,16 +37,16 @@ Security and integration assumptions:
 - Rebasing, blacklistable, pausable, fee-changing, or upgradeable ERC-20s can change behavior after deposit. A failing asset remains claimable for later retries, while unrelated assets are released independently. If every batch attempt fails, `openBox` preserves the failure events and leaves the NFT and accounting unchanged; use `openAsset` for an isolated retry when appropriate. BanmaoBox cannot bypass token-level rules and intentionally has no privileged rescue path.
 - `decimals()` must succeed and return at most 69. `symbol()` is optional for display: invalid, unsafe, or overlong values fall back to `TOKEN`.
 - `ERC721Enumerable` enables bounded `getBoxesByOwner(owner, offset, limit)` reads but adds storage gas to mint, transfer, and burn.
-- The Factory's initial and replacement default renderers must advertise both `IBanmaoBoxRenderer` and `IBanmaoBoxSVGRenderer` through ERC-165. The Factory deployer may call `setDefaultRenderer(newRenderer)` to affect only future collections; it emits `DefaultRendererUpdated` and never mutates existing collections. A collection's initial metadata/attribute renderer is immutable, while the same admin may call `BanmaoBox.setRenderer(newRenderer)` with a contract advertising `IBanmaoBoxSVGRenderer`. This changes the SVG returned by `renderSVG(tokenId)` and `image`, and emits `RendererUpdated` plus ERC-4906 `BatchMetadataUpdate`; all other metadata fields and attributes remain controlled by the collection and initial renderer.
-- Multi-token support adds `assetCount` to the renderer payload and therefore changes the renderer ERC-165 interface ID. Pre-basket renderer/factory/collection deployments are intentionally incompatible and must not be mixed with this release.
-- Factory runtime includes the `BanmaoBox` creation bytecode used by `createTokenBox`, so any Box bytecode change also changes the Factory artifact even when `BanmaoBoxFactory.sol` itself is unchanged. An unchanged deployed Renderer may be reused by replacement tooling only after its exact runtime matches the current Renderer artifact.
+- The Factory and collection require proper ERC-165 support for both the full `IBanmaoBoxRenderer` interface and its inherited `IBanmaoBoxSVGRenderer` capability. The Factory deployer may call `setDefaultRenderer(newRenderer)` to affect only future collections; the immutable Factory `renderer` field remains deployment provenance. The same admin may call `BanmaoBox.setRenderer(newRenderer)`, changing `tokenURI`, `renderSVG`, and `renderAttributes` together and emitting `RendererUpdated` plus ERC-4906 `BatchMetadataUpdate`. The renderer receives calldata only and the Box never grants it approvals or calls it from custody paths.
+- Multi-token support adds `assetCount` to the renderer payload and therefore changes the renderer ERC-165 interface ID. Earlier deployments are audit history only and are intentionally unsupported by current source, ABI, frontend, verifier, and deployment workflow.
+- Factory runtime includes the `BanmaoBox` creation bytecode used by `createTokenBox`, so any Box bytecode change also changes the Factory artifact even when `BanmaoBoxFactory.sol` itself is unchanged.
 - `unlockTime` is stored as `uint64`; lock duration is capped at exactly `100 * 365 days` (36,500 days).
 
 Deployment order:
 
 1. Compile with optimizer enabled (`runs: 200`) and the Shanghai EVM target.
 2. For testnet only, deploy `MockBanmao` from `contracts/banmaobox/MockBanmao.sol`.
-3. Deploy `BanmaoBoxRenderer` (no constructor arguments). For a replacement whose Renderer artifact is unchanged, reuse the current manifest Renderer only after exact runtime verification.
+3. Deploy a new `BanmaoBoxRenderer` (no constructor arguments).
 4. Deploy `BanmaoBoxFactory(rendererAddress, previousFactoryAddress)`. Use the zero address for the first Factory and the current Factory address for a registry-preserving replacement.
 5. Call `createTokenBox(tokenAddress)` for each token not already present anywhere in the predecessor chain, or let any community member do so permissionlessly.
 6. Read `boxForToken(tokenAddress)` and verify all source and addresses on X Layer Explorer.
@@ -58,23 +58,20 @@ guards, estimates every transaction with a gas buffer, journals partial progress
 locally for safe resume, and writes the production manifest only after all
 post-deployment invariants pass. Never commit private keys or the local journal.
 
-An existing collection's SVG-only compatibility release uses the separately
-versioned `scripts/deploy-banmaobox-renderer-mainnet.cjs` workflow. Generate and
-review its renderer-only fingerprint with
-`npm run generate:banmaobox:renderer:release`; this intentionally does not
-replace the active deployment manifest. The update script deploys only a new
-`BanmaoBoxRenderer`, then calls `setRenderer` on the existing collection. It
-requires an explicit aggregate OKB fee cap, persists transaction hashes before
-waiting so an interrupted run can resume without rebroadcasting, verifies both
-receipts and runtime bytecode, and requires the `BatchMetadataUpdate` emitted by
-`setRenderer` instead of sending a redundant metadata refresh. Any later
-rollback is a separate, explicitly approved `setRenderer(previousRenderer)`
-transaction.
+The canonical release is the full-renderer architecture only. Earlier split-renderer
+deployments and their manifests are immutable audit history; current source, generated
+ABI, frontend, verifier, and deployment workflow do not support them.
+
+The active mainnet manifest still describes the earlier deployment, so current code and
+the active deployment are intentionally mismatched pending migration. Do not enable the
+current frontend against that manifest. Migration requires a new Renderer, standalone
+Factory (`previousFactory = address(0)`), and BANMAO Box, followed by complete verification
+before the old manifest is archived and the new manifest is promoted.
 
 ```text
 BANMAO: 0x16d91d1615fc55b76d5f92365bd60c069b46ef78
 BanmaoBoxFactory constructor: (BanmaoBoxRenderer, previousFactory)
-BanmaoBoxFactory.createTokenBox(BANMAO) # first deployment only; replacements inherit it
+BanmaoBoxFactory.createTokenBox(BANMAO)
 ```
 
 The frontend reads canonical per-chain addresses from versioned JSON manifests in
@@ -89,7 +86,7 @@ remain archived under `deployments/banmaobox-mainnet-history/` for auditability.
 
 Do not enable the public write interface until the deployed source has been
 independently reviewed and the runtime bytecode, chain ID, Factory registry,
-underlying token, immutable metadata renderer/admin, and active SVG renderer bytecode have been verified.
+underlying token, renderer admin, and architecture-appropriate renderer links and bytecode have been verified.
 
 ### X Layer mainnet release runbook
 
@@ -108,10 +105,9 @@ underlying token, immutable metadata renderer/admin, and active SVG renderer byt
    `npm run deploy:banmaobox:mainnet -- --confirm-mainnet`. The script refuses
    any chain except `196`, never deploys `MockBanmao`, and only targets
    `0x16d91d1615fc55b76d5f92365bd60c069b46ef78`.
-4. To replace an immutable collection with a new metadata release in the future, additionally
+4. To replace the currently deployed old collection with the full-renderer architecture in the future, additionally
    set `BANMAOBOX_REPLACE_CONFIRM=REPLACE_BANMAOBOX_XLAYER_196` and pass
-   `--replace-deployment`. A metadata-only replacement verifies and reuses the
-   unchanged Renderer from the then-current manifest, then deploys a fresh standalone
+   `--replace-deployment`. The migration deploys a new Renderer, then a fresh standalone
    Factory (`previousFactory = address(0)`) and calls `createTokenBox(BANMAO)` for
    a fresh Box. The Factory must be redeployed because its runtime embeds the Box
    creation bytecode. The prior manifest is archived only after the new deployment
@@ -132,7 +128,7 @@ underlying token, immutable metadata renderer/admin, and active SVG renderer byt
    `-- --runtime-only` to skip only the Explorer API phase.
 7. The API phase verifies Renderer with no arguments, Factory with the immutable
    Renderer and zero predecessor address, and the Factory-created Box with production BANMAO,
-   immutable metadata Renderer, and Factory deployer/renderer admin. To retry
+   initial full Renderer, and Factory deployer/renderer admin. To retry
    only this phase, run `npm run publish:banmaobox:explorer`. Confirm all three
    contracts are indexed as verified.
 8. A successfully validated deployment is immediately available to the frontend;

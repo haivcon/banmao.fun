@@ -62,8 +62,8 @@ contract BanmaoBoxFactory is ReentrancyGuard {
 
     /**
      * @notice Changes the full renderer assigned to subsequently created collections.
-     * @dev Existing collections are unchanged. Their SVG renderer can still be
-     *      changed individually through BanmaoBox.setRenderer.
+     * @dev Existing collections are unchanged. Collections may change their
+     *      full renderer individually through BanmaoBox.setRenderer.
      */
     function setDefaultRenderer(address newRenderer) external {
         if (msg.sender != rendererAdmin) revert NotRendererAdmin();
@@ -114,6 +114,7 @@ contract BanmaoBoxFactory is ReentrancyGuard {
     function _validateRenderer(address rendererAddress) private view {
         if (
             rendererAddress.code.length == 0 ||
+            !rendererAddress.supportsERC165() ||
             !rendererAddress.supportsInterface(
                 type(IBanmaoBoxRenderer).interfaceId
             ) ||

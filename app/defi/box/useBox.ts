@@ -234,7 +234,6 @@ export function useBox(
           registered,
           underlying,
           boxRenderer,
-          metadataRenderer,
           factoryRenderer,
           defaultRenderer,
           maxAssets,
@@ -266,11 +265,6 @@ export function useBox(
             address: boxAddress,
             abi: BANMAO_BOX_ABI,
             functionName: "renderer",
-          } as never) as Promise<Address>,
-          publicClient.readContract({
-            address: boxAddress,
-            abi: BANMAO_BOX_ABI,
-            functionName: "metadataRenderer",
           } as never) as Promise<Address>,
           publicClient.readContract({
             address: factoryAddress,
@@ -358,11 +352,8 @@ export function useBox(
         ) {
           throw new Error("Collection constants do not match the production BanmaoBox release");
         }
-        if (
-          !sameAddress(metadataRenderer, expectedRendererAddress) ||
-          !sameAddress(factoryRenderer, expectedRendererAddress)
-        ) {
-          throw new Error("Immutable metadata renderer does not match the manifest");
+        if (!sameAddress(factoryRenderer, expectedRendererAddress)) {
+          throw new Error("Factory renderer does not match the manifest");
         }
         if (!cancelled) setIsDeploymentValidated(true);
       } catch (error) {

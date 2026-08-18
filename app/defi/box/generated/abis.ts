@@ -1186,19 +1186,6 @@ export const BANMAO_BOX_ABI = [
   },
   {
     "inputs": [],
-    "name": "metadataRenderer",
-    "outputs": [
-      {
-        "internalType": "contract IBanmaoBoxRenderer",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
     "name": "name",
     "outputs": [
       {
@@ -1397,7 +1384,7 @@ export const BANMAO_BOX_ABI = [
     "name": "renderer",
     "outputs": [
       {
-        "internalType": "contract IBanmaoBoxSVGRenderer",
+        "internalType": "contract IBanmaoBoxRenderer",
         "name": "",
         "type": "address"
       }

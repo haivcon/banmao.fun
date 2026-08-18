@@ -111,25 +111,69 @@ async function code(provider, address, label) {
 
 async function feeData(provider) {
   const value = await provider.getFeeData();
-  const gasPrice = value.maxFeePerGas || value.gasPrice;
-  if (!gasPrice) fail("RPC did not return a usable gas price");
-  return gasPrice;
+  if (value.maxFeePerGas) {
+    return {
+      maxFeePerGas: value.maxFeePerGas,
+      ...(value.maxPriorityFeePerGas ? { maxPriorityFeePerGas: value.maxPriorityFeePerGas } : {}),
+    };
+  }
+  if (value.gasPrice) return { gasPrice: value.gasPrice };
+  fail("RPC did not return usable explicit fee fields");
 }
 
-async function requireFunds(provider, signer, estimate, label) {
-  const gasPrice = await retryRead(`${label} gas price`, () => feeData(provider));
-  const bufferedGas = estimate.mul(GAS_BUFFER_PERCENT).div(100);
-  const required = bufferedGas.mul(gasPrice);
+function bufferedGas(estimate) {
+  return ethers.BigNumber.from(estimate).mul(GAS_BUFFER_PERCENT).add(99).div(100);
+}
+
+function assertAggregateFeeCap(estimates, gasPrice, maximumFeeOkb, existingMaximumWei = 0) {
+  if (!maximumFeeOkb) fail("BANMAOBOX_MAX_FEE_OKB is required");
+  const cap = ethers.utils.parseEther(maximumFeeOkb);
+  const total = estimates.reduce(
+    (sum, estimate) => sum.add(bufferedGas(estimate).mul(gasPrice)),
+    ethers.BigNumber.from(existingMaximumWei),
+  );
+  if (total.gt(cap)) {
+    fail(`Required release transactions cost up to ${ethers.utils.formatEther(total)} OKB, which exceeds approved aggregate fee cap ${maximumFeeOkb} OKB`);
+  }
+  return total;
+}
+
+async function transactionBudget(provider, signer, estimate, label, journal, key) {
+  const fees = await retryRead(`${label} fee data`, () => feeData(provider));
+  const price = fees.maxFeePerGas || fees.gasPrice;
+  const gasLimit = bufferedGas(estimate);
+  const previous = Object.entries(journal.feeBudget || {})
+    .filter(([entryKey]) => entryKey !== key)
+    .reduce((sum, [, entry]) => sum.add(entry.maximumWei), ethers.BigNumber.from(0));
+  const aggregate = assertAggregateFeeCap(
+    [estimate], price, process.env.BANMAOBOX_MAX_FEE_OKB, previous,
+  );
+  const required = gasLimit.mul(price);
   const balance = await retryRead(`${label} deployer balance`, () => signer.getBalance());
-  console.log(`${label} gas estimate: ${estimate.toString()} (buffered ${bufferedGas.toString()}); max estimated cost ${ethers.utils.formatEther(required)} OKB`);
+  console.log(`${label} gas estimate: ${estimate.toString()} (buffered ${gasLimit.toString()}); aggregate max ${ethers.utils.formatEther(aggregate)} OKB`);
   if (balance.lt(required)) fail(`Insufficient OKB for ${label}: have ${ethers.utils.formatEther(balance)}, need at least ${ethers.utils.formatEther(required)}`);
-  return bufferedGas;
+  journal.feeBudget = {
+    ...(journal.feeBudget || {}),
+    [key]: { gasLimit: gasLimit.toString(), maximumWei: required.toString() },
+  };
+  atomicWrite(JOURNAL, journal);
+  return { gasLimit, fees };
 }
 
 
 async function deployContract(provider, signer, artifact, args, label, journal, key) {
-  if (journal.contracts[key]) {
+  if (journal.contracts[key] || journal.transactions[key]) {
+    if (!journal.contracts[key] || !journal.transactions[key]) {
+      fail(`Journal ${label} must contain both contract address and transaction hash`);
+    }
     const address = ethers.utils.getAddress(journal.contracts[key]);
+    const receipt = await retryRead(
+      `Journal ${label} receipt`,
+      () => provider.waitForTransaction(journal.transactions[key], CONFIRMATIONS),
+    );
+    if (!receipt || receipt.status !== 1 || !same(receipt.contractAddress, address)) {
+      fail(`Journal ${label} deployment receipt is invalid`);
+    }
     const runtimeCode = await retryRead(`Journal ${label} bytecode`, () => code(provider, address, `Journal ${label}`));
     assertArtifactRuntime(runtimeCode, artifact, `Journal ${label}`);
     console.log(`Resuming verified ${label}: ${address}`);
@@ -139,29 +183,26 @@ async function deployContract(provider, signer, artifact, args, label, journal, 
   const request = factory.getDeployTransaction(...args);
   const from = await signer.getAddress();
   const estimate = await retryRead(`${label} gas estimate`, () => provider.estimateGas({ ...request, from }));
-  const gasLimit = await requireFunds(provider, signer, estimate, label);
-  const contract = await factory.deploy(...args, { gasLimit });
+  const { gasLimit, fees } = await transactionBudget(provider, signer, estimate, label, journal, key);
+  const contract = await factory.deploy(...args, { gasLimit, ...fees });
+  journal.contracts[key] = ethers.utils.getAddress(contract.address);
+  journal.transactions[key] = contract.deployTransaction.hash;
+  atomicWrite(JOURNAL, journal);
   console.log(`${label} transaction: ${contract.deployTransaction.hash}`);
   const receipt = await contract.deployTransaction.wait(CONFIRMATIONS);
-  if (receipt.status !== 1) fail(`${label} deployment reverted`);
-  const address = ethers.utils.getAddress(receipt.contractAddress || contract.address);
-  const runtimeCode = await code(provider, address, label);
+  if (receipt.status !== 1 || !same(receipt.contractAddress, journal.contracts[key])) {
+    fail(`${label} deployment receipt is invalid`);
+  }
+  const runtimeCode = await code(provider, journal.contracts[key], label);
   assertArtifactRuntime(runtimeCode, artifact, label);
-  journal.contracts[key] = address;
-  journal.transactions[key] = receipt.transactionHash;
-  atomicWrite(JOURNAL, journal);
-  console.log(`${label}: ${address}`);
-  return new ethers.Contract(address, artifact.abi, signer);
+  console.log(`${label}: ${journal.contracts[key]}`);
+  return new ethers.Contract(journal.contracts[key], artifact.abi, signer);
 }
 
-function journalComplete(journal, replacingDeployment) {
-  const rendererReady = replacingDeployment
-    ? journal.reusedContracts?.renderer &&
-      same(journal.reusedContracts.renderer.address, journal.contracts.renderer)
-    : journal.transactions.renderer;
+function journalComplete(journal) {
   return Boolean(
     journal.contracts.renderer && journal.contracts.factory && journal.contracts.box &&
-    rendererReady && journal.transactions.factory && journal.transactions.createTokenBox
+    journal.transactions.renderer && journal.transactions.factory && journal.transactions.createTokenBox
   );
 }
 
@@ -185,52 +226,20 @@ function journalMatchesReplacementSource(journal, currentManifest) {
   );
 }
 
-async function prepareRenderer({
-  replacingDeployment,
-  currentManifest,
-  provider,
-  signer,
-  artifact,
-  journal,
-  deployContract: deploy = deployContract,
-}) {
-  if (!replacingDeployment) {
-    return deploy(provider, signer, artifact, [], "BanmaoBoxRenderer", journal, "renderer");
-  }
+async function prepareRenderer({ provider, signer, artifact, journal, deployContract: deploy = deployContract }) {
+  return deploy(provider, signer, artifact, [], "BanmaoBoxRenderer", journal, "renderer");
+}
 
-  const address = ethers.utils.getAddress(currentManifest.contracts.renderer);
-  if (journal.contracts.renderer && !same(journal.contracts.renderer, address)) {
-    fail("Existing journal Renderer does not match the current deployed manifest");
+function ensureArchive(file, sourceManifest) {
+  if (!fs.existsSync(file)) {
+    atomicWrite(file, sourceManifest);
+    return "created";
   }
-  if (journal.transactions.renderer) {
-    fail("Replacement journal must not contain a Renderer deployment transaction");
+  const existing = loadJson(file);
+  if (JSON.stringify(existing) !== JSON.stringify(sourceManifest)) {
+    fail(`Previous deployment archive conflicts with source manifest: ${file}`);
   }
-  if (journal.reusedContracts?.renderer) {
-    const reused = journal.reusedContracts.renderer;
-    if (
-      !same(reused.address, address) ||
-      reused.sourceManifest !== "deployments/banmaobox-xlayer-mainnet.json" ||
-      reused.sourceCompilerInputHash !== currentManifest.compilerInputHash ||
-      reused.sourceTransactionHash !== currentManifest.transactions?.renderer
-    ) fail("Existing journal Renderer provenance does not match the current deployed manifest");
-  }
-  const runtimeCode = await retryRead(
-    "Reused BanmaoBoxRenderer bytecode",
-    () => code(provider, address, "Reused BanmaoBoxRenderer"),
-  );
-  assertArtifactRuntime(runtimeCode, artifact, "Reused BanmaoBoxRenderer");
-  journal.contracts.renderer = address;
-  journal.reusedContracts = {
-    ...(journal.reusedContracts || {}),
-    renderer: {
-      address,
-      sourceManifest: "deployments/banmaobox-xlayer-mainnet.json",
-      sourceCompilerInputHash: currentManifest.compilerInputHash,
-      sourceTransactionHash: currentManifest.transactions?.renderer,
-    },
-  };
-  console.log(`Reusing verified BanmaoBoxRenderer from current manifest: ${address}`);
-  return new ethers.Contract(address, artifact.abi, signer);
+  return "existing-equal";
 }
 
 async function validate(provider, artifacts, addresses) {
@@ -251,7 +260,6 @@ async function validate(provider, artifacts, addresses) {
   const registered = await read("Factory isTokenBox", () => factory.isTokenBox(addresses.box));
   const underlying = await read("Box underlyingToken", () => box.underlyingToken());
   const boxRenderer = await read("Box renderer", () => box.renderer());
-  const metadataRenderer = await read("Box metadata renderer", () => box.metadataRenderer());
   const rendererAdmin = await read("Box renderer admin", () => box.rendererAdmin());
   const factoryAdmin = await read("Factory renderer admin", () => factory.rendererAdmin());
   const decimals = await read("Box tokenDecimals", () => box.tokenDecimals());
@@ -266,7 +274,6 @@ async function validate(provider, artifacts, addresses) {
     !same(factoryRenderer, addresses.renderer) ||
     !same(defaultRenderer, addresses.renderer) ||
     !same(previousFactory, addresses.previousFactory) ||
-    !same(metadataRenderer, addresses.renderer) ||
     !same(boxRenderer, addresses.renderer)
   ) fail("Initial renderer invariant failed");
   if (!same(rendererAdmin, addresses.deployer) || !same(factoryAdmin, addresses.deployer)) fail("Renderer admin invariant failed");
@@ -362,21 +369,18 @@ async function main() {
   ) {
     fail(`Existing journal does not match this chain/token/source/predecessor. Inspect or remove ${JOURNAL}`);
   }
-  const completeJournal = journalComplete(journal, replacingDeployment);
+  const completeJournal = journalComplete(journal);
   if (!same(journal.deployer, deployer)) {
     if (!completeJournal) fail(`Existing incomplete journal belongs to a different deployer. Restore that key; do not remove ${JOURNAL}`);
     console.warn(`Current signer differs from original deployer ${journal.deployer}; performing read-only finalization of the complete journal.`);
   }
 
   const renderer = await prepareRenderer({
-    replacingDeployment,
-    currentManifest,
     provider,
     signer,
     artifact: artifacts.renderer,
     journal,
   });
-  if (replacingDeployment) atomicWrite(JOURNAL, journal);
   const factory = await deployContract(
     provider,
     signer,
@@ -386,21 +390,48 @@ async function main() {
     journal,
     "factory",
   );
+  if (journal.contracts.box && !journal.transactions.createTokenBox) {
+    fail("Journal BanmaoBox must contain its createTokenBox transaction hash");
+  }
   let boxAddress = journal.contracts.box;
+  if (!boxAddress && journal.transactions.createTokenBox) {
+    const receipt = await retryRead(
+      "Journal createTokenBox receipt",
+      () => provider.waitForTransaction(journal.transactions.createTokenBox, CONFIRMATIONS),
+    );
+    if (!receipt || receipt.status !== 1) fail("Journal createTokenBox receipt is invalid");
+    boxAddress = ethers.utils.getAddress(await factory.boxForToken(TOKEN));
+    if (boxAddress === ethers.constants.AddressZero) {
+      fail("Journal createTokenBox transaction did not register a BanmaoBox");
+    }
+    journal.contracts.box = boxAddress;
+    atomicWrite(JOURNAL, journal);
+  }
   if (!boxAddress) {
     const existing = await factory.boxForToken(TOKEN);
     if (existing !== ethers.constants.AddressZero) fail(`Factory already maps BANMAO to unjournaled box ${existing}; inspect before continuing`);
     const estimate = await retryRead("createTokenBox(BANMAO) gas estimate", () => factory.estimateGas.createTokenBox(TOKEN));
-    const gasLimit = await requireFunds(provider, signer, estimate, "createTokenBox(BANMAO)");
-    const tx = await factory.createTokenBox(TOKEN, { gasLimit });
+    const { gasLimit, fees } = await transactionBudget(
+      provider, signer, estimate, "createTokenBox(BANMAO)", journal, "createTokenBox",
+    );
+    const tx = await factory.createTokenBox(TOKEN, { gasLimit, ...fees });
+    journal.transactions.createTokenBox = tx.hash;
+    atomicWrite(JOURNAL, journal);
     console.log(`createTokenBox transaction: ${tx.hash}`);
     const receipt = await tx.wait(CONFIRMATIONS);
     if (receipt.status !== 1) fail("createTokenBox reverted");
     boxAddress = ethers.utils.getAddress(await factory.boxForToken(TOKEN));
     if (boxAddress === ethers.constants.AddressZero) fail("Factory did not register a box");
     journal.contracts.box = boxAddress;
-    journal.transactions.createTokenBox = receipt.transactionHash;
     atomicWrite(JOURNAL, journal);
+  } else {
+    const receipt = await retryRead(
+      "Journal createTokenBox receipt",
+      () => provider.waitForTransaction(journal.transactions.createTokenBox, CONFIRMATIONS),
+    );
+    if (!receipt || receipt.status !== 1) fail("Journal createTokenBox receipt is invalid");
+    const registeredBox = ethers.utils.getAddress(await factory.boxForToken(TOKEN));
+    if (!same(registeredBox, boxAddress)) fail("Journal BanmaoBox does not match Factory registry");
   }
   const boxCode = await retryRead("BanmaoBox bytecode", () => code(provider, boxAddress, "BanmaoBox"));
   assertArtifactRuntime(boxCode, artifacts.box, "BanmaoBox");
@@ -427,16 +458,14 @@ async function main() {
       box: boxAddress,
     },
     transactions: journal.transactions,
-    ...(journal.reusedContracts ? { reusedContracts: journal.reusedContracts } : {}),
     ...validated,
   };
   if (replacingDeployment) {
     const previousBox = String(currentManifest.contracts.box).toLowerCase().replace(/^0x/, "");
     const previousHash = String(currentManifest.compilerInputHash || "unknown").replace(/^0x/, "");
     const archive = path.join(DEPLOYMENT_HISTORY, `${previousBox}-${previousHash}.json`);
-    if (fs.existsSync(archive)) fail(`Previous deployment archive already exists: ${archive}`);
-    atomicWrite(archive, currentManifest);
-    console.log(`Archived previous deployment manifest: ${archive}`);
+    const archiveState = ensureArchive(archive, currentManifest);
+    console.log(`${archiveState === "created" ? "Archived" : "Confirmed archived"} previous deployment manifest: ${archive}`);
   }
   atomicWrite(MANIFEST, deployment);
   fs.rmSync(JOURNAL, { force: true });
@@ -452,6 +481,8 @@ if (require.main === module) {
 }
 
 module.exports = {
+  assertAggregateFeeCap,
+  ensureArchive,
   journalComplete,
   journalMatchesReplacementSource,
   prepareRenderer,

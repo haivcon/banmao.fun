@@ -37,7 +37,7 @@ pragma solidity ^0.8.20;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import {BanmaoBoxRenderData, IBanmaoBoxSVGRenderer} from "contracts/banmaobox/BanmaoBoxRenderer.sol";
+import {BanmaoBoxRenderData, IBanmaoBoxRenderer, IBanmaoBoxSVGRenderer} from "contracts/banmaobox/BanmaoBoxRenderer.sol";
 interface IBox {
     function openBox(uint256 tokenId) external;
     function transferFrom(address from, address to, uint256 tokenId) external;
@@ -59,6 +59,61 @@ contract ReplacementSVGRenderer is IBanmaoBoxSVGRenderer {
             ? '<svg xmlns="http://www.w3.org/2000/svg"><text>REPLACEMENT SVG</text></svg>'
             : '<svg xmlns="http://www.w3.org/2000/svg"></svg>';
     }
+}
+contract ReplacementFullRenderer is IBanmaoBoxRenderer {
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+        return interfaceId == type(IERC165).interfaceId ||
+            interfaceId == type(IBanmaoBoxRenderer).interfaceId ||
+            interfaceId == type(IBanmaoBoxSVGRenderer).interfaceId;
+    }
+    function tokenURI(uint256 tokenId, BanmaoBoxRenderData calldata)
+        external pure returns (string memory)
+    { return tokenId == 1 ? "replacement-token-uri" : "other-token-uri"; }
+    function renderSVG(uint256 tokenId, BanmaoBoxRenderData calldata)
+        external pure returns (string memory)
+    {
+        return tokenId == 1
+            ? '<svg xmlns="http://www.w3.org/2000/svg"><text>REPLACEMENT FULL SVG</text></svg>'
+            : '<svg xmlns="http://www.w3.org/2000/svg"></svg>';
+    }
+    function renderAttributes(BanmaoBoxRenderData calldata)
+        external pure returns (string memory)
+    { return '[{"trait_type":"Replacement","value":"Full"}]'; }
+}
+contract RevertingFullRenderer is IBanmaoBoxRenderer {
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+        return interfaceId == type(IERC165).interfaceId ||
+            interfaceId == type(IBanmaoBoxRenderer).interfaceId ||
+            interfaceId == type(IBanmaoBoxSVGRenderer).interfaceId;
+    }
+    function tokenURI(uint256, BanmaoBoxRenderData calldata) external pure returns (string memory) { revert("LIE"); }
+    function renderSVG(uint256, BanmaoBoxRenderData calldata) external pure returns (string memory) { revert("LIE"); }
+    function renderAttributes(BanmaoBoxRenderData calldata) external pure returns (string memory) { revert("LIE"); }
+}
+contract DerivedOnlyRenderer is IBanmaoBoxRenderer {
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+        return interfaceId == type(IERC165).interfaceId ||
+            interfaceId == type(IBanmaoBoxRenderer).interfaceId;
+    }
+    function tokenURI(uint256, BanmaoBoxRenderData calldata) external pure returns (string memory) { return "derived-only"; }
+    function renderSVG(uint256, BanmaoBoxRenderData calldata) external pure returns (string memory) { return "derived-only"; }
+    function renderAttributes(BanmaoBoxRenderData calldata) external pure returns (string memory) { return "[]"; }
+}
+contract RevertingSVGClaimRenderer is IBanmaoBoxRenderer {
+    function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
+        if (interfaceId == type(IBanmaoBoxSVGRenderer).interfaceId) revert("SVG_QUERY_REVERTS");
+        return interfaceId == type(IERC165).interfaceId ||
+            interfaceId == type(IBanmaoBoxRenderer).interfaceId;
+    }
+    function tokenURI(uint256, BanmaoBoxRenderData calldata) external pure returns (string memory) { return "reverting-svg-claim"; }
+    function renderSVG(uint256, BanmaoBoxRenderData calldata) external pure returns (string memory) { return "reverting-svg-claim"; }
+    function renderAttributes(BanmaoBoxRenderData calldata) external pure returns (string memory) { return "[]"; }
+}
+contract InvalidFullRenderer is IBanmaoBoxRenderer {
+    function supportsInterface(bytes4) external pure returns (bool) { return true; }
+    function tokenURI(uint256, BanmaoBoxRenderData calldata) external pure returns (string memory) { return "invalid"; }
+    function renderSVG(uint256, BanmaoBoxRenderData calldata) external pure returns (string memory) { return "invalid"; }
+    function renderAttributes(BanmaoBoxRenderData calldata) external pure returns (string memory) { return "invalid"; }
 }
 contract ReturnBombToken is ERC20 {
     address public box;
@@ -215,25 +270,26 @@ describe("BanmaoBox adversarial release security", () => {
     await provider.send("evm_mine", []);
   }
 
-  test("lets only the immutable renderer admin replace SVG while metadata stays fixed", async () => {
+  test("lets only the immutable renderer admin replace the full metadata renderer", async () => {
     const ownerAddress = await owner.getAddress();
     const other = provider.getSigner(1);
-    const replacement = await deploy("ReplacementSVGRenderer", owner);
+    const replacement = await deploy("ReplacementFullRenderer", owner);
+    const svgOnly = await deploy("ReplacementSVGRenderer", owner);
+    const derivedOnly = await deploy("DerivedOnlyRenderer", owner);
+    const revertingSvgClaim = await deploy("RevertingSVGClaimRenderer", owner);
+    const invalidFull = await deploy("InvalidFullRenderer", owner);
     await primary.approve(box.address, ethers.constants.MaxUint256);
     await box.createBox(ownerAddress, ethers.utils.parseEther("10"), 3_600);
 
-    const decodeMetadata = async () => {
-      const uri = await box.tokenURI(1);
-      return JSON.parse(Buffer.from(uri.split(",")[1], "base64").toString("utf8"));
-    };
-    const before = await decodeMetadata();
-
     await expect(box.connect(other).setRenderer(replacement.address)).rejects.toThrow();
     await expect(box.setRenderer(otherAddress)).rejects.toThrow();
+    await expect(box.setRenderer(svgOnly.address)).rejects.toThrow();
+    await expect(box.setRenderer(derivedOnly.address)).rejects.toThrow();
+    await expect(box.setRenderer(revertingSvgClaim.address)).rejects.toThrow();
+    await expect(box.setRenderer(invalidFull.address)).rejects.toThrow();
 
     const receipt = await (await box.setRenderer(replacement.address)).wait();
     expect(await box.renderer()).toBe(replacement.address);
-    expect(await box.metadataRenderer()).toBe(renderer.address);
     expect(await box.rendererAdmin()).toBe(ownerAddress);
     expect(receipt.events?.find((event: { event?: string }) =>
       event.event === "RendererUpdated")?.args?.newRenderer).toBe(replacement.address);
@@ -242,14 +298,9 @@ describe("BanmaoBox adversarial release security", () => {
     expect(refresh?.args?._fromTokenId.toString()).toBe("1");
     expect(refresh?.args?._toTokenId.toString()).toBe(ethers.constants.MaxUint256.toString());
 
-    const after = await decodeMetadata();
-    const replacementSvg = Buffer.from(after.image.split(",")[1], "base64").toString("utf8");
-    expect(replacementSvg).toContain("REPLACEMENT SVG");
-    expect(await box.renderSVG(1)).toBe(replacementSvg);
-    expect(after).not.toHaveProperty("animation_url");
-    for (const field of ["name", "description", "external_url", "background_color", "attributes", "properties"]) {
-      expect(after[field]).toEqual(before[field]);
-    }
+    expect(await box.tokenURI(1)).toBe("replacement-token-uri");
+    expect(await box.renderSVG(1)).toContain("REPLACEMENT FULL SVG");
+    expect(await box.renderAttributes(1)).toBe('[{"trait_type":"Replacement","value":"Full"}]');
   });
 
   test("makes the Factory deployer admin of collections created by other callers", async () => {
@@ -271,10 +322,10 @@ describe("BanmaoBox adversarial release security", () => {
     expect(await factory.previousFactory()).toBe(ethers.constants.AddressZero);
     expect(await deployedBox.rendererAdmin()).toBe(await owner.getAddress());
     expect(await deployedBox.renderer()).toBe(renderer.address);
-    expect(await deployedBox.metadataRenderer()).toBe(renderer.address);
   });
 
   test("lets only the Factory renderer admin update the full default renderer", async () => {
+    const ownerAddress = await owner.getAddress();
     const factory = await deploy("BanmaoBoxFactory", owner, [
       renderer.address,
       ethers.constants.AddressZero,
@@ -286,7 +337,18 @@ describe("BanmaoBox adversarial release security", () => {
     await expect(factory.setDefaultRenderer(ethers.constants.AddressZero)).rejects.toThrow();
     await expect(factory.setDefaultRenderer(otherAddress)).rejects.toThrow();
     const svgOnly = await deploy("ReplacementSVGRenderer", owner);
+    const derivedOnly = await deploy("DerivedOnlyRenderer", owner);
+    const revertingSvgClaim = await deploy("RevertingSVGClaimRenderer", owner);
+    const invalidFull = await deploy("InvalidFullRenderer", owner);
     await expect(factory.setDefaultRenderer(svgOnly.address)).rejects.toThrow();
+    await expect(factory.setDefaultRenderer(derivedOnly.address)).rejects.toThrow();
+    await expect(factory.setDefaultRenderer(revertingSvgClaim.address)).rejects.toThrow();
+    await expect(factory.setDefaultRenderer(invalidFull.address)).rejects.toThrow();
+
+    await expect(deploy("BanmaoBox", owner, [primary.address, derivedOnly.address, ownerAddress])).rejects.toThrow();
+    await expect(deploy("BanmaoBox", owner, [primary.address, revertingSvgClaim.address, ownerAddress])).rejects.toThrow();
+    await expect(deploy("BanmaoBoxFactory", owner, [derivedOnly.address, ethers.constants.AddressZero])).rejects.toThrow();
+    await expect(deploy("BanmaoBoxFactory", owner, [revertingSvgClaim.address, ethers.constants.AddressZero])).rejects.toThrow();
 
     const receipt = await (await factory.setDefaultRenderer(replacement.address)).wait();
     expect(await factory.renderer()).toBe(renderer.address);
@@ -305,7 +367,6 @@ describe("BanmaoBox adversarial release security", () => {
       owner,
     );
     expect(await deployedBox.renderer()).toBe(replacement.address);
-    expect(await deployedBox.metadataRenderer()).toBe(replacement.address);
     expect(await deployedBox.rendererAdmin()).toBe(await owner.getAddress());
   });
 
@@ -762,9 +823,11 @@ describe("BanmaoBox adversarial release security", () => {
   test("decodes renderer JSON, SVG and attributes for locked, ready, basket and maximum-duration states", async () => {
     const latest = await provider.getBlock("latest");
     const maximumDuration = 36_500 * 86_400;
-    const timestamps = ethers.BigNumber.from(latest.timestamp)
+    const createdAt = latest.timestamp;
+    const unlockTime = createdAt + maximumDuration;
+    const timestamps = ethers.BigNumber.from(createdAt)
       .shl(64)
-      .or(ethers.BigNumber.from(latest.timestamp + maximumDuration));
+      .or(ethers.BigNumber.from(unlockTime));
     const addresses = [primary.address, ...[1, 2, 3, 4].map((value) =>
       ethers.utils.getAddress(`0x${value.toString(16).padStart(40, String(value))}`),
     )];
@@ -813,7 +876,7 @@ describe("BanmaoBox adversarial release security", () => {
     expect(lockedSvg).not.toMatch(/<(?:title|desc)\b/);
     expect(lockedSvg).toContain('<g transform="scale(0.75)"><rect width="800" height="800"');
     expect(lockedSvg).toContain('</g></svg>');
-    expect(lockedSvg).toContain("TIME-SEALED");
+    expect(lockedSvg).toContain("SEALED TREASURY  /  SEALED");
     expect(lockedSvg).toContain("ASSET PORTFOLIO / 5");
     expect(lockedSvg).toContain("ASSET LEDGER");
     expect(lockedSvg).toContain('id="shine"');
@@ -850,7 +913,7 @@ describe("BanmaoBox adversarial release security", () => {
     expect(lockedSvg).not.toContain("TOTAL VALUE");
     expect(lockedSvg).not.toContain("OWNER");
     expect(attributes).toEqual(expect.arrayContaining([
-      expect.objectContaining({ trait_type: "Status", value: "Locked" }),
+      expect.objectContaining({ trait_type: "Status", value: "Sealed" }),
       expect.objectContaining({ trait_type: "Token Symbol", value: "banmao" }),
       expect.objectContaining({ trait_type: "Asset Count", value: 5 }),
       expect.objectContaining({ trait_type: "Minting Wallet", value: mintingWallet.toLowerCase() }),
@@ -871,7 +934,7 @@ describe("BanmaoBox adversarial release security", () => {
     expect(metadata.properties).toEqual({
       type: "banmaobox",
       metadataMode: "fully-onchain",
-      renderer: "solidity-svg-split-contract",
+      renderer: "solidity-full-renderer",
       chain: "X Layer",
       chainId: (await provider.getNetwork()).chainId,
     });
@@ -900,23 +963,27 @@ describe("BanmaoBox adversarial release security", () => {
       rmSync(fixtureDir, { recursive: true, force: true });
     }
 
-    await provider.send("evm_increaseTime", [maximumDuration + 1]);
+    const lockedAttributes = await renderer.renderAttributes(renderData);
+    const lockedTokenUri = await renderer.tokenURI(ethers.constants.MaxUint256, renderData);
+    await provider.send("evm_setTime", [unlockTime * 1_000]);
     await provider.send("evm_mine", []);
-    const readySvg = await renderer.renderSVG(77, renderData);
-    const readyAttributes = JSON.parse(await renderer.renderAttributes(renderData));
-    expect(readySvg).toContain("READY TO OPEN");
-    expect(readySvg).not.toContain('values="0 0;0 -3;0 0"');
-    expect(readySvg).not.toContain('M216 325v-15');
-    expect(readyAttributes).toEqual(expect.arrayContaining([
-      expect.objectContaining({ trait_type: "Status", value: "Ready to open" }),
-    ]));
+    expect((await provider.getBlock("latest")).timestamp).toBe(unlockTime);
+    expect(await renderer.renderSVG(ethers.constants.MaxUint256, renderData)).toBe(lockedSvg);
+    expect(await renderer.renderAttributes(renderData)).toBe(lockedAttributes);
+    expect(await renderer.tokenURI(ethers.constants.MaxUint256, renderData)).toBe(lockedTokenUri);
 
-    const boundary = (await provider.getBlock("latest")).timestamp;
-    const boundaryData = {
-      ...renderData,
-      timestamps: ethers.BigNumber.from(boundary - 1).shl(64).or(boundary),
-    };
-    expect(await renderer.renderSVG(78, boundaryData)).toContain("READY");
+    await provider.send("evm_increaseTime", [1]);
+    await provider.send("evm_mine", []);
+    expect(await renderer.renderSVG(ethers.constants.MaxUint256, renderData)).toBe(lockedSvg);
+    expect(await renderer.renderAttributes(renderData)).toBe(lockedAttributes);
+    expect(await renderer.tokenURI(ethers.constants.MaxUint256, renderData)).toBe(lockedTokenUri);
+    expect(lockedSvg).toContain("SEALED");
+    expect(lockedSvg).toContain("UNLOCK TIME");
+    expect(attributes).toEqual(expect.arrayContaining([
+      expect.objectContaining({ trait_type: "Created Time", value: Number(createdAt) }),
+      expect.objectContaining({ trait_type: "Unlock Time", value: Number(unlockTime) }),
+      expect.objectContaining({ trait_type: "Lock Duration Seconds", value: maximumDuration }),
+    ]));
   });
 
   test("keeps adversarial renderer data valid for XML and JSON and rejects unsafe numeric fields", async () => {
@@ -1019,6 +1086,37 @@ describe("BanmaoBox adversarial release security", () => {
       expect.objectContaining({ trait_type: "Minting Wallet", value: recipient.toLowerCase() }),
     ]));
     await expect(box.tokenURI(999)).rejects.toThrow();
+  });
+
+  test("allows renderer metadata failure without granting custody authority", async () => {
+    const ownerAddress = await owner.getAddress();
+    const amount = ethers.utils.parseEther("5");
+    await primary.approve(box.address, amount);
+    await box.createBox(ownerAddress, amount, 3_600);
+    const malicious = await deploy("RevertingFullRenderer", owner);
+    await box.setRenderer(malicious.address);
+
+    const detailsBefore = await box.boxDetails(1);
+    await expect(box.tokenURI(1)).rejects.toThrow();
+    await expect(box.renderSVG(1)).rejects.toThrow();
+    await expect(box.renderAttributes(1)).rejects.toThrow();
+    expect(await box.ownerOf(1)).toBe(ownerAddress);
+    expect(await box.boxDetails(1)).toEqual(detailsBefore);
+    expect(await box.totalTokensLocked()).toEqual(amount);
+    expect(await box.totalLockedByToken(primary.address)).toEqual(amount);
+    expect(await primary.balanceOf(box.address)).toEqual(amount);
+    await expect(box.openBox(1)).rejects.toThrow();
+    expect(await primary.balanceOf(box.address)).toEqual(amount);
+
+    await provider.send("evm_increaseTime", [3_601]);
+    await provider.send("evm_mine", []);
+    const ownerBalanceBefore = await primary.balanceOf(ownerAddress);
+    await box.openBox(1);
+    expect(await primary.balanceOf(ownerAddress)).toEqual(ownerBalanceBefore.add(amount));
+    expect(await primary.balanceOf(box.address)).toEqual(ethers.constants.Zero);
+    expect(await box.totalTokensLocked()).toEqual(ethers.constants.Zero);
+    expect(await box.totalLockedByToken(primary.address)).toEqual(ethers.constants.Zero);
+    await expect(box.ownerOf(1)).rejects.toThrow();
   });
 
   test("snapshots every asset metadata field and updates the rendered ledger after partial release", async () => {
