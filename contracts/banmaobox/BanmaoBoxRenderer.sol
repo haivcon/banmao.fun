@@ -73,12 +73,12 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         );
     }
 
-    function renderSVG(uint256 tokenId, BanmaoBoxRenderData calldata data) external view override returns (string memory) {
+    function renderSVG(uint256 tokenId, BanmaoBoxRenderData calldata data) external pure override returns (string memory) {
         _validate(data);
         return _renderSVG(tokenId, data);
     }
 
-    function renderAttributes(BanmaoBoxRenderData calldata data) external view override returns (string memory) {
+    function renderAttributes(BanmaoBoxRenderData calldata data) external pure override returns (string memory) {
         _validate(data);
         return _renderAttributes(data);
     }
@@ -97,7 +97,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         }
     }
 
-    function _renderSVG(uint256 tokenId, BanmaoBoxRenderData calldata data) internal view returns (string memory) {
+    function _renderSVG(uint256 tokenId, BanmaoBoxRenderData calldata data) internal pure returns (string memory) {
         string memory gold = _tierGold(_tier(data.amount, data.tokenDecimals));
         bytes memory hero = abi.encodePacked(
             _header(tokenId, gold),

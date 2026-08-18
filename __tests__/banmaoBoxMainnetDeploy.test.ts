@@ -11,9 +11,9 @@ const {
   replacementSource,
 } = require("../scripts/deploy-banmaobox-mainnet.cjs");
 
-const RENDERER = "0xE880e364f4a71be047cF49767313381715d57db0";
-const FACTORY = "0xA6bC56E67253E13554D629579A3c018871D21F9E";
-const BOX = "0x95c83831a283cDC41cd552374aD1279b2375a4ee";
+const RENDERER = "0xE19c875dBfa80171819E443e46Fc7839a9290769";
+const FACTORY = "0x55E0c4eDF6c542e7FeD04a6f0c914d8F24bFCCf8";
+const BOX = "0x19d3b0C4f1276D37772269f5Ce01179Db2D70559";
 
 function rendererArtifact(runtime = "6001600055") {
   return { abi: [], evm: { deployedBytecode: { object: runtime, immutableReferences: {} } } };
@@ -107,7 +107,7 @@ describe("BanmaoBox mainnet replacement deployment", () => {
     }
   });
 
-  test("enforces a cumulative fee cap across resumed release transactions", () => {
+  test("enforces cumulative fee and live gas-price caps", () => {
     const estimates = [50, 75, 100];
     const gasPrice = ethers.BigNumber.from(2);
     expect(() => assertAggregateFeeCap(estimates, gasPrice, "0.000000000000000563"))
@@ -116,15 +116,25 @@ describe("BanmaoBox mainnet replacement deployment", () => {
       .toEqual(ethers.BigNumber.from(814));
     expect(() => assertAggregateFeeCap(estimates, gasPrice, ""))
       .toThrow("BANMAOBOX_MAX_FEE_OKB");
+
+    const source = readFileSync("scripts/deploy-banmaobox-mainnet.cjs", "utf8");
+    expect(source).toContain('if (!maximumGasPriceGwei) fail("BANMAOBOX_MAX_GAS_GWEI is required")');
+    expect(source).toContain("if (price.gt(maximumGasPrice))");
+    expect(source).toContain("exceeds approved cap");
   });
 
   test("tracks only immutable release provenance while journals stay ignored", () => {
     const gitignore = readFileSync(".gitignore", "utf8");
-    const hash = "9de8225e702132fedede336deb636ffa87247dc03543ea39107bf6760d096c55";
+    const hashes = [
+      "9de8225e702132fedede336deb636ffa87247dc03543ea39107bf6760d096c55",
+      "65287404e198cceb2b9dc76cb7eacb6b263d38120e147614470598e4fc0e861f",
+    ];
     expect(gitignore).toContain("!/deployments/banmaobox-releases/");
-    expect(gitignore).toContain(`!/deployments/banmaobox-releases/${hash}.json`);
+    for (const hash of hashes) {
+      expect(gitignore).toContain(`!/deployments/banmaobox-releases/${hash}.json`);
+      const release = require(`../deployments/banmaobox-releases/${hash}.json`);
+      expect(release.compilerInputHash).toBe(`0x${hash}`);
+    }
     expect(gitignore).not.toContain("!/deployments/.banmaobox-mainnet-journal.json");
-    const release = require(`../deployments/banmaobox-releases/${hash}.json`);
-    expect(release.compilerInputHash).toBe(`0x${hash}`);
   });
 });

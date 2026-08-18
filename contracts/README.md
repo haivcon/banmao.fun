@@ -62,11 +62,9 @@ The canonical release is the full-renderer architecture only. Earlier split-rend
 deployments and their manifests are immutable audit history; current source, generated
 ABI, frontend, verifier, and deployment workflow do not support them.
 
-The active mainnet manifest still describes the earlier deployment, so current code and
-the active deployment are intentionally mismatched pending migration. Do not enable the
-current frontend against that manifest. Migration requires a new Renderer, standalone
-Factory (`previousFactory = address(0)`), and BANMAO Box, followed by complete verification
-before the old manifest is archived and the new manifest is promoted.
+The active mainnet manifest describes the verified full-renderer deployment: a standalone
+Factory (`previousFactory = address(0)`), its Renderer, and the canonical BANMAO Box. The
+previous deployment remains archived for auditability.
 
 ```text
 BANMAO: 0x16d91d1615fc55b76d5f92365bd60c069b46ef78
@@ -78,11 +76,11 @@ The frontend reads canonical per-chain addresses from versioned JSON manifests i
 `deployments/`. Per-chain `NEXT_PUBLIC_BANMAO_*` variables are optional local
 overrides only; never use an unscoped address fallback across chains.
 
-The active X Layer mainnet manifest points to the original fully-on-chain
-collection: Renderer `0xE880e364f4a71be047cF49767313381715d57db0`, Factory
-`0xA6bC56E67253E13554D629579A3c018871D21F9E`, and BanmaoBox
-`0x95c83831a283cDC41cd552374aD1279b2375a4ee`. Replacement deployment records
-remain archived under `deployments/banmaobox-mainnet-history/` for auditability.
+The active X Layer mainnet manifest points to the verified full-renderer collection:
+Renderer `0xE19c875dBfa80171819E443e46Fc7839a9290769`, standalone Factory
+`0x55E0c4eDF6c542e7FeD04a6f0c914d8F24bFCCf8`, and BanmaoBox
+`0x19d3b0C4f1276D37772269f5Ce01179Db2D70559`. Previous deployment records remain
+archived under `deployments/banmaobox-mainnet-history/` for auditability.
 
 Do not enable the public write interface until the deployed source has been
 independently reviewed and the runtime bytecode, chain ID, Factory registry,
@@ -105,7 +103,7 @@ underlying token, renderer admin, and architecture-appropriate renderer links an
    `npm run deploy:banmaobox:mainnet -- --confirm-mainnet`. The script refuses
    any chain except `196`, never deploys `MockBanmao`, and only targets
    `0x16d91d1615fc55b76d5f92365bd60c069b46ef78`.
-4. To replace the currently deployed old collection with the full-renderer architecture in the future, additionally
+4. To replace the currently deployed collection with another full-renderer release in the future, additionally
    set `BANMAOBOX_REPLACE_CONFIRM=REPLACE_BANMAOBOX_XLAYER_196` and pass
    `--replace-deployment`. The migration deploys a new Renderer, then a fresh standalone
    Factory (`previousFactory = address(0)`) and calls `createTokenBox(BANMAO)` for
