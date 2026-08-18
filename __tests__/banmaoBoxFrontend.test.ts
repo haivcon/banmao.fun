@@ -71,6 +71,7 @@ describe("BanmaoBox transaction UX contract", () => {
       "collectionReady", "tokenAddressLabel", "collectionAddressLabel", "factoryAddressLabel",
       "rendererAddressLabel", "creatorTransactionLabel", "networkLabel", "chainIdLabel",
       "copyTokenAddress", "copyCollectionAddress", "copyFactoryAddress", "copyRendererAddress",
+      "deploymentWarning",
     ] as const;
     for (const locale of BOX_LANGUAGES) {
       const copy = BOX_COPY[locale];

@@ -221,7 +221,7 @@ function journalComplete(journal) {
 
 function replacementSource(currentManifest) {
   return {
-    renderer: ethers.utils.getAddress(currentManifest.contracts.renderer),
+    renderer: ethers.utils.getAddress(currentManifest.contracts.boxRenderer),
     factory: ethers.utils.getAddress(currentManifest.contracts.factory),
     box: ethers.utils.getAddress(currentManifest.contracts.box),
     compilerInputHash: currentManifest.compilerInputHash,
@@ -243,7 +243,7 @@ function journalMatchesActiveManifest(journal, currentManifest) {
   if (!journalComplete(journal)) return false;
   return (
     journal.compilerInputHash === currentManifest.compilerInputHash &&
-    same(journal.contracts.renderer, currentManifest.contracts.renderer) &&
+    same(journal.contracts.renderer, currentManifest.contracts.boxRenderer) &&
     same(journal.contracts.factory, currentManifest.contracts.factory) &&
     same(journal.contracts.box, currentManifest.contracts.box) &&
     journal.transactions.factory === currentManifest.transactions?.factory &&
@@ -442,7 +442,7 @@ async function main() {
     artifact: artifacts.renderer,
     journal,
     reuse: replacingDeployment,
-    rendererAddress: currentManifest.contracts.renderer,
+    rendererAddress: currentManifest.contracts.boxRenderer,
   });
   const factory = await deployContract(
     provider,
@@ -515,13 +515,22 @@ async function main() {
     confirmations: CONFIRMATIONS, deployer: journal.deployer,
     contracts: {
       token: TOKEN,
-      renderer: renderer.address,
+      factoryRenderer: renderer.address,
+      defaultRenderer: renderer.address,
+      boxRenderer: renderer.address,
       factory: factory.address,
       previousFactory,
       box: boxAddress,
     },
     transactions: journal.transactions,
     ...validated,
+    runtime: {
+      ...validated.runtime,
+      factoryRenderer: validated.runtime.renderer,
+      defaultRenderer: validated.runtime.renderer,
+      boxRenderer: validated.runtime.renderer,
+      renderer: undefined,
+    },
   };
   if (replacingDeployment && !activeManifestAlreadyFinalized) {
     const previousBox = String(currentManifest.contracts.box).toLowerCase().replace(/^0x/, "");

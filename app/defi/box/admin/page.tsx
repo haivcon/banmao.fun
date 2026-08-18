@@ -235,7 +235,7 @@ export default function BoxOperationsPage() {
         box: created.address,
         txHash: created.txHash,
         factory: config.factoryAddress,
-        renderer: config.rendererAddress,
+        renderer: config.defaultRendererAddress,
       });
       setMessage(`Collection ready: ${created.address}`);
       if (created.txHash) {
@@ -255,7 +255,9 @@ export default function BoxOperationsPage() {
       ["Underlying", config.tokenAddress],
       ["BanmaoBox", config.boxAddress],
       ["Factory", config.factoryAddress],
-      ["Renderer", config.rendererAddress],
+      ["Factory provenance Renderer", config.factoryRendererAddress],
+      ["Factory default Renderer", config.defaultRendererAddress],
+      ["Canonical Box Renderer", config.boxRendererAddress],
     ] as const,
     healthy =
       box.isDeployed && box.isDeploymentValidated && !box.deploymentError;
@@ -351,8 +353,8 @@ export default function BoxOperationsPage() {
               {config.factoryAddress ? <CheckCircle2 /> : <TriangleAlert />}{" "}
               Factory registry
             </span>
-            <span className={config.rendererAddress ? "pass" : "fail"}>
-              {config.rendererAddress ? <CheckCircle2 /> : <TriangleAlert />}{" "}
+            <span className={config.factoryRendererAddress ? "pass" : "fail"}>
+              {config.factoryRendererAddress ? <CheckCircle2 /> : <TriangleAlert />}{" "}
               Immutable renderer
             </span>
           </div>

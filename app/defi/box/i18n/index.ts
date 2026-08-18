@@ -152,6 +152,7 @@ export type BoxCopy = {
   stepConfirmed: string;
   viewExplorer: string;
   deploymentFailed: string;
+  deploymentWarning: string;
   unavailable: string;
   tabCreate: string;
   tabMyBoxes: string;
@@ -351,6 +352,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     stepConfirmed: "Confirmed",
     viewExplorer: "View on explorer",
     deploymentFailed: "Deployment validation failed",
+    deploymentWarning: "Deployment provenance warning (read-only gallery remains available)",
     unavailable: "Unavailable",
     tabCreate: "Create",
     tabMyBoxes: "My Boxes",
@@ -547,6 +549,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     stepConfirmed: "Đã xác nhận",
     viewExplorer: "Xem trên explorer",
     deploymentFailed: "Xác thực triển khai thất bại",
+    deploymentWarning: "Cảnh báo nguồn gốc triển khai (thư viện chỉ đọc vẫn khả dụng)",
     unavailable: "Không khả dụng",
     tabCreate: "Tạo",
     tabMyBoxes: "Hộp của tôi",
@@ -738,6 +741,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     stepConfirmed: "已确认",
     viewExplorer: "在浏览器中查看",
     deploymentFailed: "部署验证失败",
+    deploymentWarning: "部署来源警告（只读画廊仍可用）",
     unavailable: "不可用",
     tabCreate: "创建",
     tabMyBoxes: "我的盒子",
@@ -933,6 +937,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     stepConfirmed: "확인됨",
     viewExplorer: "탐색기에서 보기",
     deploymentFailed: "배포 검증 실패",
+    deploymentWarning: "배포 출처 경고 (읽기 전용 갤러리는 계속 사용 가능)",
     unavailable: "사용 불가",
     tabCreate: "만들기",
     tabMyBoxes: "내 박스",
@@ -1128,6 +1133,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     stepConfirmed: "Подтверждено",
     viewExplorer: "Посмотреть в обозревателе",
     deploymentFailed: "Проверка развёртывания не пройдена",
+    deploymentWarning: "Предупреждение о происхождении развёртывания (галерея доступна только для чтения)",
     unavailable: "Недоступно",
     tabCreate: "Создать",
     tabMyBoxes: "Мои боксы",
@@ -1326,6 +1332,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     stepConfirmed: "Dikonfirmasi",
     viewExplorer: "Lihat di explorer",
     deploymentFailed: "Validasi deployment gagal",
+    deploymentWarning: "Peringatan asal deployment (galeri hanya-baca tetap tersedia)",
     unavailable: "Tidak tersedia",
     tabCreate: "Buat",
     tabMyBoxes: "Kotak Saya",

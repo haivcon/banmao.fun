@@ -17,7 +17,7 @@ function encodeConstructorArguments(types, values) {
   return types.length ? ethers.utils.defaultAbiCoder.encode(types, values).slice(2) : "";
 }
 function buildTargets(manifest, release) {
-  const renderer = ethers.utils.getAddress(manifest.contracts.renderer);
+  const factoryRenderer = ethers.utils.getAddress(manifest.contracts.factoryRenderer);
   const factory = ethers.utils.getAddress(manifest.contracts.factory);
   const token = ethers.utils.getAddress(manifest.contracts.token);
   const box = ethers.utils.getAddress(manifest.contracts.box);
@@ -27,9 +27,9 @@ function buildTargets(manifest, release) {
   );
   const shared = { sourceCode: release.standardInput, compilerVersion: compilerVersion(release.compiler) };
   return [
-    { key: "renderer", contractAddress: renderer, contractName: "contracts/banmaobox/BanmaoBoxRenderer.sol:BanmaoBoxRenderer", constructorArguments: "", ...shared },
-    { key: "factory", contractAddress: factory, contractName: "contracts/banmaobox/BanmaoBoxFactory.sol:BanmaoBoxFactory", constructorArguments: encodeConstructorArguments(["address", "address"], [renderer, previousFactory]), ...shared },
-    { key: "box", contractAddress: box, contractName: "contracts/banmaobox/BanmaoBox.sol:BanmaoBox", constructorArguments: encodeConstructorArguments(["address", "address", "address"], [token, renderer, rendererAdmin]), ...shared },
+    { key: "renderer", contractAddress: factoryRenderer, contractName: "contracts/banmaobox/BanmaoBoxRenderer.sol:BanmaoBoxRenderer", constructorArguments: "", ...shared },
+    { key: "factory", contractAddress: factory, contractName: "contracts/banmaobox/BanmaoBoxFactory.sol:BanmaoBoxFactory", constructorArguments: encodeConstructorArguments(["address", "address"], [factoryRenderer, previousFactory]), ...shared },
+    { key: "box", contractAddress: box, contractName: "contracts/banmaobox/BanmaoBox.sol:BanmaoBox", constructorArguments: encodeConstructorArguments(["address", "address", "address"], [token, factoryRenderer, rendererAdmin]), ...shared },
   ];
 }
 function parsePollStatus(data) {

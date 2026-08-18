@@ -35,7 +35,7 @@ This repository contains implemented product surfaces and deployment configurati
 - Airdrop preparation, CSV processing, batching, progress tracking, and analytics
 - BanmaoBox UI for transferable, time-locked ERC-20 gift boxes
 
-BanmaoBox is exposed only on X Layer mainnet. The versioned [mainnet manifest](deployments/banmaobox-xlayer-mainnet.json) is the frontend source of truth for chain `196`; the UI enables write actions only after validating its deployment addresses and runtime fingerprints. See [contracts/README.md](contracts/README.md) for contract behavior and security assumptions.
+BanmaoBox is exposed only on X Layer mainnet. The versioned [mainnet manifest](deployments/banmaobox-xlayer-mainnet.json) is the frontend source of truth for chain `196`; `factoryRenderer` records immutable Factory/Box constructor provenance, `defaultRenderer` records the renderer for future collections, and `boxRenderer` records the canonical Box's current active renderer. The UI enables write actions only after validating deployment addresses and runtime fingerprints; renderer provenance warnings do not hide safe read-only NFT discovery. See [contracts/README.md](contracts/README.md) for contract behavior and security assumptions.
 
 ### GameFi
 

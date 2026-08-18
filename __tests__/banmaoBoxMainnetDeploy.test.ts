@@ -92,7 +92,7 @@ describe("BanmaoBox mainnet replacement deployment", () => {
   test("binds replacement resume to the exact source manifest deployment", () => {
     const currentManifest = {
       compilerInputHash: "0xold-release",
-      contracts: { renderer: RENDERER, factory: FACTORY, box: BOX },
+      contracts: { boxRenderer: RENDERER, factory: FACTORY, box: BOX },
     };
     const journal = { replacementSource: replacementSource(currentManifest) };
     expect(journalMatchesReplacementSource(journal, currentManifest)).toBe(true);
@@ -112,7 +112,7 @@ describe("BanmaoBox mainnet replacement deployment", () => {
     };
     const manifest = {
       compilerInputHash: "0xnew-release",
-      contracts: { renderer: RENDERER, factory: FACTORY, box: BOX },
+      contracts: { boxRenderer: RENDERER, factory: FACTORY, box: BOX },
       transactions: { factory: "0xfactory", createTokenBox: "0xbox" },
     };
     expect(journalMatchesActiveManifest(journal, manifest)).toBe(true);
