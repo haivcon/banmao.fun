@@ -28,6 +28,7 @@ import {
   normalizeTokenSymbol,
   sameAddress,
 } from "./safety";
+import { resolveStoredAssetSymbol } from "./transactionPresentation";
 
 export type BoxTransactionPhase =
   | "idle"
@@ -87,6 +88,7 @@ export function useBox(
   selectedChainId: BoxChainId,
   selectedBoxAddress?: Address,
   selectedTokenAddress?: Address,
+  genericToken = "TOKEN",
 ) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
@@ -533,7 +535,7 @@ export function useBox(
             return {
               ...asset,
               decimals: asset.decimals ?? fallback?.decimals,
-              symbol: asset.symbol ?? fallback?.symbol,
+              symbol: resolveStoredAssetSymbol(asset.symbol, fallback?.symbol, asset.token, genericToken),
             };
           }),
         };
@@ -558,6 +560,7 @@ export function useBox(
     readAssetDisplayMetadata,
     readBoxAssets,
     tokenAddress,
+    genericToken,
   ]);
 
   useEffect(() => {
@@ -611,7 +614,7 @@ export function useBox(
     async (hash: Hash, client: NonNullable<typeof publicClient>) => {
       setTransactionHash(hash);
       setPhase("confirming");
-      const receipt = await client.waitForTransactionReceipt({ hash });
+      const receipt = await client.waitForTransactionReceipt({ hash, timeout: 120_000 });
       if (receipt.status !== "success") {
         throw new Error("Transaction reverted");
       }
@@ -1054,7 +1057,7 @@ export function useBox(
           return {
             ...asset,
             decimals: asset.decimals ?? fallback.decimals,
-            symbol: asset.symbol ?? fallback.symbol,
+            symbol: resolveStoredAssetSymbol(asset.symbol, fallback.symbol, asset.token, genericToken),
           };
         }),
       );
@@ -1078,6 +1081,7 @@ export function useBox(
       readAssetDisplayMetadata,
       readBoxAssets,
       tokenAddress,
+      genericToken,
     ],
   );
 

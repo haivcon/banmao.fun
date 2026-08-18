@@ -46,10 +46,14 @@ describe("BanmaoBox verification release", () => {
 
   it("encodes constructor arguments without the 0x prefix expected by explorers", () => {
     const encoded = encodeAbiParameters(
-      [{ type: "address" }, { type: "address" }],
-      ["0x0000000000000000000000000000000000000001", "0x0000000000000000000000000000000000000002"],
+      [{ type: "address" }, { type: "address" }, { type: "address" }],
+      [
+        "0x0000000000000000000000000000000000000001",
+        "0x0000000000000000000000000000000000000002",
+        "0x0000000000000000000000000000000000000003",
+      ],
     ).slice(2);
-    expect(encoded).toHaveLength(128);
+    expect(encoded).toHaveLength(192);
     expect(encoded.startsWith("0x")).toBe(false);
   });
 });

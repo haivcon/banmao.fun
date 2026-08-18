@@ -77,14 +77,26 @@ The frontend reads canonical per-chain addresses from versioned JSON manifests i
 overrides only; never use an unscoped address fallback across chains.
 
 The active X Layer mainnet manifest points to the verified full-renderer collection:
-Renderer `0xE19c875dBfa80171819E443e46Fc7839a9290769`, standalone Factory
+Renderer `0x479365c028A1FA633b16BBef95e8691D4f37B21F`, standalone Factory
 `0x01E03F6eb085f4934A3A7946545b00341B95d9E9`, and BanmaoBox
 `0xE8247C96787119A8F7E8F8C81F58BeC5BEFC999f`. Previous deployment records remain
 archived under `deployments/banmaobox-mainnet-history/` for auditability.
 
+The collection and Factory were not redeployed for the Unicode metadata update. The
+replacement Renderer was deployed in transaction
+`0x246558f6c8815e9f165de9d0795e0080d6c56aa5d8098ce577feaa3be922909b`, then the
+existing collection selected it in transaction
+`0x93d9de7c37cfb520bcaf5c8fae9a0a8d4f97e6db7456ca185d607e4a0b04ebb0`.
+
 Do not enable the public write interface until the deployed source has been
 independently reviewed and the runtime bytecode, chain ID, Factory registry,
 underlying token, renderer admin, and architecture-appropriate renderer links and bytecode have been verified.
+
+Each BanmaoBox collection is a direct, immutable Factory deployment, not a proxy.
+Automatic source publication therefore uses only `verify-contract-info`,
+`verify-source-code`, and `check-verify-result`. The OKX
+`verify-proxy-contract` and `check-proxy-verify-result` APIs are inapplicable and
+must never be called for BanmaoBox collections.
 
 ### X Layer mainnet release runbook
 

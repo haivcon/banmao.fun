@@ -47,6 +47,21 @@ contract TestToken is ERC20 {
         _mint(msg.sender, 1_000_000 ether);
     }
 }
+contract RawSymbolToken {
+    bytes private response;
+    uint8 private mode;
+    constructor(bytes memory response_, uint8 mode_) { response = response_; mode = mode_; }
+    fallback() external {
+        if (mode == 1) revert("SYMBOL_REVERT");
+        if (mode == 2) { assembly { return(0, 65536) } }
+        if (mode == 3) { while (true) {} }
+        bytes memory value = response;
+        assembly { return(add(value, 0x20), mload(value)) }
+    }
+}
+contract Nft5UsdToken {
+    function symbol() external pure returns (string memory) { return unicode"USD₮0"; }
+}
 contract ReplacementSVGRenderer is IBanmaoBoxSVGRenderer {
     function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
         return interfaceId == type(IERC165).interfaceId ||
@@ -995,6 +1010,116 @@ describe("BanmaoBox adversarial release security", () => {
       expect.objectContaining({ trait_type: "Unlock Time", value: Number(unlockTime) }),
       expect.objectContaining({ trait_type: "Lock Duration Seconds", value: maximumDuration }),
     ]));
+  });
+
+  test("recovers bounded safe UTF-8 TOKEN snapshots and falls back safely for hostile metadata", async () => {
+    const latest = await provider.getBlock("latest");
+    const timestamps = ethers.BigNumber.from(latest.timestamp).shl(64).or(latest.timestamp + 60);
+    const abiString = (value: string) => ethers.utils.defaultAbiCoder.encode(["string"], [value]);
+    const raw = async (response: string, mode = 0) => deploy("RawSymbolToken", owner, [response, mode]);
+    const cases = [
+      "USD₮0", "Việt Nam", "中文", "한국", "Кириллица", "📦💎",
+      "A&B<C>D\"E'F", "123456789012345678901234567890😀tail",
+    ];
+
+    for (const value of cases) {
+      const token = await raw(abiString(value));
+      const expected = value === cases[7] ? "123456789012345678901234567890" : value;
+      const data = {
+        token: token.address,
+        creator: await owner.getAddress(),
+        amount: 1,
+        timestamps,
+        tokenDecimals: 6,
+        assetCount: 1,
+        tokenSymbol: symbolBytes16("TOKEN"),
+        renderAssets: renderAssets([[token.address, 1, 6, "TOKEN"]]),
+      };
+      const svg = await renderer.renderSVG(5, data);
+      parseSvg(svg);
+      const attributesText = await renderer.renderAttributes(data);
+      const attributes = JSON.parse(attributesText);
+      const metadata = JSON.parse(Buffer.from((await renderer.tokenURI(5, data)).split(",")[1], "base64").toString("utf8"));
+      expect(attributes).toEqual(expect.arrayContaining([
+        expect.objectContaining({ trait_type: "Token Symbol", value: expected }),
+      ]));
+      expect(metadata.attributes).toEqual(attributes);
+      expect(Buffer.from(metadata.image.split(",")[1], "base64").toString("utf8")).toBe(svg);
+      if (value === "A&B<C>D\"E'F") {
+        expect(svg).toContain("A&amp;B&lt;C&gt;D&quot;E&apos;F");
+        expect(attributesText).toContain('A&B<C>D\\"E\'F');
+        const raster = await sharp(Buffer.from(svg)).png().toBuffer({ resolveWithObject: true });
+        expect(raster.info.width).toBe(600);
+        expect(raster.info.height).toBe(600);
+      } else {
+        expect(svg).toContain(expected);
+      }
+    }
+
+    const stable = await raw(abiString("CHANGED"));
+    const stableData = {
+      token: stable.address,
+      creator: await owner.getAddress(),
+      amount: 1,
+      timestamps,
+      tokenDecimals: 18,
+      assetCount: 1,
+      tokenSymbol: symbolBytes16("STABLE"),
+      renderAssets: renderAssets([[stable.address, 1, 18, "STABLE"]]),
+    };
+    expect(await renderer.renderSVG(1, stableData)).toContain("STABLE / d18");
+    expect(JSON.parse(await renderer.renderAttributes(stableData))).toEqual(expect.arrayContaining([
+      expect.objectContaining({ trait_type: "Token Symbol", value: "STABLE" }),
+    ]));
+
+    const hostile = [
+      await raw("0x", 1),
+      await raw("0x", 2),
+      await raw("0x", 3),
+      await raw("0x1234"),
+      await raw(ethers.utils.hexConcat([ethers.utils.hexZeroPad("0x40", 32), ethers.utils.hexZeroPad("0x01", 32), "0x41"])),
+      await raw("0x" + "00".repeat(31) + "20" + "ff".repeat(32) + "00".repeat(32)),
+      await raw("0x" + "00".repeat(31) + "20" + "00".repeat(31) + "01" + "41ff" + "00".repeat(30)),
+      await raw(abiString("BAD\u0001")),
+      await raw(abiString("BAD\u202eTXT")),
+      await raw(abiString("BAD\ufffeTXT")),
+      await raw("0x" + "00".repeat(31) + "20" + "00".repeat(31) + "02" + "c0af" + "00".repeat(30)),
+      await raw(abiString("X".repeat(65))),
+    ];
+    for (const token of hostile) {
+      const fallback = `TOKEN ${token.address.toLowerCase().slice(0, 8)}...${token.address.toLowerCase().slice(-4)}`;
+      const data = {
+        ...stableData,
+        token: token.address,
+        tokenSymbol: symbolBytes16("TOKEN"),
+        renderAssets: renderAssets([[token.address, 1, 18, "TOKEN"]]),
+      };
+      const svg = await renderer.renderSVG(1, data, { gasLimit: 2_000_000 });
+      expect(svg).toContain(`${fallback} / d18`);
+      expect(JSON.parse(await renderer.renderAttributes(data, { gasLimit: 2_000_000 }))).toEqual(expect.arrayContaining([
+        expect.objectContaining({ trait_type: "Token Symbol", value: fallback }),
+      ]));
+    }
+
+    const nft5TokenAddress = ethers.utils.getAddress("0x779Ded0c9e1022225f8E0630b35a9b54bE713736");
+    const nft5Token = await deploy("Nft5UsdToken", owner);
+    await provider.send("evm_setAccountCode", [nft5TokenAddress, await provider.getCode(nft5Token.address)]);
+    expect(await new ethers.Contract(nft5TokenAddress, ["function symbol() view returns (string)"], provider).symbol()).toBe("USD₮0");
+    const nft5Data = {
+      ...stableData,
+      token: primary.address,
+      assetCount: 2,
+      tokenSymbol: symbolBytes16("PRI"),
+      renderAssets: renderAssets([
+        [primary.address, ethers.utils.parseEther("1"), 18, "PRI"],
+        [nft5TokenAddress, 1_000_000, 6, "TOKEN"],
+      ]),
+    };
+    const nft5Svg = await renderer.renderSVG(5, nft5Data);
+    expect(nft5Svg).toContain(nft5TokenAddress.toLowerCase());
+    expect(nft5Svg).toContain("USD₮0 / d6");
+    expect(nft5Svg).not.toContain("TOKEN / d6");
+    console.info(`BanmaoBox NFT #5 equivalent renderSVG gas: ${(await renderer.estimateGas.renderSVG(5, nft5Data)).toString()}`);
   });
 
   test("keeps adversarial renderer data valid for XML and JSON and rejects unsafe numeric fields", async () => {

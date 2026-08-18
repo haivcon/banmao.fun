@@ -636,3 +636,18 @@ body > .defi-lang-dropdown .defi-lang-check {
     transition-duration: 0.01ms !important;
   }
 }
+/* Canonical DeFi notification region: above overlays, below safe-area chrome. */
+.banmao-toast-region > div {
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .banmao-toast-region {
+    align-items: stretch !important;
+  }
+
+  .banmao-toast-region > div {
+    width: 100%;
+    margin: 0 !important;
+  }
+}

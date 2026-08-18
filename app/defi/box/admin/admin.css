@@ -251,6 +251,32 @@
 .ops-addresses svg {
   width: 14px;
 }
+.ops-created-collection {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+.ops-created-collection .box-explorer-value {
+  display: grid;
+  grid-template-columns: minmax(92px, auto) minmax(0, 1fr) 32px;
+  gap: 8px;
+  min-width: 0;
+}
+.ops-created-collection .box-explorer-value__label { color: #8e98aa; font-size: 11px; }
+.ops-created-collection .box-explorer-value__link {
+  min-width: 0;
+  color: var(--gold);
+  font: 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.ops-created-collection .box-explorer-value > button {
+  width: 32px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--gold);
+  background: #090c13;
+}
 .ops-form {
   display: flex;
   gap: 9px;
