@@ -20,7 +20,7 @@ A permissionless system for transferable, time-locked ERC-20 gift boxes:
 - Collections are full, non-proxy deployments permanently bound to one **primary** token. The Factory deployer is the immutable renderer admin for every collection. It may update the Factory's `defaultRenderer` for subsequently created collections and replace an existing collection's full metadata renderer; it has no token upgrade, withdrawal, pause, or custody authority.
 - A creator may call `createBox(recipient, amount, lockDurationSec)` for one primary-token-only NFT, `createBoxes(recipients, amounts, lockDurationSec)` for 1–20 primary-token NFTs sharing one duration, or `createMultiTokenBox(recipient, tokens, amounts, lockDurationSec)` for a basket of 2–5 distinct ERC-20s.
 - Batch creation validates every row, pulls the aggregate primary-token amount once, and safely mints consecutive token IDs atomically. A failed ERC-20 transfer or ERC-721 receiver callback rolls back the entire batch.
-- Successful mints use the ERC-721 `Transfer` event for initial NFT discovery and do not emit a redundant `MetadataUpdate`; ERC-4906 recommends omitting that event during mint. `refreshMetadata(tokenId)` remains permissionless for every live box and changes no custody or box state.
+- Successful mints emit ERC-721 `Transfer` followed immediately by exactly one ERC-4906 `MetadataUpdate(tokenId)` on every mint path; batches emit one pair per minted token. `refreshMetadata(tokenId)` remains a permissionless manual retry for every live box and changes no custody or box state; frontends do not need to submit it automatically after mint.
 - Locks must be greater than zero and may be at most `100 * 365 days` (36,500 days, slightly less than 100 Gregorian years because leap days are not included). There is no early unlock or privileged recovery path, so integrations should require explicit duration review before submission.
 - Every basket's first asset must be the collection's primary token. This preserves canonical discovery and primary-token accounting while allowing up to four additional assets.
 - Deposits and releases are exact-balance checked independently for every asset. A release succeeds only when the collection balance decreases and the owner's balance increases by the full recorded amount. Tokens that begin charging an outbound fee remain in the live NFT for retry instead of silently reducing its liability. The collection exposes remaining contents through `getBoxAssets(tokenId)`.
@@ -78,8 +78,8 @@ overrides only; never use an unscoped address fallback across chains.
 
 The active X Layer mainnet manifest points to the verified full-renderer collection:
 Renderer `0xE19c875dBfa80171819E443e46Fc7839a9290769`, standalone Factory
-`0x55E0c4eDF6c542e7FeD04a6f0c914d8F24bFCCf8`, and BanmaoBox
-`0x19d3b0C4f1276D37772269f5Ce01179Db2D70559`. Previous deployment records remain
+`0x01E03F6eb085f4934A3A7946545b00341B95d9E9`, and BanmaoBox
+`0xE8247C96787119A8F7E8F8C81F58BeC5BEFC999f`. Previous deployment records remain
 archived under `deployments/banmaobox-mainnet-history/` for auditability.
 
 Do not enable the public write interface until the deployed source has been
@@ -105,7 +105,7 @@ underlying token, renderer admin, and architecture-appropriate renderer links an
    `0x16d91d1615fc55b76d5f92365bd60c069b46ef78`.
 4. To replace the currently deployed collection with another full-renderer release in the future, additionally
    set `BANMAOBOX_REPLACE_CONFIRM=REPLACE_BANMAOBOX_XLAYER_196` and pass
-   `--replace-deployment`. The migration deploys a new Renderer, then a fresh standalone
+   `--replace-deployment`. The migration revalidates and reuses the current full Renderer, then deploys a fresh standalone
    Factory (`previousFactory = address(0)`) and calls `createTokenBox(BANMAO)` for
    a fresh Box. The Factory must be redeployed because its runtime embeds the Box
    creation bytecode. The prior manifest is archived only after the new deployment

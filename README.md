@@ -181,7 +181,7 @@ Please discuss substantial product, protocol, or dependency changes before openi
 
 ## Project status and feature flags
 
-Banmao Fun is under active development. Some capabilities depend on deployment manifests, wallet/network selection, external services, server configuration, or safety flags. In particular, BANMAO AI modules default off, BanmaoBox mainnet is marked not deployed in the checked-in manifest, and testnet-only integrations are not production features.
+Banmao Fun is under active development. Some capabilities depend on deployment manifests, wallet/network selection, external services, server configuration, or safety flags. In particular, BANMAO AI modules default off, BanmaoBox mainnet availability comes from the checked-in deployment manifest, and testnet-only integrations are not production features.
 
 Use the live application for the currently exposed experience and the repository's source, environment template, and deployment manifests to understand implementation boundaries. Do not infer production enablement from source presence alone.
 

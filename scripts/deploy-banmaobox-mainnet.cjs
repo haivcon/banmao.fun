@@ -3,6 +3,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const crypto = require("node:crypto");
+const { isDeepStrictEqual } = require("node:util");
 const solc = require("solc");
 const { ethers } = require("ethers");
 const { artifactFingerprint, assertArtifactRuntime } = require("./banmaobox-runtime.cjs");
@@ -22,6 +23,9 @@ const CONFIRMATION = "DEPLOY_BANMAOBOX_XLAYER_196";
 const REPLACEMENT_CONFIRMATION = "REPLACE_BANMAOBOX_XLAYER_196";
 const CONFIRMATIONS = Number(process.env.BANMAOBOX_DEPLOY_CONFIRMATIONS || 2);
 const GAS_BUFFER_PERCENT = 125;
+const ERC165_INTERFACE_ID = "0x01ffc9a7";
+const SVG_RENDERER_INTERFACE_ID = "0xb96dea8a";
+const FULL_RENDERER_INTERFACE_ID = "0xf3412491";
 
 function fail(message) { throw new Error(message); }
 function same(a, b) { return a.toLowerCase() === b.toLowerCase(); }
@@ -206,9 +210,12 @@ async function deployContract(provider, signer, artifact, args, label, journal, 
 }
 
 function journalComplete(journal) {
+  const rendererComplete = journal.deploymentMode === "replacement"
+    ? Boolean(journal.contracts.renderer && !journal.transactions.renderer)
+    : Boolean(journal.contracts.renderer && journal.transactions.renderer);
   return Boolean(
-    journal.contracts.renderer && journal.contracts.factory && journal.contracts.box &&
-    journal.transactions.renderer && journal.transactions.factory && journal.transactions.createTokenBox
+    rendererComplete && journal.contracts.factory && journal.contracts.box &&
+    journal.transactions.factory && journal.transactions.createTokenBox
   );
 }
 
@@ -232,8 +239,54 @@ function journalMatchesReplacementSource(journal, currentManifest) {
   );
 }
 
-async function prepareRenderer({ provider, signer, artifact, journal, deployContract: deploy = deployContract }) {
-  return deploy(provider, signer, artifact, [], "BanmaoBoxRenderer", journal, "renderer");
+function journalMatchesActiveManifest(journal, currentManifest) {
+  if (!journalComplete(journal)) return false;
+  return (
+    journal.compilerInputHash === currentManifest.compilerInputHash &&
+    same(journal.contracts.renderer, currentManifest.contracts.renderer) &&
+    same(journal.contracts.factory, currentManifest.contracts.factory) &&
+    same(journal.contracts.box, currentManifest.contracts.box) &&
+    journal.transactions.factory === currentManifest.transactions?.factory &&
+    journal.transactions.createTokenBox === currentManifest.transactions?.createTokenBox
+  );
+}
+
+async function prepareRenderer({
+  provider,
+  signer,
+  artifact,
+  journal,
+  reuse,
+  rendererAddress,
+  contract = (address, abi, runner) => new ethers.Contract(address, abi, runner),
+  deploy = deployContract,
+  writeJournal = (value) => atomicWrite(JOURNAL, value),
+}) {
+  if (!reuse) {
+    return deploy(provider, signer, artifact, [], "BanmaoBoxRenderer", journal, "renderer");
+  }
+  const address = ethers.utils.getAddress(rendererAddress);
+  if (journal.transactions.renderer) fail("Renderer reuse journal must not contain a deployment transaction");
+  if (journal.contracts.renderer && !same(journal.contracts.renderer, address)) {
+    fail("Journal Renderer does not match the replacement source manifest");
+  }
+  const runtimeCode = await retryRead(
+    "Reused Renderer bytecode",
+    () => code(provider, address, "Reused Renderer"),
+  );
+  assertArtifactRuntime(runtimeCode, artifact, "Reused Renderer");
+  const renderer = contract(address, artifact.abi, signer);
+  for (const interfaceId of [ERC165_INTERFACE_ID, SVG_RENDERER_INTERFACE_ID, FULL_RENDERER_INTERFACE_ID]) {
+    const supported = await retryRead(
+      `Reused Renderer interface ${interfaceId}`,
+      () => renderer.supportsInterface(interfaceId),
+    );
+    if (!supported) fail(`Reused Renderer does not support interface ${interfaceId}`);
+  }
+  journal.contracts.renderer = address;
+  writeJournal(journal);
+  console.log(`Reusing verified BanmaoBoxRenderer: ${address}`);
+  return renderer;
 }
 
 function ensureArchive(file, sourceManifest) {
@@ -242,7 +295,7 @@ function ensureArchive(file, sourceManifest) {
     return "created";
   }
   const existing = loadJson(file);
-  if (JSON.stringify(existing) !== JSON.stringify(sourceManifest)) {
+  if (!isDeepStrictEqual(existing, sourceManifest)) {
     fail(`Previous deployment archive conflicts with source manifest: ${file}`);
   }
   return "existing-equal";
@@ -365,12 +418,14 @@ async function main() {
     transactions: {},
     startedAt: new Date().toISOString(),
   };
+  const activeManifestAlreadyFinalized = journalMatchesActiveManifest(journal, currentManifest);
   if (
     journal.chainId !== CHAIN_ID ||
     !same(journal.token, TOKEN) ||
     journal.compilerInputHash !== compilerInputHash ||
     journal.deploymentMode !== (replacingDeployment ? "replacement" : "initial") ||
-    (replacingDeployment && !journalMatchesReplacementSource(journal, currentManifest)) ||
+    (replacingDeployment && !activeManifestAlreadyFinalized &&
+      !journalMatchesReplacementSource(journal, currentManifest)) ||
     !same(journal.previousFactory || ethers.constants.AddressZero, previousFactory)
   ) {
     fail(`Existing journal does not match this chain/token/source/predecessor. Inspect or remove ${JOURNAL}`);
@@ -386,6 +441,8 @@ async function main() {
     signer,
     artifact: artifacts.renderer,
     journal,
+    reuse: replacingDeployment,
+    rendererAddress: currentManifest.contracts.renderer,
   });
   const factory = await deployContract(
     provider,
@@ -466,14 +523,14 @@ async function main() {
     transactions: journal.transactions,
     ...validated,
   };
-  if (replacingDeployment) {
+  if (replacingDeployment && !activeManifestAlreadyFinalized) {
     const previousBox = String(currentManifest.contracts.box).toLowerCase().replace(/^0x/, "");
     const previousHash = String(currentManifest.compilerInputHash || "unknown").replace(/^0x/, "");
     const archive = path.join(DEPLOYMENT_HISTORY, `${previousBox}-${previousHash}.json`);
     const archiveState = ensureArchive(archive, currentManifest);
     console.log(`${archiveState === "created" ? "Archived" : "Confirmed archived"} previous deployment manifest: ${archive}`);
   }
-  atomicWrite(MANIFEST, deployment);
+  if (!activeManifestAlreadyFinalized) atomicWrite(MANIFEST, deployment);
   fs.rmSync(JOURNAL, { force: true });
   console.log(`\nDeployment validated and saved atomically: ${MANIFEST}`);
   console.log("Run npm run verify:banmaobox:mainnet before using the deployment in production.");
@@ -490,6 +547,7 @@ module.exports = {
   assertAggregateFeeCap,
   ensureArchive,
   journalComplete,
+  journalMatchesActiveManifest,
   journalMatchesReplacementSource,
   prepareRenderer,
   replacementSource,
