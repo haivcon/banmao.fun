@@ -13,7 +13,9 @@
   "deployer": "0x92809f2837f708163d375960063C8A3156fCeACb",
   "contracts": {
     "token": "0xE5077fD79a28B888aF33365640FDE144cf9789e3",
-    "renderer": "0x35459B8152ae379bEF1041fD501Bc4CE8C96d215",
+    "factoryRenderer": "0x35459B8152ae379bEF1041fD501Bc4CE8C96d215",
+    "defaultRenderer": "0x35459B8152ae379bEF1041fD501Bc4CE8C96d215",
+    "boxRenderer": "0x35459B8152ae379bEF1041fD501Bc4CE8C96d215",
     "factory": "0x0b39f8E7e0040AC144F89229c6b294f379Fa5856",
     "box": "0xCE6dAA64Fa861a02B405d8ac56ae4752e4dAB4eB"
   },
@@ -31,7 +33,15 @@
       "bytes": 1816,
       "keccak256": "0x51d7d136e66ce242df9b6443fad07ba92cfb14dc2b5e8c78aafffb534fe8ab3a"
     },
-    "renderer": {
+    "factoryRenderer": {
+      "bytes": 16647,
+      "keccak256": "0xc66b482d9ef781d179c79ebcec20a19c141e611cedcb07a3c6a2a7cfa3b8d3e5"
+    },
+    "defaultRenderer": {
+      "bytes": 16647,
+      "keccak256": "0xc66b482d9ef781d179c79ebcec20a19c141e611cedcb07a3c6a2a7cfa3b8d3e5"
+    },
+    "boxRenderer": {
       "bytes": 16647,
       "keccak256": "0xc66b482d9ef781d179c79ebcec20a19c141e611cedcb07a3c6a2a7cfa3b8d3e5"
     },

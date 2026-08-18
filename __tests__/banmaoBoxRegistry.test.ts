@@ -17,13 +17,17 @@ function manifest(status = "deployed") {
     status,
     contracts: {
       token: CANONICAL_BANMAO_MAINNET_ADDRESS,
-      renderer: address("1"),
+      factoryRenderer: address("1"),
+      defaultRenderer: address("4"),
+      boxRenderer: address("5"),
       factory: address("2"),
       box: address("3"),
     },
     runtime: {
       token: { bytes: 50, keccak256: hash("d") },
-      renderer: { bytes: 100, keccak256: hash("a") },
+      factoryRenderer: { bytes: 100, keccak256: hash("a") },
+      defaultRenderer: { bytes: 101, keccak256: hash("e") },
+      boxRenderer: { bytes: 102, keccak256: hash("f") },
       factory: { bytes: 200, keccak256: hash("b") },
       box: { bytes: 300, keccak256: hash("c") },
     },
@@ -38,7 +42,7 @@ describe("BanmaoBox chain registry", () => {
     expect(XLAYER_MULTICALL3_ADDRESS).toBe(
       "0xcA11bde05977b3631167028862bE2a173976CA11",
     );
-    expect(testnetManifest.contracts.renderer).toBe(
+    expect(testnetManifest.contracts.factoryRenderer).toBe(
       "0x35459B8152ae379bEF1041fD501Bc4CE8C96d215",
     );
     expect(testnetManifest.contracts.factory).toBe(
@@ -79,7 +83,13 @@ describe("BanmaoBox chain registry", () => {
       expect(
         isVerifiedMainnetManifest(mainnetManifest as BoxDeploymentManifest),
       ).toBe(true);
-      expect(mainnetManifest.contracts.renderer).toBe(
+      expect(mainnetManifest.contracts.factoryRenderer).toBe(
+        "0xE19c875dBfa80171819E443e46Fc7839a9290769",
+      );
+      expect(mainnetManifest.contracts.defaultRenderer).toBe(
+        "0x479365c028A1FA633b16BBef95e8691D4f37B21F",
+      );
+      expect(mainnetManifest.contracts.boxRenderer).toBe(
         "0x479365c028A1FA633b16BBef95e8691D4f37B21F",
       );
       expect(mainnetManifest.contracts.factory).toBe(
@@ -114,7 +124,7 @@ describe("BanmaoBox chain registry", () => {
       wrongToken.contracts.token = address("9");
       expect(isVerifiedMainnetManifest(wrongToken)).toBe(false);
 
-      for (const contract of ["renderer", "factory", "box"] as const) {
+      for (const contract of ["factoryRenderer", "defaultRenderer", "boxRenderer", "factory", "box"] as const) {
         const invalidDeployment = manifest();
         invalidDeployment.contracts[contract] =
           "0x0000000000000000000000000000000000000000";

@@ -437,6 +437,7 @@ export default function BanmaoBoxPage() {
     boxesLoading,
     boxesError,
     deploymentError,
+    deploymentWarning,
     isDeploymentValidated,
     totalLocked,
     totalSupply,
@@ -823,7 +824,7 @@ export default function BanmaoBoxPage() {
           status: "wallet",
           tokenAddress: token,
           factoryAddress: chainConfig.factoryAddress,
-          rendererAddress: chainConfig.rendererAddress,
+          rendererAddress: chainConfig.defaultRendererAddress,
         };
         lifecycleDetails = baseDetails;
         showVerificationToast(copy.collectionWalletRequest, "loading", baseDetails);
@@ -1321,7 +1322,7 @@ export default function BanmaoBoxPage() {
         </div>
       </section>
 
-      {!isDeploymentValidated ? (
+      {!isDeploymentValidated || deploymentWarning ? (
         <section className="box-deploy-notice" role="status">
           <span>
             <Box />
@@ -1330,9 +1331,11 @@ export default function BanmaoBoxPage() {
             <h2>
               {deploymentError
                 ? copy.deploymentFailed
-                : copy.notDeployedTitle}
+                : deploymentWarning
+                  ? copy.deploymentWarning
+                  : copy.notDeployedTitle}
             </h2>
-            <p>{deploymentError ?? copy.notDeployedDescription}</p>
+            <p>{deploymentError ?? deploymentWarning ?? copy.notDeployedDescription}</p>
           </div>
         </section>
       ) : null}
@@ -2065,7 +2068,7 @@ export default function BanmaoBoxPage() {
             [copy.tokenAddressLabel, chainConfig.tokenAddress, copy.copyTokenAddress],
             [copy.collectionAddressLabel, activeBoxAddress ?? chainConfig.boxAddress, copy.copyCollectionAddress],
             [copy.factoryAddressLabel, chainConfig.factoryAddress, copy.copyFactoryAddress],
-            [copy.rendererAddressLabel, chainConfig.rendererAddress, copy.copyRendererAddress],
+            [copy.rendererAddressLabel, chainConfig.boxRendererAddress, copy.copyRendererAddress],
           ].map(([label, contractAddress, copyLabel]) =>
             contractAddress ? (
               <ExplorerValueRow

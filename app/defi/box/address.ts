@@ -57,11 +57,15 @@ export function isVerifiedMainnetManifest(
   return Boolean(
     manifest.status === "deployed" &&
       hasCanonicalMainnetToken(manifest.contracts) &&
-      validDeploymentAddress(manifest.contracts.renderer) &&
+      validDeploymentAddress(manifest.contracts.factoryRenderer) &&
+      validDeploymentAddress(manifest.contracts.defaultRenderer) &&
+      validDeploymentAddress(manifest.contracts.boxRenderer) &&
       validDeploymentAddress(manifest.contracts.factory) &&
       validDeploymentAddress(manifest.contracts.box) &&
       validRuntimeEntry(manifest.runtime?.token) &&
-      validRuntimeEntry(manifest.runtime?.renderer) &&
+      validRuntimeEntry(manifest.runtime?.factoryRenderer) &&
+      validRuntimeEntry(manifest.runtime?.defaultRenderer) &&
+      validRuntimeEntry(manifest.runtime?.boxRenderer) &&
       validRuntimeEntry(manifest.runtime?.factory) &&
       validRuntimeEntry(manifest.runtime?.box),
   );

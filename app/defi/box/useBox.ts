@@ -29,6 +29,7 @@ import {
   sameAddress,
 } from "./safety";
 import { resolveStoredAssetSymbol } from "./transactionPresentation";
+import { validateBanmaoBoxDeployment } from "./deploymentValidation";
 
 export type BoxTransactionPhase =
   | "idle"
@@ -95,7 +96,9 @@ export function useBox(
   const chainConfig = getBoxChainConfig(selectedChainId);
   const boxAddress = selectedBoxAddress ?? chainConfig.boxAddress;
   const factoryAddress = chainConfig.factoryAddress;
-  const expectedRendererAddress = chainConfig.rendererAddress;
+  const expectedFactoryRendererAddress = chainConfig.factoryRendererAddress;
+  const expectedDefaultRendererAddress = chainConfig.defaultRendererAddress;
+  const expectedBoxRendererAddress = chainConfig.boxRendererAddress;
   const tokenAddress = selectedTokenAddress ?? chainConfig.tokenAddress;
   const expectedRuntime = chainConfig.runtime;
   const publicClient = usePublicClient({ chainId: selectedChainId });
@@ -106,6 +109,8 @@ export function useBox(
   const [boxesLoading, setBoxesLoading] = useState(false);
   const [boxesError, setBoxesError] = useState<string | null>(null);
   const [deploymentError, setDeploymentError] = useState<string | null>(null);
+  const [deploymentWarning, setDeploymentWarning] = useState<string | null>(null);
+  const [isDiscoveryValidated, setIsDiscoveryValidated] = useState(false);
   const [isDeploymentValidated, setIsDeploymentValidated] = useState(false);
   const [phase, setPhase] = useState<BoxTransactionPhase>("idle");
   const [transactionHash, setTransactionHash] = useState<Hash | null>(null);
@@ -120,7 +125,7 @@ export function useBox(
     functionName: "tokenDecimals",
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(boxAddress && isDeploymentValidated),
+      enabled: Boolean(boxAddress && isDiscoveryValidated),
       staleTime: Number.POSITIVE_INFINITY,
     },
   });
@@ -133,7 +138,7 @@ export function useBox(
     functionName: "tokenSymbol",
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(boxAddress && isDeploymentValidated),
+      enabled: Boolean(boxAddress && isDiscoveryValidated),
       staleTime: Number.POSITIVE_INFINITY,
     },
   });
@@ -144,7 +149,7 @@ export function useBox(
     functionName: "MAX_LOCK_DURATION",
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(boxAddress && isDeploymentValidated),
+      enabled: Boolean(boxAddress && isDiscoveryValidated),
       staleTime: Number.POSITIVE_INFINITY,
     },
   });
@@ -184,7 +189,7 @@ export function useBox(
     args: address ? [address] : undefined,
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(address && boxAddress && isDeploymentValidated),
+      enabled: Boolean(address && boxAddress && isDiscoveryValidated),
       refetchInterval: 15_000,
     },
   });
@@ -195,7 +200,7 @@ export function useBox(
     functionName: "totalTokensLocked",
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(boxAddress && isDeploymentValidated),
+      enabled: Boolean(boxAddress && isDiscoveryValidated),
       refetchInterval: 15_000,
     },
   });
@@ -206,7 +211,7 @@ export function useBox(
     functionName: "totalSupply",
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(boxAddress && isDeploymentValidated),
+      enabled: Boolean(boxAddress && isDiscoveryValidated),
       refetchInterval: 15_000,
     },
   });
@@ -216,11 +221,15 @@ export function useBox(
 
     async function validateDeployment() {
       setIsDeploymentValidated(false);
+      setIsDiscoveryValidated(false);
       setDeploymentError(null);
+      setDeploymentWarning(null);
       if (
         !boxAddress ||
         !factoryAddress ||
-        !expectedRendererAddress ||
+        !expectedFactoryRendererAddress ||
+        !expectedDefaultRendererAddress ||
+        !expectedBoxRendererAddress ||
         !publicClient
       ) {
         return;
@@ -244,7 +253,7 @@ export function useBox(
         ] = await Promise.all([
           publicClient.getCode({ address: boxAddress }),
           publicClient.getCode({ address: factoryAddress }),
-          publicClient.getCode({ address: expectedRendererAddress }),
+          publicClient.getCode({ address: expectedFactoryRendererAddress }),
           publicClient.getCode({ address: tokenAddress }),
           publicClient.readContract({
             address: factoryAddress,
@@ -303,12 +312,6 @@ export function useBox(
           boxCode === "0x" ||
           !factoryCode ||
           factoryCode === "0x" ||
-          !rendererCode ||
-          rendererCode === "0x" ||
-          !activeRendererCode ||
-          activeRendererCode === "0x" ||
-          !defaultRendererCode ||
-          defaultRendererCode === "0x" ||
           !tokenCode ||
           tokenCode === "0x"
         ) {
@@ -335,7 +338,6 @@ export function useBox(
             chainConfig.boxAddress,
           );
         if (
-          !matchesRuntime(rendererCode, expectedRuntime.renderer) ||
           !matchesRuntime(factoryCode, expectedRuntime.factory) ||
           (canonicalCollection &&
             (!matchesRuntime(tokenCode, expectedRuntime.token) ||
@@ -343,10 +345,18 @@ export function useBox(
         ) {
           throw new Error("Deployment runtime does not match the verified manifest");
         }
-        if (!registered || !sameAddress(registryBox, boxAddress))
-          throw new Error("Factory registry does not match the selected Box");
-        if (!sameAddress(underlying, tokenAddress))
-          throw new Error("Box underlying token does not match the selected collection");
+        const validation = validateBanmaoBoxDeployment(
+          {
+            token: tokenAddress,
+            factory: factoryAddress,
+            box: boxAddress,
+            factoryRenderer: expectedFactoryRendererAddress,
+            defaultRenderer: expectedDefaultRendererAddress,
+            boxRenderer: expectedBoxRendererAddress,
+          },
+          { registryBox, registered, underlying, factoryRenderer, defaultRenderer, boxRenderer },
+        );
+        if (!validation.discoverySafe) throw new Error(validation.fatalError);
         if (
           maxAssets !== 5n ||
           maxBatchSize !== 20n ||
@@ -354,12 +364,27 @@ export function useBox(
         ) {
           throw new Error("Collection constants do not match the production BanmaoBox release");
         }
-        if (!sameAddress(factoryRenderer, expectedRendererAddress)) {
-          throw new Error("Factory renderer does not match the manifest");
+        const runtimeWarnings = [
+          !matchesRuntime(rendererCode, expectedRuntime.factoryRenderer)
+            ? "Factory provenance renderer runtime does not match the manifest"
+            : null,
+          !matchesRuntime(defaultRendererCode, expectedRuntime.defaultRenderer)
+            ? "Factory default renderer runtime does not match the manifest"
+            : null,
+          !matchesRuntime(activeRendererCode, expectedRuntime.boxRenderer)
+            ? "Canonical Box active renderer runtime does not match the manifest"
+            : null,
+        ].filter((warning): warning is string => Boolean(warning));
+        if (!cancelled) {
+          setIsDiscoveryValidated(true);
+          setDeploymentWarning([...validation.warnings, ...runtimeWarnings].join(" · ") || null);
+          setIsDeploymentValidated(validation.transactionSafe && runtimeWarnings.length === 0);
         }
-        if (!cancelled) setIsDeploymentValidated(true);
       } catch (error) {
-        if (!cancelled) setDeploymentError(getErrorMessage(error));
+        if (!cancelled) {
+          setIsDiscoveryValidated(false);
+          setDeploymentError(getErrorMessage(error));
+        }
       }
     }
 
@@ -371,7 +396,9 @@ export function useBox(
     boxAddress,
     chainConfig.boxAddress,
     chainConfig.tokenAddress,
-    expectedRendererAddress,
+    expectedFactoryRendererAddress,
+    expectedDefaultRendererAddress,
+    expectedBoxRendererAddress,
     factoryAddress,
     publicClient,
     tokenAddress,
@@ -425,7 +452,7 @@ export function useBox(
       !boxAddress ||
       !publicClient ||
       !address ||
-      !isDeploymentValidated ||
+      !isDiscoveryValidated ||
       ownedBoxCount === 0n
     ) {
       setBoxes([]);
@@ -554,7 +581,7 @@ export function useBox(
   }, [
     address,
     boxAddress,
-    isDeploymentValidated,
+    isDiscoveryValidated,
     ownedBoxCount,
     publicClient,
     readAssetDisplayMetadata,
@@ -1169,6 +1196,8 @@ export function useBox(
     boxesLoading: boxesLoading || ownedBoxCountQuery.isLoading,
     boxesError,
     deploymentError,
+    deploymentWarning,
+    isDiscoveryValidated,
     isDeploymentValidated,
     totalLocked: (totalLockedQuery.data as bigint | undefined) ?? 0n,
     totalSupply: (totalSupplyQuery.data as bigint | undefined) ?? 0n,

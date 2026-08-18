@@ -14,7 +14,9 @@
   "deployer": "0x92809f2837f708163d375960063C8A3156fCeACb",
   "contracts": {
     "token": "0x16d91d1615fC55b76d5F92365BD60C069b46eF78",
-    "renderer": "0x479365c028A1FA633b16BBef95e8691D4f37B21F",
+    "factoryRenderer": "0xE19c875dBfa80171819E443e46Fc7839a9290769",
+    "defaultRenderer": "0x479365c028A1FA633b16BBef95e8691D4f37B21F",
+    "boxRenderer": "0x479365c028A1FA633b16BBef95e8691D4f37B21F",
     "factory": "0x01E03F6eb085f4934A3A7946545b00341B95d9E9",
     "previousFactory": "0x0000000000000000000000000000000000000000",
     "box": "0xE8247C96787119A8F7E8F8C81F58BeC5BEFC999f"
@@ -34,7 +36,17 @@
       "bytes": 12619,
       "keccak256": "0xb7da2c83c7fecd639963c3a23136c015fb02a2ff0e6e23dfa1e32dd0267e0ae7"
     },
-    "renderer": {
+    "factoryRenderer": {
+      "bytes": 16175,
+      "keccak256": "0xc8a762b855958d1d0c0c91159bdd9178ef2e88157f188f02fd7293af8112f6af",
+      "normalizedKeccak256": "0xc8a762b855958d1d0c0c91159bdd9178ef2e88157f188f02fd7293af8112f6af"
+    },
+    "defaultRenderer": {
+      "bytes": 19214,
+      "keccak256": "0xd69507283765b914480cf8aa8a8f37f4bbd351b0620ede3b0bbd5e3ca390f703",
+      "normalizedKeccak256": "0xd69507283765b914480cf8aa8a8f37f4bbd351b0620ede3b0bbd5e3ca390f703"
+    },
+    "boxRenderer": {
       "bytes": 19214,
       "keccak256": "0xd69507283765b914480cf8aa8a8f37f4bbd351b0620ede3b0bbd5e3ca390f703",
       "normalizedKeccak256": "0xd69507283765b914480cf8aa8a8f37f4bbd351b0620ede3b0bbd5e3ca390f703"

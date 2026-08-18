@@ -13,8 +13,8 @@ const TOKEN = ethers.utils.getAddress("0x16d91d1615fc55b76d5f92365bd60c069b46ef7
 const manifest = JSON.parse(fs.readFileSync(path.resolve("deployments/banmaobox-xlayer-mainnet.json"), "utf8"));
 const RPC_URL = process.env.XLAYER_MAINNET_RPC_URL || process.env.XLAYER_RPC_URL || manifest.rpcUrl;
 const approved = JSON.parse(fs.readFileSync(path.resolve("deployments/banmaobox-release-artifacts.json"), "utf8"));
-const SOURCE_DIR = "contracts/banmaobox";
-const SOURCES = ["BanmaoBoxRenderer.sol", "BanmaoBox.sol", "BanmaoBoxFactory.sol"];
+const verificationRelease = JSON.parse(fs.readFileSync(path.resolve("lib/banmaobox/verification-release.json"), "utf8"));
+
 const factoryAbi = [
   "function renderer() view returns (address)",
   "function defaultRenderer() view returns (address)",
@@ -51,38 +51,12 @@ async function retryRead(label, operation, attempts = 5) {
   const detail = lastError?.error?.message || lastError?.reason || lastError?.message || String(lastError);
   fail(`${label} RPC read failed after ${attempts} attempts: ${detail}`);
 }
-function collectSources(entryNames) {
-  const collected = {};
-  const visit = (sourceName) => {
-    if (collected[sourceName]) return;
-    const file = sourceName.startsWith("@") ? path.join("node_modules", sourceName) : sourceName;
-    if (!fs.existsSync(file)) fail(`Import not found: ${sourceName}`);
-    const content = fs.readFileSync(file, "utf8");
-    collected[sourceName] = { content };
-    for (const match of content.matchAll(/import\s+(?:[^"']*?from\s+)?["']([^"']+)["']\s*;/g)) {
-      const imported = match[1].startsWith(".")
-        ? path.posix.normalize(path.posix.join(path.posix.dirname(sourceName), match[1]))
-        : match[1];
-      visit(imported);
-    }
-  };
-  entryNames.forEach(visit);
-  return collected;
-}
 function compile() {
-  const sources = collectSources(SOURCES.map((file) => `${SOURCE_DIR}/${file}`));
-  const input = {
-    language: "Solidity", sources,
-    settings: {
-      optimizer: { enabled: true, runs: 200 }, evmVersion: "shanghai",
-      metadata: { bytecodeHash: "ipfs" },
-      outputSelection: { "*": { "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object", "evm.deployedBytecode.immutableReferences"] } },
-    },
-  };
+  const input = JSON.parse(verificationRelease.standardInput);
   const output = JSON.parse(solc.compile(JSON.stringify(input)));
   const errors = (output.errors || []).filter((item) => item.severity === "error");
   if (errors.length) fail(errors.map((item) => item.formattedMessage).join("\n"));
-  const artifact = (file, name) => output.contracts[`${SOURCE_DIR}/${file}`][name];
+  const artifact = (file, name) => output.contracts[`contracts/banmaobox/${file}`][name];
   return {
     compilerInputHash: sha256(JSON.stringify(input)),
     artifacts: {
@@ -117,7 +91,8 @@ async function main() {
   const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
   const network = await retryRead("Network detection", () => provider.getNetwork());
   if (network.chainId !== CHAIN_ID) fail(`Wrong RPC chain: ${network.chainId}`);
-  const { renderer, factory, box } = manifest.contracts;
+  const { factoryRenderer: renderer, defaultRenderer: expectedDefaultRenderer,
+    boxRenderer: expectedBoxRenderer, factory, box } = manifest.contracts;
   const factoryContract = new ethers.Contract(factory, factoryAbi, provider);
   const boxContract = new ethers.Contract(box, boxAbi, provider);
   const read = (label, operation) => retryRead(label, operation);
@@ -145,14 +120,15 @@ async function main() {
   const locked = await read("Box totalTokensLocked", () => boxContract.totalTokensLocked());
   if (
     !same(factoryRenderer, renderer) ||
+    !same(defaultRenderer, expectedDefaultRenderer) ||
     !same(previousFactory, expectedPreviousFactory) ||
-    !same(boxRenderer, renderer)
+    !same(boxRenderer, expectedBoxRenderer)
   ) fail("Factory migration or full renderer links are invalid");
   if (!same(rendererAdmin, manifest.deployer)) fail("Renderer admin does not match the deployment manifest");
   if (!same(registryBox, box) || !registered || !same(underlying, TOKEN)) fail("Factory/underlying registry is invalid");
   if (Number(decimals) !== 18 || !maxAssets.eq(5) || !maxBatch.eq(20) || !maxLock.eq(3_153_600_000)) fail("Metadata/constants mismatch");
   const runtimeCodes = [
-    await read("Renderer artifact runtime", () => provider.getCode(renderer)),
+    await read("Factory provenance Renderer artifact runtime", () => provider.getCode(renderer)),
     await read("Factory artifact runtime", () => provider.getCode(factory)),
     await read("Box artifact runtime", () => provider.getCode(box)),
   ];
@@ -161,7 +137,10 @@ async function main() {
     factory: assertArtifactRuntime(runtimeCodes[1], artifacts.factory, "Factory"),
     box: assertArtifactRuntime(runtimeCodes[2], artifacts.box, "BanmaoBox"),
   };
-  const observed = { token: tokenRuntime, renderer: rendererRuntime, factory: factoryRuntime, box: boxRuntime };
+  const observed = { token: tokenRuntime, factoryRenderer: rendererRuntime,
+    defaultRenderer: await read("Factory default renderer manifest runtime", () => runtime(provider, expectedDefaultRenderer, "Factory default renderer")),
+    boxRenderer: await read("Box renderer manifest runtime", () => runtime(provider, expectedBoxRenderer, "Box renderer")),
+    factory: factoryRuntime, box: boxRuntime };
   for (const [name, value] of Object.entries(observed)) {
     const expected = manifest.runtime?.[name];
     if (!expected || expected.bytes !== value.bytes || expected.keccak256 !== value.keccak256) fail(`${name} runtime does not match manifest`);
