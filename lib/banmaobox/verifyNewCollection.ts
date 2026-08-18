@@ -5,7 +5,7 @@ import release from "./verification-release.json";
 import manifest from "../../deployments/banmaobox-xlayer-mainnet.json";
 
 const CHAIN_ID = 196;
-const RPC_URL = process.env.XLAYER_RPC_URL || "https://rpc.xlayer.tech";
+const RPC_URL = process.env.XLAYER_RPC_URL || manifest.rpcUrl;
 const positiveInteger = (value: string | undefined, fallback: number) => {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;

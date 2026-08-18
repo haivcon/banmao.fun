@@ -80,16 +80,16 @@ describe("BanmaoBox chain registry", () => {
         isVerifiedMainnetManifest(mainnetManifest as BoxDeploymentManifest),
       ).toBe(true);
       expect(mainnetManifest.contracts.renderer).toBe(
-        "0xE880e364f4a71be047cF49767313381715d57db0",
+        "0xE19c875dBfa80171819E443e46Fc7839a9290769",
       );
       expect(mainnetManifest.contracts.factory).toBe(
-        "0xA6bC56E67253E13554D629579A3c018871D21F9E",
+        "0x55E0c4eDF6c542e7FeD04a6f0c914d8F24bFCCf8",
       );
       expect(mainnetManifest.contracts.previousFactory).toBe(
         "0x0000000000000000000000000000000000000000",
       );
       expect(mainnetManifest.contracts.box).toBe(
-        "0x95c83831a283cDC41cd552374aD1279b2375a4ee",
+        "0x19d3b0C4f1276D37772269f5Ce01179Db2D70559",
       );
     });
 

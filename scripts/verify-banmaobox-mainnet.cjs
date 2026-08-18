@@ -10,8 +10,8 @@ const { publishExplorerVerification } = require("./publish-banmaobox-explorer.cj
 
 const CHAIN_ID = 196;
 const TOKEN = ethers.utils.getAddress("0x16d91d1615fc55b76d5f92365bd60c069b46ef78");
-const RPC_URL = process.env.XLAYER_MAINNET_RPC_URL || process.env.XLAYER_RPC_URL || "https://rpc.xlayer.tech";
 const manifest = JSON.parse(fs.readFileSync(path.resolve("deployments/banmaobox-xlayer-mainnet.json"), "utf8"));
+const RPC_URL = process.env.XLAYER_MAINNET_RPC_URL || process.env.XLAYER_RPC_URL || manifest.rpcUrl;
 const approved = JSON.parse(fs.readFileSync(path.resolve("deployments/banmaobox-release-artifacts.json"), "utf8"));
 const SOURCE_DIR = "contracts/banmaobox";
 const SOURCES = ["BanmaoBoxRenderer.sol", "BanmaoBox.sol", "BanmaoBoxFactory.sol"];

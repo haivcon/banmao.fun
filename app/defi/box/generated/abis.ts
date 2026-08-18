@@ -2039,7 +2039,7 @@ export const BANMAO_BOX_RENDERER_ABI = [
         "type": "string"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "pure",
     "type": "function"
   },
   {
@@ -2105,7 +2105,7 @@ export const BANMAO_BOX_RENDERER_ABI = [
         "type": "string"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "pure",
     "type": "function"
   },
   {

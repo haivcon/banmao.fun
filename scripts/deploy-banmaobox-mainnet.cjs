@@ -141,6 +141,12 @@ function assertAggregateFeeCap(estimates, gasPrice, maximumFeeOkb, existingMaxim
 async function transactionBudget(provider, signer, estimate, label, journal, key) {
   const fees = await retryRead(`${label} fee data`, () => feeData(provider));
   const price = fees.maxFeePerGas || fees.gasPrice;
+  const maximumGasPriceGwei = process.env.BANMAOBOX_MAX_GAS_GWEI;
+  if (!maximumGasPriceGwei) fail("BANMAOBOX_MAX_GAS_GWEI is required");
+  const maximumGasPrice = ethers.utils.parseUnits(maximumGasPriceGwei, "gwei");
+  if (price.gt(maximumGasPrice)) {
+    fail(`Live ${label} fee ${ethers.utils.formatUnits(price, "gwei")} Gwei exceeds approved cap ${maximumGasPriceGwei} Gwei`);
+  }
   const gasLimit = bufferedGas(estimate);
   const previous = Object.entries(journal.feeBudget || {})
     .filter(([entryKey]) => entryKey !== key)
