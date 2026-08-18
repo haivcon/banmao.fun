@@ -6,6 +6,7 @@ const {
   assertAggregateFeeCap,
   ensureArchive,
   journalComplete,
+  journalMatchesActiveManifest,
   journalMatchesReplacementSource,
   prepareRenderer,
   replacementSource,
@@ -20,7 +21,7 @@ function rendererArtifact(runtime = "6001600055") {
 }
 
 describe("BanmaoBox mainnet replacement deployment", () => {
-  test("deploys and journals Renderer, Factory and Box in release order", () => {
+  test("reuses Renderer and journals only Factory and Box transactions in release order", () => {
     const source = readFileSync("scripts/deploy-banmaobox-mainnet.cjs", "utf8");
     const main = source.slice(source.indexOf("async function main()"), source.indexOf("if (require.main === module)"));
 
@@ -30,27 +31,36 @@ describe("BanmaoBox mainnet replacement deployment", () => {
     expect(main).toContain("factory.createTokenBox(TOKEN, { gasLimit, ...fees })");
   });
 
-  test("replacement deploys the candidate Renderer and resumes it from the journal", async () => {
-    const deployed = { address: RENDERER };
-    const deployContract = jest.fn().mockResolvedValue(deployed);
-    const journal: any = { contracts: {}, transactions: {} };
+  test("replacement reuses the manifest Renderer only after runtime and interface readback", async () => {
+    const artifact = rendererArtifact();
+    const provider = {
+      getCode: jest.fn().mockResolvedValue(`0x${artifact.evm.deployedBytecode.object}`),
+    };
+    const renderer = { supportsInterface: jest.fn().mockResolvedValue(true) };
+    const contract = jest.fn().mockReturnValue(renderer);
+    const journal: any = { deploymentMode: "replacement", contracts: {}, transactions: {} };
+    const writeJournal = jest.fn();
 
     await expect(prepareRenderer({
-      provider: {}, signer: {}, artifact: rendererArtifact(), journal, deployContract,
-    })).resolves.toBe(deployed);
-    expect(deployContract).toHaveBeenCalledWith(
-      expect.anything(), expect.anything(), expect.anything(), [],
-      "BanmaoBoxRenderer", journal, "renderer",
-    );
+      provider, signer: {}, artifact, journal, reuse: true, rendererAddress: RENDERER,
+      contract, writeJournal,
+    })).resolves.toBe(renderer);
+    expect(provider.getCode).toHaveBeenCalledWith(RENDERER);
+    expect(renderer.supportsInterface).toHaveBeenCalledTimes(3);
+    expect(journal.contracts.renderer).toBe(RENDERER);
+    expect(journal.transactions.renderer).toBeUndefined();
+    expect(writeJournal).toHaveBeenCalledWith(journal);
   });
 
-  test("requires all three release transactions for journal completion", () => {
+  test("requires exactly the two replacement transactions for journal completion", () => {
     const complete = {
+      deploymentMode: "replacement",
       contracts: { renderer: RENDERER, factory: FACTORY, box: BOX },
-      transactions: { renderer: "0xrenderer", factory: "0xfactory", createTokenBox: "0xbox" },
+      transactions: { factory: "0xfactory", createTokenBox: "0xbox" },
     };
     expect(journalComplete(complete)).toBe(true);
-    expect(journalComplete({ ...complete, transactions: { factory: "0xfactory", createTokenBox: "0xbox" } })).toBe(false);
+    expect(journalComplete({ ...complete, transactions: { factory: "0xfactory" } })).toBe(false);
+    expect(journalComplete({ ...complete, transactions: { ...complete.transactions, renderer: "0xunexpected" } })).toBe(false);
   });
 
   test("persists every transaction before waiting and can recover the Box address from its receipt", () => {
@@ -93,6 +103,25 @@ describe("BanmaoBox mainnet replacement deployment", () => {
     expect(journalMatchesReplacementSource(journal, { ...currentManifest, compilerInputHash: "0xanother-release" })).toBe(false);
   });
 
+  test("recognizes a completed journal after the active manifest was already written", () => {
+    const journal = {
+      deploymentMode: "replacement",
+      compilerInputHash: "0xnew-release",
+      contracts: { renderer: RENDERER, factory: FACTORY, box: BOX },
+      transactions: { factory: "0xfactory", createTokenBox: "0xbox" },
+    };
+    const manifest = {
+      compilerInputHash: "0xnew-release",
+      contracts: { renderer: RENDERER, factory: FACTORY, box: BOX },
+      transactions: { factory: "0xfactory", createTokenBox: "0xbox" },
+    };
+    expect(journalMatchesActiveManifest(journal, manifest)).toBe(true);
+    expect(journalMatchesActiveManifest(journal, {
+      ...manifest,
+      contracts: { ...manifest.contracts, box: "0x0000000000000000000000000000000000000001" },
+    })).toBe(false);
+  });
+
   test("keeps an equal existing archive and rejects conflicting content", () => {
     const directory = mkdtempSync(join(tmpdir(), "banmaobox-archive-"));
     const archive = join(directory, "old.json");
@@ -100,6 +129,8 @@ describe("BanmaoBox mainnet replacement deployment", () => {
     try {
       expect(ensureArchive(archive, manifest)).toBe("created");
       expect(ensureArchive(archive, JSON.parse(JSON.stringify(manifest)))).toBe("existing-equal");
+      writeFileSync(archive, '{"contracts":{"box":"0x19d3b0C4f1276D37772269f5Ce01179Db2D70559","factory":"0x55E0c4eDF6c542e7FeD04a6f0c914d8F24bFCCf8","renderer":"0xE19c875dBfa80171819E443e46Fc7839a9290769"},"schemaVersion":1}\n');
+      expect(ensureArchive(archive, manifest)).toBe("existing-equal");
       writeFileSync(archive, `${JSON.stringify({ ...manifest, schemaVersion: 2 }, null, 2)}\n`);
       expect(() => ensureArchive(archive, manifest)).toThrow("conflicts with source manifest");
     } finally {
@@ -128,6 +159,7 @@ describe("BanmaoBox mainnet replacement deployment", () => {
     const hashes = [
       "9de8225e702132fedede336deb636ffa87247dc03543ea39107bf6760d096c55",
       "65287404e198cceb2b9dc76cb7eacb6b263d38120e147614470598e4fc0e861f",
+      "39e47f551ed420c27970a6e4b492121ccac445f53eb872899415d33c8f7cf143",
     ];
     expect(gitignore).toContain("!/deployments/banmaobox-releases/");
     for (const hash of hashes) {

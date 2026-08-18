@@ -13,6 +13,7 @@ import { SNAKE_CONTRACT_ADDRESS } from "../../../../app/gamefi/banmaosnake/lib/c
 import { okxFetch as realOkxFetch } from "../../../okx/okxClient";
 import { readCollectionPrompts, readCollectionQuests, readCollectionSearch } from "../../../collection/server/readers";
 import type { ToolDescriptor } from "../toolRegistry";
+import banmaoBoxDeployment from "../../../../deployments/banmaobox-xlayer-mainnet.json";
 
 type Address = `0x${string}`;
 type ReadContract = (parameters: { address: Address; abi: readonly unknown[]; functionName: string; args?: readonly unknown[]; blockNumber?: bigint }) => Promise<unknown>;
@@ -114,7 +115,7 @@ export function createDomainToolDescriptors(dependencies: { readContract?: ReadC
     try { return available({ stats: await internalRead("airdrop.stats", { token: args.tokenAddress }), ...(args.wallet ? { history: await internalRead("airdrop.history", { wallet: args.wallet, limit: args.limit }) } : {}) }, "internal-db:airdrop-records"); }
     catch { return unavailable("Airdrop database read unavailable", "internal-db:airdrop-records"); }
   }}));
-  tools.push(descriptor({ name: "defi.box", description: "Read BanmaoBox deployment availability", parameters: parameters({ chainId: { type: "integer", const: 196 } }, ["chainId"]), contexts: ["defi"], auth: "public", parse: (v) => chainSchema.parse(v), async execute() { return unavailable("deployments/banmaobox-xlayer-mainnet.json has deployed=false and address=null", "deployment:banmaobox-xlayer-mainnet"); } }));
+  tools.push(descriptor({ name: "defi.box", description: "Read BanmaoBox deployment availability", parameters: parameters({ chainId: { type: "integer", const: 196 } }, ["chainId"]), contexts: ["defi"], auth: "public", parse: (v) => chainSchema.parse(v), async execute() { return available({ chainId: banmaoBoxDeployment.chainId, status: banmaoBoxDeployment.status, contracts: banmaoBoxDeployment.contracts }, "deployment:banmaobox-xlayer-mainnet"); } }));
 
   tools.push(descriptor({ name: "gamefi.fomo", description: "Read current BanMaoFomo round, jackpot, timers and configuration", parameters: parameters({ chainId: { type: "integer", const: 196 }, wallet: { type: "string", pattern: "^0x[a-fA-F0-9]{40}$" } }, ["chainId"]), contexts: ["gamefi"], auth: "public", parse: (v) => walletChainSchema.parse(v), async execute(args) {
     try {

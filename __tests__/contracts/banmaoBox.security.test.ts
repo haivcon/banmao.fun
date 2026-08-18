@@ -400,22 +400,30 @@ describe("BanmaoBox adversarial release security", () => {
     expect(await previous.isTokenBox(successorBox)).toBe(false);
   });
 
-  test("uses Transfer for mint discovery and permits explicit locked ERC-4906 refreshes", async () => {
+  test("emits Transfer then exactly one MetadataUpdate on every successful mint path", async () => {
     const recipient = await owner.getAddress();
     const other = provider.getSigner(1);
     const secondary = await deploy("TestToken", owner, ["Secondary", "SEC"]);
     await primary.approve(box.address, ethers.constants.MaxUint256);
     await secondary.approve(box.address, ethers.constants.MaxUint256);
 
-    const assertMintEvents = (receipt: { events?: Array<{ event?: string }> }, count: number) => {
-      expect(receipt.events?.filter((event) => event.event === "Transfer")).toHaveLength(count);
-      expect(receipt.events?.filter((event) => event.event === "MetadataUpdate")).toHaveLength(0);
+    const assertMintEvents = (
+      receipt: { events?: Array<{ event?: string; args?: { _tokenId?: ethers.BigNumber } }> },
+      tokenIds: number[],
+    ) => {
+      const relevant = receipt.events?.filter((event) =>
+        event.event === "Transfer" || event.event === "MetadataUpdate");
+      expect(relevant?.map((event) => event.event)).toEqual(
+        tokenIds.flatMap(() => ["Transfer", "MetadataUpdate"]),
+      );
+      expect(relevant?.filter((event) => event.event === "MetadataUpdate")
+        .map((event) => event.args?._tokenId?.toNumber())).toEqual(tokenIds);
     };
 
     const singleReceipt = await (
       await box.createBox(recipient, ethers.utils.parseEther("1"), 86_400)
     ).wait();
-    assertMintEvents(singleReceipt, 1);
+    assertMintEvents(singleReceipt, [1]);
 
     const batchReceipt = await (
       await box.createBoxes(
@@ -424,7 +432,7 @@ describe("BanmaoBox adversarial release security", () => {
         86_400,
       )
     ).wait();
-    assertMintEvents(batchReceipt, 2);
+    assertMintEvents(batchReceipt, [2, 3]);
 
     const basketReceipt = await (
       await box.createMultiTokenBox(
@@ -434,7 +442,7 @@ describe("BanmaoBox adversarial release security", () => {
         86_400,
       )
     ).wait();
-    assertMintEvents(basketReceipt, 1);
+    assertMintEvents(basketReceipt, [4]);
 
     const lockedRefreshReceipt = await (await box.connect(other).refreshMetadata(1)).wait();
     expect(lockedRefreshReceipt.events?.find((event: { event?: string }) =>
@@ -743,6 +751,7 @@ describe("BanmaoBox adversarial release security", () => {
     const amounts = Array(4).fill(ethers.utils.parseEther("1"));
     await primary.approve(box.address, ethers.constants.MaxUint256);
     const ownerBalanceBefore = await primary.balanceOf(recipient);
+    const blockBefore = await provider.getBlockNumber();
 
     await expect(box.createBoxes(recipients, amounts, 1)).rejects.toThrow();
 
@@ -751,6 +760,8 @@ describe("BanmaoBox adversarial release security", () => {
     expect(await primary.balanceOf(box.address)).toEqual(ethers.constants.Zero);
     expect(await primary.balanceOf(recipient)).toEqual(ownerBalanceBefore);
     expect(await receiver.received()).toEqual(ethers.constants.Zero);
+    expect(await box.queryFilter(box.filters.MetadataUpdate(), blockBefore + 1, "latest"))
+      .toHaveLength(0);
   });
 
   test("rejects fee-on-transfer primary deposits atomically", async () => {
@@ -1140,7 +1151,11 @@ describe("BanmaoBox adversarial release security", () => {
     expect(before).toContain("SEC / d18");
 
     await unlock();
-    await box["openAsset(uint256,uint256)"](1, 0);
+    const releaseReceipt = await (await box["openAsset(uint256,uint256)"](1, 0)).wait();
+    expect(releaseReceipt.events?.filter((event: { event?: string }) =>
+      event.event === "MetadataUpdate")).toHaveLength(1);
+    expect(releaseReceipt.events?.find((event: { event?: string }) =>
+      event.event === "MetadataUpdate")?.args?._tokenId.toString()).toBe("1");
     const after = await box.renderSVG(1);
     expect(after).not.toContain(primary.address.toLowerCase());
     expect(after).toContain(secondary.address.toLowerCase());

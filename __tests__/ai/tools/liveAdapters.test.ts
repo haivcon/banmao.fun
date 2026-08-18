@@ -39,11 +39,22 @@ test("portfolio aggregates approved wallet reads and preserves partial failures"
   expect(result.value.sources).toEqual(expect.arrayContaining([expect.objectContaining({ name: "nativeBalance", status: "available", value: "9" }), expect.objectContaining({ name: "banmaoBalance", status: "unavailable" })]));
 });
 
-test("undeployed Box and failed shared collection source return typed unavailable with evidence", async () => {
+test("deployed Box and failed shared collection source preserve typed evidence", async () => {
   const descriptors = createDomainToolDescriptors({ readContract: jest.fn(), okxFetch: jest.fn() });
   const box = descriptors.find((tool) => tool.name === "defi.box")!;
   const collection = descriptors.find((tool) => tool.name === "collection.search")!;
-  await expect(box.execute(box.parse({ chainId: 196 }))).resolves.toMatchObject({ status: "unavailable", source: "deployment:banmaobox-xlayer-mainnet" });
+  await expect(box.execute(box.parse({ chainId: 196 }))).resolves.toMatchObject({
+    status: "available",
+    source: "deployment:banmaobox-xlayer-mainnet",
+    value: {
+      chainId: 196,
+      status: "deployed",
+      contracts: {
+        factory: "0x01E03F6eb085f4934A3A7946545b00341B95d9E9",
+        box: "0xE8247C96787119A8F7E8F8C81F58BeC5BEFC999f",
+      },
+    },
+  });
   await expect(collection.execute(collection.parse({ query: "cat" }))).resolves.toMatchObject({ status: "unavailable", source: "cloudinary:collection-search" });
 });
 

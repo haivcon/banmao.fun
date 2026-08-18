@@ -330,6 +330,7 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
             unlockTimestamp
         );
         _safeMint(to, tokenId);
+        emit MetadataUpdate(tokenId);
     }
 
     /**
@@ -867,6 +868,7 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
         emit BoxCreated(tokenId, msg.sender, to, amount, unlockTimestamp);
         emit BoxAssetLocked(tokenId, address(underlyingToken), amount);
         _safeMint(to, tokenId);
+        emit MetadataUpdate(tokenId);
     }
 
     function _pullExact(IERC20 token, uint256 amount) internal {

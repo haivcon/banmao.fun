@@ -83,13 +83,13 @@ describe("BanmaoBox chain registry", () => {
         "0xE19c875dBfa80171819E443e46Fc7839a9290769",
       );
       expect(mainnetManifest.contracts.factory).toBe(
-        "0x55E0c4eDF6c542e7FeD04a6f0c914d8F24bFCCf8",
+        "0x01E03F6eb085f4934A3A7946545b00341B95d9E9",
       );
       expect(mainnetManifest.contracts.previousFactory).toBe(
         "0x0000000000000000000000000000000000000000",
       );
       expect(mainnetManifest.contracts.box).toBe(
-        "0x19d3b0C4f1276D37772269f5Ce01179Db2D70559",
+        "0xE8247C96787119A8F7E8F8C81F58BeC5BEFC999f",
       );
     });
 

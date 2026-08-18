@@ -10,7 +10,7 @@ Banmao.fun is a modular Web3 social, DeFi, Collection, and GameFi application fo
 
 The application contains staking, burn, airdrop, BanmaoBox, and launchpad areas. The AI has bounded read adapters for X Layer chain ID 196 staking state, approved burn-address balances, and stored airdrop records when their feature flags are enabled.
 
-BanmaoBox is a permissionless Factory to per-token Box to immutable Renderer design for transferable, time-locked ERC-20 gift-box NFTs. A box may contain a primary token or a basket of two to five distinct ERC-20 assets. Release occurs after unlock to the current NFT owner. Token-level behavior such as rebasing, blacklist, pause, fees, or upgrades remains a risk. The checked-in X Layer mainnet manifest marks BanmaoBox as not deployed; source code and testnet records are not proof of a mainnet deployment.
+BanmaoBox is a permissionless Factory to per-token Box to immutable Renderer design for transferable, time-locked ERC-20 gift-box NFTs. A box may contain a primary token or a basket of two to five distinct ERC-20 assets. Release occurs after unlock to the current NFT owner. Token-level behavior such as rebasing, blacklist, pause, fees, or upgrades remains a risk. The checked-in X Layer mainnet manifest is the source of truth for the active deployment.
 
 Transaction Copilot is prepare-and-simulate only. It does not sign or submit transactions. A simulation can become stale before a user reviews and signs in their wallet.
 
