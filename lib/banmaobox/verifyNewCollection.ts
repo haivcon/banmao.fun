@@ -22,7 +22,6 @@ const factoryAbi = parseAbi([
 const boxAbi = parseAbi([
   "function underlyingToken() view returns (address)",
   "function renderer() view returns (address)",
-  "function metadataRenderer() view returns (address)",
   "function rendererAdmin() view returns (address)",
 ]);
 const client = createPublicClient({ transport: http(RPC_URL, { timeout: 30_000 }) });
@@ -126,7 +125,6 @@ async function validateTransaction(txHash: Hex) {
     factoryRenderer,
     underlying,
     boxRenderer,
-    metadataRenderer,
     rendererAdmin,
     code,
     block,
@@ -140,16 +138,19 @@ async function validateTransaction(txHash: Hex) {
       blockNumber: receipt.blockNumber,
     } as never) as Promise<Address>,
     client.readContract({ address: boxAddress, abi: boxAbi, functionName: "underlyingToken" } as never) as Promise<Address>,
-    client.readContract({ address: boxAddress, abi: boxAbi, functionName: "renderer" } as never) as Promise<Address>,
-    client.readContract({ address: boxAddress, abi: boxAbi, functionName: "metadataRenderer" } as never) as Promise<Address>,
+    client.readContract({
+      address: boxAddress,
+      abi: boxAbi,
+      functionName: "renderer",
+      blockNumber: receipt.blockNumber,
+    } as never) as Promise<Address>,
     client.readContract({ address: boxAddress, abi: boxAbi, functionName: "rendererAdmin" } as never) as Promise<Address>,
     client.getBytecode({ address: boxAddress }), client.getBlock({ blockNumber: receipt.blockNumber }),
   ]);
   if (!registered || !sameAddress(registeredBox, boxAddress)) throw new Error("Factory registry does not contain the emitted Box");
-  if (
-    !sameAddress(metadataRenderer, factoryRenderer) ||
-    !sameAddress(boxRenderer, factoryRenderer)
-  ) throw new Error("Initial renderer invariant does not match the deployed Factory");
+  if (!sameAddress(boxRenderer, factoryRenderer)) {
+    throw new Error("Initial renderer invariant does not match the deployed Factory");
+  }
   if (!sameAddress(rendererAdmin, manifest.deployer)) throw new Error("Renderer admin does not match the deployment manifest");
   if (!sameAddress(underlying, tokenAddress)) throw new Error("Box underlying token does not match TokenBoxCreated");
   if (!code || code === "0x") throw new Error("BanmaoBox runtime bytecode is missing");

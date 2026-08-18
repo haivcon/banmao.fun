@@ -24,7 +24,7 @@ const factoryAbi = [
 ];
 const boxAbi = [
   "function underlyingToken() view returns (address)", "function renderer() view returns (address)",
-  "function metadataRenderer() view returns (address)", "function rendererAdmin() view returns (address)",
+  "function rendererAdmin() view returns (address)",
   "function tokenDecimals() view returns (uint8)", "function tokenSymbol() view returns (string)",
   "function MAX_ASSETS_PER_BOX() view returns (uint256)", "function MAX_BATCH_SIZE() view returns (uint256)",
   "function MAX_LOCK_DURATION() view returns (uint256)", "function totalSupply() view returns (uint256)",
@@ -133,8 +133,7 @@ async function main() {
   const registryBox = await read("Factory boxForToken", () => factoryContract.boxForToken(TOKEN));
   const registered = await read("Factory isTokenBox", () => factoryContract.isTokenBox(box));
   const underlying = await read("Box underlyingToken", () => boxContract.underlyingToken());
-  const boxRenderer = await read("Box SVG renderer", () => boxContract.renderer());
-  const metadataRenderer = await read("Box metadata renderer", () => boxContract.metadataRenderer());
+  const boxRenderer = await read("Box full renderer", () => boxContract.renderer());
   const rendererAdmin = await read("Box renderer admin", () => boxContract.rendererAdmin());
   await read("Active SVG renderer runtime", () => runtime(provider, boxRenderer, "Active SVG renderer"));
   const decimals = await read("Box tokenDecimals", () => boxContract.tokenDecimals());
@@ -147,8 +146,8 @@ async function main() {
   if (
     !same(factoryRenderer, renderer) ||
     !same(previousFactory, expectedPreviousFactory) ||
-    !same(metadataRenderer, renderer)
-  ) fail("Factory migration or immutable metadata renderer links are invalid");
+    !same(boxRenderer, renderer)
+  ) fail("Factory migration or full renderer links are invalid");
   if (!same(rendererAdmin, manifest.deployer)) fail("Renderer admin does not match the deployment manifest");
   if (!same(registryBox, box) || !registered || !same(underlying, TOKEN)) fail("Factory/underlying registry is invalid");
   if (Number(decimals) !== 18 || !maxAssets.eq(5) || !maxBatch.eq(20) || !maxLock.eq(3_153_600_000)) fail("Metadata/constants mismatch");

@@ -93,10 +93,11 @@ ehthumbs.db
 /scripts/*
 !/scripts/banmaobox-runtime.cjs
 !/scripts/deploy-banmaobox-testnet.cjs
-!/scripts/deploy-banmaobox-renderer-mainnet.cjs
 !/scripts/generate-banmaobox-release.cjs
 /deployments/*
-!/deployments/banmaobox-renderer-release-artifacts.json
+!/deployments/banmaobox-releases/
+/deployments/banmaobox-releases/*
+!/deployments/banmaobox-releases/9de8225e702132fedede336deb636ffa87247dc03543ea39107bf6760d096c55.json
 # Local-only removed games: keep source on this machine, never commit/deploy
 /local-only/
 /app/gamefi/banmaominer/

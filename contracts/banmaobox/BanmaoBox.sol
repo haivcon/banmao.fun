@@ -10,9 +10,6 @@ import {IERC4906} from "@openzeppelin/contracts/interfaces/IERC4906.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
-import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-
 import {
     BanmaoBoxRenderData,
     IBanmaoBoxRenderer,
@@ -33,14 +30,14 @@ import {
  *   amount. Payout verifies both this contract's decrease and the owner's
  *   increase by exactly the recorded amount.
  * - Token metadata is snapshotted only for display and never affects custody.
- * - Only the SVG renderer is replaceable by the immutable renderer admin.
- *   Metadata fields and attributes remain controlled by this release.
+ * - The full metadata renderer is replaceable by the immutable renderer admin.
+ *   It receives bounded read-only data and has no custody authority.
  * - There is no admin withdrawal path, proxy upgradeability, or early unlock.
  */
 contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
     using ERC165Checker for address;
     using SafeERC20 for IERC20;
-    using Strings for uint256;
+
 
     uint8 private constant MAX_SUPPORTED_TOKEN_DECIMALS = 69;
     bytes4 private constant ERC4906_INTERFACE_ID = bytes4(0x49064906);
@@ -53,8 +50,7 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
     uint256 private constant BATCH_RELEASE_GAS_RESERVE = 100_000;
 
     IERC20 public immutable underlyingToken;
-    IBanmaoBoxSVGRenderer public renderer;
-    IBanmaoBoxRenderer public immutable metadataRenderer;
+    IBanmaoBoxRenderer public renderer;
     address public immutable rendererAdmin;
     uint8 public immutable tokenDecimals;
     string public tokenSymbol;
@@ -180,6 +176,7 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
         if (tokenAddress.code.length == 0) revert InvalidToken();
         if (
             rendererAddress.code.length == 0 ||
+            !rendererAddress.supportsERC165() ||
             !rendererAddress.supportsInterface(
                 type(IBanmaoBoxRenderer).interfaceId
             ) ||
@@ -201,8 +198,7 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
         }
 
         underlyingToken = IERC20(tokenAddress);
-        renderer = IBanmaoBoxSVGRenderer(rendererAddress);
-        metadataRenderer = IBanmaoBoxRenderer(rendererAddress);
+        renderer = IBanmaoBoxRenderer(rendererAddress);
         rendererAdmin = rendererAdminAddress;
         tokenDecimals = decimals;
         tokenSymbol = _readTokenSymbol(tokenAddress);
@@ -742,14 +738,18 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
     }
 
     /**
-     * @notice Replaces only the SVG renderer for this collection.
-     * @dev Metadata fields and attributes remain controlled by BanmaoBox and
-     *      the immutable metadataRenderer. Emits ERC-4906 for indexer refresh.
+     * @notice Replaces the full metadata renderer for this collection.
+     * @dev The renderer controls tokenURI, SVG and attributes but receives only
+     *      bounded calldata and has no custody authority. Emits ERC-4906.
      */
     function setRenderer(address newRenderer) external {
         if (msg.sender != rendererAdmin) revert NotRendererAdmin();
         if (
             newRenderer.code.length == 0 ||
+            !newRenderer.supportsERC165() ||
+            !newRenderer.supportsInterface(
+                type(IBanmaoBoxRenderer).interfaceId
+            ) ||
             !newRenderer.supportsInterface(
                 type(IBanmaoBoxSVGRenderer).interfaceId
             )
@@ -758,60 +758,20 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
         }
 
         address previousRenderer = address(renderer);
-        renderer = IBanmaoBoxSVGRenderer(newRenderer);
+        renderer = IBanmaoBoxRenderer(newRenderer);
         emit RendererUpdated(previousRenderer, newRenderer);
         emit BatchMetadataUpdate(1, type(uint256).max);
     }
 
-    /**
-     * @notice Fully on-chain metadata with a replaceable SVG.
-     * @dev All non-SVG metadata remains fixed by this collection release.
-     */
+    /** Returns the complete token URI from the configured full renderer. */
     function tokenURI(
         uint256 tokenId
     ) public view override returns (string memory) {
         _requireOwned(tokenId);
-        BanmaoBoxRenderData memory data = _renderData(tokenId);
-        string memory image = Base64.encode(
-            bytes(renderer.renderSVG(tokenId, data))
-        );
-        bytes memory metadata = abi.encodePacked(
-            _renderMetadataHead(tokenId, image),
-            _renderMetadataTail(data)
-        );
-        return string(
-            abi.encodePacked(
-                "data:application/json;base64,",
-                Base64.encode(metadata)
-            )
-        );
+        return renderer.tokenURI(tokenId, _renderData(tokenId));
     }
 
-    function _renderMetadataHead(
-        uint256 tokenId,
-        string memory image
-    ) private pure returns (bytes memory) {
-        return abi.encodePacked(
-            '{"name":"BanmaoBox #', tokenId.toString(),
-            '","description":"A transferable time-sealed treasury backed by up to five ERC-20 assets on X Layer. Ledger amounts are compact display values; on-chain balances remain exact.",',
-            '"image":"data:image/svg+xml;base64,', image,
-            '","external_url":"https://banmao.fun/defi/box",',
-            '"background_color":"08090D","attributes":'
-        );
-    }
-
-    function _renderMetadataTail(
-        BanmaoBoxRenderData memory data
-    ) private view returns (bytes memory) {
-        return abi.encodePacked(
-            metadataRenderer.renderAttributes(data),
-            ',"properties":{"type":"banmaobox","metadataMode":"fully-onchain",',
-            '"renderer":"solidity-svg-split-contract","chain":"X Layer","chainId":',
-            block.chainid.toString(), '}}'
-        );
-    }
-
-    /** Returns the raw SVG from the currently configured SVG renderer. */
+    /** Returns the raw SVG from the currently configured full renderer. */
     function renderSVG(
         uint256 tokenId
     ) external view returns (string memory) {
@@ -819,12 +779,12 @@ contract BanmaoBox is ERC721Enumerable, IERC4906, ReentrancyGuard {
         return renderer.renderSVG(tokenId, _renderData(tokenId));
     }
 
-    /** Returns attributes from the immutable metadata renderer. */
+    /** Returns attributes from the currently configured full renderer. */
     function renderAttributes(
         uint256 tokenId
     ) external view returns (string memory) {
         _requireOwned(tokenId);
-        return metadataRenderer.renderAttributes(_renderData(tokenId));
+        return renderer.renderAttributes(_renderData(tokenId));
     }
 
     /// @inheritdoc IERC165

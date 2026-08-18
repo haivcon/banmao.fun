@@ -19,13 +19,12 @@ struct BanmaoBoxRenderData {
     bytes renderAssets;
 }
 
-/// @notice Minimal interface for replaceable BanmaoBox SVG renderers.
-/// @dev Implementations cannot control collection metadata or attributes.
+/// @notice Required SVG capability inherited by the full renderer interface.
 interface IBanmaoBoxSVGRenderer is IERC165 {
     function renderSVG(uint256 tokenId, BanmaoBoxRenderData calldata data) external view returns (string memory);
 }
 
-/// @notice Full renderer interface retained for the immutable metadata renderer.
+/// @notice Full replaceable BanmaoBox metadata renderer interface.
 interface IBanmaoBoxRenderer is IBanmaoBoxSVGRenderer {
     function tokenURI(uint256 tokenId, BanmaoBoxRenderData calldata data) external view returns (string memory);
     function renderAttributes(BanmaoBoxRenderData calldata data) external view returns (string memory);
@@ -63,7 +62,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
             '","external_url":"https://banmao.fun/defi/box",',
             '"background_color":"08090D","attributes":', _renderAttributes(data),
             ',"properties":{"type":"banmaobox","metadataMode":"fully-onchain",',
-            '"renderer":"solidity-svg-split-contract","chain":"X Layer","chainId":',
+            '"renderer":"solidity-full-renderer","chain":"X Layer","chainId":',
             block.chainid.toString(), '}}'
         );
         return string(
@@ -99,31 +98,24 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
     }
 
     function _renderSVG(uint256 tokenId, BanmaoBoxRenderData calldata data) internal view returns (string memory) {
-        bool ready = block.timestamp >= uint256(_unlockTime(data));
         string memory gold = _tierGold(_tier(data.amount, data.tokenDecimals));
         bytes memory hero = abi.encodePacked(
-            _header(tokenId, ready, gold),
+            _header(tokenId, gold),
             _assetSummary(data, gold)
         );
         bytes memory details = abi.encodePacked(
-            _timeline(data, ready, gold),
+            _timeline(data, gold),
             _ledger(data)
         );
         return string(abi.encodePacked(
-            _svgHead(data.assetCount, ready, gold),
+            _svgHead(gold),
             hero,
             details,
             "</g></svg>"
         ));
     }
 
-    function _svgHead(
-        uint8 assetCount,
-        bool ready,
-        string memory gold
-    ) internal pure returns (string memory) {
-        assetCount;
-        ready;
+    function _svgHead(string memory gold) internal pure returns (string memory) {
         return string(abi.encodePacked(
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid meet" role="img" aria-label="BanmaoBox sealed treasury">',
             _defs(),
@@ -140,11 +132,11 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         return string(abi.encodePacked('<rect width="800" height="800" fill="url(#bg)"/><rect x="18" y="18" width="764" height="764" rx="34" fill="none" stroke="', gold, '" stroke-opacity=".38"/><path d="M42 112H758M42 386H758M42 466H758M42 580H758" stroke="#D8B565" stroke-opacity=".22"/>'));
     }
 
-    function _header(uint256 tokenId, bool ready, string memory gold) internal pure returns (string memory) {
+    function _header(uint256 tokenId, string memory gold) internal pure returns (string memory) {
         return string(abi.encodePacked(
             '<text class="brand" x="50" y="68" font-size="34" fill="url(#shine)">BANMAOBOX</text>',
             '<text class="label muted" x="50" y="96" font-size="13">SEALED TREASURY  /  ',
-            ready ? "READY TO OPEN" : "TIME-SEALED", '</text>',
+            'SEALED</text>',
             '<text class="label muted" x="750" y="48" text-anchor="end" font-size="11">NFT TOKEN ID</text>',
             '<text class="mono" x="750" y="84" text-anchor="end" fill="', gold,
             '" font-size="30" font-weight="700">#', _abbreviate(tokenId.toString(), 7, 7), '</text>'
@@ -202,17 +194,17 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         ));
     }
 
-    function _timeline(BanmaoBoxRenderData calldata data, bool ready, string memory gold) internal pure returns (string memory) {
+    function _timeline(BanmaoBoxRenderData calldata data, string memory gold) internal pure returns (string memory) {
         return string(abi.encodePacked(
-            _unlockPanel(data, ready),
+            _unlockPanel(data),
             _provenance(data, gold)
         ));
     }
 
-    function _unlockPanel(BanmaoBoxRenderData calldata data, bool ready) internal pure returns (string memory) {
+    function _unlockPanel(BanmaoBoxRenderData calldata data) internal pure returns (string memory) {
         return string(abi.encodePacked(
             '<g transform="translate(48 414)"><text class="label gold" font-size="15">',
-            ready ? "UNLOCKED AT" : "UNLOCKS",
+            'UNLOCK TIME',
             '</text><text class="mono white" x="704" text-anchor="end" font-size="20" font-weight="700">',
             _formatDateTime(_unlockTime(data)), '</text></g>'
         ));
@@ -315,10 +307,10 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         }
     }
 
-    function _renderAttributes(BanmaoBoxRenderData calldata data) internal view returns (string memory) {
+    function _renderAttributes(BanmaoBoxRenderData calldata data) internal pure returns (string memory) {
         bytes memory identity = abi.encodePacked(
             '[{"trait_type":"Status","value":"',
-            block.timestamp >= uint256(_unlockTime(data)) ? "Ready to open" : "Locked",
+            'Sealed',
             '"},{"trait_type":"Token Symbol","value":"', _symbol(data.tokenSymbol),
             '"},{"display_type":"number","trait_type":"Asset Count","value":',
             uint256(data.assetCount).toString()
@@ -330,8 +322,12 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         return string(abi.encodePacked(
             identity,
             provenance,
+            '},{"display_type":"date","trait_type":"Created Time","value":',
+            uint256(_createdAt(data)).toString(),
             '},{"display_type":"date","trait_type":"Unlock Time","value":',
             uint256(_unlockTime(data)).toString(),
+            '},{"display_type":"number","trait_type":"Lock Duration Seconds","value":',
+            (uint256(_unlockTime(data)) - uint256(_createdAt(data))).toString(),
             '},{"trait_type":"Metadata Mode","value":"Fully On-Chain"}]'
         ));
     }
