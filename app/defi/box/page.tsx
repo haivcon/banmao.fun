@@ -2391,7 +2391,7 @@ export default function BanmaoBoxPage() {
           }}
         >
           <section
-            className="box-dialog"
+            className="box-dialog box-transfer-dialog"
             role="dialog"
             aria-modal="true"
             aria-labelledby="box-transfer-title"

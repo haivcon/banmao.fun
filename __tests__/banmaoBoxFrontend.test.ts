@@ -392,6 +392,29 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(css).toMatch(/\.box-submit[\s\S]*min-height:\s*56px/);
   });
 
+  test("centers equal-width tabs and assigns content-specific desktop dialog geometry", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
+    const tabsRule = css.match(/\.box-tabs\s*\{([^}]*)\}/)?.[1] ?? "";
+    const tabButtonRule = css.match(/\.box-tabs button\s*\{([^}]*)\}/)?.[1] ?? "";
+    const dialogRule = css.match(/\.box-dialog\s*\{([^}]*)\}/)?.[1] ?? "";
+    const reviewRule = css.match(/\.box-review\s*\{([^}]*)\}/)?.[1] ?? "";
+    const transferRule = css.match(/\.box-transfer-dialog\s*\{([^}]*)\}/)?.[1] ?? "";
+
+    expect(tabsRule).toMatch(/display:\s*grid/);
+    expect(tabsRule).toMatch(/grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+    expect(tabsRule).toMatch(/width:\s*min\((?:8[0-9]{2}|9[0-2][0-9])px,\s*calc\(100%\s*-\s*48px\)\)/);
+    expect(tabsRule).toMatch(/margin:\s*0 auto/);
+    expect(tabButtonRule).toMatch(/justify-content:\s*center/);
+    expect(tabButtonRule).toMatch(/min-height:\s*(?:5[0-9]|6[0-9])px/);
+    expect(dialogRule).toMatch(/width:\s*min\(520px,\s*calc\(100vw\s*-\s*48px\)\)/);
+    expect(dialogRule).toMatch(/max-height:\s*calc\(100dvh\s*-\s*48px\)/);
+    expect(dialogRule).toMatch(/overflow-y:\s*auto/);
+    expect(reviewRule).toMatch(/width:\s*min\(900px,\s*calc\(100vw\s*-\s*64px\)\)/);
+    expect(transferRule).toMatch(/width:\s*min\(700px,\s*calc\(100vw\s*-\s*48px\)\)/);
+    expect(page).toContain('className="box-dialog box-transfer-dialog"');
+  });
+
   test("classifies mocked provider lifecycle failures without claiming submission", () => {
     expect(classifyTransactionError({ code: 4001 }, false)).toEqual({ kind: "rejected", submitted: false });
     expect(classifyTransactionError({ name: "UserRejectedRequestError" }, false)).toEqual({ kind: "rejected", submitted: false });

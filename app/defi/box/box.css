@@ -1697,7 +1697,9 @@
 
 .box-dialog {
   position: relative;
-  width: min(470px, 100%);
+  width: min(520px, calc(100vw - 48px));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
   border: 1px solid var(--box-line-strong);
   border-radius: 26px;
   background: #10141e;
@@ -1750,10 +1752,10 @@
   width: 17px;
 }
 
-.box-review { width: min(560px, 100%); text-align: left; }
+.box-review { width: min(900px, calc(100vw - 64px)); text-align: left; }
 .box-review > h2, .box-review > p { text-align: center; }
 .box-review__shield { display: block; width: 42px; height: 42px; margin: 0 auto 14px; color: var(--box-gold); }
-.box-review__details { display: grid; gap: 1px; overflow: hidden; margin: 0 0 14px; border: 1px solid var(--box-line); border-radius: 13px; background: var(--box-line); }
+.box-review__details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; overflow: hidden; margin: 0 0 14px; border: 1px solid var(--box-line); border-radius: 13px; background: var(--box-line); }
 .box-review__details > div { display: flex; justify-content: space-between; gap: 16px; background: #0c1018; padding: 10px 12px; }
 .box-review__details dt { color: var(--box-muted); font-size: 11px; }
 .box-review__details dd { margin: 0; font-size: 11px; font-weight: 800; text-align: right; }
@@ -1761,6 +1763,7 @@
 .box-review__rows small { overflow: hidden; color: var(--box-muted); font-family: ui-monospace, monospace; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .box-review__ack { display: flex; align-items: flex-start; gap: 10px; border: 1px solid rgba(251,191,36,.25); border-radius: 12px; background: rgba(251,191,36,.07); color: #fde68a; padding: 12px; font-size: 11px; line-height: 1.5; cursor: pointer; }
 .box-review__ack input { flex: 0 0 auto; width: 17px; height: 17px; margin: 0; accent-color: var(--box-gold-deep); }
+.box-transfer-dialog { width: min(700px, calc(100vw - 48px)); }
 
 .box-dialog__actions {
   display: grid;
@@ -1989,9 +1992,10 @@
 }
 
 .box-tabs {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
-  width: min(1280px, calc(100% - 48px));
+  width: min(860px, calc(100% - 48px));
   margin: 0 auto;
   padding: 0;
   border-bottom: 1px solid var(--box-line);
@@ -1999,6 +2003,9 @@
 .box-tabs button {
   display: flex;
   align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 56px;
   gap: 7px;
   padding: 12px 18px;
   border: none;
@@ -2008,6 +2015,8 @@
   font: inherit;
   font-size: 13px;
   font-weight: 600;
+  overflow-wrap: anywhere;
+  text-align: center;
   cursor: pointer;
   transition: color 150ms, border-color 150ms;
 }
@@ -2965,7 +2974,8 @@
     width: 14px;
   }
 
-  .box-review {
+  .box-review,
+  .box-transfer-dialog {
     width: 100%;
   }
 
@@ -2985,6 +2995,10 @@
   .box-review__approval-notice svg {
     width: 14px;
     height: 14px;
+  }
+
+  .box-review__details {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .box-review__details > div {
