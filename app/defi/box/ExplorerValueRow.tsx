@@ -8,6 +8,7 @@ type ExplorerValueRowProps = {
   value: Address | Hash;
   explorerBaseUrl: string;
   kind: "address" | "tx";
+  href?: string;
   copyLabel: string;
   onCopied: (label: string) => void;
   onCopyFailed?: () => void;
@@ -19,12 +20,13 @@ export function ExplorerValueRow({
   value,
   explorerBaseUrl,
   kind,
+  href: explicitHref,
   copyLabel,
   onCopied,
   onCopyFailed,
   className = "",
 }: ExplorerValueRowProps) {
-  const href = `${explorerBaseUrl.replace(/\/+$/, "")}/${kind}/${value}`;
+  const href = explicitHref ?? `${explorerBaseUrl.replace(/\/+$/, "")}/${kind}/${value}`;
   const copyValue = async () => {
     try {
       await navigator.clipboard.writeText(value);

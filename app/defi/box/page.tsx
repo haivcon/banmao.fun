@@ -59,6 +59,7 @@ import {
 import {
   BOX_COPY,
   getInitialBoxLanguage,
+  parameterizeBoxCopy,
   type BoxCopy,
   type BoxLanguage,
 } from "./i18n";
@@ -70,7 +71,11 @@ import {
   type BanmaoBoxVerificationRequest,
   type BanmaoBoxVerificationUpdate,
 } from "./requestVerification";
-import { classifyTransactionError, transactionProgressIndex } from "./transactionPresentation";
+import {
+  classifyTransactionError,
+  resolveStoredAssetSymbol,
+  transactionProgressIndex,
+} from "./transactionPresentation";
 import { ExplorerValueRow } from "./ExplorerValueRow";
 import {
   collectionLifecycleOwnsTransaction,
@@ -91,6 +96,7 @@ import {
 import { useBox } from "./useBox";
 import { useBoundedLoading } from "./useBoundedLoading";
 import { formatExactTokenAmount, tokenAmountInWords } from "./amountFormat";
+import { tokenExplorerUrl } from "./tokenIdentity";
 import "./box.css";
 
 const DURATION_OPTIONS = [7, 30, 90, 180, 365] as const;
@@ -285,7 +291,12 @@ function BoxCard({
               const isPrimary =
                 primaryToken?.toLowerCase() === asset.token.toLowerCase();
               const assetDecimals = asset.decimals ?? (isPrimary ? decimals : 18);
-              const assetSymbol = asset.symbol ?? (isPrimary ? tokenSymbol : "TOKEN");
+              const assetSymbol = resolveStoredAssetSymbol(
+                asset.symbol,
+                isPrimary ? tokenSymbol : undefined,
+                asset.token,
+                copy.genericToken,
+              );
               return (
                 <div className="box-asset" key={asset.token}>
                   <div>
@@ -372,6 +383,7 @@ export default function BanmaoBoxPage() {
   const [amount, setAmount] = useState("");
   const [activeBoxAddress, setActiveBoxAddress] = useState<Address>();
   const [activeTokenAddress, setActiveTokenAddress] = useState<Address>();
+  const [collectionResolving, setCollectionResolving] = useState(true);
   const [collectionToken, setCollectionToken] = useState("");
   const [collectionError, setCollectionError] = useState<string | null>(null);
   const [collectionPending, setCollectionPending] = useState(false);
@@ -419,7 +431,7 @@ export default function BanmaoBoxPage() {
     "create",
   );
   const chainConfig = getBoxChainConfig(selectedChainId);
-  const copy = BOX_COPY[language];
+  const baseCopy = BOX_COPY[language];
   const explorerBaseUrl = chainConfig.chain.blockExplorers.default.url;
 
   const {
@@ -429,6 +441,7 @@ export default function BanmaoBoxPage() {
     isDeployed,
     tokenDecimals,
     tokenSymbol,
+    tokenIdentity,
     maxLockDuration,
     tokenBalance,
     allowance,
@@ -460,7 +473,11 @@ export default function BanmaoBoxPage() {
     transactionHash,
     transactionError,
     isBusy,
-  } = useBox(selectedChainId, activeBoxAddress, activeTokenAddress, copy.genericToken);
+  } = useBox(selectedChainId, activeBoxAddress, activeTokenAddress, baseCopy.genericToken, collectionResolving);
+  const copy = useMemo(
+    () => parameterizeBoxCopy(baseCopy, tokenIdentity.displaySymbol, tokenIdentity.isCanonicalBanmao),
+    [baseCopy, tokenIdentity.displaySymbol, tokenIdentity.isCanonicalBanmao],
+  );
   const { timedOut: boxesTimedOut, resetTimeout: resetBoxesTimeout } =
     useBoundedLoading(boxesLoading);
   const retryBoxes = useCallback(() => {
@@ -507,8 +524,9 @@ export default function BanmaoBoxPage() {
       ? getAddress(savedToken)
       : canonicalToken;
 
-    setActiveTokenAddress(canonicalToken);
-    setActiveBoxAddress(chainConfig.boxAddress);
+    setCollectionResolving(true);
+    setActiveTokenAddress(undefined);
+    setActiveBoxAddress(undefined);
     setCollectionToken(requestedToken ?? "");
     setCollectionError(null);
     setExtraAssets([]);
@@ -528,16 +546,29 @@ export default function BanmaoBoxPage() {
           if (resolvedBox === "0x0000000000000000000000000000000000000000") {
             window.localStorage.removeItem(storageKey);
             setCollectionToken(canonicalToken);
+            setActiveTokenAddress(canonicalToken);
+            setActiveBoxAddress(chainConfig.boxAddress);
+            setCollectionError("Saved collection was unavailable; using the canonical collection.");
+            setCollectionResolving(false);
             return;
           }
           setActiveTokenAddress(requestedToken);
           setActiveBoxAddress(getAddress(resolvedBox));
+          setCollectionResolving(false);
         })
         .catch(() => {
           if (cancelled || requestId !== collectionRequestRef.current) return;
           window.localStorage.removeItem(storageKey);
           setCollectionToken(canonicalToken);
+          setActiveTokenAddress(canonicalToken);
+          setActiveBoxAddress(chainConfig.boxAddress);
+          setCollectionError("Saved collection could not be resolved; using the canonical collection.");
+          setCollectionResolving(false);
         });
+    } else {
+      setActiveTokenAddress(canonicalToken);
+      setActiveBoxAddress(chainConfig.boxAddress);
+      setCollectionResolving(false);
     }
 
     return () => {
@@ -1963,7 +1994,7 @@ export default function BanmaoBoxPage() {
                     language={language}
                     now={now}
                     decimals={tokenDecimals}
-                    primaryToken={chainConfig.tokenAddress}
+                    primaryToken={activeTokenAddress}
                     tokenSymbol={tokenSymbol}
                     busy={isBusy}
                     onOpen={(tokenId) => void handleOpen(tokenId)}
@@ -2077,8 +2108,16 @@ export default function BanmaoBoxPage() {
                   </div>
                 </dl>
                 <div className="box-inspector-assets">
-                  {inspectedBox.assets.map((asset, index) => (
-                    <button
+                  {inspectedBox.assets.map((asset, index) => {
+                    const isPrimary = activeTokenAddress?.toLowerCase() === asset.token.toLowerCase();
+                    const assetDecimals = asset.decimals ?? (isPrimary ? tokenDecimals : 18);
+                    const assetSymbol = resolveStoredAssetSymbol(
+                      asset.symbol,
+                      isPrimary ? tokenSymbol : undefined,
+                      asset.token,
+                      copy.genericToken,
+                    );
+                    return <button
                       type="button"
                       key={asset.token}
                       title={
@@ -2092,17 +2131,14 @@ export default function BanmaoBoxPage() {
                       }
                     >
                       <span>
-                        {formatExactTokenAmount(asset.amount, asset.decimals ?? 18, language)}{" "}
-                        {asset.symbol ?? "TOKEN"}
-                        {activeTokenAddress?.toLowerCase() ===
-                        asset.token.toLowerCase()
-                          ? ` · ${copy.primaryAsset}`
-                          : ""}{" "}
+                        {formatExactTokenAmount(asset.amount, assetDecimals, language)}{" "}
+                        {assetSymbol}
+                        {isPrimary ? ` · ${copy.primaryAsset}` : ""}{" "}
                         · {asset.token.slice(0, 8)}…{asset.token.slice(-6)}
                       </span>
                       {inspectedBox.canOpen ? <PackageOpen aria-label="Release this asset" /> : <LockKeyhole aria-label="Locked" />}
-                    </button>
-                  ))}
+                    </button>;
+                  })}
                 </div>
                 <a
                   href={boxNftExplorerUrl(
@@ -2180,8 +2216,19 @@ export default function BanmaoBoxPage() {
           <small>Chain ID {selectedChainId}</small>
         </div>
         <div className="box-contract-footer__grid">
+          {(activeTokenAddress ?? chainConfig.tokenAddress) ? (
+            <ExplorerValueRow
+              label={copy.tokenAddressLabel}
+              value={(activeTokenAddress ?? chainConfig.tokenAddress) as Address}
+              kind="address"
+              href={tokenExplorerUrl((activeTokenAddress ?? chainConfig.tokenAddress) as Address)}
+              explorerBaseUrl={explorerBaseUrl}
+              copyLabel={copy.copyTokenAddress}
+              onCopied={(copiedLabel) => toast.success(copy.copied(copiedLabel), { duration: 1800 })}
+              onCopyFailed={() => toast.error(copy.copyFailed)}
+            />
+          ) : null}
           {[
-            [copy.tokenAddressLabel, chainConfig.tokenAddress, copy.copyTokenAddress],
             [copy.collectionAddressLabel, activeBoxAddress ?? chainConfig.boxAddress, copy.copyCollectionAddress],
             [copy.factoryAddressLabel, chainConfig.factoryAddress, copy.copyFactoryAddress],
             [copy.rendererAddressLabel, chainConfig.boxRendererAddress, copy.copyRendererAddress],

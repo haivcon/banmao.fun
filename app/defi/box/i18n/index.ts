@@ -208,6 +208,24 @@ export type BoxCopy = {
   balanceRetry: string;
 };
 
+export function parameterizeBoxCopy(
+  copy: BoxCopy,
+  displaySymbol: string,
+  isCanonicalBanmao: boolean,
+): BoxCopy {
+  if (isCanonicalBanmao) return copy;
+  const replace = (value: string) => value.split("BANMAO").join(displaySymbol);
+  const dynamic = { ...copy } as Record<string, unknown>;
+  for (const [key, value] of Object.entries(copy)) {
+    if (typeof value === "string") dynamic[key] = replace(value);
+  }
+  dynamic.phase = Object.entries(copy.phase).reduce<Record<string, string>>(
+    (result, [phase, label]) => ({ ...result, [phase]: replace(label) }),
+    {},
+  );
+  return dynamic as BoxCopy;
+}
+
 export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
   en: {
     back: "DeFi home",

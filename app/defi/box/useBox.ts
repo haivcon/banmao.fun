@@ -29,6 +29,7 @@ import {
   sameAddress,
 } from "./safety";
 import { resolveStoredAssetSymbol } from "./transactionPresentation";
+import { buildTokenIdentity } from "./tokenIdentity";
 import { validateBanmaoBoxDeployment } from "./deploymentValidation";
 
 export type BoxTransactionPhase =
@@ -90,6 +91,7 @@ export function useBox(
   selectedBoxAddress?: Address,
   selectedTokenAddress?: Address,
   genericToken = "TOKEN",
+  suspended = false,
 ) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
@@ -127,12 +129,18 @@ export function useBox(
     functionName: "tokenDecimals",
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(boxAddress && isDiscoveryValidated),
+      enabled: !suspended && Boolean(boxAddress && isDiscoveryValidated),
       staleTime: Number.POSITIVE_INFINITY,
     },
   });
 
-  const tokenDecimals = Number(tokenDecimalsQuery.data ?? 18);
+  const liveTokenDecimalsQuery = useReadContract({
+    address: tokenAddress,
+    abi: BANMAO_ERC20_ABI,
+    functionName: "decimals",
+    chainId: selectedChainId,
+    query: { enabled: !suspended && Boolean(tokenAddress), staleTime: Number.POSITIVE_INFINITY },
+  });
 
   const tokenSymbolQuery = useReadContract({
     address: boxAddress,
@@ -140,9 +148,17 @@ export function useBox(
     functionName: "tokenSymbol",
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(boxAddress && isDiscoveryValidated),
+      enabled: !suspended && Boolean(boxAddress && isDiscoveryValidated),
       staleTime: Number.POSITIVE_INFINITY,
     },
+  });
+
+  const liveTokenSymbolQuery = useReadContract({
+    address: tokenAddress,
+    abi: BANMAO_ERC20_ABI,
+    functionName: "symbol",
+    chainId: selectedChainId,
+    query: { enabled: !suspended && Boolean(tokenAddress), staleTime: Number.POSITIVE_INFINITY },
   });
 
   const maxLockDurationQuery = useReadContract({
@@ -151,12 +167,21 @@ export function useBox(
     functionName: "MAX_LOCK_DURATION",
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(boxAddress && isDiscoveryValidated),
+      enabled: !suspended && Boolean(boxAddress && isDiscoveryValidated),
       staleTime: Number.POSITIVE_INFINITY,
     },
   });
 
-  const tokenSymbol = (tokenSymbolQuery.data as string | undefined) ?? "BANMAO";
+  const tokenIdentity = buildTokenIdentity({
+    address: tokenAddress,
+    collectionAddress: boxAddress,
+    canonicalAddress: chainConfig.tokenAddress,
+    liveSymbol: liveTokenSymbolQuery.data,
+    storedSymbol: tokenSymbolQuery.data,
+    decimals: liveTokenDecimalsQuery.data ?? tokenDecimalsQuery.data,
+  }, genericToken);
+  const tokenDecimals = tokenIdentity.decimals;
+  const tokenSymbol = tokenIdentity.symbol;
   const maxLockDuration =
     (maxLockDurationQuery.data as bigint | undefined) ?? 100n * 365n * 86_400n;
 
@@ -167,7 +192,7 @@ export function useBox(
     args: address ? [address] : undefined,
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(address && tokenAddress),
+      enabled: !suspended && Boolean(address && tokenAddress),
       refetchInterval: 15_000,
     },
   });
@@ -179,7 +204,7 @@ export function useBox(
     args: address && boxAddress ? [address, boxAddress] : undefined,
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(address && boxAddress && tokenAddress),
+      enabled: !suspended && Boolean(address && boxAddress && tokenAddress),
       refetchInterval: 15_000,
     },
   });
@@ -191,7 +216,7 @@ export function useBox(
     args: address ? [address] : undefined,
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(address && boxAddress && isDiscoveryValidated),
+      enabled: !suspended && Boolean(address && boxAddress && isDiscoveryValidated),
       refetchInterval: 15_000,
     },
   });
@@ -202,7 +227,7 @@ export function useBox(
     functionName: "totalTokensLocked",
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(boxAddress && isDiscoveryValidated),
+      enabled: !suspended && Boolean(boxAddress && isDiscoveryValidated),
       refetchInterval: 15_000,
     },
   });
@@ -213,7 +238,7 @@ export function useBox(
     functionName: "totalSupply",
     chainId: selectedChainId,
     query: {
-      enabled: Boolean(boxAddress && isDiscoveryValidated),
+      enabled: !suspended && Boolean(boxAddress && isDiscoveryValidated),
       refetchInterval: 15_000,
     },
   });
@@ -222,6 +247,7 @@ export function useBox(
     let cancelled = false;
 
     async function validateDeployment() {
+      if (suspended) return;
       setIsDeploymentValidated(false);
       setIsDiscoveryValidated(false);
       setDeploymentError(null);
@@ -406,6 +432,7 @@ export function useBox(
     tokenAddress,
     expectedRuntime,
     deploymentAttempt,
+    suspended,
   ]);
 
   const retryDeployment = useCallback(() => {
@@ -1217,6 +1244,7 @@ export function useBox(
     isDeployed,
     tokenDecimals,
     tokenSymbol,
+    tokenIdentity,
     maxLockDuration,
     tokenBalance: (balanceQuery.data as bigint | undefined) ?? 0n,
     tokenBalanceLoading:

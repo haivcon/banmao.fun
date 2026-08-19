@@ -518,7 +518,7 @@ export default function AirdropPage() {
                             <div className="airdrop-footer-contract-item">
                                 <span className="airdrop-footer-label">{lang === "vi" ? "Token Mặc Định" : lang === "zh" ? "默认代币" : lang === "ko" ? "기본 토큰" : lang === "ru" ? "Токен по умолчанию" : lang === "id" ? "Token Default" : "Default Token"} — $BANMAO (ERC-20)</span>
                                 <div className="airdrop-footer-addr-row">
-                                    <a href="https://web3.okx.com/explorer/x-layer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78" target="_blank" rel="noopener noreferrer" className="airdrop-footer-address">
+                                    <a href="https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78?address=0x16d91d1615fC55b76d5F92365BD60C069b46eF78" target="_blank" rel="noopener noreferrer" className="airdrop-footer-address">
                                         0x16d91d1615fc55b76d5f92365bd60c069b46ef78
                                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                                     </a>

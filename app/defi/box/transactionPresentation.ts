@@ -1,4 +1,5 @@
 import type { Address } from "viem";
+import { normalizeLiveTokenSymbol, tokenSymbolFallback } from "./tokenIdentity";
 
 export type TransactionErrorKind =
   | "disconnected"
@@ -46,30 +47,12 @@ export function classifyTransactionError(
   return { kind: "failed", submitted };
 }
 
-const encoder = new TextEncoder();
-const decoder = new TextDecoder("utf-8", { fatal: true });
-const UNSAFE_CODEPOINT = /[\u0000-\u001f\u007f-\u009f\u061c\u200e\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069\ufffe\uffff]/;
-
 export function safeLiveTokenSymbol(value: unknown): string | undefined {
-  if (typeof value !== "string" || value.length === 0) return undefined;
-  const input = encoder.encode(value);
-  if (
-    input.length === 0 ||
-    input.length > 64 ||
-    UNSAFE_CODEPOINT.test(value) ||
-    decoder.decode(input) !== value
-  ) return undefined;
-
-  let output = "";
-  for (const codepoint of value) {
-    if (encoder.encode(output + codepoint).length > 32) break;
-    output += codepoint;
-  }
-  return output || undefined;
+  return normalizeLiveTokenSymbol(value)?.full;
 }
 
 export function symbolFallback(token: Address | string, genericToken: string): string {
-  return `${genericToken} ${token.slice(0, 8)}...${token.slice(-4)}`;
+  return tokenSymbolFallback(token as Address, genericToken);
 }
 
 export function transactionProgressIndex(phase: string, hasHash: boolean): 0 | 1 | 2 {
@@ -87,6 +70,7 @@ export function resolveStoredAssetSymbol(
   token: Address | string,
   genericToken: string,
 ): string {
-  if (!isGenericStoredSymbol(storedSymbol)) return String(storedSymbol);
+  const stored = normalizeLiveTokenSymbol(storedSymbol);
+  if (!isGenericStoredSymbol(storedSymbol) && stored) return stored.full;
   return safeLiveTokenSymbol(liveSymbol) ?? symbolFallback(token, genericToken);
 }

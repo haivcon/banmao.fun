@@ -399,13 +399,13 @@ describe("BanmaoBox Renderer-consistent token symbols", () => {
     expect(resolveStoredAssetSymbol("", "USD₮0", token, "TOKEN")).toBe("USD₮0");
   });
 
-  test("rejects controls, bidi and overlong metadata with localized fallback", () => {
+  test("rejects controls and bidi while preserving long safe metadata for compact display", () => {
     expect(safeLiveTokenSymbol("BAD\u0001")).toBeUndefined();
     expect(safeLiveTokenSymbol("BAD\u202eTXT")).toBeUndefined();
     expect(safeLiveTokenSymbol("BAD\ud800")).toBeUndefined();
-    expect(safeLiveTokenSymbol("X".repeat(65))).toBeUndefined();
+    expect(safeLiveTokenSymbol("X".repeat(65))).toBe("X".repeat(65));
     expect(resolveStoredAssetSymbol("TOKEN", undefined, token, "Token")).toBe(symbolFallback(token, "Token"));
-    expect(resolveStoredAssetSymbol("TOKEN", "BAD\u0001", token, "代币")).toBe("代币 0x779Ded...3736");
+    expect(resolveStoredAssetSymbol("TOKEN", "BAD\u0001", token, "代币")).toBe("代币 0x779Ded…13736");
   });
 
   test("source uses one resolver for stored Box assets", () => {
