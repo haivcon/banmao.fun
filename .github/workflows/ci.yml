@@ -39,12 +39,18 @@ jobs:
 
   secrets:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: gitleaks/gitleaks-action@v2
+      - name: Install pinned gitleaks
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_CONFIG: .github/gitleaks.toml
-          GITLEAKS_LOG_OPTS: --all
+          GITLEAKS_VERSION: 8.24.3
+        run: |
+          curl --fail --silent --show-error --location \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz gitleaks
+          echo "$PWD" >> "$GITHUB_PATH"
+      - name: Scan full Git history
+        run: gitleaks git . --config .github/gitleaks.toml --redact --log-opts=--all
