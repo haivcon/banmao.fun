@@ -43,7 +43,7 @@
     "@xmtp/browser-sdk": "^6.4.0",
     "canvas-confetti": "^1.9.4",
     "cloudinary": "^2.9.0",
-    "ethers": "^5.8.0",
+    "ethers": "^6.17.0",
     "framer-motion": "^12.29.3",
     "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
