@@ -1,52 +1,22 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const solc = require("solc");
+const { createBanmaoBoxCompilerInput } = require("./banmaobox-runtime.cjs");
 
-const SOURCE_DIR = "contracts/banmaobox";
-const SOURCES = [
-  "BanmaoBox.sol",
-  "BanmaoBoxFactory.sol",
-  "BanmaoBoxRenderer.sol",
-];
+// Legacy virtual compiler source directory; this is not a physical path.
+const VIRTUAL_SOURCE_DIR = "contracts/banmaobox";
 const OUTPUT = "app/defi/box/generated/abis.ts";
-
-function resolveImport(importPath) {
-  for (const candidate of [
-    importPath,
-    path.join("node_modules", importPath),
-    path.join(SOURCE_DIR, importPath.replace(/^\.\//, "")),
-  ]) {
-    if (fs.existsSync(candidate) && fs.statSync(candidate).isFile()) {
-      return { contents: fs.readFileSync(candidate, "utf8") };
-    }
-  }
-  return { error: `Import not found: ${importPath}` };
-}
-
-const sources = Object.fromEntries(
-  SOURCES.map((file) => [
-    `${SOURCE_DIR}/${file}`,
-    { content: fs.readFileSync(`${SOURCE_DIR}/${file}`, "utf8") },
-  ]),
-);
-const input = {
-  language: "Solidity",
-  sources,
-  settings: {
-    optimizer: { enabled: true, runs: 200 },
-    evmVersion: "shanghai",
-    outputSelection: { "*": { "*": ["abi"] } },
-  },
-};
-const output = JSON.parse(
-  solc.compile(JSON.stringify(input), { import: resolveImport }),
-);
+const input = createBanmaoBoxCompilerInput({
+  outputSelection: { "*": { "*": ["abi"] } },
+  metadata: null,
+});
+const output = JSON.parse(solc.compile(JSON.stringify(input)));
 const errors = (output.errors || []).filter((error) => error.severity === "error");
 if (errors.length) {
   throw new Error(errors.map((error) => error.formattedMessage).join("\n"));
 }
 const abi = (file, contract) =>
-  output.contracts[`${SOURCE_DIR}/${file}`][contract].abi;
+  output.contracts[`${VIRTUAL_SOURCE_DIR}/${file}`][contract].abi;
 const erc20Abi = [
   {
     inputs: [],

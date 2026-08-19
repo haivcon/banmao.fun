@@ -4,14 +4,14 @@ This directory contains Solidity smart contracts for the Banmao ecosystem.
 
 ## Contracts
 
-### BanMaoSnake.sol
+### `BanMaoSnake/BanMaoSnake.sol`
 Snake game reward distribution contract with:
 - EIP-712 signature verification
 - Daily per-player caps (5000 tokens)
 - Hourly system-wide caps (50000 tokens)
 - Minimum claim threshold (100 tokens)
 
-### `banmaobox/` — BanmaoBox system
+### `BanmaoBox/` — BanmaoBox system
 
 A permissionless system for transferable, time-locked ERC-20 gift boxes:
 
@@ -46,11 +46,16 @@ Security and integration assumptions:
 Deployment order:
 
 1. Compile with optimizer enabled (`runs: 200`) and the Shanghai EVM target.
-2. For testnet only, deploy `MockBanmao` from `contracts/banmaobox/MockBanmao.sol`.
+2. For testnet only, deploy `MockBanmao` from `contracts/BanmaoBox/Mock/MockBanmao.sol`.
 3. Deploy a new `BanmaoBoxRenderer` (no constructor arguments).
 4. Deploy `BanmaoBoxFactory(rendererAddress, previousFactoryAddress)`. Use the zero address for the first Factory and the current Factory address for a registry-preserving replacement.
 5. Call `createTokenBox(tokenAddress)` for each token not already present anywhere in the predecessor chain, or let any community member do so permissionlessly.
 6. Read `boxForToken(tokenAddress)` and verify all source and addresses on X Layer Explorer.
+
+The repository compiler reads the physical `contracts/BanmaoBox/{Box,Factory,Renderer,Mock}/`
+layout through `scripts/banmaobox-runtime.cjs`. Standard JSON source keys and Explorer
+contract names intentionally retain the deployed legacy `contracts/banmaobox/*.sol`
+identities; they are virtual provenance names, not current physical paths.
 
 X Layer release tooling is versioned as `scripts/deploy-banmaobox-mainnet.cjs`
 and `scripts/verify-banmaobox-mainnet.cjs`. Mainnet deployment is hard-locked to

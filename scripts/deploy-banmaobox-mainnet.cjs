@@ -6,7 +6,7 @@ const crypto = require("node:crypto");
 const { isDeepStrictEqual } = require("node:util");
 const solc = require("solc");
 const { ethers } = require("ethers");
-const { artifactFingerprint, assertArtifactRuntime } = require("./banmaobox-runtime.cjs");
+const { artifactFingerprint, assertArtifactRuntime, createBanmaoBoxCompilerInput } = require("./banmaobox-runtime.cjs");
 require("dotenv").config({ path: path.resolve(".env.deploy.local") });
 
 const CHAIN_ID = 196;
@@ -17,8 +17,9 @@ const MANIFEST = path.resolve("deployments/banmaobox-xlayer-mainnet.json");
 const JOURNAL = path.resolve("deployments/.banmaobox-mainnet-journal.json");
 const RELEASE = path.resolve("deployments/banmaobox-release-artifacts.json");
 const DEPLOYMENT_HISTORY = path.resolve("deployments/banmaobox-mainnet-history");
-const SOURCE_DIR = "contracts/banmaobox";
-const SOURCES = ["BanmaoBoxRenderer.sol", "BanmaoBox.sol", "BanmaoBoxFactory.sol"];
+// Legacy virtual compiler source directory; this is not a physical path.
+const VIRTUAL_SOURCE_DIR = "contracts/banmaobox";
+
 const CONFIRMATION = "DEPLOY_BANMAOBOX_XLAYER_196";
 const REPLACEMENT_CONFIRMATION = "REPLACE_BANMAOBOX_XLAYER_196";
 const CONFIRMATIONS = Number(process.env.BANMAOBOX_DEPLOY_CONFIRMATIONS || 2);
@@ -56,39 +57,12 @@ async function retryRead(label, operation, attempts = 10) {
   fail(`${label} RPC read failed after ${attempts} attempts: ${detail}`);
 }
 
-function collectSources(entryNames) {
-  const collected = {};
-  const visit = (sourceName) => {
-    if (collected[sourceName]) return;
-    const file = sourceName.startsWith("@") ? path.join("node_modules", sourceName) : sourceName;
-    if (!fs.existsSync(file)) fail(`Import not found: ${sourceName}`);
-    const content = fs.readFileSync(file, "utf8");
-    collected[sourceName] = { content };
-    for (const match of content.matchAll(/import\s+(?:[^"']*?from\s+)?["']([^"']+)["']\s*;/g)) {
-      const imported = match[1].startsWith(".")
-        ? path.posix.normalize(path.posix.join(path.posix.dirname(sourceName), match[1]))
-        : match[1];
-      visit(imported);
-    }
-  };
-  entryNames.forEach(visit);
-  return collected;
-}
-
 function compile() {
-  const sources = collectSources(SOURCES.map((file) => `${SOURCE_DIR}/${file}`));
-  const input = {
-    language: "Solidity", sources,
-    settings: {
-      optimizer: { enabled: true, runs: 200 }, evmVersion: "shanghai",
-      metadata: { bytecodeHash: "ipfs" },
-      outputSelection: { "*": { "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object", "evm.deployedBytecode.immutableReferences"] } },
-    },
-  };
+  const input = createBanmaoBoxCompilerInput();
   const output = JSON.parse(solc.compile(JSON.stringify(input)));
   const errors = (output.errors || []).filter((item) => item.severity === "error");
   if (errors.length) fail(errors.map((item) => item.formattedMessage).join("\n"));
-  const artifact = (file, name) => output.contracts[`${SOURCE_DIR}/${file}`][name];
+  const artifact = (file, name) => output.contracts[`${VIRTUAL_SOURCE_DIR}/${file}`][name];
   const artifacts = {
     renderer: artifact("BanmaoBoxRenderer.sol", "BanmaoBoxRenderer"),
     factory: artifact("BanmaoBoxFactory.sol", "BanmaoBoxFactory"),

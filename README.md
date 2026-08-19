@@ -109,7 +109,7 @@ Jest discovers `__tests__/**/*.test.ts` through one configuration; there are no 
 
 ## Generated-artifact workflow
 
-After an approved change to `contracts/banmaobox/`:
+After an approved change to the physical sources under `contracts/BanmaoBox/`:
 
 ```bash
 npm run generate:banmaobox
@@ -125,6 +125,9 @@ Commit these together when changed:
 - the matching new hash-versioned file under `deployments/banmaobox-releases/`
 
 Never overwrite or remove historical releases, deployment manifests, or deployment records. Generation is local and deterministic; deploy, publish, and Explorer verification commands are maintainer-only operations and are not run by CI.
+
+BanmaoBox compilation preserves the legacy virtual Standard JSON and Explorer names
+under `contracts/banmaobox/`; those names are provenance identifiers, not physical paths.
 
 ## Security model
 

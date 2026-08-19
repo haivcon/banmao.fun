@@ -4,11 +4,11 @@ pragma solidity ^0.8.20;
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
 
-import {BanmaoBox} from "./BanmaoBox.sol";
+import {BanmaoBox} from "../Box/BanmaoBox.sol";
 import {
     IBanmaoBoxRenderer,
     IBanmaoBoxSVGRenderer
-} from "./BanmaoBoxRenderer.sol";
+} from "../Renderer/BanmaoBoxRenderer.sol";
 
 /**
  * @title BanmaoBoxFactory

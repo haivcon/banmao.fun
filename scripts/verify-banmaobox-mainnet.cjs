@@ -5,7 +5,7 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 const solc = require("solc");
 const { ethers } = require("ethers");
-const { artifactFingerprint, assertArtifactRuntime } = require("./banmaobox-runtime.cjs");
+const { BANMAOBOX_VIRTUAL_SOURCE_NAMES, artifactFingerprint, assertArtifactRuntime } = require("./banmaobox-runtime.cjs");
 const { publishExplorerVerification } = require("./publish-banmaobox-explorer.cjs");
 
 const CHAIN_ID = 196;
@@ -56,13 +56,13 @@ function compile() {
   const output = JSON.parse(solc.compile(JSON.stringify(input)));
   const errors = (output.errors || []).filter((item) => item.severity === "error");
   if (errors.length) fail(errors.map((item) => item.formattedMessage).join("\n"));
-  const artifact = (file, name) => output.contracts[`contracts/banmaobox/${file}`][name];
+  const artifact = (sourceName, name) => output.contracts[sourceName][name];
   return {
     compilerInputHash: sha256(JSON.stringify(input)),
     artifacts: {
-      renderer: artifact("BanmaoBoxRenderer.sol", "BanmaoBoxRenderer"),
-      factory: artifact("BanmaoBoxFactory.sol", "BanmaoBoxFactory"),
-      box: artifact("BanmaoBox.sol", "BanmaoBox"),
+      renderer: artifact(BANMAOBOX_VIRTUAL_SOURCE_NAMES.renderer, "BanmaoBoxRenderer"),
+      factory: artifact(BANMAOBOX_VIRTUAL_SOURCE_NAMES.factory, "BanmaoBoxFactory"),
+      box: artifact(BANMAOBOX_VIRTUAL_SOURCE_NAMES.box, "BanmaoBox"),
     },
   };
 }

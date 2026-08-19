@@ -1,6 +1,98 @@
 "use strict";
 
+const fs = require("node:fs");
+const path = require("node:path");
 const { keccak_256 } = require("js-sha3");
+
+const BANMAOBOX_PHYSICAL_TO_VIRTUAL_SOURCE_NAMES = Object.freeze({
+  "contracts/BanmaoBox/Renderer/BanmaoBoxRenderer.sol": "contracts/banmaobox/BanmaoBoxRenderer.sol",
+  "contracts/BanmaoBox/Box/BanmaoBox.sol": "contracts/banmaobox/BanmaoBox.sol",
+  "contracts/BanmaoBox/Factory/BanmaoBoxFactory.sol": "contracts/banmaobox/BanmaoBoxFactory.sol",
+  "contracts/BanmaoBox/Mock/MockBanmao.sol": "contracts/banmaobox/MockBanmao.sol",
+});
+const BANMAOBOX_VIRTUAL_TO_PHYSICAL_SOURCE_NAMES = Object.freeze(Object.fromEntries(
+  Object.entries(BANMAOBOX_PHYSICAL_TO_VIRTUAL_SOURCE_NAMES).map(([physical, virtual]) => [virtual, physical]),
+));
+const BANMAOBOX_RELEASE_SOURCE_NAMES = Object.freeze([
+  "contracts/banmaobox/BanmaoBoxRenderer.sol",
+  "contracts/banmaobox/BanmaoBox.sol",
+  "contracts/banmaobox/BanmaoBoxFactory.sol",
+]);
+const BANMAOBOX_VIRTUAL_SOURCE_NAMES = Object.freeze({
+  renderer: "contracts/banmaobox/BanmaoBoxRenderer.sol",
+  box: "contracts/banmaobox/BanmaoBox.sol",
+  factory: "contracts/banmaobox/BanmaoBoxFactory.sol",
+  mock: "contracts/banmaobox/MockBanmao.sol",
+});
+
+function explorerContractName(key, contractName) {
+  const sourceName = BANMAOBOX_VIRTUAL_SOURCE_NAMES[key];
+  if (!sourceName) throw new Error(`Unknown BanmaoBox source key: ${key}`);
+  return `${sourceName}:${contractName}`;
+}
+
+function physicalSourceName(virtualSourceName) {
+  return BANMAOBOX_VIRTUAL_TO_PHYSICAL_SOURCE_NAMES[virtualSourceName] || virtualSourceName;
+}
+
+function sourceFile(virtualSourceName) {
+  if (!virtualSourceName.startsWith("@")) return physicalSourceName(virtualSourceName);
+  try {
+    return require.resolve(virtualSourceName, { paths: [process.cwd()] });
+  } catch {
+    return path.join("node_modules", virtualSourceName);
+  }
+}
+
+function virtualSourceContent(virtualSourceName) {
+  let content = fs.readFileSync(sourceFile(virtualSourceName), "utf8");
+  if (virtualSourceName === "contracts/banmaobox/BanmaoBox.sol") {
+    content = content.replace('from "../Renderer/BanmaoBoxRenderer.sol";', 'from "./BanmaoBoxRenderer.sol";');
+  } else if (virtualSourceName === "contracts/banmaobox/BanmaoBoxFactory.sol") {
+    content = content
+      .replace('from "../Box/BanmaoBox.sol";', 'from "./BanmaoBox.sol";')
+      .replace('from "../Renderer/BanmaoBoxRenderer.sol";', 'from "./BanmaoBoxRenderer.sol";');
+  }
+  return content;
+}
+
+function collectBanmaoBoxSources(entryNames = BANMAOBOX_RELEASE_SOURCE_NAMES) {
+  const collected = {};
+  const visit = (virtualSourceName) => {
+    if (collected[virtualSourceName]) return;
+    const file = sourceFile(virtualSourceName);
+    if (!fs.existsSync(file)) throw new Error(`Import not found: ${virtualSourceName}`);
+    const content = virtualSourceContent(virtualSourceName);
+    collected[virtualSourceName] = { content };
+    for (const match of content.matchAll(/import\s+(?:[^"']*?from\s+)?["']([^"']+)["']\s*;/g)) {
+      const imported = match[1].startsWith(".")
+        ? path.posix.normalize(path.posix.join(path.posix.dirname(virtualSourceName), match[1]))
+        : match[1];
+      visit(imported);
+    }
+  };
+  entryNames.forEach(visit);
+  return collected;
+}
+
+function createBanmaoBoxCompilerInput({
+  entryNames = BANMAOBOX_RELEASE_SOURCE_NAMES,
+  outputSelection,
+  metadata = { bytecodeHash: "ipfs" },
+} = {}) {
+  return {
+    language: "Solidity",
+    sources: collectBanmaoBoxSources(entryNames),
+    settings: {
+      optimizer: { enabled: true, runs: 200 },
+      evmVersion: "shanghai",
+      ...(metadata ? { metadata } : {}),
+      outputSelection: outputSelection || {
+        "*": { "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object", "evm.deployedBytecode.immutableReferences"] },
+      },
+    },
+  };
+}
 
 function keccak256(code) {
   return `0x${keccak_256(Buffer.from(code.slice(2), "hex"))}`;
@@ -52,9 +144,16 @@ function assertArtifactRuntime(code, artifact, label) {
 }
 
 module.exports = {
+  BANMAOBOX_PHYSICAL_TO_VIRTUAL_SOURCE_NAMES,
+  BANMAOBOX_RELEASE_SOURCE_NAMES,
+  BANMAOBOX_VIRTUAL_SOURCE_NAMES,
   artifactFingerprint,
   assertArtifactRuntime,
+  collectBanmaoBoxSources,
+  createBanmaoBoxCompilerInput,
+  explorerContractName,
   immutableRanges,
   normalizeRuntime,
+  physicalSourceName,
   runtimeFingerprint,
 };

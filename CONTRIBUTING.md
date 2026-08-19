@@ -31,7 +31,7 @@ The repository currently has one Jest configuration and no Jest projects. Do not
 
 ## Generated BanmaoBox artifacts
 
-Contract source is under `contracts/banmaobox/`. After an approved source change, run:
+Physical contract source is under `contracts/BanmaoBox/`. After an approved source change, run:
 
 ```bash
 npm run generate:banmaobox
@@ -40,6 +40,9 @@ npm run check:generated
 ```
 
 Commit the current generated ABI, candidate release, verification release, and hash-versioned immutable release together. Never overwrite or delete historical files in `deployments/banmaobox-releases/` or deployment manifests. A deployment manifest is not proof by itself: verify chain ID, bytecode/runtime fingerprints, Factory registry, token, and renderer relationships independently.
+
+Legacy `contracts/banmaobox/*.sol` strings in compiler input and Explorer contract names
+are intentional virtual provenance identifiers and must not be changed to physical paths.
 
 Deployment, Explorer publication, and verification scripts are maintainer operations. They are not CI quality commands. Do not run deploy/publish scripts for an ordinary contribution.
 

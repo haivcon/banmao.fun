@@ -7,7 +7,7 @@ permission bits equal `BEFORE_INITIALIZE | AFTER_INITIALIZE | AFTER_SWAP`.
 ## Setup
 
 ```powershell
-cd contracts/launchpad
+cd contracts/Launchpad
 forge install Uniswap/v4-core Uniswap/v4-periphery --no-commit
 forge build
 forge test
@@ -15,7 +15,7 @@ forge test
 
 The `lib/`, `out/`, `cache/` and `broadcast/` directories are generated and
 must not be committed. The repository's `remappings.txt` maps the installed
-packages to the imports used by `LaunchpadHook.sol`.
+packages to the imports used by `Hook/LaunchpadHook.sol`.
 
 ## Deployment order
 

@@ -6,6 +6,8 @@ import { ethers } from "ethers";
 import solc from "solc";
 import sharp from "sharp";
 
+const { collectBanmaoBoxSources } = require("../../scripts/banmaobox-runtime.cjs");
+
 type Artifact = {
   abi: ethers.ContractInterface;
   bytecode: string;
@@ -210,12 +212,7 @@ contract MutableFeeToken is ERC20 {
 `;
 
 function compile(): Record<string, Artifact> {
-  const sources: Record<string, { content: string }> = {};
-  for (const file of ["BanmaoBox.sol", "BanmaoBoxFactory.sol", "BanmaoBoxRenderer.sol"]) {
-    sources[`contracts/banmaobox/${file}`] = {
-      content: readFileSync(join(process.cwd(), "contracts", "banmaobox", file), "utf8"),
-    };
-  }
+  const sources: Record<string, { content: string }> = collectBanmaoBoxSources();
   sources["test/Adversarial.sol"] = { content: adversarialSource };
   const input = {
     language: "Solidity", sources,
@@ -226,7 +223,11 @@ function compile(): Record<string, Artifact> {
   };
   const output = JSON.parse(solc.compile(JSON.stringify(input), {
     import(path: string) {
-      for (const candidate of [join(process.cwd(), path), join(process.cwd(), "node_modules", path)]) {
+      for (const candidate of [
+        join(process.cwd(), path),
+        join(process.cwd(), "node_modules", path),
+        (() => { try { return require.resolve(path, { paths: [process.cwd()] }); } catch { return ""; } })(),
+      ]) {
         try { return { contents: readFileSync(candidate, "utf8") }; } catch { /* continue */ }
       }
       return { error: `Import not found: ${path}` };

@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const solc = require("solc");
 const { ethers } = require("ethers");
-const { assertArtifactRuntime } = require("./banmaobox-runtime.cjs");
+const { assertArtifactRuntime, createBanmaoBoxCompilerInput } = require("./banmaobox-runtime.cjs");
 require("dotenv").config({ path: path.resolve(".env.deploy.local") });
 
 const CHAIN_ID = 1952;
@@ -16,7 +16,8 @@ const JOURNAL = path.resolve("deployments/.banmaobox-testnet-journal.json");
 const CONFIRMATIONS = Number(process.env.BANMAOBOX_TESTNET_CONFIRMATIONS || 1);
 const RPC_TIMEOUT_MS = Number(process.env.BANMAOBOX_TESTNET_RPC_TIMEOUT_MS || 60_000);
 const RPC_ATTEMPTS = Number(process.env.BANMAOBOX_TESTNET_RPC_ATTEMPTS || 4);
-const SOURCE_DIR = "contracts/banmaobox";
+// Legacy virtual compiler source directory; this is not a physical path.
+const VIRTUAL_SOURCE_DIR = "contracts/banmaobox";
 
 function fail(message) { throw new Error(message); }
 function same(a, b) { return String(a).toLowerCase() === String(b).toLowerCase(); }
@@ -65,21 +66,11 @@ function privateKey() {
   return value;
 }
 function compile() {
-  const entries = ["BanmaoBoxRenderer.sol", "BanmaoBox.sol", "BanmaoBoxFactory.sol"];
-  const sources = Object.fromEntries(entries.map((name) => [`${SOURCE_DIR}/${name}`, { content: fs.readFileSync(path.join(SOURCE_DIR, name), "utf8") }]));
-  const input = { language: "Solidity", sources, settings: {
-    optimizer: { enabled: true, runs: 200 }, evmVersion: "shanghai",
-    metadata: { bytecodeHash: "ipfs" },
-    outputSelection: { "*": { "*": ["abi", "evm.bytecode.object", "evm.deployedBytecode.object", "evm.deployedBytecode.immutableReferences"] } },
-  } };
-  const output = JSON.parse(solc.compile(JSON.stringify(input), { import: (name) => {
-    const candidates = [name, path.join("node_modules", name), path.join(SOURCE_DIR, name)];
-    const found = candidates.find((candidate) => fs.existsSync(candidate));
-    return found ? { contents: fs.readFileSync(found, "utf8") } : { error: `Import not found: ${name}` };
-  } }));
+  const input = createBanmaoBoxCompilerInput();
+  const output = JSON.parse(solc.compile(JSON.stringify(input)));
   const errors = (output.errors || []).filter((item) => item.severity === "error");
   if (errors.length) fail(errors.map((item) => item.formattedMessage).join("\n"));
-  const artifact = (file, name) => output.contracts[`${SOURCE_DIR}/${file}`][name];
+  const artifact = (file, name) => output.contracts[`${VIRTUAL_SOURCE_DIR}/${file}`][name];
   return {
     renderer: artifact("BanmaoBoxRenderer.sol", "BanmaoBoxRenderer"),
     factory: artifact("BanmaoBoxFactory.sol", "BanmaoBoxFactory"),

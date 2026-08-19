@@ -14,7 +14,7 @@ import {
     BanmaoBoxRenderData,
     IBanmaoBoxRenderer,
     IBanmaoBoxSVGRenderer
-} from "./BanmaoBoxRenderer.sol";
+} from "../Renderer/BanmaoBoxRenderer.sol";
 
 /**
  * @title BanmaoBox

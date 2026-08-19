@@ -3,6 +3,7 @@ const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const { ethers } = require("ethers");
+const { explorerContractName } = require("./banmaobox-runtime.cjs");
 const API_ORIGIN = "https://web3.okx.com";
 const API_ROOT = "/api/v5/xlayer/contract";
 const CHAIN_SHORT_NAME = "XLAYER";
@@ -27,9 +28,9 @@ function buildTargets(manifest, release) {
   );
   const shared = { sourceCode: release.standardInput, compilerVersion: compilerVersion(release.compiler) };
   return [
-    { key: "renderer", contractAddress: factoryRenderer, contractName: "contracts/banmaobox/BanmaoBoxRenderer.sol:BanmaoBoxRenderer", constructorArguments: "", ...shared },
-    { key: "factory", contractAddress: factory, contractName: "contracts/banmaobox/BanmaoBoxFactory.sol:BanmaoBoxFactory", constructorArguments: encodeConstructorArguments(["address", "address"], [factoryRenderer, previousFactory]), ...shared },
-    { key: "box", contractAddress: box, contractName: "contracts/banmaobox/BanmaoBox.sol:BanmaoBox", constructorArguments: encodeConstructorArguments(["address", "address", "address"], [token, factoryRenderer, rendererAdmin]), ...shared },
+    { key: "renderer", contractAddress: factoryRenderer, contractName: explorerContractName("renderer", "BanmaoBoxRenderer"), constructorArguments: "", ...shared },
+    { key: "factory", contractAddress: factory, contractName: explorerContractName("factory", "BanmaoBoxFactory"), constructorArguments: encodeConstructorArguments(["address", "address"], [factoryRenderer, previousFactory]), ...shared },
+    { key: "box", contractAddress: box, contractName: explorerContractName("box", "BanmaoBox"), constructorArguments: encodeConstructorArguments(["address", "address", "address"], [token, factoryRenderer, rendererAdmin]), ...shared },
   ];
 }
 function parsePollStatus(data) {
