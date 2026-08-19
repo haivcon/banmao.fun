@@ -3236,6 +3236,8 @@
 .box-collection-lifecycle li.current { color: var(--box-gold); }
 .box-collection-lifecycle li.completed { color: #55f29a; }
 .box-collection-lifecycle li.completed::before { content: "✓"; }
+.box-collection-lifecycle li.warning { color: var(--box-gold); }
+.box-collection-lifecycle li.warning::before { content: "!"; }
 .box-collection-lifecycle li.failed { color: #ff7878; }
 .box-collection-lifecycle li.failed::before { content: "×"; }
 .box-collection-lifecycle li.skipped { color: #656c79; }

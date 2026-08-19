@@ -15,8 +15,21 @@ export type BanmaoBoxVerificationStatus =
 export type BanmaoBoxVerificationUpdate = {
   status: BanmaoBoxVerificationStatus;
   boxAddress?: string;
+  guid?: string;
   error?: string;
 };
+
+export type BanmaoBoxVerificationOutcome = "success" | "progress" | "degraded" | "manual" | "failed";
+
+export function classifyBanmaoBoxVerification(
+  update: BanmaoBoxVerificationUpdate,
+): BanmaoBoxVerificationOutcome {
+  if (update.status === "already-verified" || update.status === "verified") return "success";
+  if (update.status === "pending" || update.status === "waiting-for-indexer") return "progress";
+  if (update.status === "transient-unavailable" || update.status === "retry-exhausted") return "degraded";
+  if (update.status === "manual-reconciliation") return "manual";
+  return "failed";
+}
 
 export type BanmaoBoxVerificationRequest = {
   promise: Promise<BanmaoBoxVerificationUpdate>;
@@ -45,6 +58,7 @@ export function requestBanmaoBoxVerification(
   });
 
   const promise = (async () => {
+    let latest: BanmaoBoxVerificationUpdate = { status: "transient-unavailable" };
     for (let attempt = 0; attempt < MAX_POLLS && !cancelled; attempt += 1) {
       try {
         const response = await fetch("/api/banmaobox/verify", {
@@ -62,12 +76,15 @@ export function requestBanmaoBoxVerification(
           });
         }
         const update = emit({
-          status: result?.status,
-          boxAddress: typeof result?.boxAddress === "string" ? result.boxAddress : undefined,
+          status: result?.status ?? (response.status === 503 ? "transient-unavailable" : "failed"),
+          boxAddress: typeof result?.boxAddress === "string" ? result.boxAddress : latest.boxAddress,
+          guid: typeof result?.guid === "string" ? result.guid : latest.guid,
+          error: typeof result?.error === "string" ? result.error : latest.error,
         });
+        latest = { ...latest, ...update };
         if (!isTransient(update)) return update;
         if (attempt + 1 >= MAX_POLLS) {
-          return emit({ ...update, status: "retry-exhausted" });
+          return emit({ ...latest, status: "retry-exhausted" });
         }
         const requestedDelay = Number(response.headers.get("retry-after")) * 1_000;
         await wait(Number.isFinite(requestedDelay)
@@ -75,13 +92,16 @@ export function requestBanmaoBoxVerification(
           : 15_000);
       } catch (error) {
         if (cancelled || controller.signal.aborted) break;
-        return emit({
+        latest = emit({
+          ...latest,
           status: "transient-unavailable",
           error: error instanceof Error ? error.message : "Explorer verification request failed",
         });
+        if (attempt + 1 >= MAX_POLLS) return emit({ ...latest, status: "retry-exhausted" });
+        await wait(15_000);
       }
     }
-    return { status: "retry-exhausted" as const };
+    return { ...latest, status: "retry-exhausted" as const };
   })();
 
   return {

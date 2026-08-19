@@ -9,8 +9,18 @@ export type CollectionLifecycleFixture = {
 };
 
 export type CollectionLifecycleFixtureDetails = CollectionLifecycleFixture & {
-  status: "ready";
+  status: "ready" | "indexing" | "degraded" | "manual" | "failed";
+  failureStage?: "verification";
+  failureReason?: string;
 };
+
+const FIXTURE_STATUS = {
+  "collection-success": "ready",
+  "collection-progress": "indexing",
+  "collection-degraded": "degraded",
+  "collection-manual": "manual",
+  "collection-actual-failed": "failed",
+} as const;
 
 export const COLLECTION_LIFECYCLE_FIXTURE: CollectionLifecycleFixture = {
   tokenAddress: "0x1111111111111111111111111111111111111111",
@@ -21,13 +31,22 @@ export const COLLECTION_LIFECYCLE_FIXTURE: CollectionLifecycleFixture = {
 };
 
 export function collectionLifecycleFixtureEnabled(search: string): boolean {
-  return new URLSearchParams(search).get("banmaoboxFixture") === "collection-success";
+  const fixture = new URLSearchParams(search).get("banmaoboxFixture");
+  return fixture !== null && fixture in FIXTURE_STATUS;
 }
 
 export function getCollectionLifecycleFixture(
   search: string,
 ): CollectionLifecycleFixtureDetails | null {
-  return collectionLifecycleFixtureEnabled(search)
-    ? { status: "ready", ...COLLECTION_LIFECYCLE_FIXTURE }
-    : null;
+  const fixture = new URLSearchParams(search).get("banmaoboxFixture") as keyof typeof FIXTURE_STATUS | null;
+  if (!fixture || !(fixture in FIXTURE_STATUS)) return null;
+  const status = FIXTURE_STATUS[fixture];
+  return {
+    status,
+    ...COLLECTION_LIFECYCLE_FIXTURE,
+    ...(status === "failed" ? {
+      failureStage: "verification" as const,
+      failureReason: "Explorer rejected the source verification",
+    } : {}),
+  };
 }

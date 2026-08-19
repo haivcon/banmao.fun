@@ -64,7 +64,12 @@ import {
 } from "./i18n";
 import { boxNftExplorerUrl } from "./address";
 import { svgImageDataUri } from "./safety";
-import { requestBanmaoBoxVerification, type BanmaoBoxVerificationRequest } from "./requestVerification";
+import {
+  classifyBanmaoBoxVerification,
+  requestBanmaoBoxVerification,
+  type BanmaoBoxVerificationRequest,
+  type BanmaoBoxVerificationUpdate,
+} from "./requestVerification";
 import { classifyTransactionError, transactionProgressIndex } from "./transactionPresentation";
 import { ExplorerValueRow } from "./ExplorerValueRow";
 import {
@@ -78,6 +83,11 @@ import {
 import {
   getCollectionLifecycleFixture,
 } from "./collectionLifecycleFixture";
+import {
+  clearPendingVerification,
+  loadPendingVerification,
+  savePendingVerification,
+} from "./verificationPersistence";
 import { useBox } from "./useBox";
 import { useBoundedLoading } from "./useBoundedLoading";
 import { formatExactTokenAmount, tokenAmountInWords } from "./amountFormat";
@@ -674,7 +684,7 @@ export default function BanmaoBoxPage() {
 
   const showVerificationToast = useCallback((
     message: string,
-    status: "loading" | "success" | "error",
+    status: "loading" | "success" | "warning" | "error",
     details: CollectionLifecycleDetails,
   ) => {
     const id = "banmaobox-collection-verification";
@@ -704,7 +714,7 @@ export default function BanmaoBoxPage() {
     toast.custom((toastState) => (
       <div className={`box-toast box-toast--${status} ${toastState.visible ? "is-visible" : ""}`} role={status === "error" ? "alert" : "status"}>
         <span className="box-toast__icon" aria-hidden="true">
-          {status === "success" ? <CheckCircle2 /> : status === "error" ? <X /> : <LoaderCircle className="box-spin" />}
+          {status === "success" ? <CheckCircle2 /> : status === "error" ? <X /> : status === "warning" ? <ShieldAlert /> : <LoaderCircle className="box-spin" />}
         </span>
         <div className="box-toast__content">
           <strong>{message}</strong>
@@ -722,16 +732,69 @@ export default function BanmaoBoxPage() {
               <li className={step.status} data-status={step.status} key={step.id}>{step.label(copy)}</li>
             ))}
           </ol>
-          {next.status === "failed" && next.failureStage === "verification" && next.transactionHash ? (
+          {(["degraded", "manual"].includes(next.status)) && next.transactionHash ? (
             <button type="button" className="box-toast__retry" onClick={() => retryCollectionVerificationRef.current(next)}>
               <RefreshCw /> {copy.retryVerification}
             </button>
           ) : null}
         </div>
-        <button type="button" className="box-toast__dismiss" aria-label={copy.dismissNotification} onClick={() => toast.dismiss(id)}><X /></button>
+        <button type="button" className="box-toast__dismiss" aria-label={copy.dismissNotification} onClick={() => {
+          clearPendingVerification(window.localStorage, selectedChainId);
+          toast.dismiss(id);
+        }}><X /></button>
       </div>
-    ), { id, duration: status === "loading" ? Infinity : status === "success" ? 12_000 : 9000 });
+    ), { id, duration: status === "loading" || status === "warning" ? Infinity : status === "success" ? 12_000 : 9000 });
   }, [chainConfig.chain.name, copy, explorerBaseUrl, selectedChainId]);
+
+  function presentVerificationUpdate(
+    details: CollectionLifecycleDetails,
+    update: BanmaoBoxVerificationUpdate,
+  ) {
+    if (!details.transactionHash || !details.boxAddress) return;
+    const outcome = classifyBanmaoBoxVerification(update);
+    const resolvedDetails: CollectionLifecycleDetails = {
+      ...details,
+      boxAddress: update.boxAddress && isAddress(update.boxAddress)
+        ? getAddress(update.boxAddress)
+        : details.boxAddress,
+      failureReason: update.error,
+    };
+    if (outcome === "success") {
+      clearPendingVerification(window.localStorage, selectedChainId);
+      showVerificationToast(copy.collectionReady, "success", { ...resolvedDetails, status: "ready" });
+      return;
+    }
+    const status = outcome === "progress" ? "indexing" : outcome === "manual" ? "manual" : outcome === "degraded" ? "degraded" : "failed";
+    if (outcome === "failed") {
+      clearPendingVerification(window.localStorage, selectedChainId);
+    } else {
+      savePendingVerification(window.localStorage, {
+        version: 1,
+        chainId: selectedChainId,
+        tokenAddress: details.tokenAddress,
+        boxAddress: resolvedDetails.boxAddress,
+        transactionHash: details.transactionHash,
+        status: update.status,
+        guid: update.guid,
+        error: update.error,
+      });
+    }
+    showVerificationToast(
+      outcome === "manual"
+        ? copy.collectionCreatedVerificationManual
+        : outcome === "failed"
+          ? copy.collectionVerificationFailure
+          : outcome === "progress"
+            ? copy.collectionIndexing
+            : copy.collectionCreatedVerificationDegraded,
+      outcome === "progress" ? "loading" : outcome === "failed" ? "error" : "warning",
+      {
+        ...resolvedDetails,
+        status,
+        failureStage: outcome === "failed" ? "verification" : undefined,
+      },
+    );
+  }
 
   function retryCollectionVerification(details: CollectionLifecycleDetails) {
     if (!details.transactionHash || !details.boxAddress) return;
@@ -745,19 +808,7 @@ export default function BanmaoBoxPage() {
     verificationRequestRef.current = requestBanmaoBoxVerification(details.transactionHash, (update) => {
       const current = collectionLifecycleRef.current;
       if (!current || current.transactionHash !== details.transactionHash) return;
-      if (update.status === "verified" || update.status === "already-verified") {
-        showVerificationToast(copy.collectionReady, "success", { ...current, status: "ready" });
-      } else if (["pending", "waiting-for-indexer", "transient-unavailable"].includes(update.status)) {
-        showVerificationToast(copy.collectionIndexing, "loading", { ...current, status: "indexing" });
-      } else {
-        showVerificationToast(
-          update.status === "manual-reconciliation"
-            ? copy.collectionCreatedVerificationManual
-            : copy.collectionCreatedVerificationDegraded,
-          "error",
-          { ...current, status: "failed", failureStage: "verification", failureReason: update.error },
-        );
-      }
+      presentVerificationUpdate(current, update);
     });
   }
 
@@ -766,11 +817,45 @@ export default function BanmaoBoxPage() {
   });
 
   useEffect(() => {
+    if (getCollectionLifecycleFixture(window.location.search)) return;
+    const pending = loadPendingVerification(window.localStorage, selectedChainId);
+    if (!pending) return;
+    const details: CollectionLifecycleDetails = {
+      status: pending.status === "manual-reconciliation" ? "manual" : "degraded",
+      tokenAddress: pending.tokenAddress,
+      boxAddress: pending.boxAddress,
+      transactionHash: pending.transactionHash,
+      factoryAddress: chainConfig.factoryAddress,
+      rendererAddress: chainConfig.defaultRendererAddress,
+      failureReason: pending.error,
+    };
+    collectionLifecycleRef.current = details;
+    setCollectionLifecycle(details);
+    setActiveTokenAddress(pending.tokenAddress);
+    setActiveBoxAddress(pending.boxAddress);
+    setCollectionToken(pending.tokenAddress);
+    retryCollectionVerificationRef.current(details);
+    return () => verificationRequestRef.current?.cancel();
+  }, [chainConfig.defaultRendererAddress, chainConfig.factoryAddress, selectedChainId]);
+
+  useEffect(() => {
     if (collectionFixtureToastShownRef.current || !collectionLifecycle) return;
     if (!getCollectionLifecycleFixture(window.location.search)) return;
     collectionFixtureToastShownRef.current = true;
-    showVerificationToast(copy.collectionReady, "success", collectionLifecycle);
-  }, [collectionLifecycle, copy.collectionReady, showVerificationToast]);
+    const fixtureStatus = collectionLifecycle.status;
+    showVerificationToast(
+      fixtureStatus === "ready" ? copy.collectionReady
+        : fixtureStatus === "manual" ? copy.collectionCreatedVerificationManual
+        : fixtureStatus === "failed" ? copy.collectionVerificationFailure
+        : fixtureStatus === "degraded" ? copy.collectionCreatedVerificationDegraded
+        : copy.collectionIndexing,
+      fixtureStatus === "ready" ? "success"
+        : fixtureStatus === "failed" ? "error"
+        : fixtureStatus === "indexing" ? "loading"
+        : "warning",
+      collectionLifecycle,
+    );
+  }, [collectionLifecycle, copy, showVerificationToast]);
 
   useEffect(() => {
     if (!collectionLifecycle || !transactionHash) return;
@@ -877,46 +962,21 @@ export default function BanmaoBoxPage() {
         lifecycleDetails = confirmedDetails;
         showVerificationToast(copy.collectionReceiptConfirmed, "loading", confirmedDetails);
         if (selectedChainId === XLAYER_CHAIN_ID && created.txHash) {
+          savePendingVerification(window.localStorage, {
+            version: 1,
+            chainId: selectedChainId,
+            tokenAddress: token,
+            boxAddress: confirmedDetails.boxAddress,
+            transactionHash: created.txHash,
+            status: "pending",
+          });
           showVerificationToast(copy.collectionVerificationRequest, "loading", {
             ...confirmedDetails,
             status: "verifying",
           });
           verificationRequestRef.current?.cancel();
           verificationRequestRef.current = requestBanmaoBoxVerification(created.txHash, (update) => {
-            const verificationDetails: CollectionLifecycleDetails = {
-              ...confirmedDetails,
-              boxAddress: update.boxAddress && isAddress(update.boxAddress)
-                ? getAddress(update.boxAddress)
-                : confirmedDetails.boxAddress,
-            };
-            if (update.status === "verified" || update.status === "already-verified") {
-              showVerificationToast(copy.collectionReady, "success", {
-                ...verificationDetails,
-                status: "ready",
-              });
-            } else if (
-              update.status === "pending" ||
-              update.status === "waiting-for-indexer" ||
-              update.status === "transient-unavailable"
-            ) {
-              showVerificationToast(copy.collectionIndexing, "loading", {
-                ...verificationDetails,
-                status: "indexing",
-              });
-            } else {
-              showVerificationToast(
-                update.status === "manual-reconciliation"
-                  ? copy.collectionCreatedVerificationManual
-                  : copy.collectionCreatedVerificationDegraded,
-                "error",
-                {
-                  ...verificationDetails,
-                  status: "failed",
-                  failureStage: "verification",
-                  failureReason: update.error,
-                },
-              );
-            }
+            presentVerificationUpdate(confirmedDetails, update);
           });
         } else {
           showVerificationToast(copy.collectionReady, "success", {

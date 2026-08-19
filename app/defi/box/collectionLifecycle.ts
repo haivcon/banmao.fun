@@ -7,11 +7,13 @@ export type CollectionLifecycleStatus =
   | "confirmed"
   | "verifying"
   | "indexing"
+  | "degraded"
+  | "manual"
   | "ready"
   | "failed";
 
 export type CollectionFailureStage = "wallet" | "submission" | "receipt" | "validation" | "verification";
-export type CollectionStepStatus = "pending" | "current" | "completed" | "failed" | "skipped";
+export type CollectionStepStatus = "pending" | "current" | "completed" | "warning" | "failed" | "skipped";
 
 export type CollectionLifecycleDetails = {
   status: CollectionLifecycleStatus;
@@ -40,6 +42,8 @@ const rank: Record<CollectionLifecycleStatus, number> = {
   confirmed: 2,
   verifying: 3,
   indexing: 4,
+  degraded: 4,
+  manual: 4,
   ready: 5,
   failed: -1,
 };
@@ -60,6 +64,9 @@ export function transitionCollectionLifecycle(
     if (current.failureStage !== "verification" || update.status !== "verifying") return current;
     return { ...current, ...update };
   }
+  if ((current.status === "degraded" || current.status === "manual") && update.status === "verifying") {
+    return { ...current, ...update };
+  }
   if (
     update.status === "failed" &&
     update.failureStage !== "verification" &&
@@ -75,6 +82,8 @@ const currentIndex: Record<Exclude<CollectionLifecycleStatus, "failed">, number>
   confirmed: 3,
   verifying: 3,
   indexing: 7,
+  degraded: 7,
+  manual: 7,
   ready: 9,
 };
 
@@ -147,7 +156,11 @@ export function collectionLifecycleSteps(details: CollectionLifecycleDetails): L
   const activeAt = currentIndex[details.status];
   return ids.map((id, index) => ({
     id,
-    status: activeAt === 9 || index < activeAt ? "completed" : index === activeAt ? "current" : "pending",
+    status: activeAt === 9 || index < activeAt
+      ? "completed"
+      : index === activeAt
+        ? details.status === "degraded" || details.status === "manual" ? "warning" : "current"
+        : "pending",
     label: activeAt === 9 || index < activeAt ? labels[index] : pendingLabels[index],
   }));
 }
