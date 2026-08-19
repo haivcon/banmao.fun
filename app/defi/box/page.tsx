@@ -405,6 +405,10 @@ export default function BanmaoBoxPage() {
   const [collectionError, setCollectionError] = useState<string | null>(null);
   const [collectionPending, setCollectionPending] = useState(false);
   const [collectionOpen, setCollectionOpen] = useState(false);
+  const [isCollectionSheet, setIsCollectionSheet] = useState(false);
+  const collectionToggleRef = useRef<HTMLButtonElement | null>(null);
+  const collectionDialogRef = useRef<HTMLDivElement | null>(null);
+  const collectionInputRef = useRef<HTMLInputElement | null>(null);
   const [collectionLifecycle, setCollectionLifecycle] =
     useState<CollectionLifecycleDetails | null>(null);
   const collectionLifecycleRef = useRef<CollectionLifecycleDetails | null>(null);
@@ -632,6 +636,64 @@ export default function BanmaoBoxPage() {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 820px)");
+    const update = () => setIsCollectionSheet(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  const closeCollection = useCallback((restoreFocus = true) => {
+    if (isBusy || collectionPending) return;
+    setCollectionOpen(false);
+    if (restoreFocus) {
+      window.requestAnimationFrame(() => collectionToggleRef.current?.focus());
+    }
+  }, [collectionPending, isBusy]);
+
+  useEffect(() => {
+    if (!collectionOpen || !isCollectionSheet) return;
+    const previousOverflow = document.body.style.overflow;
+    const background = Array.from(
+      document.querySelectorAll<HTMLElement>(".box-page > :not(.box-collection-manager)"),
+    );
+    const previousInert = background.map((element) => element.inert);
+    document.body.style.overflow = "hidden";
+    background.forEach((element) => { element.inert = true; });
+    window.requestAnimationFrame(() => collectionInputRef.current?.focus());
+
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape" && !isBusy && !collectionPending) {
+        event.preventDefault();
+        closeCollection();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const dialog = collectionDialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), input:not(:disabled), a[href], [tabindex]:not([tabindex="-1"])',
+      ));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      background.forEach((element, index) => { element.inert = previousInert[index]; });
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [closeCollection, collectionOpen, collectionPending, isBusy, isCollectionSheet]);
 
   useEffect(() => () => verificationRequestRef.current?.cancel(), []);
 
@@ -1180,6 +1242,7 @@ export default function BanmaoBoxPage() {
     setFormError(validationError);
     if (validationError) return;
     setLockAcknowledged(false);
+    setCollectionOpen(false);
     setReviewOpen(true);
   };
 
@@ -1215,6 +1278,7 @@ export default function BanmaoBoxPage() {
         await createBox(getAddress(recipient), amount, duration);
       }
       setReviewOpen(false);
+      setCollectionOpen(false);
       setCelebrationOpen(true);
     } catch {
       // The hook exposes a normalized transaction error.
@@ -1378,7 +1442,7 @@ export default function BanmaoBoxPage() {
         : null;
 
   return (
-    <main className="box-page">
+    <main className={`box-page ${collectionOpen && isCollectionSheet ? "box-page--collection-sheet-open" : ""}`}>
       <div className="box-orb box-orb--one" aria-hidden="true" />
       <div className="box-orb box-orb--two" aria-hidden="true" />
 
@@ -1520,10 +1584,23 @@ export default function BanmaoBoxPage() {
 
       <section className="box-collection-manager">
         <button
+          ref={collectionToggleRef}
           type="button"
           className="box-collection-toggle"
-          onClick={() => setCollectionOpen((open) => !open)}
+          onClick={() => {
+            if (collectionOpen) {
+              closeCollection(false);
+              return;
+            }
+            if (isBusy && (reviewOpen || transferEntry || celebrationOpen)) return;
+            setReviewOpen(false);
+            setTransferEntry(null);
+            setTransferError(null);
+            setCelebrationOpen(false);
+            setCollectionOpen(true);
+          }}
           aria-expanded={collectionOpen}
+          aria-controls="box-collection-manager-body"
         >
           <span className="box-collection-identity">
             <strong><bdi aria-label={tokenIdentity.displaySymbol}>{tokenIdentity.displaySymbol}</bdi></strong>
@@ -1532,10 +1609,37 @@ export default function BanmaoBoxPage() {
           <ChevronDown className={collectionOpen ? "box-chevron-open" : ""} />
         </button>
         {collectionOpen ? (
-          <div className="box-collection-body">
-            <span>{copy.collectionHint}</span>
+          <div
+            className="box-collection-layer is-open"
+            onMouseDown={(event) => {
+              if (isCollectionSheet && event.target === event.currentTarget) closeCollection();
+            }}
+          >
+          <div
+            ref={collectionDialogRef}
+            id="box-collection-manager-body"
+            className="box-collection-body"
+            role={isCollectionSheet ? "dialog" : undefined}
+            aria-modal={isCollectionSheet ? true : undefined}
+            aria-labelledby="box-collection-title"
+          >
+            <header className="box-collection-sheet-header">
+              <span className="box-collection-identity">
+                <strong id="box-collection-title"><bdi aria-label={tokenIdentity.displaySymbol}>{tokenIdentity.displaySymbol}</bdi></strong>
+                <small>{copy.collectionTitle}</small>
+              </span>
+              <button
+                type="button"
+                className="box-collection-sheet-close"
+                onClick={() => closeCollection()}
+                disabled={isBusy || collectionPending}
+                aria-label={copy.cancel}
+              ><X /></button>
+            </header>
+            <span className="box-collection-hint">{copy.collectionHint}</span>
             <div className="box-collection-controls">
               <input
+                ref={collectionInputRef}
                 value={collectionToken}
                 onChange={(event) => {
                   collectionRequestRef.current += 1;
@@ -1613,6 +1717,7 @@ export default function BanmaoBoxPage() {
               </div>
             ) : null}
             {collectionError ? <p className="box-form-error" role="alert">{collectionError}</p> : null}
+          </div>
           </div>
         ) : null}
       </section>
@@ -2046,7 +2151,12 @@ export default function BanmaoBoxPage() {
                     onOpenAsset={(tokenId, assetIndex, asset) =>
                       void handleOpenAsset(tokenId, assetIndex, asset)
                     }
-                    onTransfer={setTransferEntry}
+                    onTransfer={(entry) => {
+                      setCollectionOpen(false);
+                      setReviewOpen(false);
+                      setCelebrationOpen(false);
+                      setTransferEntry(entry);
+                    }}
                     onRefreshMetadata={(tokenId) =>
                       void refreshMetadata(tokenId)
                     }

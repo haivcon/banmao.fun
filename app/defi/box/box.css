@@ -726,6 +726,20 @@
   display: grid;
   gap: 12px;
 }
+.box-collection-layer { display: contents; }
+.box-collection-sheet-header { display: none; }
+.box-collection-sheet-close {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--box-line);
+  border-radius: 12px;
+  background: rgba(255,255,255,.04);
+  color: var(--box-muted);
+  cursor: pointer;
+}
+.box-collection-sheet-close svg { width: 18px; height: 18px; }
 
 .box-collection-manager > div:first-child { display: grid; gap: 5px; }
 .box-collection-manager span,
@@ -3307,6 +3321,70 @@
 .box-contract-footer[open] .box-contract-footer__heading { margin-bottom: 16px; }
 .box-review__details dd code { display: block; max-width: 340px; overflow-wrap: anywhere; font-size: 10px; }
 @media (max-width: 820px) {
+  .box-collection-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: flex;
+    align-items: flex-end;
+    width: 100vw;
+    max-width: 100%;
+    overflow: hidden;
+    background: rgba(2, 4, 8, 0.78);
+    backdrop-filter: blur(8px);
+  }
+  .box-collection-body {
+    width: 100%;
+    max-width: 100%;
+    max-height: 88dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 16px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+    border: 1px solid var(--box-line-strong);
+    border-bottom: 0;
+    border-radius: 22px 22px 0 0;
+    background: #10141e;
+    box-shadow: 0 -24px 80px rgba(0,0,0,.55);
+    animation: box-sheet-in var(--box-motion-base) var(--box-ease-premium);
+  }
+  .box-collection-sheet-header {
+    position: sticky;
+    z-index: 2;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 68px;
+    margin: 0 -16px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--box-line);
+    background: rgba(16,20,30,.98);
+  }
+  .box-collection-sheet-header .box-collection-identity strong { font-size: 14px; }
+  .box-collection-sheet-header .box-collection-identity small,
+  .box-collection-hint,
+  .box-collection-details > span,
+  .box-address-history > span { font-size: 12px; line-height: 1.45; }
+  .box-collection-controls { grid-template-columns: 1fr; }
+  .box-collection-controls input {
+    width: 100%;
+    min-height: 48px;
+    font-size: 16px;
+  }
+  .box-collection-controls button,
+  .box-address-history button,
+  .box-collection-details button { min-height: 44px; }
+  .box-collection-create {
+    grid-column: auto;
+    margin-top: 10px;
+    padding-top: 14px;
+  }
+  body:has(.box-collection-layer.is-open) .banmao-ai-root,
+  body:has(.box-collection-layer.is-open) .banmao-ai-launcher { display: none; }
+  .box-page--collection-sheet-open .box-submit { visibility: hidden; }
   .box-page { min-height: 100dvh; font-size: 14px; }
   .box-hero { min-height: 190px; height: 230px; max-height: 230px; padding-block: 10px; }
   .box-hero__copy h1 { margin-block: 4px; font-size: clamp(24px, 8vw, 32px); }

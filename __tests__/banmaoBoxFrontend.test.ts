@@ -392,6 +392,36 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(css).toMatch(/\.box-submit[\s\S]*min-height:\s*56px/);
   });
 
+  test("contains the mobile collection manager as one accessible modal sheet without changing desktop inline layout", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
+    const mobile = css.slice(css.indexOf("@media (max-width: 820px)", css.indexOf(".box-collection-layer")));
+
+    expect(page).toContain('className="box-collection-layer is-open"');
+    expect(page).toContain('role={isCollectionSheet ? "dialog" : undefined}');
+    expect(page).toContain("aria-modal={isCollectionSheet ? true : undefined}");
+    expect(page).toContain('aria-labelledby="box-collection-title"');
+    expect(page).toContain('className="box-collection-sheet-close"');
+    expect(page).toContain("collectionToggleRef.current?.focus()");
+    expect(page).toContain('event.key === "Escape"');
+    expect(page).toContain('event.key !== "Tab"');
+    expect(page).toContain("document.body.style.overflow = \"hidden\"");
+    expect(page).toContain("setCollectionOpen(false)");
+    expect(page).toContain("setReviewOpen(false)");
+    expect(page).toContain("setTransferEntry(null)");
+    expect(page).toContain("setCelebrationOpen(false)");
+    expect(page.match(/box-collection-controls/g)).toHaveLength(1);
+
+    expect(css).toMatch(/\.box-collection-layer\s*\{\s*display:\s*contents/);
+    expect(mobile).toMatch(/\.box-collection-layer\s*\{[\s\S]*position:\s*fixed[\s\S]*inset:\s*0[\s\S]*z-index:\s*900/);
+    expect(mobile).toMatch(/\.box-collection-body\s*\{[\s\S]*width:\s*100%[\s\S]*max-height:\s*88dvh[\s\S]*overflow-y:\s*auto/);
+    expect(mobile).toMatch(/padding-bottom:\s*calc\([^;]*env\(safe-area-inset-bottom\)/);
+    expect(mobile).toMatch(/\.box-collection-controls input\s*\{[\s\S]*font-size:\s*16px/);
+    expect(mobile).toMatch(/\.box-collection-controls button[\s\S]*min-height:\s*44px/);
+    expect(mobile).toMatch(/body:has\(\.box-collection-layer\.is-open\) \.banmao-ai-launcher[\s\S]*display:\s*none/);
+    expect(mobile).toMatch(/\.box-page--collection-sheet-open \.box-submit[\s\S]*visibility:\s*hidden/);
+  });
+
   test("centers equal-width tabs and assigns content-specific desktop dialog geometry", () => {
     const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
     const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
