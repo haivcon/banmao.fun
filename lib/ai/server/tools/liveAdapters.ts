@@ -14,6 +14,7 @@ import { okxFetch as realOkxFetch } from "../../../okx/okxClient";
 import { readCollectionPrompts, readCollectionQuests, readCollectionSearch } from "../../../collection/server/readers";
 import type { ToolDescriptor } from "../toolRegistry";
 import banmaoBoxDeployment from "../../../../deployments/banmaobox-xlayer-mainnet.json";
+import { BANMAO_BOX_ABI } from "../../../../app/defi/box/generated/abis";
 
 type Address = `0x${string}`;
 type ReadContract = (parameters: { address: Address; abi: readonly unknown[]; functionName: string; args?: readonly unknown[]; blockNumber?: bigint }) => Promise<unknown>;
@@ -82,7 +83,7 @@ export function createDomainToolDescriptors(dependencies: { readContract?: ReadC
         ]);
         wallet = { address: args.wallet, summary, stakeIds, pendingRewards };
       }
-      return available({ totalStaked, totalShares, rewardBucket, paused, contract: STAKING_CONTRACT_ADDRESS, ...(wallet ? { wallet } : {}) }, "xlayer:196:banmao-staking", blockNumber as bigint | undefined);
+      return available({ protocol: { totalStaked, totalShares, rewardBucket, paused, contract: STAKING_CONTRACT_ADDRESS }, ...(wallet ? { wallet } : {}), risks: ["Smart-contract risk", "Lock and liquidity risk", "Reward availability is not guaranteed"] }, "xlayer:196:banmao-staking", blockNumber as bigint | undefined);
     } catch { return unavailable("X Layer staking RPC read failed", "xlayer:196:banmao-staking"); }
   }}));
 
@@ -101,12 +102,14 @@ export function createDomainToolDescriptors(dependencies: { readContract?: ReadC
     return { status: availableCount ? "available" as const : "unavailable" as const, value: { wallet: args.wallet, chainId: 196, sources }, partial: availableCount !== sources.length, source: "aggregate:xlayer:196:wallet-portfolio", observedAt: now(), asOf: blockNumber ? `block:${blockNumber}` : now(), ...(blockNumber ? { blockNumber: blockNumber.toString() } : {}) };
   }}));
 
-  tools.push(descriptor({ name: "defi.burn", description: "Read BANMAO balances at the two approved burn addresses", parameters: parameters({ chainId: { type: "integer", const: 196 } }, ["chainId"]), contexts: ["defi", "landing"], auth: "public", parse: (v) => chainSchema.parse(v), async execute() {
+  const burnSchema = z.object({ chainId: z.literal(196), amount: z.string().regex(/^\d{1,78}$/).optional() }).strict();
+  tools.push(descriptor({ name: "defi.burn", description: "Read approved BANMAO burn addresses, balances, total burned, supply, and an optional amount impact preview; never submits a burn", parameters: parameters({ chainId: { type: "integer", const: 196 }, amount: { type: "string", pattern: "^\\d{1,78}$", description: "Optional BANMAO amount in base units" } }, ["chainId"]), contexts: ["defi", "landing"], auth: "public", parse: (v) => burnSchema.parse(v), async execute(args) {
     try {
       const burnAddresses = ["0x000000000000000000000000000000000000dead", "0x0000000000000000000000000000000000000000"] as const;
-      const [balances, blockNumber] = await Promise.all([Promise.all(burnAddresses.map((address) => readContract({ address: BANMAO_ADDRESS, abi: ERC20_ABI, functionName: "balanceOf", args: [address] }))), block()]);
+      const [balances, totalSupply, blockNumber] = await Promise.all([Promise.all(burnAddresses.map((address) => readContract({ address: BANMAO_ADDRESS, abi: ERC20_ABI, functionName: "balanceOf", args: [address] }))), readContract({ address: BANMAO_ADDRESS, abi: ERC20_ABI, functionName: "totalSupply" }), block()]);
       const burnedRaw = balances.reduce<bigint>((sum, value) => sum + BigInt(String(value)), 0n);
-      return available({ burnedRaw, balances: burnAddresses.map((address, index) => ({ address, balance: balances[index] })), token: BANMAO_ADDRESS }, "xlayer:196:banmao-burn-address-balances", blockNumber);
+      const amount = args.amount ? BigInt(args.amount) : undefined;
+      return available({ approvedBurnAddresses: burnAddresses, burnedRaw, totalSupply, circulatingSupplyPreview: BigInt(String(totalSupply)) - burnedRaw, balances: burnAddresses.map((address, index) => ({ address, balance: balances[index] })), token: BANMAO_ADDRESS, ...(amount !== undefined ? { amountPreview: { amount, totalBurnedAfter: burnedRaw + amount, supplyImpactBasisPoints: BigInt(String(totalSupply)) ? ((burnedRaw + amount) * 10_000n / BigInt(String(totalSupply))).toString() : "0" } } : {}) }, "xlayer:196:banmao-burn-address-balances", blockNumber);
     } catch { return unavailable("BANMAO burn balance RPC read failed", "xlayer:196:banmao-burn-address-balances"); }
   }}));
 
@@ -115,7 +118,21 @@ export function createDomainToolDescriptors(dependencies: { readContract?: ReadC
     try { return available({ stats: await internalRead("airdrop.stats", { token: args.tokenAddress }), ...(args.wallet ? { history: await internalRead("airdrop.history", { wallet: args.wallet, limit: args.limit }) } : {}) }, "internal-db:airdrop-records"); }
     catch { return unavailable("Airdrop database read unavailable", "internal-db:airdrop-records"); }
   }}));
-  tools.push(descriptor({ name: "defi.box", description: "Read BanmaoBox deployment availability", parameters: parameters({ chainId: { type: "integer", const: 196 } }, ["chainId"]), contexts: ["defi"], auth: "public", parse: (v) => chainSchema.parse(v), async execute() { return available({ chainId: banmaoBoxDeployment.chainId, status: banmaoBoxDeployment.status, contracts: banmaoBoxDeployment.contracts }, "deployment:banmaobox-xlayer-mainnet"); } }));
+  const boxSchema = z.object({ chainId: z.literal(196), wallet: addressSchema.optional(), nftId: z.string().regex(/^\d{1,78}$/).optional(), limit: z.number().int().min(1).max(20).default(10) }).strict();
+  tools.push(descriptor({ name: "defi.box", description: "Read BanmaoBox deployment, renderer roles, registry totals, and bounded optional NFT or wallet-owned IDs", parameters: parameters({ chainId: { type: "integer", const: 196 }, wallet: { type: "string", pattern: "^0x[a-fA-F0-9]{40}$" }, nftId: { type: "string", pattern: "^\\d{1,78}$" }, limit: { type: "integer", minimum: 1, maximum: 20 } }, ["chainId"]), contexts: ["defi"], auth: "public", parse: (v) => boxSchema.parse(v), async execute(args) {
+    try {
+      const box = banmaoBoxDeployment.contracts.box as Address;
+      const [totalSupply, renderer, blockNumber] = await Promise.all([readContract({ address: box, abi: BANMAO_BOX_ABI, functionName: "totalSupply" }), readContract({ address: box, abi: BANMAO_BOX_ABI, functionName: "renderer" }), block()]);
+      const nft = args.nftId ? { id: args.nftId, owner: await readContract({ address: box, abi: BANMAO_BOX_ABI, functionName: "ownerOf", args: [BigInt(args.nftId)] }) } : undefined;
+      let ownedIds: unknown[] | undefined;
+      if (args.wallet) {
+        const balance = BigInt(String(await readContract({ address: box, abi: BANMAO_BOX_ABI, functionName: "balanceOf", args: [args.wallet] })));
+        const count = Math.min(Number(balance), args.limit, 20);
+        ownedIds = await Promise.all(Array.from({ length: count }, (_, index) => readContract({ address: box, abi: BANMAO_BOX_ABI, functionName: "tokenOfOwnerByIndex", args: [args.wallet!, BigInt(index)] })));
+      }
+      return available({ chainId: banmaoBoxDeployment.chainId, status: banmaoBoxDeployment.status, contracts: banmaoBoxDeployment.contracts, deployment: { chainId: banmaoBoxDeployment.chainId, status: banmaoBoxDeployment.status }, rendererRoles: { factory: banmaoBoxDeployment.contracts.factoryRenderer, default: banmaoBoxDeployment.contracts.defaultRenderer, box: renderer }, registry: { factory: banmaoBoxDeployment.contracts.factory, box }, collectionTotals: { totalSupply }, ...(nft ? { nft } : {}), ...(ownedIds ? { wallet: { address: args.wallet, ownedIds, cappedAt: args.limit } } : {}) }, "deployment:banmaobox-xlayer-mainnet", blockNumber as bigint | undefined);
+    } catch { return unavailable("BanmaoBox RPC read unavailable", "deployment:banmaobox-xlayer-mainnet"); }
+  } }));
 
   tools.push(descriptor({ name: "gamefi.fomo", description: "Read current BanMaoFomo round, jackpot, timers and configuration", parameters: parameters({ chainId: { type: "integer", const: 196 }, wallet: { type: "string", pattern: "^0x[a-fA-F0-9]{40}$" } }, ["chainId"]), contexts: ["gamefi"], auth: "public", parse: (v) => walletChainSchema.parse(v), async execute(args) {
     try {

@@ -2,6 +2,8 @@ export const AI_MODELS = ["banmao.fun"] as const;
 export type AIModel = (typeof AI_MODELS)[number];
 export const AI_SURFACES = ["landing", "defi", "gamefi", "collection"] as const;
 export type AISurface = (typeof AI_SURFACES)[number];
+export const DEFI_APPS = ["overview", "staking", "burn", "airdrop", "box"] as const;
+export type DeFiApp = (typeof DEFI_APPS)[number];
 
 export type AIConversationTurn = { role: "user" | "assistant"; content: string };
 export type AIEpisodicState = {
@@ -16,6 +18,7 @@ export type AIChatRequest = {
   model?: AIModel;
   context: {
     surface: AISurface;
+    app?: DeFiApp;
     pathname: string;
     locale?: string;
     entity?: { type: string; id: string };
@@ -39,7 +42,7 @@ export type CollectionMediaResult = { publicId: string; secureUrl: string; thumb
 export type CollectionResultsPayload = { callId: string; observedAt: string; searchMode: "metadata"; results: CollectionMediaResult[] };
 
 export type AIStreamEvent =
-  | { event: "meta"; data: { requestId: string; conversationId?: string; model: AIModel; surface: AISurface; personaVersion: string; ragStatus: "ready"|"disabled"|"degraded"; ragHitCount: number; idempotency: "distributed"|"local-degraded"; rateLimit: "distributed"|"local-degraded" } }
+  | { event: "meta"; data: { requestId: string; conversationId?: string; model: AIModel; surface: AISurface; app?: DeFiApp; personaVersion: string; ragStatus: "ready"|"disabled"|"degraded"; ragHitCount: number; idempotency: "distributed"|"local-degraded"; rateLimit: "distributed"|"local-degraded" } }
   | { event: "delta"; data: { requestId:string; text: string } }
   | { event: "tool"; data: { requestId: string; callId: string; name: string; status: string; source: string; summary: string } }
   | { event: "collection_results"; data: CollectionResultsPayload & { requestId: string } }

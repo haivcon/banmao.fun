@@ -1,8 +1,9 @@
 import { z } from "zod";
-import { AI_MODELS, AI_SURFACES, type AIModel, type ValidatedAIChatRequest } from "../contracts";
+import { AI_MODELS, AI_SURFACES, DEFI_APPS, type AIModel, type ValidatedAIChatRequest } from "../contracts";
 
 const contextSchema = z.object({
   surface: z.enum(AI_SURFACES),
+  app: z.enum(DEFI_APPS).optional(),
   pathname: z.string().min(1).max(512).startsWith("/"),
   locale: z.string().min(2).max(16).optional(),
   entity: z.object({ type: z.string().min(1).max(64), id: z.string().min(1).max(128) }).strict().optional(),
