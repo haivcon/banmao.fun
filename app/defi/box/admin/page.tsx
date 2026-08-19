@@ -36,6 +36,7 @@ import { formatExactTokenAmount } from "../amountFormat";
 import { resolveStoredAssetSymbol } from "../transactionPresentation";
 import { ExplorerValueRow } from "../ExplorerValueRow";
 import { getAdminCreationFixture } from "../adminCreationFixture";
+import { useBoundedLoading } from "../useBoundedLoading";
 import type { BanmaoBoxVerificationRequest } from "../requestVerification";
 import "./admin.css";
 
@@ -78,6 +79,13 @@ export default function BoxOperationsPage() {
     config = getBoxChainConfig(network),
     box = useBox(network),
     explorer = config.chain.blockExplorers?.default.url;
+  const deploymentLoading = !box.isDeploymentValidated && !box.deploymentError;
+  const { timedOut: deploymentTimedOut, resetTimeout: resetDeploymentTimeout } =
+    useBoundedLoading(deploymentLoading);
+  const retryDeployment = () => {
+    resetDeploymentTimeout();
+    box.retryDeployment();
+  };
   const inspect = async (e: FormEvent) => {
     e.preventDefault();
     setMessage(null);
@@ -335,6 +343,12 @@ export default function BoxOperationsPage() {
         </article>
       </section>
       {message ? <div className="ops-message">{message}</div> : null}
+      {deploymentTimedOut ? (
+        <div className="ops-message" role="status">
+          Deployment data is taking longer than expected. Check your connection and try again.
+          <button type="button" onClick={retryDeployment}>Retry</button>
+        </div>
+      ) : null}
       <section className="ops-grid">
         <article className="ops-panel ops-contracts">
           <header>

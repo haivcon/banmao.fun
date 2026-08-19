@@ -108,10 +108,10 @@ const connectors = [
             name: "BANMAO",
             description:
               "BANMAO GameFi, DeFi and NFT ecosystem on X Layer",
-            url: "https://banmao.fun",
-            icons: ["https://banmao.fun/pwa/main/icon-512x512.png"],
+            url: "https://www.banmao.fun",
+            icons: ["https://www.banmao.fun/pwa/main/icon-512x512.png"],
             redirect: {
-              universal: "https://banmao.fun",
+              universal: "https://www.banmao.fun",
             },
           },
           qrModalOptions: {

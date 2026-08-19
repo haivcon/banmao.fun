@@ -108,10 +108,12 @@ export function useBox(
   const [boxes, setBoxes] = useState<BoxEntry[]>([]);
   const [boxesLoading, setBoxesLoading] = useState(false);
   const [boxesError, setBoxesError] = useState<string | null>(null);
+  const [boxesAttempt, setBoxesAttempt] = useState(0);
   const [deploymentError, setDeploymentError] = useState<string | null>(null);
   const [deploymentWarning, setDeploymentWarning] = useState<string | null>(null);
   const [isDiscoveryValidated, setIsDiscoveryValidated] = useState(false);
   const [isDeploymentValidated, setIsDeploymentValidated] = useState(false);
+  const [deploymentAttempt, setDeploymentAttempt] = useState(0);
   const [phase, setPhase] = useState<BoxTransactionPhase>("idle");
   const [transactionHash, setTransactionHash] = useState<Hash | null>(null);
   const [transactionError, setTransactionError] = useState<string | null>(null);
@@ -403,7 +405,12 @@ export function useBox(
     publicClient,
     tokenAddress,
     expectedRuntime,
+    deploymentAttempt,
   ]);
+
+  const retryDeployment = useCallback(() => {
+    setDeploymentAttempt((value) => value + 1);
+  }, []);
 
   const ownedBoxCount = (ownedBoxCountQuery.data as bigint | undefined) ?? 0n;
 
@@ -588,6 +595,7 @@ export function useBox(
     readBoxAssets,
     tokenAddress,
     genericToken,
+    boxesAttempt,
   ]);
 
   useEffect(() => {
@@ -665,6 +673,11 @@ export function useBox(
     totalLockedQuery,
     totalSupplyQuery,
   ]);
+
+  const retryBoxes = useCallback(() => {
+    setBoxesAttempt((value) => value + 1);
+    void refetchAll();
+  }, [refetchAll]);
 
   const createBox = useCallback(
     async (recipient: Address, amount: string, lockDurationSec: bigint) => {
@@ -1195,10 +1208,12 @@ export function useBox(
     boxes,
     boxesLoading: boxesLoading || ownedBoxCountQuery.isLoading,
     boxesError,
+    retryBoxes,
     deploymentError,
     deploymentWarning,
     isDiscoveryValidated,
     isDeploymentValidated,
+    retryDeployment,
     totalLocked: (totalLockedQuery.data as bigint | undefined) ?? 0n,
     totalSupply: (totalSupplyQuery.data as bigint | undefined) ?? 0n,
     createBox,
