@@ -27,6 +27,7 @@ const MOVEMENT_COPY: Record<string, { open: string; move: string; keyboard: stri
 
 type Props = {
   open: boolean;
+  health: "online" | "degraded" | "offline";
   emotion: BanmaoEmotion;
   mascotVisible: boolean;
   reducedMotion: boolean;
@@ -49,9 +50,16 @@ function getBounds(control: HTMLElement): FloatingBounds {
   };
 }
 
-export default function AIChatLauncher({ open, emotion, mascotVisible, reducedMotion, language, onClick }: Props) {
+const HEALTH_COPY: Record<string, Record<Props["health"], string>> = {
+  en: { online: "Online", degraded: "Degraded", offline: "Offline" }, vi: { online: "Trực tuyến", degraded: "Suy giảm", offline: "Ngoại tuyến" },
+  zh: { online: "在线", degraded: "服务降级", offline: "离线" }, ko: { online: "온라인", degraded: "성능 저하", offline: "오프라인" },
+  ru: { online: "Онлайн", degraded: "Ограниченно", offline: "Офлайн" }, id: { online: "Online", degraded: "Terganggu", offline: "Offline" },
+};
+
+export default function AIChatLauncher({ open, health, emotion, mascotVisible, reducedMotion, language, onClick }: Props) {
   const t = (key: Parameters<typeof aiText>[1]) => aiText(language, key);
   const movement = MOVEMENT_COPY[language || "en"] || MOVEMENT_COPY.en;
+  const healthLabel = (HEALTH_COPY[language || "en"] || HEALTH_COPY.en)[health];
   const launcherRef = useRef<HTMLButtonElement>(null);
   const positionRef = useRef<FloatingPoint>({ x: 0, y: 0 });
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; origin: FloatingPoint; moved: boolean } | undefined>(undefined);
@@ -160,6 +168,7 @@ export default function AIChatLauncher({ open, emotion, mascotVisible, reducedMo
       aria-controls="banmao-ai-panel"
       aria-describedby="banmao-ai-drag-help"
       aria-label={open ? t("close") : movement.open}
+      data-ai-health={health}
       onClick={() => {
         if (suppressClickRef.current) { suppressClickRef.current = false; return; }
         onClick();
@@ -172,7 +181,7 @@ export default function AIChatLauncher({ open, emotion, mascotVisible, reducedMo
     >
       <span className="banmao-ai-launcher-glow" aria-hidden="true" />
       {mascotVisible ? <span className="banmao-ai-orb"><BanmaoAIMascot emotion={emotion} reducedMotion={reducedMotion} size="launcher" /><i aria-hidden="true" /></span> : <span className="banmao-ai-launcher-icon"><MessageCircleMore size={22} /></span>}
-      <span className="banmao-ai-launcher-copy"><span><strong>BANMAO AI</strong><Sparkles size={12} aria-hidden="true" /></span><small>{open ? t("copilot") : `${t("online")} · ${t("ask").replace(/…$/, "")}`}</small></span>
+      <span className="banmao-ai-launcher-copy"><span><strong>BANMAO AI</strong><Sparkles size={12} aria-hidden="true" /></span><small role="status" aria-live="polite">{open ? t("copilot") : `${healthLabel} · ${t("ask").replace(/…$/, "")}`}</small></span>
     </button>
   </>;
 }

@@ -1,5 +1,6 @@
-import type { AISurface } from "../contracts";
+import type { AISurface, DeFiApp } from "../contracts";
 const routes: Array<[string,AISurface]>=[["/collection","collection"],["/gamefi","gamefi"],["/defi","defi"]];
+const defiRoutes: Array<[string, DeFiApp]> = [["/defi/staking", "staking"], ["/defi/burn", "burn"], ["/defi/airdrop", "airdrop"], ["/defi/box", "box"]];
 const collectionMediaConcepts = new Set([
   "cat", "kitty", "kitten", "banmao", "mao", "mèo", "猫", "고양이", "кот", "кошка", "kucing",
   "happy", "joy", "smile", "vui", "vui vẻ", "hạnh phúc", "开心", "快乐", "행복", "웃는", "веселый", "счастливый", "senang", "bahagia",
@@ -26,6 +27,8 @@ export function isCollectionMediaConcept(message:string, surface:AISurface) {
   const concept = normalizeCollectionConcept(message);
   return surface === "collection" && concept.length >= 3 && collectionMediaConcepts.has(concept);
 }
-export function surfaceForPath(pathname:string):AISurface|null { const path=pathname.split(/[?#]/,1)[0].replace(/\/+$/,"/"); if(path==="/") return "landing"; for(const [prefix,surface] of routes) if(path===prefix || path.startsWith(prefix+"/")) return surface; return null; }
-export function resolveContext(pathname:string, claimed:AISurface){ const surface=surfaceForPath(pathname); if(!surface) throw new Error("Unsupported pathname"); if(surface!==claimed) throw new Error("Context mismatch"); return Object.freeze({surface,pathname}); }
-export function routeContext(context:{pathname:string;surface:AISurface}){return resolveContext(context.pathname,context.surface);}
+function cleanPath(pathname: string) { return pathname.split(/[?#]/, 1)[0].replace(/\/+$/, "") || "/"; }
+export function surfaceForPath(pathname:string):AISurface|null { const path=cleanPath(pathname); if(path==="/") return "landing"; for(const [prefix,surface] of routes) if(path===prefix || path.startsWith(prefix+"/")) return surface; return null; }
+export function appForPath(pathname: string): DeFiApp | undefined { const path = cleanPath(pathname); if (path === "/defi") return "overview"; for (const [prefix, app] of defiRoutes) if (path === prefix || path.startsWith(prefix + "/")) return app; return undefined; }
+export function resolveContext(pathname:string, claimed:AISurface, claimedApp?:DeFiApp){ const surface=surfaceForPath(pathname); if(!surface) throw new Error("Unsupported pathname"); if(surface!==claimed) throw new Error("Context mismatch"); const app = surface === "defi" ? appForPath(pathname) : undefined; if (surface === "defi" && !app) throw new Error("Unsupported DeFi pathname"); if (claimedApp && claimedApp !== app) throw new Error("App context mismatch"); return Object.freeze({surface,pathname,...(app ? { app } : {})}); }
+export function routeContext(context:{pathname:string;surface:AISurface;app?:DeFiApp}){return resolveContext(context.pathname,context.surface,context.app);}

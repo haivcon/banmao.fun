@@ -8,12 +8,14 @@ import { routeContext } from "../../../../lib/ai/server/contextRouter";
 import { BANMAO_PERSONA_VERSION, runOrchestrator } from "../../../../lib/ai/server/orchestrator";
 import { loadApprovedCorpus } from "../../../../lib/ai/server/rag/corpus";
 import { retrieveHybrid } from "../../../../lib/ai/server/rag/retriever";
+import { shouldRetrieveDocs } from "../../../../lib/ai/server/rag/retrievalGate";
 import { safeLogRecord } from "../../../../lib/ai/server/observability";
 import { validateChatRequest, AIValidationError } from "../../../../lib/ai/server/schemas";
 import { createRateLimiter } from "../../../../lib/ai/server/security/rateLimit";
 import { createToolRegistry } from "../../../../lib/ai/server/toolRegistry";
 import { docsSearchTool } from "../../../../lib/ai/server/tools/docs";
 import { createDomainToolDescriptors } from "../../../../lib/ai/server/tools/liveAdapters";
+import { filterToolsForContext } from "../../../../lib/ai/server/toolSelection";
 import { createOnchainOSReadOnlyDescriptors, preferOnchainOSReadOnlyTools } from "../../../../lib/ai/server/tools/onchainosReadOnly";
 
 export const runtime = "nodejs";
@@ -76,7 +78,8 @@ export async function POST(request: Request) {
   let ragStatus: "ready" | "disabled" | "degraded" = config.flags.rag ? "ready" : "disabled";
   let corpus: Awaited<ReturnType<typeof loadApprovedCorpus>> = [];
   let evidence: Array<{ chunkId: string; sourcePath: string; excerpt: string }> = [];
-  if (config.flags.rag) {
+  const docsIntent = config.flags.rag && shouldRetrieveDocs(validated.message);
+  if (docsIntent) {
     try { corpus = await loadApprovedCorpus(); const result = await retrieveHybrid(corpus, validated.message, 4); evidence = result.hits; ragMode = result.mode; } catch { evidence = []; ragStatus = "degraded"; }
   }
   const domainTools = createDomainToolDescriptors().filter((tool) => {
@@ -89,7 +92,8 @@ export async function POST(request: Request) {
   });
   const onchainosTools = createOnchainOSReadOnlyDescriptors({ enabled: config.flags.onchainosReadOnly });
   const marketTools = preferOnchainOSReadOnlyTools(domainTools, onchainosTools);
-  const tools = createToolRegistry(config.flags.tools ? [...(ragStatus === "ready" ? [docsSearchTool(corpus)] : []), ...marketTools] : []).descriptors;
+  const contextualTools = filterToolsForContext([...(ragStatus === "ready" ? [docsSearchTool(corpus)] : []), ...marketTools], routed);
+  const tools = createToolRegistry(config.flags.tools ? contextualTools : []).descriptors;
   const requestId = validated.requestId;
   const orchestrationAbort = new AbortController();
   if (request.signal.aborted) orchestrationAbort.abort(request.signal.reason);
@@ -98,7 +102,7 @@ export async function POST(request: Request) {
     async start(controller) {
       const chunks:Uint8Array[]=[];let streamBytes=0;let firstTokenAt:number|undefined;let finishReason="unknown";let inputTokens:number|undefined;let outputTokens:number|undefined;let toolRounds=0;
       const emit=(event:string,data:unknown)=>{const chunk=sse(event,data);chunks.push(chunk);streamBytes+=chunk.byteLength;controller.enqueue(chunk);};
-      emit("meta", { requestId, model: validated.model, personaVersion: BANMAO_PERSONA_VERSION, ragMode, ragStatus,ragHitCount: evidence.length, surface: routed.surface,idempotency:"local-degraded",rateLimit:rate.mode });
+      emit("meta", { requestId, model: validated.model, personaVersion: BANMAO_PERSONA_VERSION, ragMode, ragStatus,ragHitCount: evidence.length, surface: routed.surface, app: routed.app, idempotency:"local-degraded",rateLimit:rate.mode });
       try {
         for await (const event of runOrchestrator({
           model: validated.model,
