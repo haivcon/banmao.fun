@@ -29,6 +29,7 @@ import { createEmotionState, emotionForSSEEvent, emotionForTransactionEvent, emo
 import { parseAIStreamBlock, type AIModel, type CollectionResultsPayload, type DeFiApp } from "../../../lib/ai/contracts";
 import AIChatLauncher from "./AIChatLauncher";
 import AIChatPanel from "./AIChatPanel";
+import type { FloatingRect } from "./floatingPosition";
 import TransactionCopilot from "./TransactionCopilot";
 import { getMascotAsset } from "./mascot/mascotAssets";
 
@@ -72,6 +73,7 @@ const uid = createClientRequestId;
 export default function AIChatProvider({ children }: { children?: ReactNode }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [launcherRect, setLauncherRect] = useState<FloatingRect>();
   const [input, setInputState] = useState("");
   const [language, setLanguage] = useState<AILocale>("en");
   const [persistenceEnabled, setPersistenceEnabledState] = useState(true);
@@ -257,11 +259,12 @@ export default function AIChatProvider({ children }: { children?: ReactNode }) {
   async function exportData() { const data = await exportSession(); if (!data) return; const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const url = URL.createObjectURL(blob); const link = document.createElement("a"); link.href = url; link.download = `banmao-ai-${data.session.id}.json`; link.click(); URL.revokeObjectURL(url); }
   async function clear() { dispatch({ type: "clear" }); dispatchEmotion({ type: "clear" }); setPendingAction(null); setActionNotice(""); if (persistenceEnabled && currentSessionId) { await repository.current?.replaceSession(currentSessionId, [], state.model); await refreshSessions(); publishInvalidation(currentSessionId); } }
   function finishAnimation() { if (emotionState.closeAfterAnimation) setOpen(false); else dispatchEmotion({ type: "animation-complete" }); }
+  const updateLauncherGeometry = useCallback((rect: FloatingRect) => setLauncherRect(rect), []);
 
   const persistenceAPI: AIChatPersistenceAPI = { sessions, currentSessionId, persistenceReady, persistenceError, persistenceEnabled, estimatedTokens: currentSession?.estimatedTokens || 0, quotaTokens: AI_SESSION_TOKEN_CAP, listSessions, createSession, switchSession, renameSession, deleteSession, archiveSession, exportSession };
   return <PersistenceContext.Provider value={persistenceAPI}><div className="banmao-ai-root">
-    <AIChatLauncher open={open} health={health} emotion={open ? emotionState.emotion : "idle"} mascotVisible={mascotVisible} reducedMotion={reducedMotion} language={language} onClick={openPanel} />
-    {open && <AIChatPanel state={state} surface={surface} emotion={emotionState.emotion} language={language} input={input} setInput={setInput} onInputFocus={() => dispatchEmotion({ type: "input-focus" })} submit={submit} stop={stop} close={closePanel} retry={() => { if (state.lastPrompt) { dispatchEmotion({ type: "retry" }); void send(state.lastPrompt, true); } }} optIn={persistenceEnabled} setOptIn={setPersistenceEnabled} mascotVisible={mascotVisible} setMascotVisible={setMascotVisible} reducedMotion={reducedMotion} setReducedMotion={setReducedMotion} onAnimationComplete={finishAnimation} clear={() => void clear()} exportData={() => void exportData()} pendingAction={pendingAction} actionNotice={actionNotice} confirmAction={confirmPageAction} cancelAction={() => setPendingAction(null)} memoryTurns={currentSession?.messageCount || 0} persistenceReady={persistenceReady} persistenceError={persistenceError}>{txCopilotEnabled ? <TransactionCopilot language={language} onEmotion={txEmotion} /> : null}</AIChatPanel>}
+    <AIChatLauncher open={open} health={health} emotion={open ? emotionState.emotion : "idle"} mascotVisible={mascotVisible} reducedMotion={reducedMotion} language={language} onClick={openPanel} onGeometryChange={updateLauncherGeometry} />
+    {open && <AIChatPanel launcherRect={launcherRect} state={state} surface={surface} emotion={emotionState.emotion} language={language} input={input} setInput={setInput} onInputFocus={() => dispatchEmotion({ type: "input-focus" })} submit={submit} stop={stop} close={closePanel} retry={() => { if (state.lastPrompt) { dispatchEmotion({ type: "retry" }); void send(state.lastPrompt, true); } }} optIn={persistenceEnabled} setOptIn={setPersistenceEnabled} mascotVisible={mascotVisible} setMascotVisible={setMascotVisible} reducedMotion={reducedMotion} setReducedMotion={setReducedMotion} onAnimationComplete={finishAnimation} clear={() => void clear()} exportData={() => void exportData()} pendingAction={pendingAction} actionNotice={actionNotice} confirmAction={confirmPageAction} cancelAction={() => setPendingAction(null)} memoryTurns={currentSession?.messageCount || 0} persistenceReady={persistenceReady} persistenceError={persistenceError}>{txCopilotEnabled ? <TransactionCopilot language={language} onEmotion={txEmotion} /> : null}</AIChatPanel>}
     {children}
   </div></PersistenceContext.Provider>;
 }
