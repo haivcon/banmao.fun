@@ -57,6 +57,32 @@ describe("BanmaoBox collection lifecycle", () => {
     expect(collectionLifecycleSteps(stale).map((step) => step.status)).toEqual(Array(9).fill("completed"));
   });
 
+  test.each(["degraded", "manual"] as const)(
+    "%s verification remains nonfatal after confirmed on-chain validation",
+    (status) => {
+      const confirmed = transitionCollectionLifecycle(start(), { status: "confirmed", transactionHash, boxAddress });
+      const unresolved = transitionCollectionLifecycle(confirmed, { status });
+      const steps = collectionLifecycleSteps(unresolved);
+      expect(unresolved.failureStage).toBeUndefined();
+      expect(steps.slice(0, 7).map((step) => step.status)).toEqual(Array(7).fill("completed"));
+      expect(steps[7].status).toBe("warning");
+      expect(steps[8].status).toBe("pending");
+      expect(steps.every((step) => step.status !== "failed")).toBe(true);
+    },
+  );
+
+  test("only an actual Explorer failure uses the failed lifecycle state", () => {
+    const confirmed = transitionCollectionLifecycle(start(), { status: "confirmed", transactionHash, boxAddress });
+    const failed = transitionCollectionLifecycle(confirmed, {
+      status: "failed",
+      failureStage: "verification",
+      failureReason: "Explorer rejected the source verification",
+    });
+    const steps = collectionLifecycleSteps(failed);
+    expect(steps[7].status).toBe("failed");
+    expect(steps.filter((step) => step.status === "failed")).toHaveLength(1);
+  });
+
   test("the reported failed-without-collection state cannot render future completed copy", () => {
     const failed = transitionCollectionLifecycle(start(), { status: "failed", failureStage: "wallet" });
     const steps = collectionLifecycleSteps(failed);

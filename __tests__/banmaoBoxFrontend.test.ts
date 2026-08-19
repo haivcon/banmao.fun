@@ -19,7 +19,15 @@ import {
   symbolFallback,
   transactionProgressIndex,
 } from "../app/defi/box/transactionPresentation";
-import { requestBanmaoBoxVerification } from "../app/defi/box/requestVerification";
+import {
+  classifyBanmaoBoxVerification,
+  requestBanmaoBoxVerification,
+} from "../app/defi/box/requestVerification";
+import {
+  clearPendingVerification,
+  loadPendingVerification,
+  savePendingVerification,
+} from "../app/defi/box/verificationPersistence";
 
 const TX_HASH = `0x${"a".repeat(64)}` as const;
 const bounds: FloatingBounds = {
@@ -97,8 +105,65 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(requester).toContain('response.headers.get("retry-after")');
     expect(requester).toContain("const MAX_POLLS = 20");
     expect(requester).toContain('update.status === "transient-unavailable"');
-    expect(page).toMatch(/update\.status === "transient-unavailable"[\s\S]*status: "indexing"/);
+    expect(page).toContain('outcome === "progress" ? "indexing"');
+    expect(page).toContain('outcome === "failed" ? "error" : "warning"');
     expect(page.match(/requestBanmaoBoxVerification\(created\.txHash/g)).toHaveLength(1);
+  });
+
+  test("pending followed by already-verified is successful", async () => {
+    jest.useFakeTimers();
+    Object.defineProperty(globalThis, "window", { value: globalThis, configurable: true });
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "pending", guid: "guid-1", boxAddress: "0x2222222222222222222222222222222222222222" }), { status: 202, headers: { "retry-after": "0" } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "already-verified", guid: "guid-1", boxAddress: "0x2222222222222222222222222222222222222222" }), { status: 200 }));
+    try {
+      const request = requestBanmaoBoxVerification(TX_HASH);
+      await jest.runAllTimersAsync();
+      await expect(request.promise).resolves.toMatchObject({ status: "already-verified", guid: "guid-1" });
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    } finally {
+      global.fetch = originalFetch;
+      jest.useRealTimers();
+    }
+  });
+
+  test("a first 503 continues through pending to verified", async () => {
+    jest.useFakeTimers();
+    Object.defineProperty(globalThis, "window", { value: globalThis, configurable: true });
+    const originalFetch = global.fetch;
+    const updates: string[] = [];
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "transient-unavailable", error: "busy" }), { status: 503, headers: { "retry-after": "0" } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "pending", guid: "guid-2" }), { status: 202, headers: { "retry-after": "0" } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "verified", guid: "guid-2" }), { status: 200 }));
+    try {
+      const request = requestBanmaoBoxVerification(TX_HASH, (update) => updates.push(update.status));
+      await jest.runAllTimersAsync();
+      await expect(request.promise).resolves.toMatchObject({ status: "verified", guid: "guid-2" });
+      expect(updates).toEqual(["transient-unavailable", "pending", "verified"]);
+    } finally {
+      global.fetch = originalFetch;
+      jest.useRealTimers();
+    }
+  });
+
+  test("a thrown network error remains transient and polling continues", async () => {
+    jest.useFakeTimers();
+    Object.defineProperty(globalThis, "window", { value: globalThis, configurable: true });
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn()
+      .mockRejectedValueOnce(new Error("network unavailable"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "verified", boxAddress: "0x2222222222222222222222222222222222222222" }), { status: 200 }));
+    try {
+      const request = requestBanmaoBoxVerification(TX_HASH);
+      await jest.runAllTimersAsync();
+      await expect(request.promise).resolves.toMatchObject({ status: "verified" });
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    } finally {
+      global.fetch = originalFetch;
+      jest.useRealTimers();
+    }
   });
 
   test("verification polling emits retry-exhausted exactly at the bounded limit", async () => {
@@ -120,6 +185,44 @@ describe("BanmaoBox transaction UX contract", () => {
       global.fetch = originalFetch;
       jest.useRealTimers();
     }
+  });
+
+  test.each([
+    ["already-verified", "success"],
+    ["verified", "success"],
+    ["pending", "progress"],
+    ["waiting-for-indexer", "progress"],
+    ["transient-unavailable", "degraded"],
+    ["retry-exhausted", "degraded"],
+    ["manual-reconciliation", "manual"],
+    ["failed", "failed"],
+  ] as const)("classifies %s as %s", (status, outcome) => {
+    expect(classifyBanmaoBoxVerification({ status })).toBe(outcome);
+  });
+
+  test("reload persistence is versioned, bounded, resumable, and explicitly clearable", () => {
+    const storage = new Map<string, string>();
+    const localStorage = {
+      getItem: (key: string) => storage.get(key) ?? null,
+      setItem: (key: string, value: string) => storage.set(key, value),
+      removeItem: (key: string) => storage.delete(key),
+    };
+    const pending = {
+      version: 1 as const,
+      chainId: 196,
+      tokenAddress: "0x1111111111111111111111111111111111111111" as const,
+      boxAddress: "0x2222222222222222222222222222222222222222" as const,
+      transactionHash: TX_HASH,
+      status: "retry-exhausted" as const,
+      guid: "38eb82ea4ba449d4aa466c25e63fbf9c",
+      error: "indexing",
+    };
+    savePendingVerification(localStorage, pending);
+    expect(loadPendingVerification(localStorage, 196)).toEqual(pending);
+    expect(loadPendingVerification(localStorage, 195)).toBeNull();
+    expect(Array.from(storage.values())[0].length).toBeLessThan(2048);
+    clearPendingVerification(localStorage, 196);
+    expect(loadPendingVerification(localStorage, 196)).toBeNull();
   });
 
   test("cancellation stops scheduled polling and suppresses later updates", async () => {
@@ -182,6 +285,13 @@ describe("BanmaoBox transaction UX contract", () => {
       ...COLLECTION_LIFECYCLE_FIXTURE,
     });
     expect(getCollectionLifecycleFixture("?collectionFixture=success")).toBeNull();
+    expect(getCollectionLifecycleFixture("?banmaoboxFixture=collection-progress")).toMatchObject({ status: "indexing" });
+    expect(getCollectionLifecycleFixture("?banmaoboxFixture=collection-degraded")).toMatchObject({ status: "degraded" });
+    expect(getCollectionLifecycleFixture("?banmaoboxFixture=collection-manual")).toMatchObject({ status: "manual" });
+    expect(getCollectionLifecycleFixture("?banmaoboxFixture=collection-actual-failed")).toMatchObject({
+      status: "failed",
+      failureStage: "verification",
+    });
     expect(page).toContain("if (getCollectionLifecycleFixture(window.location.search)) return;");
     expect(COLLECTION_LIFECYCLE_FIXTURE.transactionHash).toHaveLength(66);
   });
