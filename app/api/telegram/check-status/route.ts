@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const TELEGRAM_API_BASE_URL =
-  process.env.TELEGRAM_API_BASE_URL ?? "http://103.75.183.59:3000";
+const TELEGRAM_API_BASE_URL = process.env.TELEGRAM_API_BASE_URL?.replace(/\/$/, "");
 
 export async function GET(request: NextRequest) {
+  if (!TELEGRAM_API_BASE_URL) {
+    return NextResponse.json(
+      { message: "Telegram integration is not configured" },
+      { status: 503 }
+    );
+  }
+
   const walletAddress = request.nextUrl.searchParams.get("walletAddress");
 
   if (!walletAddress) {

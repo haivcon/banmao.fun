@@ -1,0 +1,26 @@
+name: Feature request
+description: Propose a focused product or developer improvement
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Do not disclose vulnerabilities or secrets here. Follow SECURITY.md."
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user or contributor problem should be solved?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the smallest useful outcome and alternatives considered.
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Web3, privacy, and compatibility impact
+      description: Note affected chains, contracts, wallets, data, APIs, and migration needs.

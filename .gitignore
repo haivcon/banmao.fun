@@ -48,6 +48,7 @@ pnpm-lock.yaml
 /test/
 /public/Happy Smile.png
 /public/previews
+/public/previews/
 
 # Logs and temporary files
 *.log
@@ -97,6 +98,7 @@ ehthumbs.db
 /deployments/*
 !/deployments/banmaobox-releases/
 /deployments/banmaobox-releases/*
+!/deployments/banmaobox-releases/22aad5bfec33af537e970ff3f2cca2f43d7ebfe63d1c537712d9ecb8728ebc8d.json
 !/deployments/banmaobox-releases/9de8225e702132fedede336deb636ffa87247dc03543ea39107bf6760d096c55.json
 !/deployments/banmaobox-releases/65287404e198cceb2b9dc76cb7eacb6b263d38120e147614470598e4fc0e861f.json
 !/deployments/banmaobox-releases/39e47f551ed420c27970a6e4b492121ccac445f53eb872899415d33c8f7cf143.json

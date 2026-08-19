@@ -1,0 +1,8 @@
+# Default review owner
+* @haivcon
+
+# Security-sensitive and deployment provenance paths
+/.github/ @haivcon
+/contracts/ @haivcon
+/deployments/ @haivcon
+/scripts/ @haivcon
