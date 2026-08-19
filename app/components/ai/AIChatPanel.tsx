@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, CircleAlert, Compass, ShieldCheck, Sparkles, Square, TrendingUp, X } from "lucide-react";
-import { type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode, useEffect, useRef, useState } from "react";
+import { type CSSProperties, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ClientState } from "../../../lib/ai/client/state";
 import { aiPrompts, aiText } from "../../../lib/ai/client/i18n";
 import { getStatusPhrase, type BanmaoEmotion } from "../../../lib/ai/client/emotion";
@@ -15,9 +15,11 @@ import PageActionCard from "./PageActionCard";
 import PrivacyControls from "./PrivacyControls";
 import SessionManager from "./SessionManager";
 import ToolCard from "./ToolCard";
+import { getFloatingPanelPosition, type FloatingPanelPosition, type FloatingRect } from "./floatingPosition";
 import BanmaoAIMascot from "./mascot/BanmaoAIMascot";
 
 type Props = {
+  launcherRect?: FloatingRect;
   state: ClientState; surface: AISurface; emotion: BanmaoEmotion; language: string; input: string;
   setInput: (value: string) => void; onInputFocus: () => void; submit: (event: FormEvent) => void;
   stop: () => void; close: () => void; retry: () => void; optIn: boolean; setOptIn: (value: boolean) => void;
@@ -31,17 +33,55 @@ type Props = {
 const PROMPT_ICONS = [Sparkles, TrendingUp, ShieldCheck];
 
 export default function AIChatPanel(props: Props) {
+  const panelRef = useRef<HTMLElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesRef = useRef<HTMLDivElement>(null);
   const stayAtBottom = useRef(true);
   const dragStart = useRef<number | null>(null);
   const [showScroll, setShowScroll] = useState(false);
+  const [floatingPosition, setFloatingPosition] = useState<FloatingPanelPosition>();
   const streaming = props.state.status === "streaming";
   const phrase = getStatusPhrase(props.emotion, props.language);
   const t = (key: Parameters<typeof aiText>[1]) => aiText(props.language, key);
   const errorText = props.state.error === "SESSION_QUOTA_EXCEEDED" ? t("quotaExceeded") : props.state.error === "MODEL_UNAVAILABLE" ? t("modelUnavailable") : props.state.error;
   const prompts = aiPrompts(props.language, props.surface);
   const surfaceLabel = props.surface === "landing" ? t("ecosystem") : props.surface === "collection" ? t("collections") : props.surface === "defi" ? "DeFi" : "GameFi";
+
+  useLayoutEffect(() => {
+    const panel = panelRef.current;
+    if (!panel || !props.launcherRect) return;
+    const update = () => {
+      const visual = window.visualViewport;
+      const bodyStyles = getComputedStyle(document.body);
+      const bottomNav = Number.parseFloat(bodyStyles.getPropertyValue("--defi-bottom-nav-height")) || 0;
+      setFloatingPosition(getFloatingPanelPosition(
+        props.launcherRect!,
+        { width: panel.offsetWidth, height: panel.offsetHeight },
+        {
+          width: visual?.width || window.innerWidth,
+          height: visual?.height || window.innerHeight,
+          offsetLeft: visual?.offsetLeft || 0,
+          offsetTop: visual?.offsetTop || 0,
+          inset: 12,
+          topReserved: 76,
+          bottomReserved: Math.max(20, bottomNav + 14),
+          gap: 12,
+        },
+        window.innerWidth <= 640,
+      ));
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+    window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+      window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
+    };
+  }, [props.launcherRect]);
 
   useEffect(() => { const previous=document.activeElement as HTMLElement|null;const panel=document.getElementById("banmao-ai-panel");const root=document.getElementById("__next")||document.querySelector("main");if(root&&!root.contains(panel))root.setAttribute("inert","");inputRef.current?.focus();return()=>{root?.removeAttribute("inert");previous?.focus();}; }, []);
   useEffect(() => {
@@ -98,7 +138,8 @@ export default function AIChatPanel(props: Props) {
   }
 
 
-  return <section id="banmao-ai-panel" data-surface={props.surface} data-emotion={props.emotion} role="dialog" aria-modal="true" aria-label="BANMAO AI" className="banmao-ai-panel" onKeyDown={(event) => { if (event.key === "Escape") props.close(); if(event.key==="Tab"){const items=Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])'));if(!items.length)return;const first=items[0],last=items.at(-1)!;if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}} }}>
+  const panelStyle = floatingPosition ? ({ position: "fixed", left: floatingPosition.left, top: floatingPosition.top, right: "auto", bottom: "auto" } as CSSProperties) : undefined;
+  return <section ref={panelRef} style={panelStyle} id="banmao-ai-panel" data-surface={props.surface} data-emotion={props.emotion} role="dialog" aria-modal="true" aria-label="BANMAO AI" className="banmao-ai-panel" onKeyDown={(event) => { if (event.key === "Escape") props.close(); if(event.key==="Tab"){const items=Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not([disabled]),textarea:not([disabled]),select:not([disabled]),a[href],[tabindex]:not([tabindex="-1"])'));if(!items.length)return;const first=items[0],last=items.at(-1)!;if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}} }}>
     <header className="banmao-ai-header" onPointerDown={startDrag} onPointerUp={endDrag} onPointerCancel={() => { dragStart.current = null; }}>
       <span className="banmao-ai-drag-handle" aria-hidden="true" />
       <div className="banmao-ai-brand">

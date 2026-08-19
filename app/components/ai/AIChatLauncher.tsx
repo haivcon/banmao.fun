@@ -10,6 +10,7 @@ import {
   normalizeFloatingPosition,
   type FloatingBounds,
   type FloatingPoint,
+  type FloatingRect,
   type NormalizedFloatingPoint,
 } from "./floatingPosition";
 import BanmaoAIMascot from "./mascot/BanmaoAIMascot";
@@ -33,6 +34,7 @@ type Props = {
   reducedMotion: boolean;
   language?: string;
   onClick: () => void;
+  onGeometryChange: (rect: FloatingRect) => void;
 };
 
 function getBounds(control: HTMLElement): FloatingBounds {
@@ -56,7 +58,7 @@ const HEALTH_COPY: Record<string, Record<Props["health"], string>> = {
   ru: { online: "Онлайн", degraded: "Ограниченно", offline: "Офлайн" }, id: { online: "Online", degraded: "Terganggu", offline: "Offline" },
 };
 
-export default function AIChatLauncher({ open, health, emotion, mascotVisible, reducedMotion, language, onClick }: Props) {
+export default function AIChatLauncher({ open, health, emotion, mascotVisible, reducedMotion, language, onClick, onGeometryChange }: Props) {
   const t = (key: Parameters<typeof aiText>[1]) => aiText(language, key);
   const movement = MOVEMENT_COPY[language || "en"] || MOVEMENT_COPY.en;
   const healthLabel = (HEALTH_COPY[language || "en"] || HEALTH_COPY.en)[health];
@@ -74,6 +76,7 @@ export default function AIChatLauncher({ open, health, emotion, mascotVisible, r
     const safe = clampFloatingPosition(next, bounds);
     positionRef.current = safe;
     setPosition(safe);
+    onGeometryChange({ x: safe.x, y: safe.y, width: bounds.controlWidth, height: bounds.controlHeight });
     if (persist) {
       try { localStorage.setItem(POSITION_KEY, JSON.stringify(normalizeFloatingPosition(safe, bounds))); } catch { /* Position persistence is optional. */ }
     }
@@ -94,6 +97,7 @@ export default function AIChatLauncher({ open, health, emotion, mascotVisible, r
         : clampFloatingPosition({ x: window.innerWidth, y: window.innerHeight }, bounds);
       positionRef.current = initial;
       setPosition(initial);
+      onGeometryChange({ x: initial.x, y: initial.y, width: bounds.controlWidth, height: bounds.controlHeight });
     };
     restore();
     const onResize = () => {
@@ -103,14 +107,19 @@ export default function AIChatLauncher({ open, health, emotion, mascotVisible, r
       const next = saved ? clampFloatingPosition(saved, bounds, true) : clampFloatingPosition(positionRef.current, bounds);
       positionRef.current = next;
       setPosition(next);
+      onGeometryChange({ x: next.x, y: next.y, width: bounds.controlWidth, height: bounds.controlHeight });
     };
     window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
     window.visualViewport?.addEventListener("resize", onResize);
+    window.visualViewport?.addEventListener("scroll", onResize);
     return () => {
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
       window.visualViewport?.removeEventListener("resize", onResize);
+      window.visualViewport?.removeEventListener("scroll", onResize);
     };
-  }, []);
+  }, [onGeometryChange]);
 
   const onPointerDown = (event: PointerEvent<HTMLButtonElement>) => {
     if (event.button !== 0 && event.pointerType === "mouse") return;
