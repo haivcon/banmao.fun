@@ -880,10 +880,35 @@ export function useBox(
           args: [primaryToken],
         } as never);
         const hash = await writeContractAsync(request as never);
-        await waitForHash(hash, publicClient);
+        const receipt = await waitForHash(hash, publicClient);
+        const createdEvents = receipt.logs.flatMap((log) => {
+          if (log.address.toLowerCase() !== factoryAddress.toLowerCase()) return [];
+          try {
+            const event = decodeEventLog({
+              abi: BANMAO_BOX_FACTORY_ABI,
+              eventName: "TokenBoxCreated",
+              data: log.data,
+              topics: [...(log as typeof log & { topics: readonly `0x${string}`[] }).topics] as [`0x${string}`, ...`0x${string}`[]],
+            });
+            return event.eventName === "TokenBoxCreated" ? [event.args] : [];
+          } catch {
+            return [];
+          }
+        });
+        if (createdEvents.length !== 1) {
+          throw new Error("Receipt must contain exactly one TokenBoxCreated event");
+        }
+        const event = createdEvents[0] as { token: Address; box: Address };
+        if (!sameAddress(event.token, primaryToken)) {
+          throw new Error("TokenBoxCreated token does not match the requested token");
+        }
         const created = await resolveCollection(primaryToken);
-        if (created === "0x0000000000000000000000000000000000000000") {
-          throw new Error("Factory did not register the new collection");
+        if (!sameAddress(created, event.box)) {
+          throw new Error("Factory did not register the emitted collection");
+        }
+        const code = await publicClient.getCode({ address: created });
+        if (!code || code === "0x") {
+          throw new Error("Collection runtime bytecode is missing");
         }
         setPhase("success");
         return { address: created, txHash: hash };

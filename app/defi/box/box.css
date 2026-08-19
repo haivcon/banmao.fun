@@ -3233,9 +3233,13 @@
 .box-collection-lifecycle { display: grid; gap: 4px; margin: 9px 0 0; padding: 0; list-style: none; }
 .box-collection-lifecycle li { color: #7f8797; font-size: 9px; line-height: 1.35; }
 .box-collection-lifecycle li::before { content: "○"; display: inline-block; width: 14px; }
-.box-collection-lifecycle li.active { color: var(--box-gold); }
-.box-collection-lifecycle li.complete { color: #55f29a; }
-.box-collection-lifecycle li.complete::before { content: "✓"; }
+.box-collection-lifecycle li.current { color: var(--box-gold); }
+.box-collection-lifecycle li.completed { color: #55f29a; }
+.box-collection-lifecycle li.completed::before { content: "✓"; }
+.box-collection-lifecycle li.failed { color: #ff7878; }
+.box-collection-lifecycle li.failed::before { content: "×"; }
+.box-collection-lifecycle li.skipped { color: #656c79; }
+.box-collection-lifecycle li.skipped::before { content: "—"; }
 .box-collection-details { border-top: 1px solid var(--box-line); padding-top: 11px; }
 .box-contract-footer__grid .box-explorer-value { padding: 14px; border: 1px solid var(--box-line); border-radius: 12px; background: rgba(5,7,12,.42); }
 .box-contract-footer__grid .box-explorer-value__label { font-size: 11px; }

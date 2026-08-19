@@ -76,7 +76,7 @@ export function requestBanmaoBoxVerification(
       } catch (error) {
         if (cancelled || controller.signal.aborted) break;
         return emit({
-          status: "failed",
+          status: "transient-unavailable",
           error: error instanceof Error ? error.message : "Explorer verification request failed",
         });
       }
