@@ -1736,8 +1736,9 @@ export default function BanmaoBoxPage() {
       </nav>
 
       {activeTab === "create" ? (
-      <section className="box-tab-panel" id="box-panel-create" role="tabpanel" aria-labelledby="box-tab-create" tabIndex={0}>
-        <article className="box-panel box-create-panel">
+      <section className="box-tab-panel box-tab-panel--create" id="box-panel-create" role="tabpanel" aria-labelledby="box-tab-create" tabIndex={0}>
+        <div className="box-create-workspace">
+          <article className="box-panel box-create-panel">
           <div className="box-panel__heading">
             <span className="box-panel__icon">
               <Gift />
@@ -1748,7 +1749,7 @@ export default function BanmaoBoxPage() {
             </div>
           </div>
 
-          <form onSubmit={handleCreate} className="box-form">
+          <form id="box-create-form" onSubmit={handleCreate} className="box-form">
             <ol className="box-create-stages" aria-label={copy.createDescription}>
               {[copy.amount, copy.recipient, copy.duration, copy.reviewTitle].map((label, index) => (
                 <li key={label}><span>{index + 1}</span>{label}</li>
@@ -2061,7 +2062,57 @@ export default function BanmaoBoxPage() {
               </p>
             ) : null}
           </form>
-        </article>
+          </article>
+
+          <aside className="box-live-summary" aria-label={copy.reviewTitle}>
+            <div className="box-live-summary__visual" aria-hidden="true">
+              <GiftBoxArtwork ready={parsedAmount > 0n && Boolean(durationSeconds && durationSeconds > 0n)} />
+              <span className="box-live-summary__status">
+                <LockKeyhole /> {durationSeconds && durationSeconds > 0n ? formatDuration(durationSeconds, language, copy) : copy.duration}
+              </span>
+            </div>
+            <div className="box-live-summary__content">
+              <span className="box-eyebrow"><Sparkles /> {copy.reviewTitle}</span>
+              <h2>{copy.createTitle}</h2>
+              <dl className="box-live-summary__details">
+              <div>
+                <dt>{copy.reviewTotal}</dt>
+                <dd>{createMode === "batch" ? formatExactTokenAmount(batchTotal, tokenDecimals, language) : amount || "—"} {tokenSymbol}</dd>
+              </div>
+              <div>
+                <dt>{copy.recipient}</dt>
+                <dd className="box-live-summary__address">
+                  {createMode === "batch" ? `${batchRows.length} ${copy.modeBatch}` : recipient || "—"}
+                </dd>
+              </div>
+              <div>
+                <dt>{copy.reviewOpening}</dt>
+                <dd>{estimatedUnlock.toLocaleString(language, { dateStyle: "medium", timeStyle: "short" })}</dd>
+              </div>
+              <div>
+                <dt>Network</dt>
+                <dd>{chainConfig.chain.name}</dd>
+              </div>
+            </dl>
+            <div className={`box-live-summary__approval ${needsApproval ? "is-needed" : isConnected && parsedAmount > 0n ? "is-ready" : "is-idle"}`}>
+              {needsApproval ? <ShieldAlert /> : <ShieldCheck />}
+              <span>{needsApproval ? copy.approvalNeeded : isConnected && parsedAmount > 0n ? copy.approvalReady : copy.checking}</span>
+            </div>
+            <button
+              type="submit"
+              form="box-create-form"
+              className="box-submit box-live-summary__submit"
+              disabled={!isConnected || !isDeployed || !isDeploymentValidated || isBusy}
+              aria-describedby={createDisabledReason ? "box-create-disabled-reason" : undefined}
+            >
+              {isBusy ? <LoaderCircle className="box-spin" /> : <Gift />}
+              {isConnected ? copy.reviewTitle : copy.connectToCreate}
+              {!isBusy ? <ArrowRight /> : null}
+              </button>
+              <p className="box-live-summary__note"><ShieldCheck /> {copy.safetyText}</p>
+            </div>
+          </aside>
+        </div>
       </section>
       ) : null}
 

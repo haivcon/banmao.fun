@@ -376,6 +376,9 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(page).toContain('className="box-identity-chip"');
     expect(page).toContain("tokenIdentity.displaySymbol");
     expect(page).toContain('className="box-create-stages"');
+    expect(page).toContain('className="box-create-workspace"');
+    expect(page).toContain('className="box-live-summary"');
+    expect(page).toContain('form="box-create-form"');
     expect(page).toContain('className="box-card-details"');
     expect(page).toContain('<details className="box-contract-footer"');
     expect(page).toContain("formatDuration");
@@ -390,6 +393,9 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(css).toMatch(/\.box-hero\s*\{[\s\S]*min-height:\s*260px/);
     expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*\.box-hero\s*\{[\s\S]*min-height:\s*190px/);
     expect(css).toMatch(/\.box-submit[\s\S]*min-height:\s*56px/);
+    expect(css).toMatch(/\.box-create-workspace\s*\{[\s\S]*grid-template-columns:/);
+    expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*\.box-live-summary\s*\{\s*display:\s*none/);
+    expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*\.box-hero__art\s*\{[\s\S]*display:\s*grid/);
   });
 
   test("contains the mobile collection manager as one accessible modal sheet without changing desktop inline layout", () => {
