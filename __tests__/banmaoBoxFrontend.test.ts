@@ -366,6 +366,32 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(css).toMatch(/@media \(max-width: 420px\)[\s\S]*body:has\(\.box-toast\) \.banmao-ai-launcher[\s\S]*display:\s*none/);
   });
 
+  test("Phase 1 exposes keyboard tabs, truthful identity, staged creation and progressive disclosure", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
+
+    expect(page).toContain("handleTabKeyDown");
+    expect(page).toContain('aria-controls="box-panel-create"');
+    expect(page).toContain('id="box-panel-create"');
+    expect(page).toContain('className="box-identity-chip"');
+    expect(page).toContain("tokenIdentity.displaySymbol");
+    expect(page).toContain('className="box-create-stages"');
+    expect(page).toContain('className="box-card-details"');
+    expect(page).toContain('<details className="box-contract-footer"');
+    expect(page).toContain("formatDuration");
+    expect(page).toContain("resolvedOptions().timeZone");
+    expect(css).toContain("--box-bottom-action-height");
+    expect(css).toMatch(/box-ready-ripple[^}]*3/);
+  });
+
+  test("Phase 1 mobile geometry keeps readable type and 44px controls", () => {
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
+    expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*\.box-page\s*\{[\s\S]*font-size:\s*14px/);
+    expect(css).toMatch(/\.box-hero\s*\{[\s\S]*min-height:\s*260px/);
+    expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*\.box-hero\s*\{[\s\S]*min-height:\s*190px/);
+    expect(css).toMatch(/\.box-submit[\s\S]*min-height:\s*56px/);
+  });
+
   test("classifies mocked provider lifecycle failures without claiming submission", () => {
     expect(classifyTransactionError({ code: 4001 }, false)).toEqual({ kind: "rejected", submitted: false });
     expect(classifyTransactionError({ name: "UserRejectedRequestError" }, false)).toEqual({ kind: "rejected", submitted: false });

@@ -24,7 +24,7 @@ import {
   Wallet,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import { useSwitchChain } from "wagmi";
 import confetti from "canvas-confetti";
 import toast from "react-hot-toast";
@@ -121,6 +121,19 @@ function formatDate(timestamp: bigint, language: BoxLanguage): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(Number(timestamp) * 1000));
+}
+
+function formatDuration(seconds: bigint, language: BoxLanguage, copy: BoxCopy): string {
+  const total = Number(seconds);
+  return [
+    [Math.floor(total / 86_400), copy.days],
+    [Math.floor((total % 86_400) / 3_600), copy.hours],
+    [Math.floor((total % 3_600) / 60), copy.minutes],
+    [total % 60, copy.seconds],
+  ]
+    .filter(([value]) => Number(value) > 0)
+    .map(([value, unit]) => `${Number(value).toLocaleString(language)}${unit}`)
+    .join(" ");
 }
 
 function getRemaining(
@@ -281,7 +294,19 @@ function BoxCard({
           </div>
         </dl>
 
-        <div className="box-assets">
+        <button
+          type="button"
+          className="box-button box-button--primary box-item__primary"
+          disabled={!ready || busy}
+          onClick={() => onOpen(entry.tokenId)}
+        >
+          {busy ? <LoaderCircle className="box-spin" /> : ready ? <PackageOpen /> : <LockKeyhole />}
+          {ready ? copy.open : copy.locked}
+        </button>
+
+        <details className="box-card-details">
+          <summary><ChevronDown aria-hidden="true" /> {copy.operations}</summary>
+          <div className="box-assets">
           <div className="box-assets__heading">
             <strong>{copy.basketAssets}</strong>
             <small>{copy.releaseHint}</small>
@@ -324,18 +349,9 @@ function BoxCard({
             })}
             {entry.assets.length === 0 ? <small>{copy.noAssets}</small> : null}
           </div>
-        </div>
+          </div>
 
         <div className="box-item__actions">
-          <button
-            type="button"
-            className="box-button box-button--primary"
-            disabled={!ready || busy}
-            onClick={() => onOpen(entry.tokenId)}
-          >
-            {busy ? <LoaderCircle className="box-spin" /> : <PackageOpen />}
-            {copy.open}
-          </button>
           <button
             type="button"
             className="box-button box-button--secondary"
@@ -368,6 +384,7 @@ function BoxCard({
             </a>
           ) : null}
         </div>
+        </details>
       </div>
     </article>
   );
@@ -430,6 +447,7 @@ export default function BanmaoBoxPage() {
   const [activeTab, setActiveTab] = useState<"create" | "boxes" | "explore">(
     "create",
   );
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const chainConfig = getBoxChainConfig(selectedChainId);
   const baseCopy = BOX_COPY[language];
   const explorerBaseUrl = chainConfig.chain.blockExplorers.default.url;
@@ -1337,6 +1355,20 @@ export default function BanmaoBoxPage() {
         ? transactionError || copy.transactionError
         : copy.phase[phase];
 
+  const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const tabs = ["create", "boxes", "explore"] as const;
+    const current = tabs.indexOf(activeTab);
+    let next = current;
+    if (event.key === "ArrowRight") next = (current + 1) % tabs.length;
+    else if (event.key === "ArrowLeft") next = (current - 1 + tabs.length) % tabs.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = tabs.length - 1;
+    else return;
+    event.preventDefault();
+    setActiveTab(tabs[next]);
+    tabRefs.current[next]?.focus();
+  };
+
   const createDisabledReason = !isConnected
     ? copy.connectToCreate
     : !isDeployed || !isDeploymentValidated
@@ -1407,6 +1439,11 @@ export default function BanmaoBoxPage() {
           </span>
           <h1>{copy.title}</h1>
           <p>{copy.subtitle}</p>
+          <div className="box-identity-chip" title={activeTokenAddress}>
+            <ShieldCheck aria-hidden="true" />
+            <span><small>{copy.primaryAsset}</small><bdi aria-label={tokenIdentity.displaySymbol}>{tokenIdentity.displaySymbol}</bdi></span>
+            <code>{activeTokenAddress ?? copy.checking}</code>
+          </div>
 
           <div className="box-metrics">
             <div>
@@ -1488,7 +1525,10 @@ export default function BanmaoBoxPage() {
           onClick={() => setCollectionOpen((open) => !open)}
           aria-expanded={collectionOpen}
         >
-          <strong>{copy.collectionTitle}</strong>
+          <span className="box-collection-identity">
+            <strong><bdi aria-label={tokenIdentity.displaySymbol}>{tokenIdentity.displaySymbol}</bdi></strong>
+            <small>{copy.collectionTitle}</small>
+          </span>
           <ChevronDown className={collectionOpen ? "box-chevron-open" : ""} />
         </button>
         {collectionOpen ? (
@@ -1517,7 +1557,7 @@ export default function BanmaoBoxPage() {
               </button>
               <button
                 type="button"
-                className="primary"
+                className="primary box-collection-create"
                 onClick={() => void handleCollection(true)}
                 disabled={isBusy || collectionPending || !isConnected}
               >
@@ -1578,20 +1618,20 @@ export default function BanmaoBoxPage() {
       </section>
 
       <nav className="box-tabs" role="tablist" aria-label="BanmaoBox sections">
-        <button role="tab" aria-selected={activeTab === "create"} className={activeTab === "create" ? "active" : ""} onClick={() => setActiveTab("create")}>
+        <button id="box-tab-create" ref={(node) => { tabRefs.current[0] = node; }} role="tab" tabIndex={activeTab === "create" ? 0 : -1} aria-selected={activeTab === "create"} aria-controls="box-panel-create" className={activeTab === "create" ? "active" : ""} onKeyDown={handleTabKeyDown} onClick={() => setActiveTab("create")}>
           <Gift /> {copy.tabCreate}
         </button>
-        <button role="tab" aria-selected={activeTab === "boxes"} className={activeTab === "boxes" ? "active" : ""} onClick={() => setActiveTab("boxes")}>
+        <button id="box-tab-boxes" ref={(node) => { tabRefs.current[1] = node; }} role="tab" tabIndex={activeTab === "boxes" ? 0 : -1} aria-selected={activeTab === "boxes"} aria-controls="box-panel-boxes" className={activeTab === "boxes" ? "active" : ""} onKeyDown={handleTabKeyDown} onClick={() => setActiveTab("boxes")}>
           <Box /> {copy.tabMyBoxes}
           {boxes.length > 0 ? <span className="box-tab-count">{boxes.length}</span> : null}
         </button>
-        <button role="tab" aria-selected={activeTab === "explore"} className={activeTab === "explore" ? "active" : ""} onClick={() => setActiveTab("explore")}>
+        <button id="box-tab-explore" ref={(node) => { tabRefs.current[2] = node; }} role="tab" tabIndex={activeTab === "explore" ? 0 : -1} aria-selected={activeTab === "explore"} aria-controls="box-panel-explore" className={activeTab === "explore" ? "active" : ""} onKeyDown={handleTabKeyDown} onClick={() => setActiveTab("explore")}>
           <Eye /> {copy.tabExplore}
         </button>
       </nav>
 
       {activeTab === "create" ? (
-      <section className="box-tab-panel">
+      <section className="box-tab-panel" id="box-panel-create" role="tabpanel" aria-labelledby="box-tab-create" tabIndex={0}>
         <article className="box-panel box-create-panel">
           <div className="box-panel__heading">
             <span className="box-panel__icon">
@@ -1604,6 +1644,11 @@ export default function BanmaoBoxPage() {
           </div>
 
           <form onSubmit={handleCreate} className="box-form">
+            <ol className="box-create-stages" aria-label={copy.createDescription}>
+              {[copy.amount, copy.recipient, copy.duration, copy.reviewTitle].map((label, index) => (
+                <li key={label}><span>{index + 1}</span>{label}</li>
+              ))}
+            </ol>
             <div className="box-mode-switch" role="group" aria-label="Box creation mode">
               <button type="button" className={createMode === "single" ? "active" : ""} onClick={() => setCreateMode("single")} disabled={isBusy}>
                 {copy.modeSingle}
@@ -1916,7 +1961,7 @@ export default function BanmaoBoxPage() {
       ) : null}
 
       {activeTab === "boxes" ? (
-      <section className="box-tab-panel">
+      <section className="box-tab-panel" id="box-panel-boxes" role="tabpanel" aria-labelledby="box-tab-boxes" tabIndex={0}>
         <article className="box-panel box-list-panel">
           <div className="box-panel__heading box-panel__heading--list">
             <span className="box-panel__icon">
@@ -2041,7 +2086,7 @@ export default function BanmaoBoxPage() {
       ) : null}
 
       {activeTab === "explore" ? (
-      <section className="box-tab-panel box-inspector">
+      <section className="box-tab-panel box-inspector" id="box-panel-explore" role="tabpanel" aria-labelledby="box-tab-explore" tabIndex={0}>
         <div className="box-inspector__copy">
           <span className="box-eyebrow">
             <Eye /> {copy.onchainExplorer}
@@ -2207,14 +2252,15 @@ export default function BanmaoBoxPage() {
         </aside>
       </section>
 
-      <footer className="box-contract-footer">
-        <div className="box-contract-footer__heading">
+      <details className="box-contract-footer">
+        <summary className="box-contract-footer__heading">
           <div>
             <span>Verified deployment details</span>
             <strong>{chainConfig.chain.name}</strong>
           </div>
           <small>Chain ID {selectedChainId}</small>
-        </div>
+          <ChevronDown aria-hidden="true" />
+        </summary>
         <div className="box-contract-footer__grid">
           {(activeTokenAddress ?? chainConfig.tokenAddress) ? (
             <ExplorerValueRow
@@ -2247,7 +2293,7 @@ export default function BanmaoBoxPage() {
             ) : null,
           )}
         </div>
-      </footer>
+      </details>
 
       {celebrationOpen && phase === "success" ? (
         <div className="box-dialog-backdrop box-celebration-backdrop" role="presentation" onMouseDown={(event) => {
@@ -2302,12 +2348,14 @@ export default function BanmaoBoxPage() {
             <dl className="box-review__details">
               <div><dt>{copy.reviewMode}</dt><dd>{createMode === "batch" ? copy.modeBatch : createMode === "basket" ? copy.modeBasket : copy.modeSingle}</dd></div>
               <div><dt>{copy.reviewTotal}</dt><dd>{createMode === "batch" ? formatExactTokenAmount(batchTotal, tokenDecimals, language) : amount} {tokenSymbol}</dd></div>
-              <div><dt>{copy.reviewDuration}</dt><dd>{(durationSeconds ?? 0n).toLocaleString()} {copy.totalSeconds}</dd></div>
-              <div><dt>{copy.reviewOpening}</dt><dd>{estimatedUnlock.toLocaleString(language, { dateStyle: "medium", timeStyle: "medium" })}</dd></div>
+              <div><dt>{copy.reviewDuration}</dt><dd>{formatDuration(durationSeconds ?? 0n, language, copy)}</dd></div>
+              <div><dt>{copy.reviewOpening}</dt><dd>{estimatedUnlock.toLocaleString(language, { dateStyle: "medium", timeStyle: "medium" })} · {Intl.DateTimeFormat().resolvedOptions().timeZone}</dd></div>
+              <div><dt>{copy.primaryAsset}</dt><dd><bdi aria-label={tokenIdentity.displaySymbol}>{tokenIdentity.displaySymbol}</bdi><code>{activeTokenAddress}</code></dd></div>
+              {createMode !== "batch" ? <div><dt>{copy.recipient}</dt><dd><code>{recipient}</code></dd></div> : null}
             </dl>
             {createMode === "batch" ? (
               <div className="box-review__rows">
-                {batchRows.map((row, index) => <small key={index}>#{index + 1} · {row.recipient.slice(0, 8)}…{row.recipient.slice(-6)} · {row.amount} {tokenSymbol}</small>)}
+                {batchRows.map((row, index) => <small key={index}>#{index + 1} · {row.recipient} · {row.amount} {tokenSymbol}</small>)}
               </div>
             ) : null}
             {needsApproval ? (
