@@ -3,14 +3,21 @@
 ## Testing
 
 - [ ] `npm run check`
-- [ ] Relevant contract/integration tests
+- [ ] Relevant focused test command(s)
+- [ ] `npm run build` when application/runtime behavior changed
 
-## Web3 and security checklist
+## Generated artifacts
 
-- [ ] No secrets, runtime databases, or generated artifacts are included
-- [ ] Chain IDs and deployment addresses are documented
-- [ ] Write calls are simulated/validated and receipts are checked
-- [ ] Security implications and rollback/disable path are described
+- [ ] `npm run check:generated`
+- [ ] No generated BanmaoBox artifact changed
+- [ ] If changed, the candidate, verification release, ABI, and new immutable hash-versioned release are included; no history was overwritten
+
+## Web3 and security
+
+- [ ] No credentials, private keys, environment files, user data, build output, or unrelated local tests are included
+- [ ] Chain IDs, contracts, and deployment evidence are documented where relevant
+- [ ] Wallet writes validate chain/runtime relationships and check receipts
+- [ ] Security/privacy implications and rollback or safe-disable behavior are described
 - [ ] Not applicable
 
-## Screenshots / verification evidence
+## Verification evidence / screenshots

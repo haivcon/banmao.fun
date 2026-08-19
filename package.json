@@ -1,7 +1,17 @@
 {
   "name": "banmao-fun",
   "version": "0.6.1",
+  "description": "Community, DeFi, GameFi, and on-chain experiences for X Layer.",
   "private": true,
+  "license": "MIT",
+  "homepage": "https://www.banmao.fun/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/haivcon/banmao.fun.git"
+  },
+  "bugs": {
+    "url": "https://github.com/haivcon/banmao.fun/issues"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,13 +20,15 @@
     "typecheck": "tsc --noEmit --incremental false",
     "test": "jest",
     "test:contracts": "jest __tests__/contracts/banmaoBox.security.test.ts --runInBand",
+    "test:release": "jest __tests__/banmaoBoxVerificationRelease.test.ts --runInBand",
     "generate:banmaobox": "node scripts/generate-banmaobox-abis.cjs",
     "generate:banmaobox:release": "node scripts/generate-banmaobox-release.cjs",
+    "check:generated": "npm run generate:banmaobox && npm run generate:banmaobox:release && git diff --exit-code -- app/defi/box/generated/abis.ts deployments/banmaobox-release-artifacts.json lib/banmaobox/verification-release.json && node -e \"const fs=require('fs'),r=require('./deployments/banmaobox-release-artifacts.json'),p='deployments/banmaobox-releases/'+r.compilerInputHash.slice(2)+'.json';if(!fs.existsSync(p)||fs.readFileSync(p,'utf8')!==JSON.stringify(r,null,2)+'\\n')throw new Error('Missing or mismatched immutable BanmaoBox release: '+p)\"",
     "deploy:banmaobox:mainnet": "node scripts/deploy-banmaobox-mainnet.cjs",
     "deploy:banmaobox:testnet": "node scripts/deploy-banmaobox-testnet.cjs",
     "verify:banmaobox:mainnet": "node scripts/verify-banmaobox-mainnet.cjs",
     "publish:banmaobox:explorer": "node scripts/publish-banmaobox-explorer.cjs",
-    "check": "npm run typecheck && npm run lint && npm test -- --runInBand --passWithNoTests"
+    "check": "npm run check:generated && npm run typecheck && npm run lint && npm test -- --runInBand"
   },
   "dependencies": {
     "@imgly/background-removal": "^1.7.0",

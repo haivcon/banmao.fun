@@ -7,7 +7,10 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:
@@ -15,23 +18,24 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
-      - name: Verify generated BanmaoBox release files are current
-        shell: bash
-        run: |
-          npm run generate:banmaobox
-          npm run generate:banmaobox:release
-          git diff --exit-code -- app/defi/box/generated/abis.ts deployments/banmaobox-release-artifacts.json deployments/banmaobox-releases lib/banmaobox/verification-release.json
-          release_hash="$(node -p 'require("./deployments/banmaobox-release-artifacts.json").compilerInputHash.slice(2)')"
-          test -f "deployments/banmaobox-releases/${release_hash}.json"
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm test -- --runInBand --passWithNoTests
-      - run: npm audit --omit=dev --audit-level=critical
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Generated artifacts
+        run: npm run check:generated
+      - name: TypeScript
+        run: npm run typecheck
+      - name: ESLint
+        run: npm run lint
+      - name: Jest
+        run: npm test -- --runInBand
+      - name: Production dependency audit (critical)
+        run: npm audit --omit=dev --audit-level=critical
 
   secrets:
     runs-on: ubuntu-latest
@@ -43,3 +47,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_CONFIG: .github/gitleaks.toml
+          GITLEAKS_LOG_OPTS: --all

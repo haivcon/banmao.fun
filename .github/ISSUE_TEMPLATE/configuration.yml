@@ -1,0 +1,26 @@
+name: Configuration or support
+description: Ask about setup, environment variables, networks, or local development
+title: "[Config]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Never post credentials, private keys, seed phrases, .env contents, or private user data."
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What are you trying to configure or run?
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Sanitized environment
+      description: Include OS, Node/npm versions, route, network, and names (not values) of relevant variables.
+    validations:
+      required: true
+  - type: textarea
+    id: attempts
+    attributes:
+      label: What you tried
+      description: Include sanitized commands and errors.
