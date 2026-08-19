@@ -85,7 +85,7 @@
     "eslint-config-next": "16.0.0",
     "fastestsmallesttextencoderdecoder": "^1.0.22",
     "ganache": "^7.9.2",
-    "javascript-obfuscator": "^4.1.1",
+    "javascript-obfuscator": "^5.5.0",
     "jest": "^30.2.0",
     "sharp": "^0.34.5",
     "solc": "^0.8.30",
