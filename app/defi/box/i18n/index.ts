@@ -48,6 +48,7 @@ export type BoxCopy = {
   cancel: string;
   confirmTransfer: string;
   loading: string;
+  loadingTimedOut: string;
   retry: string;
   howTitle: string;
   howDescription: string;
@@ -232,6 +233,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     cancel: "Cancel",
     confirmTransfer: "Confirm transfer",
     loading: "Loading boxes…",
+    loadingTimedOut: "Box data is taking longer than expected. Check your connection and try again.",
     retry: "Refresh",
     howTitle: "How BanmaoBox works",
     howDescription: "One NFT, one protected BANMAO balance, one opening date.",
@@ -429,6 +431,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     cancel: "Hủy",
     confirmTransfer: "Xác nhận chuyển",
     loading: "Đang tải box…",
+    loadingTimedOut: "Dữ liệu box đang tải lâu hơn dự kiến. Hãy kiểm tra kết nối và thử lại.",
     retry: "Làm mới",
     howTitle: "BanmaoBox hoạt động thế nào",
     howDescription: "Một NFT, một khoản BANMAO bảo chứng và một ngày mở.",
@@ -626,6 +629,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     cancel: "取消",
     confirmTransfer: "确认转让",
     loading: "正在加载礼盒…",
+    loadingTimedOut: "礼盒数据加载时间超出预期。请检查网络连接并重试。",
     retry: "刷新",
     howTitle: "BanmaoBox 如何运作",
     howDescription: "一个 NFT、一份受保护的 BANMAO 和一个开启日期。",
@@ -819,6 +823,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     cancel: "취소",
     confirmTransfer: "전송 확인",
     loading: "박스 로딩 중…",
+    loadingTimedOut: "박스 데이터를 불러오는 데 예상보다 오래 걸립니다. 연결을 확인하고 다시 시도하세요.",
     retry: "새로고침",
     howTitle: "BanmaoBox 작동 방식",
     howDescription: "하나의 NFT, 보호된 BANMAO 잔액, 하나의 개봉일.",
@@ -1014,6 +1019,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     cancel: "Отмена",
     confirmTransfer: "Подтвердить",
     loading: "Загрузка боксов…",
+    loadingTimedOut: "Данные боксов загружаются дольше ожидаемого. Проверьте соединение и повторите попытку.",
     retry: "Обновить",
     howTitle: "Как работает BanmaoBox",
     howDescription: "Один NFT, защищённый баланс BANMAO и дата открытия.",
@@ -1211,6 +1217,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     cancel: "Batal",
     confirmTransfer: "Konfirmasi transfer",
     loading: "Memuat box…",
+    loadingTimedOut: "Data box membutuhkan waktu lebih lama dari perkiraan. Periksa koneksi dan coba lagi.",
     retry: "Muat ulang",
     howTitle: "Cara kerja BanmaoBox",
     howDescription:

@@ -71,6 +71,7 @@ import {
   getCollectionLifecycleFixture,
 } from "./collectionLifecycleFixture";
 import { useBox } from "./useBox";
+import { useBoundedLoading } from "./useBoundedLoading";
 import { formatExactTokenAmount, tokenAmountInWords } from "./amountFormat";
 import "./box.css";
 
@@ -368,7 +369,7 @@ export default function BanmaoBoxPage() {
     useState<BoxChainId>(XLAYER_CHAIN_ID);
   const [networkError, setNetworkError] = useState<string | null>(null);
   const { switchChainAsync } = useSwitchChain();
-  const [now, setNow] = useState(() => Date.now());
+  const [now, setNow] = useState(0);
   const [amount, setAmount] = useState("");
   const [activeBoxAddress, setActiveBoxAddress] = useState<Address>();
   const [activeTokenAddress, setActiveTokenAddress] = useState<Address>();
@@ -436,6 +437,7 @@ export default function BanmaoBoxPage() {
     boxes,
     boxesLoading,
     boxesError,
+    retryBoxes: retryBoxReads,
     deploymentError,
     deploymentWarning,
     isDeploymentValidated,
@@ -458,6 +460,12 @@ export default function BanmaoBoxPage() {
     transactionError,
     isBusy,
   } = useBox(selectedChainId, activeBoxAddress, activeTokenAddress, copy.genericToken);
+  const { timedOut: boxesTimedOut, resetTimeout: resetBoxesTimeout } =
+    useBoundedLoading(boxesLoading);
+  const retryBoxes = useCallback(() => {
+    resetBoxesTimeout();
+    retryBoxReads();
+  }, [resetBoxesTimeout, retryBoxReads]);
 
   const parsedAmount = useMemo(() => {
     try {
@@ -570,6 +578,7 @@ export default function BanmaoBoxPage() {
   }, []);
 
   useEffect(() => {
+    setNow(Date.now());
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
@@ -1805,6 +1814,12 @@ export default function BanmaoBoxPage() {
                 targetChainId={selectedChainId}
                 supportedChainIds={[...XLAYER_SUPPORTED_CHAIN_IDS]}
               />
+            </div>
+          ) : boxesLoading && boxesTimedOut ? (
+            <div className="box-empty box-empty--error" role="status">
+              <Clock3 />
+              <strong>{copy.loadingTimedOut}</strong>
+              <button type="button" onClick={retryBoxes}>{copy.retry}</button>
             </div>
           ) : boxesLoading ? (
             <div className="box-skeleton-list" role="status" aria-label={copy.loading}>
