@@ -114,6 +114,8 @@ export type BoxCopy = {
   connectWalletError: string;
   wrongNetworkError: string;
   transactionFailed: string;
+  approvalConfirmedCreateIncomplete: string;
+  approvalTransactionLabel: string;
   genericToken: string;
   collectionVerificationRequest: string;
   collectionVerificationPending: string;
@@ -358,6 +360,8 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     connectWalletError: "Connect your wallet before starting this action.",
     wrongNetworkError: "Switch your wallet to the selected X Layer network and try again.",
     transactionFailed: "The transaction failed. Review the wallet or explorer details before retrying.",
+    approvalConfirmedCreateIncomplete: "Token approval succeeded, but the Box transaction was not completed. You can continue without approving again.",
+    approvalTransactionLabel: "Approval transaction hash",
     genericToken: "TOKEN",
     collectionVerificationRequest: "Collection created. Requesting OKX Explorer verification…",
     collectionVerificationPending: "OKX Explorer is indexing the collection contract…",
@@ -581,6 +585,8 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     connectWalletError: "Hãy kết nối ví trước khi bắt đầu thao tác này.",
     wrongNetworkError: "Chuyển ví sang mạng X Layer đã chọn rồi thử lại.",
     transactionFailed: "Giao dịch thất bại. Hãy kiểm tra chi tiết trong ví hoặc explorer trước khi thử lại.",
+    approvalConfirmedCreateIncomplete: "Approve token đã thành công, nhưng giao dịch tạo Box chưa hoàn tất. Bạn có thể tiếp tục mà không cần approve lại.",
+    approvalTransactionLabel: "Hash giao dịch approve",
     genericToken: "TOKEN",
     collectionVerificationRequest: "Bộ sưu tập đã được tạo. Đang yêu cầu OKX Explorer xác minh…",
     collectionVerificationPending: "OKX Explorer đang lập chỉ mục hợp đồng bộ sưu tập…",
@@ -799,6 +805,8 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     connectWalletError: "请先连接钱包再开始此操作。",
     wrongNetworkError: "请将钱包切换到所选 X Layer 网络后重试。",
     transactionFailed: "交易失败。重试前请检查钱包或浏览器中的详情。",
+    approvalConfirmedCreateIncomplete: "代币授权已成功，但创建 Box 的交易尚未完成。您可以继续，无需再次授权。",
+    approvalTransactionLabel: "授权交易哈希",
     genericToken: "代币",
     collectionVerificationRequest: "系列已创建，正在请求 OKX 浏览器验证…",
     collectionVerificationPending: "OKX 浏览器正在索引系列合约…",
@@ -1021,6 +1029,8 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     connectWalletError: "이 작업을 시작하기 전에 지갑을 연결하세요.",
     wrongNetworkError: "지갑을 선택한 X Layer 네트워크로 전환한 뒤 다시 시도하세요.",
     transactionFailed: "거래가 실패했습니다. 다시 시도하기 전에 지갑 또는 탐색기 세부 정보를 확인하세요.",
+    approvalConfirmedCreateIncomplete: "토큰 승인은 성공했지만 Box 생성 거래는 완료되지 않았습니다. 다시 승인하지 않고 계속할 수 있습니다.",
+    approvalTransactionLabel: "승인 거래 해시",
     genericToken: "토큰",
     collectionVerificationRequest: "컬렉션이 생성되었습니다. OKX 탐색기 검증을 요청하는 중…",
     collectionVerificationPending: "OKX 탐색기가 컬렉션 계약을 인덱싱하는 중…",
@@ -1243,6 +1253,8 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     connectWalletError: "Подключите кошелёк перед началом операции.",
     wrongNetworkError: "Переключите кошелёк на выбранную сеть X Layer и повторите попытку.",
     transactionFailed: "Транзакция завершилась ошибкой. Перед повтором проверьте детали в кошельке или обозревателе.",
+    approvalConfirmedCreateIncomplete: "Разрешение токена подтверждено, но транзакция создания Box не завершена. Можно продолжить без повторного разрешения.",
+    approvalTransactionLabel: "Хеш транзакции разрешения",
     genericToken: "ТОКЕН",
     collectionVerificationRequest: "Коллекция создана. Запрашиваем проверку в OKX Explorer…",
     collectionVerificationPending: "OKX Explorer индексирует контракт коллекции…",
@@ -1468,6 +1480,8 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     connectWalletError: "Hubungkan dompet sebelum memulai tindakan ini.",
     wrongNetworkError: "Alihkan dompet ke jaringan X Layer yang dipilih lalu coba lagi.",
     transactionFailed: "Transaksi gagal. Tinjau detail di dompet atau explorer sebelum mencoba lagi.",
+    approvalConfirmedCreateIncomplete: "Persetujuan token berhasil, tetapi transaksi pembuatan Box belum selesai. Anda dapat melanjutkan tanpa menyetujui lagi.",
+    approvalTransactionLabel: "Hash transaksi persetujuan",
     genericToken: "TOKEN",
     collectionVerificationRequest: "Koleksi dibuat. Meminta verifikasi OKX Explorer…",
     collectionVerificationPending: "OKX Explorer sedang mengindeks kontrak koleksi…",

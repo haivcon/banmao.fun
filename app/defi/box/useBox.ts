@@ -118,6 +118,7 @@ export function useBox(
   const [deploymentAttempt, setDeploymentAttempt] = useState(0);
   const [phase, setPhase] = useState<BoxTransactionPhase>("idle");
   const [transactionHash, setTransactionHash] = useState<Hash | null>(null);
+  const [approvalHash, setApprovalHash] = useState<Hash | null>(null);
   const [transactionError, setTransactionError] = useState<string | null>(null);
 
   const isDeployed = Boolean(boxAddress);
@@ -632,6 +633,7 @@ export function useBox(
   const resetTransaction = useCallback(() => {
     setPhase("idle");
     setTransactionHash(null);
+    setApprovalHash(null);
     setTransactionError(null);
   }, []);
 
@@ -685,8 +687,20 @@ export function useBox(
     [],
   );
 
+  const waitForApproval = useCallback(
+    async (hash: Hash, client: NonNullable<typeof publicClient>) => {
+      const receipt = await waitForHash(hash, client);
+      setApprovalHash(hash);
+      // The approval is complete. Do not present its successful hash as the
+      // pending create transaction while the wallet prepares the next request.
+      setTransactionHash(null);
+      return receipt;
+    },
+    [waitForHash],
+  );
+
   const refetchAll = useCallback(async () => {
-    await Promise.all([
+    await Promise.allSettled([
       balanceQuery.refetch(),
       allowanceQuery.refetch(),
       ownedBoxCountQuery.refetch(),
@@ -732,7 +746,7 @@ export function useBox(
           const approvalHash = await writeContractAsync(
             approvalRequest as never,
           );
-          await waitForHash(approvalHash, client);
+          await waitForApproval(approvalHash, client);
           currentAllowance = amountBaseUnits;
         }
 
@@ -767,6 +781,7 @@ export function useBox(
       resetTransaction,
       tokenAddress,
       tokenDecimals,
+      waitForApproval,
       waitForHash,
       writeContractAsync,
     ],
@@ -803,7 +818,7 @@ export function useBox(
             args: [boxAddress, totalAmount],
           } as never);
           const approvalHash = await writeContractAsync(approvalRequest as never);
-          await waitForHash(approvalHash, client);
+          await waitForApproval(approvalHash, client);
           currentAllowance = totalAmount;
         }
         if (currentAllowance < totalAmount) {
@@ -836,6 +851,7 @@ export function useBox(
       resetTransaction,
       tokenAddress,
       tokenDecimals,
+      waitForApproval,
       waitForHash,
       writeContractAsync,
     ],
@@ -988,7 +1004,7 @@ export function useBox(
               args: [boxAddress, amounts[index]],
             } as never);
             const hash = await writeContractAsync(request as never);
-            await waitForHash(hash, client);
+            await waitForApproval(hash, client);
           }
         }
         setPhase("creating");
@@ -1010,8 +1026,8 @@ export function useBox(
         throw error;
       }
     },
-    [ensureReady, refetchAll, resetTransaction, tokenAddress, waitForHash,
-      writeContractAsync],
+    [ensureReady, refetchAll, resetTransaction, tokenAddress, waitForApproval,
+      waitForHash, writeContractAsync],
   );
 
   const openBox = useCallback(
@@ -1284,6 +1300,7 @@ export function useBox(
     resetTransaction,
     phase,
     transactionHash,
+    approvalHash,
     transactionError,
     isBusy: isWalletPending || !["idle", "success", "error"].includes(phase),
   };

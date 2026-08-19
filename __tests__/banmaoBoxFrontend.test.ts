@@ -70,7 +70,8 @@ describe("BanmaoBox transaction UX contract", () => {
     const phases = ["idle", "switching-chain", "approving", "creating", "opening", "refreshing-metadata", "transferring", "confirming", "success", "error"];
     const keys = [
       "transactionProgressLabel", "dismissNotification", "copyTransactionHash",
-      "connectWalletError", "wrongNetworkError", "transactionFailed", "genericToken",
+      "connectWalletError", "wrongNetworkError", "transactionFailed",
+      "approvalConfirmedCreateIncomplete", "approvalTransactionLabel", "genericToken",
       "collectionVerificationRequest", "collectionVerificationPending",
       "collectionVerificationSuccess", "collectionVerificationFailure",
       "collectionLifecycleLabel", "collectionWalletRequest", "collectionSubmitted",
@@ -467,6 +468,26 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(transactionProgressIndex("confirming", true)).toBe(1);
     expect(transactionProgressIndex("error", true)).toBe(1);
     expect(transactionProgressIndex("success", true)).toBe(2);
+  });
+
+  test("keeps confirmed approval distinct from the subsequent Box transaction", () => {
+    const hook = fs.readFileSync(path.join(process.cwd(), "app/defi/box/useBox.ts"), "utf8");
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+
+    expect(hook).toContain("const [approvalHash, setApprovalHash]");
+    expect(hook).toContain("await waitForApproval(approvalHash, client)");
+    expect(hook).toContain("setApprovalHash(hash)");
+    expect(hook).toContain("setTransactionHash(null)");
+    expect(page).toContain("copy.approvalConfirmedCreateIncomplete");
+    expect(page).toContain("value={approvalHash}");
+  });
+
+  test("read refresh failures cannot turn a confirmed write into a failed transaction", () => {
+    const hook = fs.readFileSync(path.join(process.cwd(), "app/defi/box/useBox.ts"), "utf8");
+    const refetch = hook.slice(hook.indexOf("const refetchAll"), hook.indexOf("const retryBoxes"));
+
+    expect(refetch).toContain("Promise.allSettled");
+    expect(refetch).not.toContain("Promise.all([");
   });
 });
 

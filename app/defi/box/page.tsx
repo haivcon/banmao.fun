@@ -493,6 +493,7 @@ export default function BanmaoBoxPage() {
     refetchAll,
     phase,
     transactionHash,
+    approvalHash,
     transactionError,
     isBusy,
   } = useBox(selectedChainId, activeBoxAddress, activeTokenAddress, baseCopy.genericToken, collectionResolving);
@@ -734,7 +735,9 @@ export default function BanmaoBoxPage() {
     const message = phase === "success"
       ? copy.transactionConfirmed(activeAction)
       : phase === "error"
-        ? localizedError
+        ? approvalHash && !transactionHash
+          ? copy.approvalConfirmedCreateIncomplete
+          : localizedError
         : copy.phase[phase];
     const detail = releaseOutcome ? `${message} ${releaseOutcome}` : message;
     const options = { id: toastId, duration: phase === "success" ? 6500 : phase === "error" ? 9000 : Infinity };
@@ -756,17 +759,30 @@ export default function BanmaoBoxPage() {
               </li>
             ))}
           </ol>
-          {transactionHash ? (
+          {transactionHash || approvalHash ? (
             <div className="box-toast__actions">
-              <ExplorerValueRow
-                label={copy.creatorTransactionLabel}
-                value={transactionHash}
-                kind="tx"
-                explorerBaseUrl={explorerBaseUrl}
-                copyLabel={copy.copyTransactionHash}
-                onCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })}
-                onCopyFailed={() => toast.error(copy.copyFailed)}
-              />
+              {transactionHash ? (
+                <ExplorerValueRow
+                  label={copy.creatorTransactionLabel}
+                  value={transactionHash}
+                  kind="tx"
+                  explorerBaseUrl={explorerBaseUrl}
+                  copyLabel={copy.copyTransactionHash}
+                  onCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })}
+                  onCopyFailed={() => toast.error(copy.copyFailed)}
+                />
+              ) : null}
+              {approvalHash ? (
+                <ExplorerValueRow
+                  label={copy.approvalTransactionLabel}
+                  value={approvalHash}
+                  kind="tx"
+                  explorerBaseUrl={explorerBaseUrl}
+                  copyLabel={copy.copyTransactionHash}
+                  onCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })}
+                  onCopyFailed={() => toast.error(copy.copyFailed)}
+                />
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -791,7 +807,7 @@ export default function BanmaoBoxPage() {
       return;
     }
     renderToast();
-  }, [activeAction, copy, explorerBaseUrl, phase, releaseOutcome, transactionError, transactionHash]);
+  }, [activeAction, approvalHash, copy, explorerBaseUrl, phase, releaseOutcome, transactionError, transactionHash]);
 
   const showVerificationToast = useCallback((
     message: string,
