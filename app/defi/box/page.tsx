@@ -68,6 +68,14 @@ import { requestBanmaoBoxVerification, type BanmaoBoxVerificationRequest } from 
 import { classifyTransactionError, transactionProgressIndex } from "./transactionPresentation";
 import { ExplorerValueRow } from "./ExplorerValueRow";
 import {
+  collectionLifecycleOwnsTransaction,
+  collectionLifecycleSteps,
+  initialCollectionLifecycle,
+  transitionCollectionLifecycle,
+  type CollectionFailureStage,
+  type CollectionLifecycleDetails,
+} from "./collectionLifecycle";
+import {
   getCollectionLifecycleFixture,
 } from "./collectionLifecycleFixture";
 import { useBox } from "./useBox";
@@ -83,25 +91,6 @@ type CreateMode = "single" | "batch" | "basket";
 type BatchRow = { recipient: string; amount: string };
 type DurationField = "days" | "hours" | "minutes" | "seconds";
 type AddressHistoryType = "asset" | "collection";
-type CollectionLifecycleStatus =
-  | "wallet"
-  | "submitted"
-  | "confirmed"
-  | "verifying"
-  | "indexing"
-  | "ready"
-  | "rejected"
-  | "replaced"
-  | "timeout"
-  | "failed";
-type CollectionLifecycleDetails = {
-  status: CollectionLifecycleStatus;
-  tokenAddress: Address;
-  boxAddress?: Address;
-  factoryAddress?: Address;
-  rendererAddress?: Address;
-  transactionHash?: Hash;
-};
 
 function getTier(amount: bigint, decimals: number): string {
   const unit = 10n ** BigInt(decimals);
@@ -379,6 +368,8 @@ export default function BanmaoBoxPage() {
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [collectionLifecycle, setCollectionLifecycle] =
     useState<CollectionLifecycleDetails | null>(null);
+  const collectionLifecycleRef = useRef<CollectionLifecycleDetails | null>(null);
+  const retryCollectionVerificationRef = useRef<(details: CollectionLifecycleDetails) => void>(() => undefined);
   const collectionRequestRef = useRef(0);
   const verificationRequestRef = useRef<BanmaoBoxVerificationRequest | undefined>(undefined);
   const collectionFixtureToastShownRef = useRef(false);
@@ -604,6 +595,10 @@ export default function BanmaoBoxPage() {
 
   const showTransactionToast = useCallback(() => {
     const toastId = "banmaobox-transaction";
+    if (activeAction === "Collection creation" && collectionLifecycleOwnsTransaction(collectionLifecycleRef.current)) {
+      toast.dismiss(toastId);
+      return;
+    }
     if (phase === "idle") {
       toast.dismiss(toastId);
       return;
@@ -683,7 +678,12 @@ export default function BanmaoBoxPage() {
     details: CollectionLifecycleDetails,
   ) => {
     const id = "banmaobox-collection-verification";
-    setCollectionLifecycle(details);
+    const previous = collectionLifecycleRef.current;
+    const next = previous ? transitionCollectionLifecycle(previous, details) : details;
+    if (previous && next === previous && previous.status !== details.status) return;
+    collectionLifecycleRef.current = next;
+    setCollectionLifecycle(next);
+    toast.dismiss("banmaobox-transaction");
     const explorerRow = (
       label: string,
       value: Address | Hash | undefined,
@@ -709,30 +709,61 @@ export default function BanmaoBoxPage() {
         <div className="box-toast__content">
           <strong>{message}</strong>
           <div className="box-toast__values">
-            {explorerRow(copy.tokenAddressLabel, details.tokenAddress, "address", copy.copyTokenAddress)}
-            {explorerRow(copy.collectionAddressLabel, details.boxAddress, "address", copy.copyCollectionAddress)}
-            {explorerRow(copy.factoryAddressLabel, details.factoryAddress, "address", copy.copyFactoryAddress)}
-            {explorerRow(copy.rendererAddressLabel, details.rendererAddress, "address", copy.copyRendererAddress)}
-            {explorerRow(copy.creatorTransactionLabel, details.transactionHash, "tx", copy.copyTransactionHash)}
+            {explorerRow(copy.tokenAddressLabel, next.tokenAddress, "address", copy.copyTokenAddress)}
+            {explorerRow(copy.collectionAddressLabel, next.boxAddress, "address", copy.copyCollectionAddress)}
+            {explorerRow(copy.factoryAddressLabel, next.factoryAddress, "address", copy.copyFactoryAddress)}
+            {explorerRow(copy.rendererAddressLabel, next.rendererAddress, "address", copy.copyRendererAddress)}
+            {explorerRow(copy.creatorTransactionLabel, next.transactionHash, "tx", copy.copyTransactionHash)}
             <span>{copy.networkLabel}: {chainConfig.chain.name}</span>
             <span>{copy.chainIdLabel}: {selectedChainId}</span>
           </div>
           <ol className="box-collection-lifecycle" aria-label={copy.collectionLifecycleLabel}>
-            <li className="complete">{copy.collectionWalletRequest}</li>
-            <li className={details.transactionHash ? "complete" : "active"}>{copy.collectionSubmitted}</li>
-            <li className={details.boxAddress ? "complete" : ""}>{copy.collectionReceiptConfirmed}</li>
-            <li className={details.status === "ready" ? "complete" : details.status === "verifying" ? "active" : ""}>{copy.collectionBytecodeVerified}</li>
-            <li className={details.status === "ready" ? "complete" : ""}>{copy.collectionRegistryVerified}</li>
-            <li className={details.status === "ready" ? "complete" : ""}>{copy.collectionUnderlyingVerified}</li>
-            <li className={details.status === "ready" ? "complete" : ""}>{copy.collectionRendererVerified}</li>
-            <li className={details.status === "indexing" ? "active" : details.status === "ready" ? "complete" : ""}>{copy.collectionIndexing}</li>
-            <li className={details.status === "ready" ? "complete" : ""}>{copy.collectionReady}</li>
+            {collectionLifecycleSteps(next).map((step) => (
+              <li className={step.status} data-status={step.status} key={step.id}>{step.label(copy)}</li>
+            ))}
           </ol>
+          {next.status === "failed" && next.failureStage === "verification" && next.transactionHash ? (
+            <button type="button" className="box-toast__retry" onClick={() => retryCollectionVerificationRef.current(next)}>
+              <RefreshCw /> {copy.retryVerification}
+            </button>
+          ) : null}
         </div>
         <button type="button" className="box-toast__dismiss" aria-label={copy.dismissNotification} onClick={() => toast.dismiss(id)}><X /></button>
       </div>
     ), { id, duration: status === "loading" ? Infinity : status === "success" ? 12_000 : 9000 });
   }, [chainConfig.chain.name, copy, explorerBaseUrl, selectedChainId]);
+
+  function retryCollectionVerification(details: CollectionLifecycleDetails) {
+    if (!details.transactionHash || !details.boxAddress) return;
+    showVerificationToast(copy.collectionVerificationRequest, "loading", {
+      ...details,
+      status: "verifying",
+      failureStage: undefined,
+      failureReason: undefined,
+    });
+    verificationRequestRef.current?.cancel();
+    verificationRequestRef.current = requestBanmaoBoxVerification(details.transactionHash, (update) => {
+      const current = collectionLifecycleRef.current;
+      if (!current || current.transactionHash !== details.transactionHash) return;
+      if (update.status === "verified" || update.status === "already-verified") {
+        showVerificationToast(copy.collectionReady, "success", { ...current, status: "ready" });
+      } else if (["pending", "waiting-for-indexer", "transient-unavailable"].includes(update.status)) {
+        showVerificationToast(copy.collectionIndexing, "loading", { ...current, status: "indexing" });
+      } else {
+        showVerificationToast(
+          update.status === "manual-reconciliation"
+            ? copy.collectionCreatedVerificationManual
+            : copy.collectionCreatedVerificationDegraded,
+          "error",
+          { ...current, status: "failed", failureStage: "verification", failureReason: update.error },
+        );
+      }
+    });
+  }
+
+  useEffect(() => {
+    retryCollectionVerificationRef.current = retryCollectionVerification;
+  });
 
   useEffect(() => {
     if (collectionFixtureToastShownRef.current || !collectionLifecycle) return;
@@ -829,12 +860,10 @@ export default function BanmaoBoxPage() {
           throw new Error("No collection exists for this token on the canonical Factory.");
         }
         setActiveAction("Collection creation");
-        const baseDetails: CollectionLifecycleDetails = {
-          status: "wallet",
-          tokenAddress: token,
+        const baseDetails = initialCollectionLifecycle(token, {
           factoryAddress: chainConfig.factoryAddress,
           rendererAddress: chainConfig.defaultRendererAddress,
-        };
+        });
         lifecycleDetails = baseDetails;
         showVerificationToast(copy.collectionWalletRequest, "loading", baseDetails);
         const created = await createCollection(token);
@@ -875,10 +904,18 @@ export default function BanmaoBoxPage() {
                 status: "indexing",
               });
             } else {
-              showVerificationToast(copy.collectionVerificationFailure, "error", {
-                ...verificationDetails,
-                status: "failed",
-              });
+              showVerificationToast(
+                update.status === "manual-reconciliation"
+                  ? copy.collectionCreatedVerificationManual
+                  : copy.collectionCreatedVerificationDegraded,
+                "error",
+                {
+                  ...verificationDetails,
+                  status: "failed",
+                  failureStage: "verification",
+                  failureReason: update.error,
+                },
+              );
             }
           });
         } else {
@@ -893,20 +930,24 @@ export default function BanmaoBoxPage() {
     } catch (error) {
       if (requestId !== collectionRequestRef.current) return;
       if (lifecycleDetails) {
-        const classification = classifyTransactionError(error, Boolean(transactionHash));
-        const lifecycleStatus: CollectionLifecycleStatus =
-          classification.kind === "rejected" ? "rejected"
-          : classification.kind === "replaced" ? "replaced"
-          : classification.kind === "timeout" ? "timeout"
-          : "failed";
+        const current = collectionLifecycleRef.current ?? lifecycleDetails;
+        const knownHash = current.transactionHash ?? transactionHash ?? undefined;
+        const classification = classifyTransactionError(error, Boolean(knownHash));
+        const reason = error instanceof Error ? error.message : "";
+        const validationFailure = /TokenBoxCreated|Factory did not register|runtime bytecode/.test(reason);
+        const failureStage: CollectionFailureStage = !knownHash
+          ? classification.kind === "rejected" ? "wallet" : "submission"
+          : validationFailure ? "validation" : "receipt";
         const lifecycleMessage = classification.kind === "rejected" ? copy.transactionRejected
           : classification.kind === "replaced" ? copy.transactionReplaced
           : classification.kind === "timeout" ? copy.transactionTimeout
           : copy.transactionFailed;
         showVerificationToast(lifecycleMessage, "error", {
-          ...lifecycleDetails,
-          status: lifecycleStatus,
-          transactionHash: transactionHash ?? lifecycleDetails.transactionHash,
+          ...current,
+          status: "failed",
+          failureStage,
+          failureReason: reason,
+          transactionHash: knownHash,
         });
       }
       setCollectionError(
