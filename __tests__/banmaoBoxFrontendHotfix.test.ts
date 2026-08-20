@@ -32,6 +32,17 @@ describe("BanmaoBox bounded read-only loading", () => {
     expect(retryHandler).not.toMatch(/writeContract|createBox|openBox|transferBox/);
   });
 
+  test("RPC fallback is bounded and stale gallery attempts cannot overwrite a retry", () => {
+    const walletConfig = read("app/lib/walletConfig.ts");
+    const boxHook = read("app/defi/box/useBox.ts");
+
+    expect(walletConfig).toContain("const RPC_TIMEOUT_MS = 10_000");
+    expect(walletConfig.match(/timeout: RPC_TIMEOUT_MS/g)).toHaveLength(4);
+    expect(boxHook).toContain("const boxLoadGeneration = useRef(0)");
+    expect(boxHook).toContain("const generation = ++boxLoadGeneration.current");
+    expect(boxHook.match(/generation === boxLoadGeneration\.current/g)?.length).toBeGreaterThanOrEqual(3);
+  });
+
   test("admin deployment loading times out with a safe read-only retry", () => {
     const admin = read("app/defi/box/admin/page.tsx");
     expect(admin).toContain("deploymentTimedOut");

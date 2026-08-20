@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   useAccount,
   useChainId,
@@ -110,6 +110,7 @@ export function useBox(
   const [boxes, setBoxes] = useState<BoxEntry[]>([]);
   const [boxesLoading, setBoxesLoading] = useState(false);
   const [boxesError, setBoxesError] = useState<string | null>(null);
+  const boxLoadGeneration = useRef(0);
   const [deploymentError, setDeploymentError] = useState<string | null>(null);
   const [deploymentWarning, setDeploymentWarning] = useState<string | null>(null);
   const [isDiscoveryValidated, setIsDiscoveryValidated] = useState(false);
@@ -482,6 +483,7 @@ export function useBox(
   );
 
   const loadBoxDetails = useCallback(async () => {
+    const generation = ++boxLoadGeneration.current;
     if (
       !boxAddress ||
       !publicClient ||
@@ -606,11 +608,13 @@ export function useBox(
           ? Number(b.tokenId - a.tokenId)
           : Number(a.unlockTime - b.unlockTime),
       );
-      setBoxes(entries);
+      if (generation === boxLoadGeneration.current) setBoxes(entries);
     } catch (error) {
-      setBoxesError(getErrorMessage(error));
+      if (generation === boxLoadGeneration.current) {
+        setBoxesError(getErrorMessage(error));
+      }
     } finally {
-      setBoxesLoading(false);
+      if (generation === boxLoadGeneration.current) setBoxesLoading(false);
     }
   }, [
     address,

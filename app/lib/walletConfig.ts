@@ -123,9 +123,11 @@ const connectors = [
     : []),
 ];
 
+const RPC_TIMEOUT_MS = 10_000;
+
 const mainnetTransport = fallback([
-  http(RPC_PRIMARY, { batch: true, retryCount: 2 }),
-  http(RPC_BACKUP, { batch: true, retryCount: 1 }),
+  http(RPC_PRIMARY, { batch: true, retryCount: 2, timeout: RPC_TIMEOUT_MS }),
+  http(RPC_BACKUP, { batch: true, retryCount: 1, timeout: RPC_TIMEOUT_MS }),
 ]);
 
 export const walletConfig = BANMAOBOX_TESTNET_UI_ENABLED
@@ -135,8 +137,8 @@ export const walletConfig = BANMAOBOX_TESTNET_UI_ENABLED
       transports: {
         [xLayer.id]: mainnetTransport,
         [xLayerTestnet.id]: fallback([
-          http(TESTNET_RPC_PRIMARY, { batch: true, retryCount: 2 }),
-          http(TESTNET_RPC_BACKUP, { batch: true, retryCount: 1 }),
+          http(TESTNET_RPC_PRIMARY, { batch: true, retryCount: 2, timeout: RPC_TIMEOUT_MS }),
+          http(TESTNET_RPC_BACKUP, { batch: true, retryCount: 1, timeout: RPC_TIMEOUT_MS }),
         ]),
       },
       ssr: true,
