@@ -24,6 +24,7 @@ export {
 } from "./address";
 
 const productionManifest = mainnetManifest as BoxDeploymentManifest;
+const testDeployment = testnetManifest as BoxDeploymentManifest;
 const mainnetEnabled = isVerifiedMainnetManifest(productionManifest);
 const mainnetAddress = (value: string | null | undefined) =>
   mainnetEnabled ? validDeploymentAddress(value) : undefined;
@@ -33,6 +34,17 @@ const testnetEnabled =
   testnetManifest.chainId === XLAYER_TESTNET_CHAIN_ID;
 const testnetAddress = (value: string | null | undefined) =>
   testnetEnabled ? validDeploymentAddress(value) : undefined;
+const testnetRuntime: BoxDeploymentManifest["runtime"] = testnetEnabled
+  ? {
+      ...testDeployment.runtime,
+      factoryRenderer:
+        testDeployment.runtime?.factoryRenderer ?? testDeployment.runtime?.renderer,
+      defaultRenderer:
+        testDeployment.runtime?.defaultRenderer ?? testDeployment.runtime?.renderer,
+      boxRenderer:
+        testDeployment.runtime?.boxRenderer ?? testDeployment.runtime?.renderer,
+    }
+  : undefined;
 
 export const BOX_CHAIN_CONFIG = {
   [XLAYER_CHAIN_ID]: {
@@ -49,13 +61,19 @@ export const BOX_CHAIN_CONFIG = {
   [XLAYER_TESTNET_CHAIN_ID]: {
     chain: xLayerTestnet,
     manifest: testnetManifest,
-    tokenAddress: testnetAddress(testnetManifest.contracts.token)!,
-    factoryRendererAddress: testnetAddress(testnetManifest.contracts.factoryRenderer),
-    defaultRendererAddress: testnetAddress(testnetManifest.contracts.defaultRenderer),
-    boxRendererAddress: testnetAddress(testnetManifest.contracts.boxRenderer),
-    factoryAddress: testnetAddress(testnetManifest.contracts.factory),
-    boxAddress: testnetAddress(testnetManifest.contracts.box),
-    runtime: testnetEnabled ? testnetManifest.runtime : undefined,
+    tokenAddress: testnetAddress(testDeployment.contracts.token)!,
+    factoryRendererAddress: testnetAddress(
+      testDeployment.contracts.factoryRenderer ?? testDeployment.contracts.renderer,
+    ),
+    defaultRendererAddress: testnetAddress(
+      testDeployment.contracts.defaultRenderer ?? testDeployment.contracts.renderer,
+    ),
+    boxRendererAddress: testnetAddress(
+      testDeployment.contracts.boxRenderer ?? testDeployment.contracts.renderer,
+    ),
+    factoryAddress: testnetAddress(testDeployment.contracts.factory),
+    boxAddress: testnetAddress(testDeployment.contracts.box),
+    runtime: testnetRuntime,
   },
 } as const;
 

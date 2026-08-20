@@ -2,7 +2,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useAccount, usePublicClient } from "wagmi";
+import { useAccount, usePublicClient, useWriteContract } from "wagmi";
 import { isAddress, type Address, type Hash } from "viem";
 import {
   Activity,
@@ -14,6 +14,7 @@ import {
   LoaderCircle,
   Search,
   ShieldCheck,
+  SlidersHorizontal,
   TriangleAlert,
   Wallet,
 } from "lucide-react";
@@ -47,7 +48,15 @@ export default function BoxOperationsPage() {
     [wallet, setWallet] = useState(""),
     [factoryToken, setFactoryToken] = useState(""),
     [registryToken, setRegistryToken] = useState(""),
-    [registryBox, setRegistryBox] = useState("");
+    [registryBox, setRegistryBox] = useState(""),
+    [factoryRendererInput, setFactoryRendererInput] = useState(""),
+    [boxRendererInput, setBoxRendererInput] = useState("");
+  const [rendererRoles, setRendererRoles] = useState<{
+    factoryAdmin?: Address;
+    boxAdmin?: Address;
+    defaultRenderer?: Address;
+    boxRenderer?: Address;
+  }>({});
   const [createdCollection, setCreatedCollection] = useState<{
     token: Address;
     box: Address;
@@ -79,6 +88,14 @@ export default function BoxOperationsPage() {
     config = getBoxChainConfig(network),
     box = useBox(network),
     explorer = config.chain.blockExplorers?.default.url;
+  const { writeContractAsync } = useWriteContract();
+  const connectedIsRendererAdmin = Boolean(
+    address &&
+    rendererRoles.factoryAdmin &&
+    rendererRoles.boxAdmin &&
+    address.toLowerCase() === rendererRoles.factoryAdmin.toLowerCase() &&
+    address.toLowerCase() === rendererRoles.boxAdmin.toLowerCase(),
+  );
   const deploymentLoading = !box.isDeploymentValidated && !box.deploymentError;
   const { timedOut: deploymentTimedOut, resetTimeout: resetDeploymentTimeout } =
     useBoundedLoading(deploymentLoading);
@@ -86,6 +103,32 @@ export default function BoxOperationsPage() {
     resetDeploymentTimeout();
     box.retryDeployment();
   };
+  useEffect(() => {
+    let active = true;
+    const loadRendererRoles = async () => {
+      if (!client || !config.factoryAddress || !config.boxAddress) {
+        if (active) setRendererRoles({});
+        return;
+      }
+      try {
+        const [factoryAdmin, boxAdmin, defaultRenderer, boxRenderer] = await Promise.all([
+          client.readContract({ address: config.factoryAddress, abi: BANMAO_BOX_FACTORY_ABI, functionName: "rendererAdmin" } as never) as Promise<Address>,
+          client.readContract({ address: config.boxAddress, abi: BANMAO_BOX_ABI, functionName: "rendererAdmin" } as never) as Promise<Address>,
+          client.readContract({ address: config.factoryAddress, abi: BANMAO_BOX_FACTORY_ABI, functionName: "defaultRenderer" } as never) as Promise<Address>,
+          client.readContract({ address: config.boxAddress, abi: BANMAO_BOX_ABI, functionName: "renderer" } as never) as Promise<Address>,
+        ]);
+        if (active) {
+          setRendererRoles({ factoryAdmin, boxAdmin, defaultRenderer, boxRenderer });
+          setFactoryRendererInput((value) => value || defaultRenderer);
+          setBoxRendererInput((value) => value || boxRenderer);
+        }
+      } catch {
+        if (active) setRendererRoles({});
+      }
+    };
+    void loadRendererRoles();
+    return () => { active = false; };
+  }, [client, config.factoryAddress, config.boxAddress]);
   const inspect = async (e: FormEvent) => {
     e.preventDefault();
     setMessage(null);
@@ -259,6 +302,52 @@ export default function BoxOperationsPage() {
       setBusy(false);
     }
   };
+  const updateRenderer = async (
+    target: "factory" | "box",
+    candidate: string,
+  ) => {
+    setMessage(null);
+    if (!client || !address || !connectedIsRendererAdmin) {
+      return setMessage("Connect the immutable renderer-admin wallet to use this control.");
+    }
+    if (!isAddress(candidate)) return setMessage("Enter a valid renderer contract address.");
+    const contractAddress = target === "factory" ? config.factoryAddress : config.boxAddress;
+    if (!contractAddress) return setMessage("The target contract is not deployed on this network.");
+    setBusy(true);
+    try {
+      const renderer = candidate as Address;
+      let hash: Hash;
+      if (target === "factory") {
+        const { request } = await client.simulateContract({
+          account: address,
+          address: contractAddress,
+          abi: BANMAO_BOX_FACTORY_ABI,
+          functionName: "setDefaultRenderer",
+          args: [renderer],
+        } as never);
+        hash = await writeContractAsync(request as never);
+      } else {
+        const { request } = await client.simulateContract({
+          account: address,
+          address: contractAddress,
+          abi: BANMAO_BOX_ABI,
+          functionName: "setRenderer",
+          args: [renderer],
+        } as never);
+        hash = await writeContractAsync(request as never);
+      }
+      setMessage("Transaction submitted. Waiting for confirmation…");
+      await client.waitForTransactionReceipt({ hash });
+      setRendererRoles((current) => target === "factory"
+        ? { ...current, defaultRenderer: renderer }
+        : { ...current, boxRenderer: renderer });
+      setMessage(`${target === "factory" ? "Factory default" : "Collection"} renderer updated: ${renderer}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message.split("\n")[0] : "Renderer update failed.");
+    } finally {
+      setBusy(false);
+    }
+  };
   const addresses = [
       ["Underlying", config.tokenAddress],
       ["BanmaoBox", config.boxAddress],
@@ -292,7 +381,7 @@ export default function BoxOperationsPage() {
       <section className="ops-hero">
         <div>
           <span className="ops-kicker">
-            <Activity /> READ-ONLY OPERATIONS
+            <Activity /> ON-CHAIN OPERATIONS
           </span>
           <h1>
             Protocol clarity,
@@ -300,8 +389,7 @@ export default function BoxOperationsPage() {
             <em>without hidden control.</em>
           </h1>
           <p>
-            Monitor immutable deployments and inspect every gift box. There is
-            no owner, pause, upgrade or admin withdrawal.
+            Monitor immutable deployments, inspect every gift box and manage metadata renderers with the immutable renderer-admin wallet. There is no pause, proxy upgrade, early unlock or admin withdrawal.
           </p>
         </div>
         <div className={`ops-health ${healthy ? "healthy" : "warning"}`}>
@@ -337,9 +425,9 @@ export default function BoxOperationsPage() {
           <small>Immutable</small>
         </article>
         <article>
-          <span>Admin privileges</span>
-          <strong>0</strong>
-          <small>Trust minimized</small>
+          <span>Admin scope</span>
+          <strong>Renderer</strong>
+          <small>Metadata only · no custody</small>
         </article>
       </section>
       {message ? <div className="ops-message">{message}</div> : null}
@@ -532,6 +620,54 @@ export default function BoxOperationsPage() {
               <span>Enter a token and candidate Box address</span>
             </div>
           )}
+        </article>
+        <article className="ops-panel ops-renderer-admin">
+          <header>
+            <SlidersHorizontal />
+            <span>
+              <strong>Renderer administration</strong>
+              <small>Immutable role · metadata and SVG only</small>
+            </span>
+          </header>
+          <div className={`ops-access ${connectedIsRendererAdmin ? "pass" : "restricted"}`}>
+            {connectedIsRendererAdmin ? <CheckCircle2 /> : <ShieldCheck />}
+            <span>
+              <strong>{connectedIsRendererAdmin ? "Renderer-admin wallet verified" : "Owner wallet required"}</strong>
+              <small>
+                {address
+                  ? connectedIsRendererAdmin
+                    ? address
+                    : `Connected wallet has read-only access. Required: ${rendererRoles.factoryAdmin ?? "loading…"}`
+                  : `Connect renderer admin: ${rendererRoles.factoryAdmin ?? "loading…"}`}
+              </small>
+            </span>
+          </div>
+          {rendererRoles.factoryAdmin && rendererRoles.boxAdmin && rendererRoles.factoryAdmin.toLowerCase() !== rendererRoles.boxAdmin.toLowerCase() ? (
+            <div className="ops-warning" role="alert"><TriangleAlert /> Factory and Box renderer-admin roles do not match. Writes are disabled.</div>
+          ) : null}
+          <dl className="ops-renderer-state">
+            <div><dt>Factory renderer admin</dt><dd>{rendererRoles.factoryAdmin ?? "Loading…"}</dd></div>
+            <div><dt>Box renderer admin</dt><dd>{rendererRoles.boxAdmin ?? "Loading…"}</dd></div>
+            <div><dt>Default renderer</dt><dd>{rendererRoles.defaultRenderer ?? "Loading…"}</dd></div>
+            <div><dt>Canonical Box renderer</dt><dd>{rendererRoles.boxRenderer ?? "Loading…"}</dd></div>
+          </dl>
+          {connectedIsRendererAdmin ? (
+            <div className="ops-renderer-forms">
+              <form className="ops-form ops-form--renderer" onSubmit={(event) => { event.preventDefault(); void updateRenderer("factory", factoryRendererInput); }}>
+                <label htmlFor="factory-renderer">Future collections</label>
+                <small>Calls Factory.setDefaultRenderer. Existing collections stay unchanged.</small>
+                <input id="factory-renderer" value={factoryRendererInput} onChange={(event) => setFactoryRendererInput(event.target.value.trim())} placeholder="0x renderer contract" spellCheck={false} />
+                <button disabled={busy || !isAddress(factoryRendererInput)}>{busy ? <LoaderCircle className="spin" /> : <SlidersHorizontal />} Set default</button>
+              </form>
+              <form className="ops-form ops-form--renderer" onSubmit={(event) => { event.preventDefault(); void updateRenderer("box", boxRendererInput); }}>
+                <label htmlFor="box-renderer">Current canonical collection</label>
+                <small>Calls BanmaoBox.setRenderer and emits an ERC-4906 metadata refresh.</small>
+                <input id="box-renderer" value={boxRendererInput} onChange={(event) => setBoxRendererInput(event.target.value.trim())} placeholder="0x renderer contract" spellCheck={false} />
+                <button disabled={busy || !isAddress(boxRendererInput)}>{busy ? <LoaderCircle className="spin" /> : <SlidersHorizontal />} Set renderer</button>
+              </form>
+            </div>
+          ) : null}
+          <div className="ops-warning"><TriangleAlert /> Renderer contracts must support both required ERC-165 renderer interfaces. The transaction is simulated before the wallet prompt. This role cannot withdraw assets, pause boxes or unlock early.</div>
         </article>
         <article className="ops-panel ops-factory">
           <header>

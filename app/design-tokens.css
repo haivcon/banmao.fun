@@ -125,6 +125,11 @@
   --bm-transition: 240ms var(--bm-ease);
   --bm-transition-slow: 420ms var(--bm-ease);
 
+  /* Shared scrollbar palette */
+  --bm-scrollbar-track: #080811;
+  --bm-scrollbar-thumb: #a855f7;
+  --bm-scrollbar-thumb-hover: #ec4899;
+
   /* Legacy compatibility aliases for existing pages */
   --col-pink: var(--bm-primary-light);
   --col-purple: var(--bm-secondary);
@@ -144,6 +149,38 @@
   --hub-border-light: var(--bm-border-inverse);
   --hub-text-light: var(--bm-ink);
   --hub-text-muted-light: var(--bm-ink-muted);
+}
+
+/* One branded scrollbar treatment across document and nested scroll regions. */
+html,
+body,
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bm-scrollbar-thumb) var(--bm-scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--bm-scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  min-height: 40px;
+  border: 2px solid var(--bm-scrollbar-track);
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--bm-secondary), var(--bm-primary));
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--bm-secondary-light), var(--bm-scrollbar-thumb-hover));
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--bm-scrollbar-track);
 }
 
 /* Reusable utility classes for new/refactored surfaces */

@@ -110,7 +110,6 @@ export function useBox(
   const [boxes, setBoxes] = useState<BoxEntry[]>([]);
   const [boxesLoading, setBoxesLoading] = useState(false);
   const [boxesError, setBoxesError] = useState<string | null>(null);
-  const [boxesAttempt, setBoxesAttempt] = useState(0);
   const [deploymentError, setDeploymentError] = useState<string | null>(null);
   const [deploymentWarning, setDeploymentWarning] = useState<string | null>(null);
   const [isDiscoveryValidated, setIsDiscoveryValidated] = useState(false);
@@ -623,7 +622,6 @@ export function useBox(
     readBoxAssets,
     tokenAddress,
     genericToken,
-    boxesAttempt,
   ]);
 
   useEffect(() => {
@@ -716,9 +714,43 @@ export function useBox(
   ]);
 
   const retryBoxes = useCallback(() => {
-    setBoxesAttempt((value) => value + 1);
+    void loadBoxDetails();
     void refetchAll();
-  }, [refetchAll]);
+  }, [loadBoxDetails, refetchAll]);
+
+  const approveToken = useCallback(
+    async (amountBaseUnits: bigint) => {
+      resetTransaction();
+      try {
+        if (amountBaseUnits <= 0n) throw new Error("Amount must be greater than zero");
+        const { account, boxAddress, client } = await ensureReady();
+        setPhase("approving");
+        const { request } = await client.simulateContract({
+          account,
+          address: tokenAddress,
+          abi: BANMAO_ERC20_ABI,
+          functionName: "approve",
+          args: [boxAddress, amountBaseUnits],
+        } as never);
+        const hash = await writeContractAsync(request as never);
+        await waitForApproval(hash, client);
+        await allowanceQuery.refetch();
+        setPhase("idle");
+        return hash;
+      } catch (error) {
+        setPhase("error");
+        setTransactionError(getErrorMessage(error));
+        throw error;
+      }
+    }, [
+      allowanceQuery,
+      ensureReady,
+      resetTransaction,
+      tokenAddress,
+      waitForApproval,
+      writeContractAsync,
+    ],
+  );
 
   const createBox = useCallback(
     async (recipient: Address, amount: string, lockDurationSec: bigint) => {
@@ -1285,6 +1317,7 @@ export function useBox(
     retryDeployment,
     totalLocked: (totalLockedQuery.data as bigint | undefined) ?? 0n,
     totalSupply: (totalSupplyQuery.data as bigint | undefined) ?? 0n,
+    approveToken,
     createBox,
     createBoxes,
     createMultiTokenBox,

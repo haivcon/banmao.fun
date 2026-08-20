@@ -379,6 +379,11 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(page).toContain('className="box-create-stages"');
     expect(page).toContain('className="box-create-workspace"');
     expect(page).toContain('className="box-live-summary"');
+    expect(page).toContain('box-create-progress box-create-progress--${phase}');
+    expect(page).toContain('className="box-create-progress__steps"');
+    expect(page).toContain('className="box-live-summary__badges"');
+    expect(page).toContain('className="box-live-summary__composition"');
+    expect(page).toContain('className="box-live-summary__assets"');
     expect(page).toContain('form="box-create-form"');
     expect(page).toContain('className="box-card-details"');
     expect(page).toContain('<details className="box-contract-footer"');
@@ -448,6 +453,7 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(dialogRule).toMatch(/max-height:\s*calc\(100dvh\s*-\s*48px\)/);
     expect(dialogRule).toMatch(/overflow-y:\s*auto/);
     expect(reviewRule).toMatch(/width:\s*min\(900px,\s*calc\(100vw\s*-\s*64px\)\)/);
+
     expect(transferRule).toMatch(/width:\s*min\(700px,\s*calc\(100vw\s*-\s*48px\)\)/);
     expect(page).toContain('className="box-dialog box-transfer-dialog"');
   });
@@ -475,7 +481,12 @@ describe("BanmaoBox transaction UX contract", () => {
     const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
 
     expect(hook).toContain("const [approvalHash, setApprovalHash]");
+    expect(hook).toContain("const approveToken = useCallback(");
     expect(hook).toContain("await waitForApproval(approvalHash, client)");
+    expect(page).toContain("onClick={() => void handleApproveToken()}");
+    const registry = fs.readFileSync(path.join(process.cwd(), "app/defi/box/registry.ts"), "utf8");
+    expect(registry).toContain("testDeployment.contracts.factoryRenderer ?? testDeployment.contracts.renderer");
+    expect(registry).toContain("testDeployment.runtime?.factoryRenderer ?? testDeployment.runtime?.renderer");
     expect(hook).toContain("setApprovalHash(hash)");
     expect(hook).toContain("setTransactionHash(null)");
     expect(page).toContain("copy.approvalConfirmedCreateIncomplete");
@@ -520,5 +531,68 @@ describe("BanmaoBox Renderer-consistent token symbols", () => {
     expect(hook).not.toContain("symbol: asset.symbol ?? fallback?.symbol");
     expect(hook).not.toContain("symbol: asset.symbol ?? fallback.symbol");
     expect(hook.match(/resolveStoredAssetSymbol\(asset\.symbol/g)).toHaveLength(2);
+  });
+});
+
+
+describe("BanmaoBox portfolio dashboard", () => {
+  test("provides localized portfolio controls for every supported locale", () => {
+    const { BOX_DASHBOARD_COPY } = require("../app/defi/box/i18n") as typeof import("../app/defi/box/i18n");
+    for (const locale of BOX_LANGUAGES) {
+      expect(Object.values(BOX_DASHBOARD_COPY[locale]).every(Boolean)).toBe(true);
+    }
+  });
+
+  test("prioritizes ready actions and replaces the disabled locked CTA with a countdown", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const card = page.slice(page.indexOf("function BoxCard"), page.indexOf("export default function"));
+    expect(card).toContain('className="box-item__locked-callout"');
+    expect(card).toContain('className="box-item__utilities"');
+    expect(card).toContain("BOX_DASHBOARD_COPY[language].detailsAssets");
+    expect(card).toMatch(/className="box-button box-button--primary box-item__primary"[\s\S]{0,100}disabled=\{busy\}/);
+  });
+
+  test("opens on-chain box artwork in an accessible large preview and exposes rich NFT asset details", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
+    expect(page).toContain('className="box-artwork-trigger"');
+    expect(page).toContain('className="box-image-preview"');
+    expect(page).toContain('aria-modal="true"');
+    expect(page).toContain('className="box-nft-facts"');
+    expect(page).toContain('className="box-asset__explorer"');
+    expect(page).toContain("onCopyAddress(asset.token)");
+    expect(page).toContain("copyToClipboard(value, copy.tokenAddressLabel)");
+    expect(css).toMatch(/\.box-image-preview-backdrop\s*\{[^}]*inset:\s*var\(--defi-shell-header-height,\s*68px\)\s+0\s+0/);
+    expect(css).toMatch(/\.box-image-preview\s*\{[\s\S]*--box-preview-art-size:\s*min\([\s\S]*calc\(100dvh\s*-\s*var\(--defi-shell-header-height,\s*68px\)\s*-\s*116px\)/);
+    expect(css).toMatch(/@media \(max-width:\s*820px\)[\s\S]*\.box-image-preview\s*\{[^}]*height:\s*auto;[^}]*max-height:\s*none/);
+    expect(css).toMatch(/\.box-image-preview__canvas\s*\{[\s\S]*aspect-ratio:\s*1\s*\/\s*1;[\s\S]*overflow:\s*hidden/);
+    expect(css).toMatch(/\.box-image-preview__image\s*\{[\s\S]*width:\s*100%;[\s\S]*height:\s*100%;[\s\S]*object-fit:\s*contain/);
+    expect(css).toMatch(/\.box-item__svg\s*\{[\s\S]*object-fit:\s*contain/);
+  });
+
+  test("restricts renderer administration to the immutable on-chain admin", () => {
+    const admin = fs.readFileSync(path.join(process.cwd(), "app/defi/box/admin/page.tsx"), "utf8");
+    expect(admin).toContain('functionName: "rendererAdmin"');
+    expect(admin).toContain('functionName: "setDefaultRenderer"');
+    expect(admin).toContain('functionName: "setRenderer"');
+    expect(admin).toContain("connectedIsRendererAdmin ? (");
+    expect(admin).toContain("simulateContract");
+    expect(admin).toContain("waitForTransactionReceipt");
+  });
+
+  test("renders summary, filter, search and premium segmented sort controls with a responsive card grid", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
+    expect(page).toContain('className="box-portfolio-summary"');
+    expect(page).toContain('className="box-filter-group"');
+    expect(page).toContain('className="box-portfolio-search"');
+    expect(page).toContain('className="box-portfolio-sort" role="group"');
+    expect(page).not.toContain("<select value={boxSort}");
+    expect(page).toContain("aria-pressed={boxSort === sort}");
+    expect(css).toMatch(/\.box-list\s*\{[^}]*grid-template-columns:\s*repeat\(2,minmax\(0,1fr\)\)/);
+    const mobile = css.slice(css.lastIndexOf("@media (max-width: 820px)"));
+    expect(mobile).toMatch(/\.box-filter-group button\s*\{[^}]*min-height:\s*44px/);
+    expect(mobile).toMatch(/\.box-portfolio-search input,[^{]+\{[^}]*font-size:\s*16px/);
+    expect(mobile).toMatch(/\.box-item__utilities button,[^{]+\{[^}]*width:\s*44px;\s*height:\s*44px/);
   });
 });

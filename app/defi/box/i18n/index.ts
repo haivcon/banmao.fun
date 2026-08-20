@@ -2,6 +2,43 @@ export const BOX_LANGUAGES = ["en", "vi", "zh", "ko", "ru", "id"] as const;
 
 export type BoxLanguage = (typeof BOX_LANGUAGES)[number];
 
+export type BoxDashboardCopy = {
+  total: string;
+  ready: string;
+  locked: string;
+  baskets: string;
+  all: string;
+  search: string;
+  sortLabel: string;
+  sortReady: string;
+  sortNewest: string;
+  sortUnlock: string;
+  noMatches: string;
+  clearFilters: string;
+  detailsAssets: string;
+  previewImage: string;
+  closePreview: string;
+  nftDetails: string;
+  tokenId: string;
+  collection: string;
+  creator: string;
+  status: string;
+  assetCount: string;
+  tier: string;
+  decimals: string;
+  lockDuration: string;
+  viewAsset: string;
+};
+
+export const BOX_DASHBOARD_COPY: Record<BoxLanguage, BoxDashboardCopy> = {
+  en: { total: "Total boxes", ready: "Ready", locked: "Locked", baskets: "Multi-asset", all: "All", search: "Search token ID", sortLabel: "Sort boxes", sortReady: "Ready first", sortNewest: "Newest", sortUnlock: "Unlock soonest", noMatches: "No boxes match these filters", clearFilters: "Clear filters", detailsAssets: "Details & assets", previewImage: "View box artwork larger", closePreview: "Close image preview", nftDetails: "NFT details", tokenId: "Token ID", collection: "Collection", creator: "Creator", status: "Status", assetCount: "Asset count", tier: "Tier", decimals: "Decimals", lockDuration: "Lock duration", viewAsset: "View asset on explorer" },
+  vi: { total: "Tổng số box", ready: "Có thể mở", locked: "Đang khóa", baskets: "Nhiều tài sản", all: "Tất cả", search: "Tìm theo token ID", sortLabel: "Sắp xếp box", sortReady: "Có thể mở trước", sortNewest: "Mới nhất", sortUnlock: "Sắp mở khóa", noMatches: "Không có box phù hợp bộ lọc", clearFilters: "Xóa bộ lọc", detailsAssets: "Chi tiết & tài sản", previewImage: "Xem ảnh box kích thước lớn", closePreview: "Đóng ảnh lớn", nftDetails: "Chi tiết NFT", tokenId: "Token ID", collection: "Bộ sưu tập", creator: "Người tạo", status: "Trạng thái", assetCount: "Số tài sản", tier: "Hạng", decimals: "Số thập phân", lockDuration: "Thời gian khóa", viewAsset: "Xem tài sản trên explorer" },
+  zh: { total: "礼盒总数", ready: "可开启", locked: "锁定中", baskets: "多资产", all: "全部", search: "搜索代币 ID", sortLabel: "礼盒排序", sortReady: "可开启优先", sortNewest: "最新", sortUnlock: "即将解锁", noMatches: "没有符合筛选条件的礼盒", clearFilters: "清除筛选", detailsAssets: "详情与资产", previewImage: "放大查看礼盒图片", closePreview: "关闭图片预览", nftDetails: "NFT 详情", tokenId: "Token ID", collection: "合集", creator: "创建者", status: "状态", assetCount: "资产数量", tier: "等级", decimals: "小数位", lockDuration: "锁定时长", viewAsset: "在浏览器查看资产" },
+  ko: { total: "전체 박스", ready: "열기 가능", locked: "잠김", baskets: "다중 자산", all: "전체", search: "토큰 ID 검색", sortLabel: "박스 정렬", sortReady: "열기 가능 우선", sortNewest: "최신순", sortUnlock: "잠금 해제 임박순", noMatches: "필터와 일치하는 박스가 없습니다", clearFilters: "필터 지우기", detailsAssets: "상세 정보 및 자산", previewImage: "박스 이미지 크게 보기", closePreview: "이미지 미리보기 닫기", nftDetails: "NFT 상세", tokenId: "Token ID", collection: "컬렉션", creator: "생성자", status: "상태", assetCount: "자산 수", tier: "등급", decimals: "소수 자릿수", lockDuration: "잠금 기간", viewAsset: "탐색기에서 자산 보기" },
+  ru: { total: "Всего боксов", ready: "Готовы", locked: "Заблокированы", baskets: "Мультиактив", all: "Все", search: "Поиск по token ID", sortLabel: "Сортировка боксов", sortReady: "Сначала готовые", sortNewest: "Сначала новые", sortUnlock: "Скоро откроются", noMatches: "Нет боксов по выбранным фильтрам", clearFilters: "Сбросить фильтры", detailsAssets: "Детали и активы", previewImage: "Увеличить изображение бокса", closePreview: "Закрыть просмотр", nftDetails: "Детали NFT", tokenId: "Token ID", collection: "Коллекция", creator: "Создатель", status: "Статус", assetCount: "Активов", tier: "Уровень", decimals: "Десятичные знаки", lockDuration: "Срок блокировки", viewAsset: "Открыть актив в обозревателе" },
+  id: { total: "Total box", ready: "Siap", locked: "Terkunci", baskets: "Multi-aset", all: "Semua", search: "Cari token ID", sortLabel: "Urutkan box", sortReady: "Siap lebih dulu", sortNewest: "Terbaru", sortUnlock: "Segera terbuka", noMatches: "Tidak ada box yang cocok dengan filter", clearFilters: "Hapus filter", detailsAssets: "Detail & aset", previewImage: "Lihat gambar box lebih besar", closePreview: "Tutup pratinjau gambar", nftDetails: "Detail NFT", tokenId: "Token ID", collection: "Koleksi", creator: "Pembuat", status: "Status", assetCount: "Jumlah aset", tier: "Tingkat", decimals: "Desimal", lockDuration: "Durasi kunci", viewAsset: "Lihat aset di explorer" },
+};
+
 export type BoxCopy = {
   back: string;
   eyebrow: string;
@@ -26,6 +63,7 @@ export type BoxCopy = {
   createButton: string;
   approvalNeeded: string;
   approvalReady: string;
+  approveToken: string;
   approveAndCreate: string;
   reviewApprovalNotice: string;
   connectToCreate: string;
@@ -255,6 +293,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     createButton: "Create box",
     approvalNeeded: "Token approval required. Your wallet will ask you to approve BANMAO spending first.",
     approvalReady: "Token spending approved. Ready to create.",
+    approveToken: "Approve token",
     approveAndCreate: "Approve & create box",
     reviewApprovalNotice: "Your wallet will first request token approval, then the box creation. Two signatures required.",
     connectToCreate: "Connect wallet to create",
@@ -480,6 +519,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     createButton: "Tạo box",
     approvalNeeded: "Cần phê duyệt token. Ví sẽ yêu cầu bạn phê duyệt chi tiêu BANMAO trước.",
     approvalReady: "Đã phê duyệt chi tiêu. Sẵn sàng tạo box.",
+    approveToken: "Phê duyệt token",
     approveAndCreate: "Phê duyệt & tạo box",
     reviewApprovalNotice: "Ví sẽ yêu cầu phê duyệt token trước, sau đó tạo box. Cần hai chữ ký.",
     connectToCreate: "Kết nối ví để tạo",
@@ -705,6 +745,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     createButton: "创建礼盒",
     approvalNeeded: "需要代币授权。钱包将先请求您授权 BANMAO 支出。",
     approvalReady: "代币支出已授权，可以创建。",
+    approveToken: "授权代币",
     approveAndCreate: "授权并创建",
     reviewApprovalNotice: "钱包将先请求代币授权，然后创建盒子。需要两次签名。",
     connectToCreate: "连接钱包以创建",
@@ -926,6 +967,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     createButton: "박스 만들기",
     approvalNeeded: "토큰 승인이 필요합니다. 지갑에서 BANMAO 지출 승인을 먼저 요청합니다.",
     approvalReady: "토큰 지출이 승인되었습니다. 생성 준비 완료.",
+    approveToken: "토큰 승인",
     approveAndCreate: "승인 후 생성",
     reviewApprovalNotice: "지갑에서 토큰 승인을 먼저 요청한 다음 박스를 생성합니다. 서명 두 번 필요.",
     connectToCreate: "지갑 연결",
@@ -1149,6 +1191,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     createButton: "Создать бокс",
     approvalNeeded: "Требуется одобрение токена. Кошелёк запросит разрешение на расход BANMAO.",
     approvalReady: "Расход токена одобрен. Готово к созданию.",
+    approveToken: "Одобрить токен",
     approveAndCreate: "Одобрить и создать",
     reviewApprovalNotice: "Кошелёк сначала запросит одобрение токена, затем создание. Потребуется две подписи.",
     connectToCreate: "Подключить кошелёк",
@@ -1374,6 +1417,7 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     createButton: "Buat box",
     approvalNeeded: "Perlu persetujuan token. Dompet akan meminta Anda menyetujui pengeluaran BANMAO terlebih dahulu.",
     approvalReady: "Pengeluaran token disetujui. Siap membuat.",
+    approveToken: "Setujui token",
     approveAndCreate: "Setujui & buat",
     reviewApprovalNotice: "Dompet akan meminta persetujuan token terlebih dahulu, lalu membuat box. Diperlukan dua tanda tangan.",
     connectToCreate: "Hubungkan dompet",

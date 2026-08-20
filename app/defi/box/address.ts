@@ -23,7 +23,7 @@ export function boxNftExplorerUrl(
 ): string | undefined {
   const collection = validDeploymentAddress(collectionAddress);
   if (!collection || tokenId < 0n) return undefined;
-  return `${explorerBaseUrl.replace(/\/+$/, "")}/token/${collection}?a=${tokenId.toString()}`;
+  return `${explorerBaseUrl.replace(/\/+$/, "")}/assets/${collection.toLowerCase()}/${tokenId.toString()}`;
 }
 
 function hasCanonicalMainnetToken(

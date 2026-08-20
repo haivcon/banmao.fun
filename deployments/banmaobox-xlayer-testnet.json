@@ -5,7 +5,7 @@
   "chainId": 1952,
   "rpcUrl": "https://xlayertestrpc.okx.com/terigon",
   "explorerUrl": "https://www.okx.com/web3/explorer/xlayer-test",
-  "deployedAt": "2026-08-17T08:00:33.686Z",
+  "deployedAt": "2026-08-20T07:10:17.978Z",
   "compiler": "0.8.30+commit.73712a01.Emscripten.clang",
   "optimizerRuns": 200,
   "evmVersion": "shanghai",
@@ -13,16 +13,14 @@
   "deployer": "0x92809f2837f708163d375960063C8A3156fCeACb",
   "contracts": {
     "token": "0xE5077fD79a28B888aF33365640FDE144cf9789e3",
-    "factoryRenderer": "0x35459B8152ae379bEF1041fD501Bc4CE8C96d215",
-    "defaultRenderer": "0x35459B8152ae379bEF1041fD501Bc4CE8C96d215",
-    "boxRenderer": "0x35459B8152ae379bEF1041fD501Bc4CE8C96d215",
-    "factory": "0x0b39f8E7e0040AC144F89229c6b294f379Fa5856",
-    "box": "0xCE6dAA64Fa861a02B405d8ac56ae4752e4dAB4eB"
+    "renderer": "0x991e10eB9B88A08f60514A294255Fa1726c8Ae60",
+    "factory": "0xa4649B62033AE50f338a79BA248DAF09C3A6729c",
+    "box": "0x7b99b901CF411C32Aef1D80783B1a6599f3Cb516"
   },
   "transactions": {
-    "renderer": "0xd73a5b6ab4d86fffbabf6e76c37c4df044dd30a11b0bdf5344385552911a6df5",
-    "factory": "0x20c39cda8f6f14a9712b9c8b4987a084cd2bf041fe627f4ae224af89e5c07631",
-    "createTokenBox": "0x5553dae50bc3a79db4a37e615c97e1afed09d4fdd2d9f41af51e8adfe072e25d"
+    "renderer": "0x1830266ceccc89a9488f4c3b4ec12410cb24136146d3533909cdd663c752d9ed",
+    "factory": "0x42eea1a3eeef80495a6eafe02ebea1a68b52e5415d28335e8f2e25b1a71a5d5f",
+    "createTokenBox": "0xa1db05b0eaebdd375795bd49784dbf3e5c272bc48c2cf6c36d00ff287950fd79"
   },
   "tokenMetadata": {
     "symbol": "BANMAO",
@@ -33,25 +31,17 @@
       "bytes": 1816,
       "keccak256": "0x51d7d136e66ce242df9b6443fad07ba92cfb14dc2b5e8c78aafffb534fe8ab3a"
     },
-    "factoryRenderer": {
-      "bytes": 16647,
-      "keccak256": "0xc66b482d9ef781d179c79ebcec20a19c141e611cedcb07a3c6a2a7cfa3b8d3e5"
-    },
-    "defaultRenderer": {
-      "bytes": 16647,
-      "keccak256": "0xc66b482d9ef781d179c79ebcec20a19c141e611cedcb07a3c6a2a7cfa3b8d3e5"
-    },
-    "boxRenderer": {
-      "bytes": 16647,
-      "keccak256": "0xc66b482d9ef781d179c79ebcec20a19c141e611cedcb07a3c6a2a7cfa3b8d3e5"
+    "renderer": {
+      "bytes": 19214,
+      "keccak256": "0xd69507283765b914480cf8aa8a8f37f4bbd351b0620ede3b0bbd5e3ca390f703"
     },
     "factory": {
-      "bytes": 24197,
-      "keccak256": "0xc7630ca6baf1040a0fcac75f54512486cf5b78f8247883ebce43c2fe15add7fc"
+      "bytes": 22056,
+      "keccak256": "0x25d41f7a5f8fff23ab9b855e68dd1bc45b168f0bf1e492b33b1e3483fa2cd0ed"
     },
     "box": {
-      "bytes": 20055,
-      "keccak256": "0xbf8123bda8e867e016e1766a8a7089485853e7e386bda0e51b4347034fb212df"
+      "bytes": 17892,
+      "keccak256": "0x214d7bdf13862e8532df6e0d34836c1e6b589ab90b2ac8c0ec1587d92d112dab"
     }
   }
 }

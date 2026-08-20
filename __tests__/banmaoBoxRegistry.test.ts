@@ -42,14 +42,14 @@ describe("BanmaoBox chain registry", () => {
     expect(XLAYER_MULTICALL3_ADDRESS).toBe(
       "0xcA11bde05977b3631167028862bE2a173976CA11",
     );
-    expect(testnetManifest.contracts.factoryRenderer).toBe(
-      "0x35459B8152ae379bEF1041fD501Bc4CE8C96d215",
+    expect(testnetManifest.contracts.renderer).toBe(
+      "0x991e10eB9B88A08f60514A294255Fa1726c8Ae60",
     );
     expect(testnetManifest.contracts.factory).toBe(
-      "0x0b39f8E7e0040AC144F89229c6b294f379Fa5856",
+      "0xa4649B62033AE50f338a79BA248DAF09C3A6729c",
     );
     expect(testnetManifest.contracts.box).toBe(
-      "0xCE6dAA64Fa861a02B405d8ac56ae4752e4dAB4eB",
+      "0x7b99b901CF411C32Aef1D80783B1a6599f3Cb516",
     );
     for (const contractAddress of Object.values(testnetManifest.contracts)) {
       expect(validDeploymentAddress(contractAddress)).toBe(contractAddress);
@@ -61,21 +61,32 @@ describe("BanmaoBox chain registry", () => {
       boxNftExplorerUrl(
         "https://www.okx.com/web3/explorer/xlayer/",
         mainnetManifest.contracts.box,
-        42n,
+        BigInt(42),
       ),
     ).toBe(
-      `https://www.okx.com/web3/explorer/xlayer/token/${mainnetManifest.contracts.box}?a=42`,
+      `https://www.okx.com/web3/explorer/xlayer/assets/${mainnetManifest.contracts.box.toLowerCase()}/42`,
     );
     expect(
       boxNftExplorerUrl(
         "https://www.okx.com/web3/explorer/xlayer-test",
         testnetManifest.contracts.box,
-        7n,
+        BigInt(7),
       ),
     ).toBe(
-      `https://www.okx.com/web3/explorer/xlayer-test/token/${testnetManifest.contracts.box}?a=7`,
+      `https://www.okx.com/web3/explorer/xlayer-test/assets/${testnetManifest.contracts.box.toLowerCase()}/7`,
     );
-    expect(boxNftExplorerUrl("https://example.com", undefined, 1n)).toBeUndefined();
+    expect(
+      boxNftExplorerUrl(
+        "https://web3.okx.com/explorer/x-layer/evm",
+        "0xE8247C96787119A8F7E8F8C81F58BeC5BEFC999f",
+        BigInt(3),
+      ),
+    ).toBe(
+      "https://web3.okx.com/explorer/x-layer/evm/assets/0xe8247c96787119a8f7e8f8c81f58bec5befc999f/3",
+    );
+    expect(
+      boxNftExplorerUrl("https://example.com", undefined, BigInt(1)),
+    ).toBeUndefined();
   });
 
   describe("mainnet registry gates", () => {

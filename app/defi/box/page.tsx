@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Box,
   CheckCircle2,
+  CalendarClock,
   ChevronDown,
   Clock3,
   Copy,
@@ -15,8 +16,11 @@ import {
   ExternalLink,
   LoaderCircle,
   LockKeyhole,
+  Maximize2,
   PackageOpen,
   RefreshCw,
+  Search,
+  SortDesc,
   Send,
   ShieldAlert,
   ShieldCheck,
@@ -58,6 +62,7 @@ import {
 } from "../../lib/walletConfig";
 import {
   BOX_COPY,
+  BOX_DASHBOARD_COPY,
   getInitialBoxLanguage,
   parameterizeBoxCopy,
   type BoxCopy,
@@ -104,6 +109,8 @@ const BOXES_PER_PAGE = 6;
 const MAX_BATCH_SIZE = 20;
 
 type CreateMode = "single" | "batch" | "basket";
+type BoxFilter = "all" | "ready" | "locked";
+type BoxSort = "ready" | "newest" | "unlock";
 type BatchRow = { recipient: string; amount: string };
 type DurationField = "days" | "hours" | "minutes" | "seconds";
 type AddressHistoryType = "asset" | "collection";
@@ -212,7 +219,13 @@ function BoxCard({
   onOpenAsset,
   onTransfer,
   onRefreshMetadata,
+  onPreview,
+  onCopyAddress,
+  onAddressCopied,
+  onCopyFailed,
   explorerUrl,
+  explorerBaseUrl,
+  collectionAddress,
   primaryToken,
   tokenSymbol,
 }: {
@@ -226,7 +239,13 @@ function BoxCard({
   onOpenAsset: (tokenId: bigint, assetIndex: number, asset: BoxAsset) => void;
   onTransfer: (entry: BoxEntry) => void;
   onRefreshMetadata: (tokenId: bigint) => void;
+  onPreview: (entry: BoxEntry) => void;
+  onCopyAddress: (address: string) => Promise<void>;
+  onAddressCopied: (label: string) => void;
+  onCopyFailed: () => void;
   explorerUrl?: string;
+  explorerBaseUrl: string;
+  collectionAddress?: Address;
   primaryToken?: Address;
   tokenSymbol: string;
 }) {
@@ -237,14 +256,22 @@ function BoxCard({
     <article className={`box-item ${ready ? "box-item--ready" : ""}`}>
       <div className="box-item__visual">
         {entry.svg ? (
-          <Image
-            className="box-svg box-item__svg"
-            src={svgImageDataUri(entry.svg)}
-            alt={`${copy.boxNumber} #${entry.tokenId.toString()}`}
-            width={600}
-            height={600}
-            unoptimized
-          />
+          <button
+            type="button"
+            className="box-artwork-trigger"
+            onClick={() => onPreview(entry)}
+            aria-label={`${BOX_DASHBOARD_COPY[language].previewImage}: ${copy.boxNumber} #${entry.tokenId.toString()}`}
+          >
+            <Image
+              className="box-svg box-item__svg"
+              src={svgImageDataUri(entry.svg)}
+              alt={`${copy.boxNumber} #${entry.tokenId.toString()}`}
+              width={600}
+              height={600}
+              unoptimized
+            />
+            <span className="box-artwork-trigger__hint" aria-hidden="true"><Maximize2 /></span>
+          </button>
         ) : (
           <GiftBoxArtwork ready={ready} />
         )}
@@ -260,8 +287,8 @@ function BoxCard({
 
       <div className="box-item__content">
         <div className="box-item__heading">
-          <span>
-            {copy.boxNumber} #{entry.tokenId.toString()}
+          <div>
+            <span>{copy.boxNumber} #{entry.tokenId.toString()}</span>
             <em
               className={`box-tier box-tier--${getTier(entry.amount, decimals).toLowerCase()}`}
               tabIndex={0}
@@ -270,7 +297,17 @@ function BoxCard({
             >
               {getTier(entry.amount, decimals)}
             </em>
-          </span>
+          </div>
+          <div className="box-item__utilities">
+            <button type="button" disabled={busy} onClick={() => onRefreshMetadata(entry.tokenId)} title={copy.refreshMetadata} aria-label={copy.refreshMetadata}>
+              <RefreshCw />
+            </button>
+            {explorerUrl ? (
+              <a href={explorerUrl} target="_blank" rel="noopener noreferrer" title={copy.viewExplorer} aria-label={copy.viewExplorer}>
+                <ExternalLink />
+              </a>
+            ) : null}
+          </div>
           <strong>
             <TokenAmount value={entry.amount} decimals={decimals} symbol={tokenSymbol} language={language} />
           </strong>
@@ -294,19 +331,44 @@ function BoxCard({
           </div>
         </dl>
 
-        <button
-          type="button"
-          className="box-button box-button--primary box-item__primary"
-          disabled={!ready || busy}
-          onClick={() => onOpen(entry.tokenId)}
-        >
-          {busy ? <LoaderCircle className="box-spin" /> : ready ? <PackageOpen /> : <LockKeyhole />}
-          {ready ? copy.open : copy.locked}
-        </button>
+        {ready ? (
+          <button
+            type="button"
+            className="box-button box-button--primary box-item__primary"
+            disabled={busy}
+            onClick={() => onOpen(entry.tokenId)}
+          >
+            {busy ? <LoaderCircle className="box-spin" /> : <PackageOpen />}
+            {copy.open}
+          </button>
+        ) : (
+          <div className="box-item__locked-callout" aria-label={`${copy.remaining}: ${getRemaining(entry.unlockTime, now, copy)}`}>
+            <Clock3 />
+            <span><small>{copy.remaining}</small><strong className="box-countdown">{getRemaining(entry.unlockTime, now, copy)}</strong></span>
+          </div>
+        )}
 
         <details className="box-card-details">
-          <summary><ChevronDown aria-hidden="true" /> {copy.operations}</summary>
+          <summary><ChevronDown aria-hidden="true" /> {BOX_DASHBOARD_COPY[language].detailsAssets}</summary>
           <div className="box-assets">
+          <section className="box-nft-details" aria-label={BOX_DASHBOARD_COPY[language].nftDetails}>
+            <strong>{BOX_DASHBOARD_COPY[language].nftDetails}</strong>
+            <dl className="box-nft-facts">
+              <div><dt>{BOX_DASHBOARD_COPY[language].tokenId}</dt><dd>#{entry.tokenId.toString()}</dd></div>
+              <div><dt>{BOX_DASHBOARD_COPY[language].tier}</dt><dd>{getTier(entry.amount, decimals)}</dd></div>
+              <div><dt>{BOX_DASHBOARD_COPY[language].status}</dt><dd className={ready ? "box-ready-text" : ""}>{ready ? copy.ready : copy.locked}</dd></div>
+              <div><dt>{BOX_DASHBOARD_COPY[language].assetCount}</dt><dd>{entry.assets.length.toLocaleString(language)}</dd></div>
+              <div><dt>{copy.createdAt}</dt><dd>{formatDate(entry.createdAt, language)}</dd></div>
+              <div><dt>{copy.unlocksAt}</dt><dd>{formatDate(entry.unlockTime, language)}</dd></div>
+              <div><dt>{BOX_DASHBOARD_COPY[language].lockDuration}</dt><dd>{formatDuration(entry.unlockTime - entry.createdAt, language, copy)}</dd></div>
+            </dl>
+            <div className="box-nft-addresses">
+              {collectionAddress ? (
+                <ExplorerValueRow label={BOX_DASHBOARD_COPY[language].collection} value={collectionAddress} kind="address" explorerBaseUrl={explorerBaseUrl} copyLabel={copy.copyCollectionAddress} onCopied={onAddressCopied} onCopyFailed={onCopyFailed} />
+              ) : null}
+              <ExplorerValueRow label={BOX_DASHBOARD_COPY[language].creator} value={entry.creator} kind="address" explorerBaseUrl={explorerBaseUrl} copyLabel={copy.copyAddress} onCopied={onAddressCopied} onCopyFailed={onCopyFailed} />
+            </div>
+          </section>
           <div className="box-assets__heading">
             <strong>{copy.basketAssets}</strong>
             <small>{copy.releaseHint}</small>
@@ -328,10 +390,13 @@ function BoxCard({
                     <strong>
                       <TokenAmount value={asset.amount} decimals={assetDecimals} symbol={assetSymbol} language={language} compact />
                     </strong>
-                    <span className="box-asset__address">
-                      <code>{asset.token}</code>
-                      <button type="button" onClick={() => void navigator.clipboard.writeText(asset.token)} aria-label={`Copy ${asset.token}`}>
-                        <Copy />
+                    <span className="box-asset__metadata">
+                      <span>{BOX_DASHBOARD_COPY[language].decimals}: {assetDecimals}</span>
+                      <a className="box-asset__explorer" href={`${explorerBaseUrl.replace(/\/+$/, "")}/token/${asset.token}`} target="_blank" rel="noopener noreferrer" title={BOX_DASHBOARD_COPY[language].viewAsset} aria-label={`${BOX_DASHBOARD_COPY[language].viewAsset}: ${assetSymbol}`}>
+                        <code>{asset.token}</code><ExternalLink aria-hidden="true" />
+                      </a>
+                      <button className="box-asset__copy" type="button" onClick={() => void onCopyAddress(asset.token)} aria-label={`${copy.copyAddress}: ${asset.token}`} title={copy.copyAddress}>
+                        <Copy aria-hidden="true" />
                       </button>
                     </span>
                   </div>
@@ -361,28 +426,7 @@ function BoxCard({
             <Send />
             {copy.transfer}
           </button>
-          <button
-            type="button"
-            className="box-button box-button--ghost"
-            disabled={busy}
-            onClick={() => onRefreshMetadata(entry.tokenId)}
-            title={copy.refreshMetadata}
-          >
-            <RefreshCw />
-            {copy.refreshMetadata}
-          </button>
-          {explorerUrl ? (
-            <a
-              className="box-button box-button--explorer"
-              href={explorerUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={`${copy.viewExplorer}: ${copy.boxNumber} #${entry.tokenId.toString()}`}
-            >
-              <ExternalLink />
-              {copy.viewExplorer}
-            </a>
-          ) : null}
+
         </div>
         </details>
       </div>
@@ -441,6 +485,11 @@ export default function BanmaoBoxPage() {
   const [transferRecipient, setTransferRecipient] = useState("");
   const [transferError, setTransferError] = useState<string | null>(null);
   const [boxPage, setBoxPage] = useState(0);
+  const [boxFilter, setBoxFilter] = useState<BoxFilter>("all");
+  const [boxSort, setBoxSort] = useState<BoxSort>("ready");
+  const [boxSearch, setBoxSearch] = useState("");
+  const [previewEntry, setPreviewEntry] = useState<BoxEntry | null>(null);
+  const previewCloseRef = useRef<HTMLButtonElement | null>(null);
   const [inspectId, setInspectId] = useState("");
   const [inspectedBox, setInspectedBox] = useState<InspectedBox | null>(null);
   const [inspectError, setInspectError] = useState<string | null>(null);
@@ -479,6 +528,7 @@ export default function BanmaoBoxPage() {
     isDeploymentValidated,
     totalLocked,
     totalSupply,
+    approveToken,
     createBox,
     createBoxes,
     createMultiTokenBox,
@@ -501,6 +551,7 @@ export default function BanmaoBoxPage() {
     () => parameterizeBoxCopy(baseCopy, tokenIdentity.displaySymbol, tokenIdentity.isCanonicalBanmao),
     [baseCopy, tokenIdentity.displaySymbol, tokenIdentity.isCanonicalBanmao],
   );
+  const dashboardCopy = BOX_DASHBOARD_COPY[language];
   const { timedOut: boxesTimedOut, resetTimeout: resetBoxesTimeout } =
     useBoundedLoading(boxesLoading);
   const retryBoxes = useCallback(() => {
@@ -526,11 +577,48 @@ export default function BanmaoBoxPage() {
   const needsApproval =
     isConnected && parsedAmount > 0n && allowance < parsedAmount;
 
-  const pageCount = Math.max(1, Math.ceil(boxes.length / BOXES_PER_PAGE));
+  const boxPortfolio = useMemo(() => {
+    const timestamp = Math.floor(now / 1000);
+    const ready = boxes.filter(
+      (entry) => entry.canOpen || Number(entry.unlockTime) <= timestamp,
+    ).length;
+    return {
+      total: boxes.length,
+      ready,
+      locked: boxes.length - ready,
+      baskets: boxes.filter((entry) => entry.assets.length > 1).length,
+    };
+  }, [boxes, now]);
+  const filteredBoxes = useMemo(() => {
+    const timestamp = Math.floor(now / 1000);
+    const query = boxSearch.trim().replace(/^#/, "");
+    return boxes
+      .filter((entry) => {
+        const ready = entry.canOpen || Number(entry.unlockTime) <= timestamp;
+        const matchesStatus = boxFilter === "all" || (boxFilter === "ready" ? ready : !ready);
+        return matchesStatus && (!query || entry.tokenId.toString().includes(query));
+      })
+      .sort((a, b) => {
+        if (boxSort === "newest") return Number(b.createdAt - a.createdAt);
+        if (boxSort === "unlock") return Number(a.unlockTime - b.unlockTime);
+        const aReady = a.canOpen || Number(a.unlockTime) <= timestamp;
+        const bReady = b.canOpen || Number(b.unlockTime) <= timestamp;
+        return Number(bReady) - Number(aReady) || Number(a.unlockTime - b.unlockTime);
+      });
+  }, [boxFilter, boxSearch, boxSort, boxes, now]);
+  const pageCount = Math.max(1, Math.ceil(filteredBoxes.length / BOXES_PER_PAGE));
   const visibleBoxes = useMemo(
-    () => boxes.slice(boxPage * BOXES_PER_PAGE, (boxPage + 1) * BOXES_PER_PAGE),
-    [boxPage, boxes],
+    () => filteredBoxes.slice(boxPage * BOXES_PER_PAGE, (boxPage + 1) * BOXES_PER_PAGE),
+    [boxPage, filteredBoxes],
   );
+
+  useEffect(() => {
+    setBoxPage(0);
+  }, [boxFilter, boxSearch, boxSort]);
+
+  useEffect(() => {
+    setBoxPage((page) => Math.min(page, pageCount - 1));
+  }, [pageCount]);
 
   useEffect(() => {
     if (getCollectionLifecycleFixture(window.location.search)) return;
@@ -645,6 +733,21 @@ export default function BanmaoBoxPage() {
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
+
+  useEffect(() => {
+    if (!previewEntry) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.requestAnimationFrame(() => previewCloseRef.current?.focus());
+    const closeOnEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") setPreviewEntry(null);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [previewEntry]);
 
   const closeCollection = useCallback((restoreFocus = true) => {
     if (isBusy || collectionPending) return;
@@ -1252,6 +1355,18 @@ export default function BanmaoBoxPage() {
     return null;
   };
 
+  const handleApproveToken = async () => {
+    const validationError = validateCreate();
+    setFormError(validationError);
+    if (validationError || !needsApproval) return;
+    setActiveAction("Token approval");
+    try {
+      await approveToken(parsedAmount);
+    } catch {
+      // The hook exposes a normalized transaction error.
+    }
+  };
+
   const handleCreate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const validationError = validateCreate();
@@ -1456,6 +1571,31 @@ export default function BanmaoBoxPage() {
       : isBusy
         ? transactionMessage
         : null;
+  const isCreateTransaction =
+    phase !== "idle" &&
+    (activeAction === "BanmaoBox creation" || activeAction === "Batch creation");
+  const createProgressSteps = [
+    { id: "wallet", label: copy.stepWallet },
+    ...(needsApproval || Boolean(approvalHash)
+      ? [{ id: "approval", label: copy.approvalTransactionLabel }]
+      : []),
+    { id: "broadcast", label: copy.stepBroadcast },
+    { id: "confirmed", label: copy.stepConfirmed },
+  ];
+  const createProgressIndex = phase === "success"
+    ? createProgressSteps.length - 1
+    : transactionHash
+      ? createProgressSteps.findIndex((step) => step.id === "broadcast")
+      : approvalHash
+        ? createProgressSteps.findIndex((step) => step.id === "broadcast")
+        : 0;
+  const previewAssetCount = createMode === "basket" ? extraAssets.length + 1 : 1;
+  const previewBoxCount = createMode === "batch" ? batchRows.length : 1;
+  const previewModeLabel = createMode === "batch"
+    ? copy.modeBatch
+    : createMode === "basket"
+      ? copy.modeBasket
+      : copy.modeSingle;
 
   return (
     <main className={`box-page ${collectionOpen && isCollectionSheet ? "box-page--collection-sheet-open" : ""}`}>
@@ -2058,20 +2198,79 @@ export default function BanmaoBoxPage() {
               </div>
             ) : null}
 
-            <button
-              type="submit"
-              className="box-submit"
-              disabled={!isConnected || !isDeployed || !isDeploymentValidated || isBusy}
-              aria-describedby={createDisabledReason ? "box-create-disabled-reason" : undefined}
-            >
-              {isBusy ? <LoaderCircle className="box-spin" /> : <Gift />}
-              {isConnected
-                ? needsApproval
-                  ? copy.approveAndCreate
-                  : copy.createButton
-                : copy.connectToCreate}
-              {!isBusy ? <ArrowRight /> : null}
-            </button>
+            {isCreateTransaction ? (
+              <section
+                className={`box-create-progress box-create-progress--${phase}`}
+                aria-label={copy.transactionProgressLabel}
+                aria-live="polite"
+              >
+                <div className="box-create-progress__heading">
+                  <span className="box-create-progress__icon" aria-hidden="true">
+                    {phase === "success" ? <CheckCircle2 /> : phase === "error" ? <X /> : <LoaderCircle className="box-spin" />}
+                  </span>
+                  <span>
+                    <small>{copy.transactionProgressLabel}</small>
+                    <strong>{transactionMessage}</strong>
+                  </span>
+                </div>
+                <ol className="box-create-progress__steps">
+                  {createProgressSteps.map((step, index) => {
+                    const state = phase === "error" && index === createProgressIndex
+                      ? "error"
+                      : index < createProgressIndex || phase === "success"
+                        ? "complete"
+                        : index === createProgressIndex
+                          ? "active"
+                          : "pending";
+                    return (
+                      <li className={state} key={step.id}>
+                        <span aria-hidden="true">{state === "complete" ? <CheckCircle2 /> : index + 1}</span>
+                        <small>{step.label}</small>
+                      </li>
+                    );
+                  })}
+                </ol>
+                {transactionHash || approvalHash ? (
+                  <div className="box-create-progress__links">
+                    {approvalHash ? (
+                      <a href={`${explorerBaseUrl}/tx/${approvalHash}`} target="_blank" rel="noreferrer">
+                        {copy.approvalTransactionLabel} <ExternalLink />
+                      </a>
+                    ) : null}
+                    {transactionHash ? (
+                      <a href={`${explorerBaseUrl}/tx/${transactionHash}`} target="_blank" rel="noreferrer">
+                        {copy.viewTransaction} <ExternalLink />
+                      </a>
+                    ) : null}
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
+
+            {needsApproval ? (
+              <button
+                type="button"
+                className="box-submit box-submit--approve"
+                onClick={() => void handleApproveToken()}
+                disabled={!isDeployed || !isDeploymentValidated || isBusy}
+                aria-describedby={createDisabledReason ? "box-create-disabled-reason" : undefined}
+              >
+                {isBusy ? <LoaderCircle className="box-spin" /> : <ShieldCheck />}
+                {copy.approveToken}
+                {!isBusy ? <ArrowRight /> : null}
+              </button>
+            ) : (
+              <button
+                type="submit"
+                className="box-submit"
+                disabled={!isConnected || !isDeployed || !isDeploymentValidated || isBusy}
+                aria-describedby={createDisabledReason ? "box-create-disabled-reason" : undefined}
+              >
+                {isBusy ? <LoaderCircle className="box-spin" /> : <Gift />}
+                {isConnected ? copy.createButton : copy.connectToCreate}
+                {!isBusy ? <ArrowRight /> : null}
+              </button>
+            )}
             {createDisabledReason ? (
               <p className="box-submit-reason" id="box-create-disabled-reason" role="status">
                 {createDisabledReason}
@@ -2082,14 +2281,29 @@ export default function BanmaoBoxPage() {
 
           <aside className="box-live-summary" aria-label={copy.reviewTitle}>
             <div className="box-live-summary__visual" aria-hidden="true">
+              <div className="box-live-summary__badges">
+                <span>{previewModeLabel}</span>
+                <span>{getTier(parsedAmount, tokenDecimals)}</span>
+              </div>
               <GiftBoxArtwork ready={parsedAmount > 0n && Boolean(durationSeconds && durationSeconds > 0n)} />
+              <div className="box-live-summary__composition">
+                <span><Box /> {previewBoxCount}</span>
+                <span><Sparkles /> {previewAssetCount}</span>
+              </div>
               <span className="box-live-summary__status">
                 <LockKeyhole /> {durationSeconds && durationSeconds > 0n ? formatDuration(durationSeconds, language, copy) : copy.duration}
               </span>
             </div>
             <div className="box-live-summary__content">
               <span className="box-eyebrow"><Sparkles /> {copy.reviewTitle}</span>
-              <h2>{copy.createTitle}</h2>
+              <h2>{previewModeLabel}</h2>
+              {createMode === "basket" ? (
+                <div className="box-live-summary__assets">
+                  <span>{tokenSymbol}</span>
+                  {extraAssets.map((asset) => <span key={asset.token}>{asset.symbol}</span>)}
+                  <small>{copy.assetsInBasket(previewAssetCount)}</small>
+                </div>
+              ) : null}
               <dl className="box-live-summary__details">
               <div>
                 <dt>{copy.reviewTotal}</dt>
@@ -2114,17 +2328,31 @@ export default function BanmaoBoxPage() {
               {needsApproval ? <ShieldAlert /> : <ShieldCheck />}
               <span>{needsApproval ? copy.approvalNeeded : isConnected && parsedAmount > 0n ? copy.approvalReady : copy.checking}</span>
             </div>
-            <button
-              type="submit"
-              form="box-create-form"
-              className="box-submit box-live-summary__submit"
-              disabled={!isConnected || !isDeployed || !isDeploymentValidated || isBusy}
-              aria-describedby={createDisabledReason ? "box-create-disabled-reason" : undefined}
-            >
-              {isBusy ? <LoaderCircle className="box-spin" /> : <Gift />}
-              {isConnected ? copy.reviewTitle : copy.connectToCreate}
-              {!isBusy ? <ArrowRight /> : null}
+            {needsApproval ? (
+              <button
+                type="button"
+                className="box-submit box-submit--approve box-live-summary__submit"
+                onClick={() => void handleApproveToken()}
+                disabled={!isDeployed || !isDeploymentValidated || isBusy}
+                aria-describedby={createDisabledReason ? "box-create-disabled-reason" : undefined}
+              >
+                {isBusy ? <LoaderCircle className="box-spin" /> : <ShieldCheck />}
+                {copy.approveToken}
+                {!isBusy ? <ArrowRight /> : null}
               </button>
+            ) : (
+              <button
+                type="submit"
+                form="box-create-form"
+                className="box-submit box-live-summary__submit"
+                disabled={!isConnected || !isDeployed || !isDeploymentValidated || isBusy}
+                aria-describedby={createDisabledReason ? "box-create-disabled-reason" : undefined}
+              >
+                {isBusy ? <LoaderCircle className="box-spin" /> : <Gift />}
+                {isConnected ? copy.reviewTitle : copy.connectToCreate}
+                {!isBusy ? <ArrowRight /> : null}
+              </button>
+            )}
               <p className="box-live-summary__note"><ShieldCheck /> {copy.safetyText}</p>
             </div>
           </aside>
@@ -2154,6 +2382,55 @@ export default function BanmaoBoxPage() {
               <RefreshCw className={boxesLoading ? "box-spin" : ""} />
             </button>
           </div>
+
+          {isConnected && !boxesLoading && !boxesError && boxes.length > 0 ? (
+            <div className="box-portfolio-dashboard">
+              <dl className="box-portfolio-summary" aria-label={copy.boxesTitle}>
+                {([
+                  [dashboardCopy.total, boxPortfolio.total, "total"],
+                  [dashboardCopy.ready, boxPortfolio.ready, "ready"],
+                  [dashboardCopy.locked, boxPortfolio.locked, "locked"],
+                  [dashboardCopy.baskets, boxPortfolio.baskets, "basket"],
+                ] satisfies Array<[string, number, string]>).map(([label, value, tone]) => (
+                  <div className={`box-portfolio-stat box-portfolio-stat--${tone}`} key={String(tone)}>
+                    <dt>{label}</dt><dd>{value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <div className="box-portfolio-toolbar">
+                <div className="box-filter-group" aria-label={copy.boxesTitle}>
+                  {(["all", "ready", "locked"] as const).map((filter) => (
+                    <button key={filter} type="button" className={boxFilter === filter ? "is-active" : ""} aria-pressed={boxFilter === filter} onClick={() => setBoxFilter(filter)}>
+                      {filter === "all" ? dashboardCopy.all : filter === "ready" ? dashboardCopy.ready : dashboardCopy.locked}
+                      <span>{filter === "all" ? boxPortfolio.total : filter === "ready" ? boxPortfolio.ready : boxPortfolio.locked}</span>
+                    </button>
+                  ))}
+                </div>
+                <label className="box-portfolio-search">
+                  <Search aria-hidden="true" />
+                  <span className="box-sr-only">{dashboardCopy.search}</span>
+                  <input value={boxSearch} onChange={(event) => setBoxSearch(event.target.value)} inputMode="numeric" placeholder={dashboardCopy.search} />
+                </label>
+                <div className="box-portfolio-sort" role="group" aria-label={dashboardCopy.sortLabel}>
+                  {([
+                    ["ready", dashboardCopy.sortReady, <PackageOpen key="ready-icon" />],
+                    ["newest", dashboardCopy.sortNewest, <SortDesc key="newest-icon" />],
+                    ["unlock", dashboardCopy.sortUnlock, <CalendarClock key="unlock-icon" />],
+                  ] as const).map(([sort, label, icon]) => (
+                    <button
+                      key={sort}
+                      type="button"
+                      className={boxSort === sort ? "is-active" : ""}
+                      aria-pressed={boxSort === sort}
+                      onClick={() => setBoxSort(sort)}
+                    >
+                      {icon}<span>{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           {!isConnected ? (
             <div className="box-empty">
@@ -2200,6 +2477,14 @@ export default function BanmaoBoxPage() {
               <strong>{copy.noBoxes}</strong>
               <small>{copy.noBoxesHint}</small>
             </div>
+          ) : filteredBoxes.length === 0 ? (
+            <div className="box-empty box-empty--filtered">
+              <Search />
+              <strong>{dashboardCopy.noMatches}</strong>
+              <button type="button" onClick={() => { setBoxFilter("all"); setBoxSearch(""); }}>
+                {dashboardCopy.clearFilters}
+              </button>
+            </div>
           ) : (
             <>
               <div className="box-list">
@@ -2227,8 +2512,14 @@ export default function BanmaoBoxPage() {
                     onRefreshMetadata={(tokenId) =>
                       void refreshMetadata(tokenId)
                     }
+                    onPreview={setPreviewEntry}
+                    onCopyAddress={(value) => copyToClipboard(value, copy.tokenAddressLabel)}
+                    onAddressCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })}
+                    onCopyFailed={() => toast.error(copy.copyFailed)}
+                    explorerBaseUrl={explorerBaseUrl}
+                    collectionAddress={activeBoxAddress ?? chainConfig.boxAddress}
                     explorerUrl={boxNftExplorerUrl(
-                      chainConfig.chain.blockExplorers.default.url,
+                      explorerBaseUrl,
                       activeBoxAddress ?? chainConfig.boxAddress,
                       entry.tokenId,
                     )}
@@ -2472,6 +2763,30 @@ export default function BanmaoBoxPage() {
         </div>
       </details>
 
+      {previewEntry?.svg ? (
+        <div className="box-dialog-backdrop box-image-preview-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setPreviewEntry(null);
+        }}>
+          <section className="box-image-preview" role="dialog" aria-modal="true" aria-labelledby="box-image-preview-title">
+            <header>
+              <div>
+                <span>{BOX_DASHBOARD_COPY[language].previewImage}</span>
+                <h2 id="box-image-preview-title">{copy.boxNumber} #{previewEntry.tokenId.toString()}</h2>
+              </div>
+              <div className="box-image-preview__actions">
+                {boxNftExplorerUrl(explorerBaseUrl, activeBoxAddress ?? chainConfig.boxAddress, previewEntry.tokenId) ? (
+                  <a href={boxNftExplorerUrl(explorerBaseUrl, activeBoxAddress ?? chainConfig.boxAddress, previewEntry.tokenId)} target="_blank" rel="noopener noreferrer" title={copy.viewExplorer} aria-label={copy.viewExplorer}><ExternalLink /></a>
+                ) : null}
+                <button ref={previewCloseRef} type="button" onClick={() => setPreviewEntry(null)} title={BOX_DASHBOARD_COPY[language].closePreview} aria-label={BOX_DASHBOARD_COPY[language].closePreview}><X /></button>
+              </div>
+            </header>
+            <div className="box-image-preview__canvas">
+              <Image className="box-image-preview__image" src={svgImageDataUri(previewEntry.svg)} alt={`${copy.boxNumber} #${previewEntry.tokenId.toString()}`} width={1200} height={1200} unoptimized priority />
+            </div>
+          </section>
+        </div>
+      ) : null}
+
       {celebrationOpen && phase === "success" ? (
         <div className="box-dialog-backdrop box-celebration-backdrop" role="presentation" onMouseDown={(event) => {
           if (event.target === event.currentTarget) setCelebrationOpen(false);
@@ -2547,10 +2862,17 @@ export default function BanmaoBoxPage() {
             </label>
             <div className="box-dialog__actions">
               <button type="button" className="box-button box-button--secondary" onClick={() => setReviewOpen(false)} disabled={isBusy}>{copy.cancel}</button>
-              <button type="button" className="box-button box-button--primary" onClick={() => void confirmCreate()} disabled={isBusy || !lockAcknowledged}>
-                {isBusy ? <LoaderCircle className="box-spin" /> : <LockKeyhole />}
-                {copy.confirmCreate}
-              </button>
+              {needsApproval ? (
+                <button type="button" className="box-button box-button--primary" onClick={() => void handleApproveToken()} disabled={isBusy}>
+                  {isBusy ? <LoaderCircle className="box-spin" /> : <ShieldCheck />}
+                  {copy.approveToken}
+                </button>
+              ) : (
+                <button type="button" className="box-button box-button--primary" onClick={() => void confirmCreate()} disabled={isBusy || !lockAcknowledged}>
+                  {isBusy ? <LoaderCircle className="box-spin" /> : <LockKeyhole />}
+                  {copy.confirmCreate}
+                </button>
+              )}
             </div>
           </section>
         </div>
