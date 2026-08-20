@@ -22,6 +22,7 @@ export default function SessionManager({ language }: { language: string }) {
   const t = (key: Parameters<typeof aiText>[1]) => aiText(language, key);
   const visible = useMemo(() => filterSessions(api.sessions, query, archived), [api.sessions, archived, query]);
   const quota = getQuotaState(api.estimatedTokens, api.quotaTokens);
+  const mutationsDisabled = busy || api.actionsDisabled;
   const pendingSession = api.sessions.find((session) => session.id === pendingDelete);
 
   useEffect(() => { if (renamingId) renameRef.current?.focus(); }, [renamingId]);
@@ -71,7 +72,7 @@ export default function SessionManager({ language }: { language: string }) {
     {open && <button className="banmao-ai-session-scrim" type="button" aria-label={t("closeSessions")} onClick={() => closeDrawer()} />}
     <aside id="banmao-ai-sessions" className={`banmao-ai-sessions${open ? " is-open" : ""}`} aria-label={t("sessions")} aria-hidden={!open} onKeyDown={(event) => { if (event.key === "Escape") closeDrawer(); }}>
       <header><div><History size={17} /><strong>{t("sessions")}</strong></div><button type="button" aria-label={t("closeSessions")} onClick={() => closeDrawer()}><X size={18} /></button></header>
-      <button className="banmao-ai-new-session" type="button" disabled={!api.persistenceReady || busy} onClick={() => void create()}><MessageSquarePlus size={17} /> {t("newChat")}</button>
+      <button className="banmao-ai-new-session" type="button" disabled={!api.persistenceReady || mutationsDisabled} onClick={() => void create()}><MessageSquarePlus size={17} /> {t("newChat")}</button>
       <label className="banmao-ai-session-search"><Search size={15} /><span className="banmao-ai-sr-only">{t("searchSessions")}</span><input type="search" value={query} placeholder={t("searchSessions")} onChange={(event) => setQuery(event.target.value)} /></label>
       <div className="banmao-ai-session-tabs" role="group" aria-label={t("sessionView")}><button type="button" aria-pressed={!archived} onClick={() => setArchived(false)}>{t("activeSessions")}</button><button type="button" aria-pressed={archived} onClick={() => setArchived(true)}>{t("archivedSessions")}</button></div>
       {stateText && <p className="banmao-ai-session-state" role="status">{stateText}</p>}
@@ -81,12 +82,12 @@ export default function SessionManager({ language }: { language: string }) {
         {api.persistenceReady && api.sessions.length > 0 && !visible.length && <p className="banmao-ai-session-empty">{query ? t("noSessionResults") : archived ? t("noArchivedSessions") : t("noActiveSessions")}</p>}
         {visible.map((session) => <article className={session.id === api.currentSessionId ? "is-current" : ""} key={session.id}>
           {renamingId === session.id ? <form onSubmit={(event) => { event.preventDefault(); void rename(session.id); }}><label className="banmao-ai-sr-only" htmlFor={`rename-${session.id}`}>{t("sessionName")}</label><input ref={renameRef} id={`rename-${session.id}`} maxLength={SESSION_TITLE_MAX_LENGTH} value={title} onChange={(event) => setTitle(event.target.value)} /><div><button type="submit" disabled={busy}>{t("save")}</button><button type="button" onClick={() => setRenamingId(null)}>{t("cancel")}</button></div></form> : <>
-            <button className="banmao-ai-session-select" type="button" onClick={() => void switchTo(session.id)} aria-current={session.id === api.currentSessionId ? "true" : undefined}><strong>{session.title}</strong><small>{session.messageCount} {t("storedMessages")}</small></button>
+            <button className="banmao-ai-session-select" type="button" disabled={api.actionsDisabled} onClick={() => void switchTo(session.id)} aria-current={session.id === api.currentSessionId ? "true" : undefined}><strong>{session.title}</strong><small>{session.messageCount} {t("storedMessages")}</small></button>
             <div className="banmao-ai-session-actions">
-              <button type="button" aria-label={`${t("renameSession")}: ${session.title}`} onClick={() => { setRenamingId(session.id); setTitle(session.title); }}><Pencil size={14} /></button>
-              {!session.archivedAt && <button type="button" aria-label={`${t("archiveSession")}: ${session.title}`} onClick={() => void archive(session.id)}><Archive size={14} /></button>}
+              <button type="button" disabled={api.actionsDisabled} aria-label={`${t("renameSession")}: ${session.title}`} onClick={() => { setRenamingId(session.id); setTitle(session.title); }}><Pencil size={14} /></button>
+              {!session.archivedAt && <button type="button" disabled={api.actionsDisabled} aria-label={`${t("archiveSession")}: ${session.title}`} onClick={() => void archive(session.id)}><Archive size={14} /></button>}
               <button type="button" aria-label={`${t("exportSession")}: ${session.title}`} onClick={() => void exportSelected(session.id)}><Download size={14} /></button>
-              <button type="button" aria-label={`${t("deleteSession")}: ${session.title}`} onClick={() => setPendingDelete(session.id)}><Trash2 size={14} /></button>
+              <button type="button" disabled={api.actionsDisabled} aria-label={`${t("deleteSession")}: ${session.title}`} onClick={() => setPendingDelete(session.id)}><Trash2 size={14} /></button>
             </div>
           </>}
         </article>)}
@@ -99,7 +100,7 @@ export default function SessionManager({ language }: { language: string }) {
       <p className="banmao-ai-local-only">{t("localOnly")}</p>
     </aside>
     {pendingDelete && pendingSession !== undefined && <div className="banmao-ai-confirm" role="alertdialog" aria-modal="true" aria-labelledby="banmao-ai-delete-title" aria-describedby="banmao-ai-delete-description">
-      <div><h3 id="banmao-ai-delete-title">{t("deleteSessionTitle")}</h3><p id="banmao-ai-delete-description">{t("deleteSessionConfirm")}</p><div><button type="button" onClick={() => setPendingDelete(null)}>{t("cancel")}</button><button ref={confirmRef} className="is-danger" type="button" disabled={busy} onClick={() => void remove(pendingDelete)}>{t("delete")}</button></div></div>
+      <div><h3 id="banmao-ai-delete-title">{t("deleteSessionTitle")}</h3><p id="banmao-ai-delete-description">{t("deleteSessionConfirm")}</p><div><button type="button" onClick={() => setPendingDelete(null)}>{t("cancel")}</button><button ref={confirmRef} className="is-danger" type="button" disabled={mutationsDisabled} onClick={() => void remove(pendingDelete)}>{t("delete")}</button></div></div>
     </div>}
   </>;
 }

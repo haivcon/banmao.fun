@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAccount, useSignMessage } from "wagmi";
+import { parseUnits } from "viem";
 import type { TransactionEmotionEvent } from "../../../lib/ai/client/emotion";
 import { aiText } from "../../../lib/ai/client/i18n";
 import ActionConfirmation from "./ActionConfirmation";
@@ -64,7 +65,7 @@ export default function TransactionCopilot({ language, onEmotion }: { language: 
       const response = await fetch("/api/ai/transactions/prepare", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ intent: "stake", amount, lockOptionId, chainId: 196 }),
+        body: JSON.stringify({ intent: "stake", amount: parseUnits(amount, 18).toString(), lockOptionId, chainId: 196 }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || data.reason || t("draftUnavailable"));
@@ -102,12 +103,12 @@ export default function TransactionCopilot({ language, onEmotion }: { language: 
     <summary>{t("transactionDraft")}</summary>
     <p>{t("transactionPrivacy")}</p>
     <label htmlFor="banmao-ai-stake-amount">{t("stakeAmount")}</label>
-    <input id="banmao-ai-stake-amount" inputMode="numeric" pattern="[0-9]+" value={amount} onChange={(event) => setAmount(event.target.value)} />
+    <input id="banmao-ai-stake-amount" inputMode="decimal" pattern="[0-9]+([.][0-9]{0,18})?" value={amount} onChange={(event) => setAmount(event.target.value)} />
     <label htmlFor="banmao-ai-lock-option">{t("lockOption")}</label>
     <select id="banmao-ai-lock-option" value={lockOptionId} onChange={(event) => setLockOptionId(Number(event.target.value))}>
       <option value={0}>{t("flexible")}</option><option value={1}>{t("days30")}</option><option value={2}>{t("days90")}</option><option value={3}>{t("days180")}</option>
     </select>
-    <button type="button" disabled={busy || !isConnected || chainId !== 196 || !/^\d+$/.test(amount)} onClick={prepare}>{t("authenticatePrepare")}</button>
+    <button type="button" disabled={busy || !isConnected || chainId !== 196 || !/^\d+(\.\d{0,18})?$/.test(amount) || Number(amount) <= 0} onClick={prepare}>{t("authenticatePrepare")}</button>
     {draft && <ActionConfirmation draft={draft} language={language} onReview={simulate} />}
     {result && <pre aria-live="polite">{result}</pre>}
   </details>;

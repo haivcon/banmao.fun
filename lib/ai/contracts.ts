@@ -6,6 +6,7 @@ export const DEFI_APPS = ["overview", "staking", "burn", "airdrop", "box"] as co
 export type DeFiApp = (typeof DEFI_APPS)[number];
 
 export type AIConversationTurn = { role: "user" | "assistant"; content: string };
+export type AIMemoryChunk = { sessionId: string; sessionTitle: string; createdAt: number; user: string; assistant: string };
 export type AIEpisodicState = {
   recentTopics: string[];
   recentMotifs: string[];
@@ -32,8 +33,9 @@ export type AIChatRequest = {
     }>;
   };
   history?: AIConversationTurn[];
+  /** Opt-in browser-local retrieval, kept separate from the active conversation. */
+  memory?: AIMemoryChunk[];
   episodic?: AIEpisodicState;
-  connectedWalletHint?: { address: `0x${string}`; chainId: number };
 };
 
 export type ValidatedAIChatRequest = Omit<AIChatRequest, "model"> & { model: AIModel };
@@ -43,6 +45,8 @@ export type CollectionResultsPayload = { callId: string; observedAt: string; sea
 
 export type AIStreamEvent =
   | { event: "meta"; data: { requestId: string; conversationId?: string; model: AIModel; surface: AISurface; app?: DeFiApp; personaVersion: string; ragStatus: "ready"|"disabled"|"degraded"; ragHitCount: number; idempotency: "distributed"|"local-degraded"; rateLimit: "distributed"|"local-degraded" } }
+  | { event: "status"; data: { requestId: string; phase: "connecting" | "retrying" | "streaming"; attempt: number; elapsedMs: number } }
+  | { event: "heartbeat"; data: { requestId: string; phase: "connecting" | "retrying" | "streaming"; elapsedMs: number } }
   | { event: "delta"; data: { requestId:string; text: string } }
   | { event: "tool"; data: { requestId: string; callId: string; name: string; status: string; source: string; summary: string } }
   | { event: "collection_results"; data: CollectionResultsPayload & { requestId: string } }
@@ -52,7 +56,7 @@ export type AIStreamEvent =
   | { event: "done"; data: { requestId:string; finishReason: string } };
 
 export const AI_STREAM_MAX_EVENT_BYTES = 64 * 1024;
-const AI_STREAM_EVENTS = new Set(["meta", "delta", "tool", "collection_results", "citation", "usage", "error", "done"]);
+const AI_STREAM_EVENTS = new Set(["meta", "status", "heartbeat", "delta", "tool", "collection_results", "citation", "usage", "error", "done"]);
 export function parseAIStreamBlock(buffer: string): { separator: number; event?: AIStreamEvent } {
   const separator = buffer.search(/\r?\n\r?\n/);
   if (separator < 0) { if (new TextEncoder().encode(buffer).byteLength > AI_STREAM_MAX_EVENT_BYTES) throw new Error("SSE_EVENT_TOO_LARGE"); return { separator }; }
@@ -67,6 +71,9 @@ export function parseAIStreamBlock(buffer: string): { separator: number; event?:
   if (eventName === "delta" && typeof value.text !== "string") throw new Error("MALFORMED_SSE_EVENT");
   if (eventName === "done" && typeof value.finishReason !== "string") throw new Error("MALFORMED_SSE_EVENT");
   if (eventName === "error" && (typeof value.code !== "string" || typeof value.retryable !== "boolean")) throw new Error("MALFORMED_SSE_EVENT");
+  if ((eventName === "status" || eventName === "heartbeat") && (!["connecting", "retrying", "streaming"].includes(String(value.phase)) || typeof value.elapsedMs !== "number")) throw new Error("MALFORMED_SSE_EVENT");
+  if (eventName === "status" && typeof value.attempt !== "number") throw new Error("MALFORMED_SSE_EVENT");
   if (eventName === "meta" && (!["ready", "disabled", "degraded"].includes(String(value.ragStatus)) || typeof value.ragHitCount !== "number")) throw new Error("MALFORMED_SSE_EVENT");
+  if (eventName === "citation" && (typeof value.sourcePath !== "string" || typeof value.documentId !== "string" || typeof value.version !== "string" || typeof value.excerpt !== "string")) throw new Error("MALFORMED_SSE_EVENT");
   return { separator, event: { event: eventName, data } as AIStreamEvent };
 }

@@ -76,6 +76,19 @@ test("persisted tool activity coalesces running and terminal entries by call ID"
   expect(provider).not.toMatch(/tools\.push\(streamEvent\.data\); dispatch/);
 });
 
+test("persistence lifecycle fails closed and prevents toggling during a stream", () => {
+  const provider=fs.readFileSync(path.join(process.cwd(), "app/components/ai/AIChatProvider.tsx"), "utf8");
+  const controls=fs.readFileSync(path.join(process.cwd(), "app/components/ai/PrivacyControls.tsx"), "utf8");
+  expect(provider).toMatch(/catch \{\s*enabled = false;\s*try \{ localStorage\.setItem\(AI_PERSISTENCE_ENABLED_KEY, "false"\)/);
+  expect(provider.match(/setPersistenceEnabledState\(false\)/g)?.length).toBeGreaterThanOrEqual(2);
+  expect(provider).toContain("persistenceToggleDisabled={lifecycleBusy}");
+  expect(provider).toContain('if (streamingRef.current) return; requestGeneration.current += 1; dispatch({ type: "clear" })');
+  expect(provider).toContain('if (generation !== requestGeneration.current) { await reader.cancel(); return; }');
+  expect(controls).toContain("disabled={props.optInDisabled}");
+  expect(controls).toContain("disabled={props.dataActionsDisabled}");
+  expect(provider).toMatch(/retrying \? await repository\.current\?\.replaceTrailingTurn\(currentSessionId, message, additions\)/);
+});
+
 test("Escape closes the dialog and mount cleanup restores launcher focus", () => {
   const panel=fs.readFileSync(path.join(process.cwd(), "app/components/ai/AIChatPanel.tsx"), "utf8");
   const provider=fs.readFileSync(path.join(process.cwd(), "app/components/ai/AIChatProvider.tsx"), "utf8");

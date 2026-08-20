@@ -40,7 +40,7 @@ describe("OpenAI-compatible client", () => {
     expect(chunks).toEqual(["Hi"]);
   });
 
-  test("redacts non-2xx upstream errors and never retries/falls back", async () => {
+  test("redacts non-2xx upstream errors and retries once before output without fallback", async () => {
     const fetchImpl = jest.fn(async () =>
       new Response("Bearer unit-test-placeholder internal detail", { status: 503 }),
     );
@@ -52,9 +52,27 @@ describe("OpenAI-compatible client", () => {
       )) {
         // consume stream
       }
-    }).rejects.toMatchObject({ code: "UPSTREAM_UNAVAILABLE", status: 503 });
-    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    }).rejects.toMatchObject({ code: "UPSTREAM_SERVER_ERROR", status: 503, phase: "connecting", retryable: true });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
+
+  test("retries a transient connection once before output and reports attempt phases", async () => {
+    const phases: string[] = [];
+    const fetchImpl = jest.fn().mockRejectedValueOnce(new TypeError("network")).mockResolvedValueOnce(sseResponse('data: {"choices":[{"delta":{"content":"Hi"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n'));
+    const chunks: string[] = [];
+    for await (const chunk of streamChatCompletion({ model: "banmao.fun", messages: [{ role: "user", content: "hello" }] }, { config, fetchImpl, sleep: async () => {}, random: () => 0, onAttempt: (attempt, phase) => phases.push(`${attempt}:${phase}`) })) chunks.push(chunk);
+    expect(chunks).toEqual(["Hi"]); expect(fetchImpl).toHaveBeenCalledTimes(2); expect(phases).toEqual(["1:connecting", "2:retrying", "2:streaming"]);
+  });
+
+  test("never retries after the first output token", async () => {
+    let reads = 0;
+    const fetchImpl = jest.fn(async () => new Response(new ReadableStream({ pull(controller) { if (reads++ === 0) controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"partial"}}]}\n\n')); else controller.error(new TypeError("reset")); } })));
+    const chunks: string[] = [];
+    await expect(async () => { for await (const chunk of streamChatCompletion({ model: "banmao.fun", messages: [{ role: "user", content: "hello" }] }, { config, fetchImpl, sleep: async () => {} })) chunks.push(chunk); }).rejects.toBeInstanceOf(UpstreamAIError);
+    expect(chunks).toEqual(["partial"]); expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  test.each([[401,"UPSTREAM_AUTH_FAILED"],[429,"UPSTREAM_RATE_LIMITED"],[503,"UPSTREAM_SERVER_ERROR"]])("classifies upstream HTTP %s as %s",async(status,code)=>{const fetchImpl=jest.fn(async()=>new Response("",{status}));await expect(async()=>{for await(const _chunk of streamChatCompletion({model:"banmao.fun",messages:[{role:"user",content:"hello"}]},{config:{...config,upstreamRetryLimit:0},fetchImpl})) {}}).rejects.toMatchObject({code,status});});
 
   test("accepts the upstream terminal finish reason when the provider omits [DONE]", async () => {
     const fetchImpl = jest.fn(async () => sseResponse(

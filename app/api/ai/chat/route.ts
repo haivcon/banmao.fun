@@ -41,9 +41,12 @@ function errorStatus(error: unknown) {
   if (error.code === "MODEL_REJECTED") return 422;
   if (error.code === "REQUEST_ABORTED") return 499;
   if (error.code === "UPSTREAM_TIMEOUT") return 504;
+  if (error.code === "UPSTREAM_RATE_LIMITED") return 429;
+  if (error.code === "UPSTREAM_AUTH_FAILED") return 503;
   return 502;
 }
 function errorCode(error: unknown) { return error instanceof UpstreamAIError ? error.code : "UPSTREAM_UNAVAILABLE"; }
+function errorRetryable(error: unknown) { return error instanceof UpstreamAIError && error.retryable && error.code !== "REQUEST_ABORTED"; }
 
 export async function POST(request: Request) {
   let config: ReturnType<typeof loadAIConfig>;
@@ -58,7 +61,7 @@ export async function POST(request: Request) {
   let parsed: unknown;
   try { parsed = JSON.parse(raw); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   let validated: ReturnType<typeof validateChatRequest>;
-  try { validated = validateChatRequest(parsed, config.defaultModel); enforceRequestBudget({ message: validated.message, maxPromptBytes: config.maxRequestBytes, maxEstimatedTokens: config.maxEstimatedTokens }); }
+  try { validated = validateChatRequest(parsed, config.defaultModel); enforceRequestBudget({ message: raw, maxPromptBytes: config.maxRequestBytes, maxEstimatedTokens: config.maxEstimatedTokens }); }
   catch (error) { return NextResponse.json({ error: error instanceof AIValidationError ? error.message : "Request budget exceeded" }, { status: error instanceof AIValidationError ? 400 : 413 }); }
 
   const now = Date.now();
@@ -71,13 +74,13 @@ export async function POST(request: Request) {
     return new Response(new ReadableStream({ start(controller) { controller.enqueue(replay); controller.close(); } }), { status: 200, headers: { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-cache, no-store", "x-idempotent-replay": "local-degraded" } });
   }
   if (existing) return NextResponse.json({ error: "Request already in flight", requestId: validated.requestId, idempotency: "local-degraded" }, { status: 409, headers: { "retry-after": "1" } });
-  requestClaims.set(validated.requestId, { state: "in-flight", expires: now + 60_000, fingerprint });
+  requestClaims.set(validated.requestId, { state: "in-flight", expires: now + config.requestTimeoutMs + 15_000, fingerprint });
   const routed = routeContext(validated.context);
   const startedAt = Date.now();
   let ragMode: "lexical" | "hybrid" = "lexical";
   let ragStatus: "ready" | "disabled" | "degraded" = config.flags.rag ? "ready" : "disabled";
   let corpus: Awaited<ReturnType<typeof loadApprovedCorpus>> = [];
-  let evidence: Array<{ chunkId: string; sourcePath: string; excerpt: string }> = [];
+  let evidence: Array<{ chunkId: string; documentId: string; version: string; sourcePath: string; excerpt: string }> = [];
   const docsIntent = config.flags.rag && shouldRetrieveDocs(validated.message);
   if (docsIntent) {
     try { corpus = await loadApprovedCorpus(); const result = await retrieveHybrid(corpus, validated.message, 4); evidence = result.hits; ragMode = result.mode; } catch { evidence = []; ragStatus = "degraded"; }
@@ -92,7 +95,7 @@ export async function POST(request: Request) {
   });
   const onchainosTools = createOnchainOSReadOnlyDescriptors({ enabled: config.flags.onchainosReadOnly });
   const marketTools = preferOnchainOSReadOnlyTools(domainTools, onchainosTools);
-  const contextualTools = filterToolsForContext([...(ragStatus === "ready" ? [docsSearchTool(corpus)] : []), ...marketTools], routed);
+  const contextualTools = filterToolsForContext([...(ragStatus === "ready" && corpus.length > 0 ? [docsSearchTool(corpus)] : []), ...marketTools], routed);
   const tools = createToolRegistry(config.flags.tools ? contextualTools : []).descriptors;
   const requestId = validated.requestId;
   const orchestrationAbort = new AbortController();
@@ -100,9 +103,10 @@ export async function POST(request: Request) {
   else request.signal.addEventListener("abort", () => orchestrationAbort.abort(request.signal.reason), { once: true });
   const body = new ReadableStream({
     async start(controller) {
-      const chunks:Uint8Array[]=[];let streamBytes=0;let firstTokenAt:number|undefined;let finishReason="unknown";let inputTokens:number|undefined;let outputTokens:number|undefined;let toolRounds=0;
-      const emit=(event:string,data:unknown)=>{const chunk=sse(event,data);chunks.push(chunk);streamBytes+=chunk.byteLength;controller.enqueue(chunk);};
+      const chunks:Uint8Array[]=[];let streamBytes=0;let firstTokenAt:number|undefined;let finishReason="unknown";let inputTokens:number|undefined;let outputTokens:number|undefined;let toolRounds=0;let retryCount=0;let phase:"connecting"|"retrying"|"streaming"="connecting";let closed=false;
+      const emit=(event:string,data:unknown)=>{if(closed)return;const chunk=sse(event,data);chunks.push(chunk);streamBytes+=chunk.byteLength;controller.enqueue(chunk);};
       emit("meta", { requestId, model: validated.model, personaVersion: BANMAO_PERSONA_VERSION, ragMode, ragStatus,ragHitCount: evidence.length, surface: routed.surface, app: routed.app, idempotency:"local-degraded",rateLimit:rate.mode });
+      const heartbeat=setInterval(()=>emit("heartbeat",{requestId,phase,elapsedMs:Date.now()-startedAt}),config.heartbeatIntervalMs);
       try {
         for await (const event of runOrchestrator({
           model: validated.model,
@@ -110,13 +114,14 @@ export async function POST(request: Request) {
           context: { ...routed, locale: validated.context.locale, pageElements: validated.context.pageElements },
           evidence,
           history: validated.history,
+          memory: validated.memory,
           recentMotifs: validated.episodic?.recentMotifs,
           authenticated: false,
         }, {
           tools: [...tools],
           maxToolRounds: config.maxToolRounds,
           signal: orchestrationAbort.signal,
-          completion: (completionRequest, signal) => streamCompletion(completionRequest, { config, signal }),
+          completion: (completionRequest, signal) => streamCompletion(completionRequest, { config, signal, onAttempt:(attempt,nextPhase)=>{phase=nextPhase;if(attempt>1)retryCount=Math.max(retryCount,attempt-1);emit("status",{requestId,phase:nextPhase,attempt,elapsedMs:Date.now()-startedAt});} }),
         })) {
           if (event.type === "delta") {firstTokenAt??=Date.now();emit("delta", { requestId,text: event.text });}
           else if (event.type === "citation") emit("citation", { requestId, ...event });
@@ -127,12 +132,12 @@ export async function POST(request: Request) {
           else emit("error", { code: event.code,retryable:false,requestId });
         }
         emit("done", { requestId,finishReason });const replay=new Uint8Array(streamBytes);let offset=0;for(const chunk of chunks){replay.set(chunk,offset);offset+=chunk.byteLength;}requestClaims.set(requestId,{state:"complete",expires:Date.now()+60_000,fingerprint,body:replay});
-        console.info("banmao_ai_metric", safeLogRecord({ requestId, model: validated.model, surface: routed.surface, status: "ok", durationMs: Date.now() - startedAt,ttftMs:firstTokenAt?firstTokenAt-startedAt:undefined,streamBytes,finishReason,inputTokens,outputTokens,toolRounds, ragMode,ragStatus, ragHitCount: evidence.length }));
+        console.info("banmao_ai_metric", safeLogRecord({ requestId, model: validated.model, surface: routed.surface, status: "ok", durationMs: Date.now() - startedAt,ttftMs:firstTokenAt?firstTokenAt-startedAt:undefined,streamBytes,finishReason,inputTokens,outputTokens,toolRounds,retryCount, ragMode,ragStatus, ragHitCount: evidence.length }));
       } catch (error) {
         requestClaims.delete(requestId);
-        emit("error", { code: errorCode(error), status: errorStatus(error),retryable:errorStatus(error)>=500,requestId });
-        console.warn("banmao_ai_metric", safeLogRecord({ requestId, model: validated.model, surface: routed.surface, status: "error", durationMs: Date.now() - startedAt, ragMode,ragStatus, ragHitCount: evidence.length, errorCode: errorCode(error) }));
-      } finally { controller.close(); }
+        emit("error", { code: errorCode(error), status: errorStatus(error),retryable:errorRetryable(error),requestId });
+        console.warn("banmao_ai_metric", safeLogRecord({ requestId, model: validated.model, surface: routed.surface, status: "error", durationMs: Date.now() - startedAt, ragMode,ragStatus, ragHitCount: evidence.length, errorCode: errorCode(error),errorPhase:error instanceof UpstreamAIError?error.phase:phase,upstreamStatus:error instanceof UpstreamAIError?error.status:undefined,retryCount }));
+      } finally { clearInterval(heartbeat);closed=true;controller.close(); }
     },
     cancel(reason) { orchestrationAbort.abort(reason); },
   });

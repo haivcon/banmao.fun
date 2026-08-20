@@ -1,5 +1,5 @@
 import "server-only";
-import { encodeFunctionData, getAddress, keccak256, toHex } from "viem";
+import { encodeFunctionData, formatUnits, getAddress, keccak256, toHex } from "viem";
 
 type Address = `0x${string}`;
 type Input = {
@@ -92,7 +92,7 @@ export function prepareAction(
     to,
     data,
     value: "0",
-    humanSummary: `Review staking ${input.amount} base units with lock option ${lockOptionId}`,
+    humanSummary: `Review staking ${formatUnits(BigInt(input.amount), 18)} BANMAO with lock option ${lockOptionId}`,
     risks: ["Simulation can become stale before signing"],
     expiresAt,
     requiresUserReviewAndSignature: true,
@@ -104,7 +104,7 @@ export function prepareAction(
 export async function simulateAction(
   input: { actionId: string; draftHash: string; wallet: Address },
   store: ReturnType<typeof createDraftStore>,
-  reader: (action: PreparedAction) => Promise<{ success: boolean; simulationBlock: string; stateDeltaPreview: unknown[]; warnings: string[] }>,
+  reader: (action: PreparedAction) => Promise<{ success: boolean; simulationBlock: string; preflightSnapshot: unknown[]; warnings: string[] }>,
   now = Date.now(),
 ) {
   const action = store.get(input.actionId);
@@ -134,7 +134,7 @@ export async function simulatePreparedAction(
   const before = await client.getBalance({ address: action.wallet, blockNumber: simulationBlock });
   await client.call({ account: action.wallet, to: action.to, data: action.data, value });
   const gasEstimate = await client.estimateGas({ account: action.wallet, to: action.to, data: action.data, value });
-  const stateDeltaPreview = [{ field: "nativeBalance", before: before.toString(), after: before.toString() }];
+  const preflightSnapshot = [{ field: "nativeBalance", value: before.toString() }];
   if (reads && client.readContract) {
     const [tokenBalance, allowance, summary] = await Promise.all([
       client.readContract({ address: reads.token, abi: reads.erc20Abi, functionName: "balanceOf", args: [action.wallet], blockNumber: simulationBlock }),
@@ -142,17 +142,17 @@ export async function simulatePreparedAction(
       client.readContract({ address: action.to, abi: reads.stakingAbi, functionName: "userSummary", args: [action.wallet], blockNumber: simulationBlock }),
     ]);
     const stakedAmount = Array.isArray(summary) ? summary[0] : 0;
-    stateDeltaPreview.push(
-      { field: "tokenBalance", before: String(tokenBalance), after: String(tokenBalance) },
-      { field: "allowance", before: String(allowance), after: String(allowance) },
-      { field: "stakedAmount", before: String(stakedAmount), after: String(stakedAmount) },
+    preflightSnapshot.push(
+      { field: "tokenBalance", value: String(tokenBalance) },
+      { field: "allowance", value: String(allowance) },
+      { field: "stakedAmount", value: String(stakedAmount) },
     );
   }
   return {
     success: true,
     gasEstimate: gasEstimate.toString(),
     simulationBlock: simulationBlock.toString(),
-    stateDeltaPreview,
+    preflightSnapshot,
     warnings: ["Read-only eth_call cannot guarantee execution at a later block"],
   };
 }

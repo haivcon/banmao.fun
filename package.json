@@ -83,6 +83,7 @@
     "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.0.0",
+    "fake-indexeddb": "^6.2.5",
     "fastestsmallesttextencoderdecoder": "^1.0.22",
     "ganache": "^7.9.2",
     "javascript-obfuscator": "^4.1.1",

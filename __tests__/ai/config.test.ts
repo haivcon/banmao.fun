@@ -12,6 +12,7 @@ describe("AI server config", () => {
     expect(config.baseUrl).toBe("https://xlayerbot.fun/v1");
     expect(config.models).toEqual(["banmao.fun"]);
     expect(config.defaultModel).toBe("banmao.fun");
+    expect(config).toMatchObject({ requestTimeoutMs: 75_000, connectTimeoutMs: 15_000, streamIdleTimeoutMs: 30_000, upstreamRetryLimit: 1, heartbeatIntervalMs: 10_000 });
     expect(Object.isFrozen(config)).toBe(true);
   });
 

@@ -12,7 +12,7 @@ Upstream text deltas are emitted incrementally at safety-buffered sentence bound
 
 ## Browser memory
 
-Conversation persistence is disabled by default. When the user opts in, a versioned bounded record is stored in localStorage under `banmao-ai-memory-v1`, expires after 30 minutes, and contains at most 20 turns. Disabling or clearing memory removes persisted content. Wallet addresses and session/wallet secrets are not added to conversation memory by the memory module.
+Conversation persistence is disabled by default. Without opt-in, chat uses an in-memory repository for the current page session. When the user opts in, versioned sessions are stored in IndexedDB with a 500,000 estimated-token cap per session. At most 12 recent complete messages within the independent request budget are sent as model context. Disabling persistence stops durable writes; saved sessions remain available for explicit export or deletion when persistence is enabled again. Browser wallet state and session/wallet secrets are not added to chat requests or conversation persistence; SIWE wallet proof is isolated to transaction prepare/simulate endpoints.
 
 ## Language and prompts
 

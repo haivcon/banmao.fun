@@ -61,6 +61,22 @@ export const SUGGESTED_PROMPTS: Record<AISurface, readonly string[]> = {
   ],
 };
 export function initialClientState(model: AIModel | null = null): ClientState { return { model, models: model ? [model] : [], messages: [], tools: [], citations: [], status: "idle" }; }
+
+export function clientMessagesForRequestContext(
+  messages: readonly ClientMessage[],
+  status: ClientState["status"],
+  retrying = false,
+): Array<ClientMessage & { status?: "interrupted" }> {
+  const hasTrailingTurn = messages.at(-2)?.role === "user" && messages.at(-1)?.role === "assistant";
+  const end = retrying && hasTrailingTurn ? messages.length - 2 : messages.length;
+  return messages.slice(0, end).map((message, index) => ({
+    ...message,
+    ...(status === "interrupted" && !retrying && index === messages.length - 1 && message.role === "assistant"
+      ? { status: "interrupted" as const }
+      : {}),
+  }));
+}
+
 export function migratePersistedModel(model: unknown): { model: AIModel; migrated: boolean } {
   if (model === "banmao.fun") return { model, migrated: false };
   if (model === "open9" || model === "xenon1") return { model: "banmao.fun", migrated: true };

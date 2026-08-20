@@ -19,7 +19,15 @@ const contextSchema = z.object({
 
 const historySchema = z.array(z.object({
   role: z.enum(["user", "assistant"]),
-  content: z.string().min(1).max(4000),
+  content: z.string().min(1).max(16_000),
+}).strict()).max(2048);
+
+const memorySchema = z.array(z.object({
+  sessionId: z.string().min(1).max(128),
+  sessionTitle: z.string().min(1).max(120),
+  createdAt: z.number().int().nonnegative(),
+  user: z.string().min(1).max(8_000),
+  assistant: z.string().min(1).max(8_000),
 }).strict()).max(12);
 
 const motifSchema = z.enum([
@@ -43,11 +51,8 @@ const chatRequestSchema = z.object({
   model: z.enum(AI_MODELS).optional(),
   context: contextSchema,
   history: historySchema.optional(),
+  memory: memorySchema.optional(),
   episodic: episodicSchema.optional(),
-  connectedWalletHint: z.object({
-    address: z.custom<`0x${string}`>((value) => typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value)),
-    chainId: z.literal(196),
-  }).strict().optional(),
 }).strict();
 
 export class AIValidationError extends Error {

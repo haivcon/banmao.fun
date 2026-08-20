@@ -3,7 +3,7 @@
 import { ArrowDown, ArrowUp, CircleAlert, Compass, ShieldCheck, Sparkles, Square, TrendingUp, X } from "lucide-react";
 import { type CSSProperties, type FormEvent, type KeyboardEvent, type PointerEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ClientState } from "../../../lib/ai/client/state";
-import { aiPrompts, aiText } from "../../../lib/ai/client/i18n";
+import { aiPrompts, aiReliabilityError, aiText } from "../../../lib/ai/client/i18n";
 import { getStatusPhrase, type BanmaoEmotion } from "../../../lib/ai/client/emotion";
 import type { AIPageAction } from "../../../lib/ai/client/actionBridge";
 import type { AISurface } from "../../../lib/ai/contracts";
@@ -23,11 +23,12 @@ type Props = {
   state: ClientState; surface: AISurface; emotion: BanmaoEmotion; language: string; input: string;
   setInput: (value: string) => void; onInputFocus: () => void; submit: (event: FormEvent) => void;
   stop: () => void; close: () => void; retry: () => void; optIn: boolean; setOptIn: (value: boolean) => void;
+  crossSessionMemory: boolean; setCrossSessionMemory: (value: boolean) => void; usedMemorySessions: Array<{ id: string; title: string }>; dismissMemorySession: (id: string) => void;
   mascotVisible: boolean; setMascotVisible: (value: boolean) => void; reducedMotion: boolean;
   setReducedMotion: (value: boolean) => void; onAnimationComplete: () => void; clear: () => void;
   exportData: () => void; children?: ReactNode;
   pendingAction: AIPageAction | null; actionNotice: string; confirmAction: () => void; cancelAction: () => void; memoryTurns: number;
-  persistenceReady: boolean; persistenceError?: string;
+  persistenceReady: boolean; persistenceError?: string; persistenceToggleDisabled: boolean;
 };
 
 const PROMPT_ICONS = [Sparkles, TrendingUp, ShieldCheck];
@@ -43,7 +44,7 @@ export default function AIChatPanel(props: Props) {
   const streaming = props.state.status === "streaming";
   const phrase = getStatusPhrase(props.emotion, props.language);
   const t = (key: Parameters<typeof aiText>[1]) => aiText(props.language, key);
-  const errorText = props.state.error === "SESSION_QUOTA_EXCEEDED" ? t("quotaExceeded") : props.state.error === "MODEL_UNAVAILABLE" ? t("modelUnavailable") : props.state.error;
+  const errorText = props.state.error === "SESSION_QUOTA_EXCEEDED" ? t("quotaExceeded") : props.state.error === "MODEL_UNAVAILABLE" ? t("modelUnavailable") : props.state.error ? aiReliabilityError(props.language, props.state.error) : undefined;
   const prompts = aiPrompts(props.language, props.surface);
   const surfaceLabel = props.surface === "landing" ? t("ecosystem") : props.surface === "collection" ? t("collections") : props.surface === "defi" ? "DeFi" : "GameFi";
 
@@ -176,8 +177,9 @@ export default function AIChatPanel(props: Props) {
         <div className="banmao-ai-composer-bar">{props.state.model&&<ModelSelector language={props.language} />}{props.input.length > 7000 && <span className="banmao-ai-count">{props.input.length}/8000</span>}<span className="banmao-ai-composer-hint">{t("sendHint")}</span>{streaming ? <button className="banmao-ai-stop" type="button" onClick={props.stop} aria-label={t("stop")}><Square size={13} fill="currentColor" /></button> : <button className="banmao-ai-send" disabled={!props.input.trim()} aria-label={t("send")}><ArrowUp size={17} /></button>}</div>
       </form>
       <p className="banmao-ai-disclaimer"><ShieldCheck size={12} /> {t("localHistory")}: {props.optIn ? `${props.memoryTurns} ${t("storedMessages")} · ${t("persistenceOn")}` : t("persistenceOff")} · {t("review")}</p>
+      {!!props.usedMemorySessions.length && <p className="banmao-ai-disclaimer" role="status"><Sparkles size={12} /> {props.language.toLowerCase().startsWith("vi") ? "Đã dùng trí nhớ từ" : "Memory used from"}: {props.usedMemorySessions.map((source) => <span key={source.id}>{source.title} <button type="button" onClick={() => props.dismissMemorySession(source.id)} aria-label={`Remove memory from ${source.title}`}>×</button></span>)}</p>}
       {props.persistenceError && <p className="banmao-ai-disclaimer" role="status"><CircleAlert size={12} /> {t("persistenceWarning")}</p>}
-      <PrivacyControls language={props.language} optIn={props.optIn} onOptIn={props.setOptIn} mascotVisible={props.mascotVisible} onMascotVisible={props.setMascotVisible} reducedMotion={props.reducedMotion} onReducedMotion={props.setReducedMotion} onClear={props.clear} onExport={props.exportData} />
+      <PrivacyControls language={props.language} optIn={props.optIn} onOptIn={props.setOptIn} crossSessionMemory={props.crossSessionMemory} onCrossSessionMemory={props.setCrossSessionMemory} optInDisabled={props.persistenceToggleDisabled} dataActionsDisabled={props.persistenceToggleDisabled} mascotVisible={props.mascotVisible} onMascotVisible={props.setMascotVisible} reducedMotion={props.reducedMotion} onReducedMotion={props.setReducedMotion} onClear={props.clear} onExport={props.exportData} />
       {props.children}
     </footer>
   </section>;

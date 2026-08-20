@@ -38,16 +38,20 @@ describe("AI chat request validation", () => {
     expect(value.history).toHaveLength(1);
   });
 
+  test("accepts separately sourced cross-session memory", () => {
+    const value = validateChatRequest({ ...request, memory: [{ sessionId: "old", sessionTitle: "BanmaoBox notes", createdAt: 10, user: "Which box?", assistant: "Box #1" }] }, "banmao.fun");
+    expect(value.memory?.[0]).toMatchObject({ sessionId: "old", user: "Which box?" });
+  });
+
   test("accepts bounded allowlisted page element context", () => {
     const value = validateChatRequest({ ...request, context: { ...request.context, pageElements: [{ id: "staking.amount", type: "input", label: "Stake amount", action: "fill", risk: "reversible" }] } }, "banmao.fun");
     expect(value.context.pageElements?.[0].id).toBe("staking.amount");
   });
 
-  test("treats browser wallet JSON only as a connected wallet hint", () => {
-    const connectedWalletHint = { address: "0x0000000000000000000000000000000000000001", chainId: 196 } as const;
-    const value = validateChatRequest({ ...request, connectedWalletHint }, "banmao.fun");
-    expect(value.connectedWalletHint).toEqual(connectedWalletHint);
-    expect(() => validateChatRequest({ ...request, wallet: connectedWalletHint }, "banmao.fun")).toThrow("Unknown field");
+  test("rejects unverified browser wallet context", () => {
+    const wallet = { address: "0x0000000000000000000000000000000000000001", chainId: 196 } as const;
+    expect(() => validateChatRequest({ ...request, connectedWalletHint: wallet }, "banmao.fun")).toThrow("Unknown field");
+    expect(() => validateChatRequest({ ...request, wallet }, "banmao.fun")).toThrow("Unknown field");
   });
 
   test("rejects invalid page selectors and unknown element fields", () => {
@@ -59,7 +63,7 @@ describe("AI chat request validation", () => {
   });
 
   test("rejects unbounded history", () => {
-    expect(() => validateChatRequest({ ...request, history: Array.from({ length: 13 }, () => ({ role: "user", content: "x" })) }, "banmao.fun")).toThrow("Invalid chat request");
+    expect(() => validateChatRequest({ ...request, history: Array.from({ length: 2049 }, () => ({ role: "user", content: "x" })) }, "banmao.fun")).toThrow("Invalid chat request");
   });
 
   test("rejects oversized messages", () => {
