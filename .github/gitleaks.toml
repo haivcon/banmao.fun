@@ -11,8 +11,8 @@ regexes = [
   # Public EVM address fallback in the audited testnet deployment script (40 hex chars, not a key).
   '''^0x[a-fA-F0-9]{40}$''',
   # Stable browser-storage/version keys, not credentials.
-  '''^banmao-ai-floating-position$''',
-  '''^banmao-ai-legacy-migrated$''',
+  '''^banmao-ai-floating-position-v1$''',
+  '''^banmao-ai-legacy-migrated-v1$''',
   '''^wc_season_branding_v1$''',
 ]
 commits = [
@@ -20,7 +20,4 @@ commits = [
   "2e9dbede1f23fd24d7824ae05c02074c33d0f3eb",
   # Public on-chain BANMAO token address used in test fixtures (not a secret)
   "e5a83413d1d166d77b9f6e11bde3544f9523f81c",
-  # Browser-local storage key additions (not credentials)
-  "cf14520597a7c01f532143bb43a3f67f7724f217",
-  "465a82d29c5425796c1fcd7ed149f31c32497591",
 ]
