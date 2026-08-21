@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" role="img" aria-labelledby="title desc">
+  <title id="title">BanmaoBox product mark</title>
+  <desc id="desc">A time-locked cat box surrounded by token symbols</desc>
+  <defs>
+    <radialGradient id="halo" cx="50%" cy="48%" r="52%">
+      <stop offset="0" stop-color="#FFD85A" stop-opacity=".28"/>
+      <stop offset=".65" stop-color="#FFD85A" stop-opacity=".06"/>
+      <stop offset="1" stop-color="#FFD85A" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="lid" x1=".12" y1="0" x2=".88" y2="1">
+      <stop stop-color="#FFF0A6"/><stop offset=".48" stop-color="#FFD85A"/><stop offset="1" stop-color="#F5A90B"/>
+    </linearGradient>
+    <linearGradient id="body" x1=".18" y1="0" x2=".82" y2="1">
+      <stop stop-color="#FFD85A"/><stop offset="1" stop-color="#D97706"/>
+    </linearGradient>
+    <filter id="shadow" x="-40%" y="-40%" width="180%" height="200%">
+      <feDropShadow dx="0" dy="24" stdDeviation="22" flood-color="#000" flood-opacity=".42"/>
+    </filter>
+  </defs>
+  <circle cx="320" cy="320" r="292" fill="url(#halo)"/>
+  <circle cx="320" cy="320" r="246" fill="none" stroke="#FFD85A" stroke-opacity=".24" stroke-width="2" stroke-dasharray="7 13"/>
+  <path d="M116 257A230 230 0 0 1 259 103" fill="none" stroke="#F7E7A0" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+  <path d="M524 383A230 230 0 0 1 381 537" fill="none" stroke="#F7E7A0" stroke-opacity=".5" stroke-width="3" stroke-linecap="round"/>
+  <g filter="url(#shadow)">
+    <path d="M184 289 320 229l136 60-14 202-122 64-122-64z" fill="url(#body)" stroke="#FFF0B1" stroke-width="8" stroke-linejoin="round"/>
+    <path d="m184 289 136 65 136-65-136-65z" fill="url(#lid)" stroke="#FFF6CE" stroke-width="8" stroke-linejoin="round"/>
+    <path d="m227 250 18-91 75 64zm186 0-18-91-75 64z" fill="#FFD85A" stroke="#FFF0B1" stroke-width="8" stroke-linejoin="round"/>
+    <path d="m249 208 9-28 26 25zm107-3 26-25 9 28z" fill="#E7830A" opacity=".88"/>
+    <path d="M320 354v198" stroke="#B85308" stroke-opacity=".66" stroke-width="20"/>
+    <path d="M184 289 320 354l136-65" fill="none" stroke="#FFF6CE" stroke-width="8" stroke-linejoin="round"/>
+    <circle cx="320" cy="408" r="55" fill="#0B0E15" stroke="#FFF0B1" stroke-width="8"/>
+    <circle cx="320" cy="398" r="28" fill="none" stroke="#FFD85A" stroke-width="6"/>
+    <path d="M320 398v-16m0 16 15 10" fill="none" stroke="#FFD85A" stroke-width="6" stroke-linecap="round"/>
+    <path d="M311 426h18l9 31h-36z" fill="#FFD85A"/>
+  </g>
+  <g stroke="#0B0E15" stroke-width="6">
+    <circle cx="109" cy="347" r="35" fill="#62E6C7"/><path d="M94 347h30m-15-15v30" stroke="#0B0E15" stroke-linecap="round"/>
+    <circle cx="500" cy="174" r="42" fill="#A78BFA"/><path d="m500 151 20 23-20 23-20-23z" fill="none"/>
+    <circle cx="526" cy="431" r="31" fill="#67D4FF"/><path d="M514 431h24" stroke-linecap="round"/>
+  </g>
+  <g fill="#FFD85A">
+    <circle cx="157" cy="191" r="6"/><circle cx="478" cy="318" r="5"/><circle cx="177" cy="470" r="4"/>
+  </g>
+</svg>

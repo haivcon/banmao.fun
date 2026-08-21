@@ -23,6 +23,7 @@ import {
   classifyBanmaoBoxVerification,
   requestBanmaoBoxVerification,
 } from "../app/defi/box/requestVerification";
+import { rendererDisplayAmount } from "../app/defi/box/RendererArtworkPreview";
 import {
   clearPendingVerification,
   loadPendingVerification,
@@ -80,7 +81,8 @@ describe("BanmaoBox transaction UX contract", () => {
       "collectionReady", "tokenAddressLabel", "collectionAddressLabel", "factoryAddressLabel",
       "rendererAddressLabel", "creatorTransactionLabel", "networkLabel", "chainIdLabel",
       "copyTokenAddress", "copyCollectionAddress", "copyFactoryAddress", "copyRendererAddress",
-      "deploymentWarning",
+      "deploymentWarning", "modeGuideTitle", "modeSingleGuide", "modeBatchGuide",
+      "modeBasketGuide", "quickAmount", "quickAmountHint",
     ] as const;
     for (const locale of BOX_LANGUAGES) {
       const copy = BOX_COPY[locale];
@@ -88,6 +90,18 @@ describe("BanmaoBox transaction UX contract", () => {
       for (const key of keys) expect(copy[key]).toBeTruthy();
       if (locale !== "en") expect(copy.transactionProgressLabel).not.toBe(BOX_COPY.en.transactionProgressLabel);
     }
+  });
+
+  test("creation modes explain their behavior and amount controls preserve canonical values", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    expect(page).toContain('className="box-mode-guide"');
+    expect(page).toContain("copy.modeSingleGuide");
+    expect(page).toContain("copy.modeBatchGuide");
+    expect(page).toContain("copy.modeBasketGuide");
+    expect(page).toContain("formatTokenAmountInput(amount, language)");
+    expect(page).toContain("normalizeTokenAmountInput(event.target.value, language, tokenDecimals)");
+    expect(page).toContain("tokenBalancePercentage(tokenBalance, percentage, tokenDecimals)");
+    expect(page).toContain("[25, 50, 75, 100]");
   });
 
   test("BanmaoBox uses the canonical toast system without a legacy fixed transaction card", () => {
@@ -381,9 +395,11 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(page).toContain('className="box-live-summary"');
     expect(page).toContain('box-create-progress box-create-progress--${phase}');
     expect(page).toContain('className="box-create-progress__steps"');
-    expect(page).toContain('className="box-live-summary__badges"');
-    expect(page).toContain('className="box-live-summary__composition"');
-    expect(page).toContain('className="box-live-summary__assets"');
+    expect(page).toContain("<RendererArtworkPreview");
+    expect(page).toContain('className="box-nft-preview__badges"');
+    expect(page).toContain('className="box-live-summary__essentials"');
+    expect(page).toContain("data-create-step={createStep}");
+    expect(page).toContain("setCreateStep(4)");
     expect(page).toContain('form="box-create-form"');
     expect(page).toContain('className="box-card-details"');
     expect(page).toContain('<details className="box-contract-footer"');
@@ -393,6 +409,91 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(css).toMatch(/box-ready-ripple[^}]*3/);
   });
 
+  test("centers the lower information area and provides accessible interaction motion", () => {
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
+
+    expect(css).toMatch(/\.box-how\s*\{[^}]*width:\s*min\(1120px,[^}]*text-align:\s*center/);
+    expect(css).toMatch(/\.box-how__heading\s*\{[^}]*margin:\s*0 auto 42px/);
+    expect(css).toMatch(/\.box-steps article\s*\{[^}]*align-items:\s*center[^}]*text-align:\s*center[^}]*transition:/);
+    expect(css).toMatch(/\.box-steps article:hover\s*\{[^}]*transform:\s*translateY\(-7px\)/);
+    expect(css).toMatch(/\.box-contract-footer\s*\{[^}]*width:\s*min\(1120px/);
+    expect(css).toMatch(/\.box-contract-footer__heading\s*\{[^}]*grid-template-columns:\s*1fr auto 1fr[^}]*text-align:\s*center/);
+    expect(css).toMatch(/\.box-contract-footer__grid\s*\{[^}]*repeat\(auto-fit,\s*minmax\(190px,\s*1fr\)\)/);
+    expect(css).toMatch(/\.box-contract-footer__grid a:active\s*\{[^}]*scale\(\.985\)/);
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.box-steps article/);
+  });
+
+  test("confirms metadata gas transactions before opening the wallet", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
+    expect(page).toContain("METADATA_CONFIRM_COPY");
+    expect(page).toContain("metadataRefreshTokenId !== null");
+    expect(page).toContain("setMetadataRefreshTokenId(tokenId)");
+    expect(page).toContain("void refreshMetadata(tokenId)");
+    expect(page).toContain('src="/defi/banmao_box.webp"');
+    expect(css).toContain("prefers-reduced-motion: reduce");
+  });
+
+  test("creation wizard supports recipient clipboard actions, expanded locks and a collectible preview", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
+
+    expect(page).toContain("navigator.clipboard.readText()");
+    expect(page).toContain("setRecipient(\"\")");
+    expect(page).toContain("ClipboardPaste");
+    expect(page).toContain("Trash2");
+    expect(page).toContain("[1, 3, 7, 14, 30, 60, 90, 180, 365, 730]");
+    expect(page).toContain('className="box-nft-preview__frame"');
+    expect(page).toContain("<RendererArtworkPreview");
+    expect(page).toContain('batchPosition={createMode === "batch" ? `1 / ${previewBoxCount}` : undefined}');
+    expect(page).toContain('className="box-nft-preview__badges"');
+    expect(page).toContain("artworkPreviewOpen");
+    expect(page).toContain('className="box-preview-dialog box-artwork-viewer"');
+    expect(page).toContain('className="box-dialog-backdrop box-preview-backdrop box-artwork-viewer-backdrop"');
+    expect(css).toMatch(/\.box-preview-backdrop\s*\{[^}]*inset:\s*var\(--defi-shell-header-height,\s*68px\)\s+0\s+0/);
+    expect(css).toMatch(/\.box-preview-dialog\s*\{[^}]*max-height:\s*calc\(100dvh\s*-\s*var\(--defi-shell-header-height,\s*68px\)\s*-\s*36px\)/);
+    expect(page).toContain('/address/${recipient}`');
+    expect(page).toContain('aria-label={`${copy.viewExplorer}: ${recipient}`}');
+    expect(page).toContain('className="box-live-summary__recipient-row"');
+    expect(css).toMatch(/\.box-live-summary__essentials\s*>\s*\.box-live-summary__recipient-row\s*\{[^}]*grid-template-columns:\s*minmax\(90px,.75fr\)\s+minmax\(0,1.25fr\)/);
+    expect(css).toMatch(/\.box-live-summary__address\s*\{[^}]*font-size:\s*8px\s*!important[^}]*overflow-wrap:\s*normal[^}]*white-space:\s*nowrap/);
+    expect(css).toMatch(/@media \(max-width:\s*420px\)[\s\S]*\.box-live-summary__essentials\s*>\s*\.box-live-summary__recipient-row\s*\{[^}]*grid-template-columns:\s*minmax\(0,1fr\)/);
+    expect(css).not.toMatch(/\.box-live-summary__address\s*\{[^}]*(?:text-overflow:\s*ellipsis|overflow-wrap:\s*anywhere)/);
+    expect(css).toContain(".box-recipient-actions");
+    expect(css).toContain(".box-nft-preview__frame");
+    expect(css).toContain(".box-renderer-preview");
+  });
+
+  test("pre-mint artwork mirrors the on-chain sealed treasury renderer", () => {
+    const preview = fs.readFileSync(path.join(process.cwd(), "app/defi/box/RendererArtworkPreview.tsx"), "utf8");
+    expect(preview).toContain('viewBox="0 0 600 600"');
+    expect(preview).toContain('transform="scale(0.75)"');
+    expect(preview).toContain("SEALED TREASURY  /  SEALED");
+    expect(preview).toContain("ASSET PORTFOLIO / {assets.length}");
+    expect(preview).toContain("UNLOCK TIME");
+    expect(preview).toContain("MINTED BY");
+    expect(preview).toContain("ASSET LEDGER");
+    expect(preview).toContain("#PENDING");
+    expect(rendererDisplayAmount(123456789n, 6)).toBe("123.45");
+    expect(rendererDisplayAmount(1n, 18)).toBe("<0.01");
+    expect(rendererDisplayAmount(1000000000000000000000000000000000000n, 18)).toBe("1.0000e18");
+  });
+
+  test("uses ERC-20-neutral BanmaoBox branding and a dedicated product mark", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const layout = fs.readFileSync(path.join(process.cwd(), "app/defi/box/layout.tsx"), "utf8");
+    const hub = fs.readFileSync(path.join(process.cwd(), "app/defi/page.tsx"), "utf8");
+    const mark = fs.readFileSync(path.join(process.cwd(), "public/defi/banmaobox-mark.svg"), "utf8");
+
+    expect(page).toContain('src="/defi/banmaobox-mark.svg"');
+    expect(page).toContain("1–5 ERC-20 · TIME LOCK");
+    expect(layout).toContain("Pack one or more ERC-20 tokens");
+    expect(layout).not.toContain("Time-Locked BANMAO NFT");
+    expect(hub).toContain("Pack one or more ERC-20 tokens");
+    expect(mark).toContain("BanmaoBox product mark");
+    expect(mark).toContain("A time-locked cat box surrounded by token symbols");
+  });
+
   test("Phase 1 mobile geometry keeps readable type and 44px controls", () => {
     const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
     expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*\.box-page\s*\{[\s\S]*font-size:\s*14px/);
@@ -400,7 +501,8 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*\.box-hero\s*\{[\s\S]*min-height:\s*190px/);
     expect(css).toMatch(/\.box-submit[\s\S]*min-height:\s*56px/);
     expect(css).toMatch(/\.box-create-workspace\s*\{[\s\S]*grid-template-columns:/);
-    expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*\.box-live-summary\s*\{\s*display:\s*none/);
+    expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*\.box-live-summary\s*\{[\s\S]*display:\s*block/);
+    expect(css).toMatch(/\.box-live-summary:not\(\[data-create-step="4"\]\) \.box-nft-preview__frame/);
     expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*\.box-hero__art\s*\{[\s\S]*display:\s*grid/);
   });
 
@@ -556,17 +658,18 @@ describe("BanmaoBox portfolio dashboard", () => {
     const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
     const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
     expect(page).toContain('className="box-artwork-trigger"');
-    expect(page).toContain('className="box-image-preview"');
+    expect(page).toContain('className="box-preview-dialog box-image-preview"');
+    expect(page).toContain('className="box-dialog-backdrop box-preview-backdrop box-image-preview-backdrop"');
     expect(page).toContain('aria-modal="true"');
     expect(page).toContain('className="box-nft-facts"');
     expect(page).toContain('className="box-asset__explorer"');
     expect(page).toContain("onCopyAddress(asset.token)");
     expect(page).toContain("copyToClipboard(value, copy.tokenAddressLabel)");
-    expect(css).toMatch(/\.box-image-preview-backdrop\s*\{[^}]*inset:\s*var\(--defi-shell-header-height,\s*68px\)\s+0\s+0/);
-    expect(css).toMatch(/\.box-image-preview\s*\{[\s\S]*--box-preview-art-size:\s*min\([\s\S]*calc\(100dvh\s*-\s*var\(--defi-shell-header-height,\s*68px\)\s*-\s*116px\)/);
-    expect(css).toMatch(/@media \(max-width:\s*820px\)[\s\S]*\.box-image-preview\s*\{[^}]*height:\s*auto;[^}]*max-height:\s*none/);
-    expect(css).toMatch(/\.box-image-preview__canvas\s*\{[\s\S]*aspect-ratio:\s*1\s*\/\s*1;[\s\S]*overflow:\s*hidden/);
-    expect(css).toMatch(/\.box-image-preview__image\s*\{[\s\S]*width:\s*100%;[\s\S]*height:\s*100%;[\s\S]*object-fit:\s*contain/);
+    expect(css).toMatch(/\.box-preview-backdrop\s*\{[^}]*inset:\s*var\(--defi-shell-header-height,\s*68px\)\s+0\s+0/);
+    expect(css).toMatch(/\.box-preview-dialog\s*\{[^}]*max-height:\s*calc\(100dvh\s*-\s*var\(--defi-shell-header-height,\s*68px\)\s*-\s*36px\)/);
+    expect(css).toMatch(/@media \(max-width:\s*820px\)[\s\S]*\.box-preview-dialog\s*\{[^}]*max-height:\s*calc\(100dvh\s*-\s*var\(--defi-shell-header-height,\s*68px\)\s*-\s*24px\)/);
+    expect(css).toMatch(/\.box-image-preview__canvas\s*\{[^}]*overflow:\s*auto/);
+    expect(css).toMatch(/\.box-image-preview__image\s*\{[^}]*object-fit:\s*contain/);
     expect(css).toMatch(/\.box-item__svg\s*\{[\s\S]*object-fit:\s*contain/);
   });
 

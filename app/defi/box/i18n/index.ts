@@ -127,6 +127,12 @@ export type BoxCopy = {
   modeSingle: string;
   modeBatch: string;
   modeBasket: string;
+  modeGuideTitle: string;
+  modeSingleGuide: string;
+  modeBatchGuide: string;
+  modeBasketGuide: string;
+  quickAmount: string;
+  quickAmountHint: string;
   addAsset: string;
   addRecipient: string;
   batchHint: string;
@@ -269,11 +275,11 @@ export function parameterizeBoxCopy(
 export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
   en: {
     back: "DeFi home",
-    eyebrow: "A gift that waits",
-    title: "Pack BANMAO into a time-locked NFT.",
+    eyebrow: "Pack assets · Transfer ownership · Open on time",
+    title: "Pack assets. Transfer ownership. Open on time.",
     subtitle:
-      "Create a transferable BanmaoBox, gift it to any wallet, and let its current owner open it when the timer ends.",
-    lockedMetric: "BANMAO locked",
+      "Pack one or more ERC-20 tokens into BanmaoBox, set the opening time, and send the NFT to any wallet. The right to receive every asset follows the NFT owner.",
+    lockedMetric: "Primary token locked",
     activeMetric: "Active boxes",
     walletMetric: "Your balance",
     createTitle: "Create a BanmaoBox",
@@ -320,16 +326,16 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     loadingTimedOut: "Box data is taking longer than expected. Check your connection and try again.",
     retry: "Refresh",
     howTitle: "How BanmaoBox works",
-    howDescription: "One NFT, one protected BANMAO balance, one opening date.",
+    howDescription: "One NFT can hold one or more ERC-20 assets behind one opening time.",
     stepApprove: "Pack",
     stepApproveText:
-      "Approve the exact amount and lock BANMAO in a newly minted ERC-721.",
-    stepGift: "Gift",
+      "Choose one to five compatible ERC-20 assets and lock them in a newly minted ERC-721.",
+    stepGift: "Transfer",
     stepGiftText:
-      "Keep, gift or trade the NFT. The locked BANMAO follows its current owner.",
+      "Keep, gift or trade the NFT. The right to receive every remaining asset follows its current owner.",
     stepOpen: "Open",
     stepOpenText:
-      "After the timestamp, the NFT owner claims all BANMAO and the box is burned.",
+      "After the timestamp, the NFT owner releases the assets. Basket assets release independently, and the NFT burns after the final asset leaves.",
     safetyTitle: "Trust-minimized by design",
     safetyText:
       "No admin withdrawal and no early unlock. Always verify the deployed contract address before signing.",
@@ -374,6 +380,12 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     modeSingle: "Single box",
     modeBatch: "Batch (1–20)",
     modeBasket: "Basket (2–5 tokens)",
+    modeGuideTitle: "How this mode works",
+    modeSingleGuide: "Create one NFT box for one recipient with one primary token amount and one unlock date. The box can be transferred while locked; after the date, its current NFT owner opens it and receives the token.",
+    modeBatchGuide: "Create 1–20 separate NFT boxes in one atomic transaction. Each row has its own recipient and amount, while every box shares the same unlock date. If any row fails, the entire batch is reverted.",
+    modeBasketGuide: "Create one NFT box containing the primary token plus 1–4 additional ERC-20s for one recipient and one unlock date. Assets release independently, so a problematic token can be retried without blocking transferable assets.",
+    quickAmount: "Quick amount",
+    quickAmountHint: "Percentage of available balance",
     addAsset: "Add asset",
     addRecipient: "Add recipient",
     batchHint: "The batch is atomic and uses one shared unlock date.",
@@ -496,11 +508,11 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
   },
   vi: {
     back: "Trang DeFi",
-    eyebrow: "Món quà biết chờ đợi",
-    title: "Gói BANMAO vào NFT khóa theo thời gian.",
+    eyebrow: "Gói tài sản · Trao quyền sở hữu · Mở đúng lúc",
+    title: "Đóng gói tài sản. Trao quyền sở hữu. Mở đúng thời điểm.",
     subtitle:
-      "Tạo BanmaoBox có thể chuyển nhượng, tặng cho bất kỳ ví nào và để chủ sở hữu hiện tại mở khi hết thời gian.",
-    lockedMetric: "BANMAO đang khóa",
+      "Đóng gói một hoặc nhiều token ERC-20 vào BanmaoBox, đặt thời điểm mở và gửi NFT cho bất kỳ ví nào. Quyền nhận mọi tài sản đi cùng chủ sở hữu NFT.",
+    lockedMetric: "Token chính đang khóa",
     activeMetric: "Box đang hoạt động",
     walletMetric: "Số dư của bạn",
     createTitle: "Tạo BanmaoBox",
@@ -546,16 +558,16 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     loadingTimedOut: "Dữ liệu box đang tải lâu hơn dự kiến. Hãy kiểm tra kết nối và thử lại.",
     retry: "Làm mới",
     howTitle: "BanmaoBox hoạt động thế nào",
-    howDescription: "Một NFT, một khoản BANMAO bảo chứng và một ngày mở.",
+    howDescription: "Một NFT có thể chứa một hoặc nhiều tài sản ERC-20 với cùng một thời điểm mở.",
     stepApprove: "Đóng gói",
     stepApproveText:
-      "Approve đúng số lượng và khóa BANMAO trong một NFT ERC-721 mới.",
-    stepGift: "Trao tặng",
+      "Chọn từ một đến năm tài sản ERC-20 tương thích và khóa chúng trong một NFT ERC-721 mới.",
+    stepGift: "Trao quyền",
     stepGiftText:
-      "Giữ, tặng hoặc giao dịch NFT. BANMAO bị khóa luôn đi cùng chủ NFT hiện tại.",
+      "Giữ, tặng hoặc giao dịch NFT. Quyền nhận mọi tài sản còn lại đi cùng chủ NFT hiện tại.",
     stepOpen: "Mở hộp",
     stepOpenText:
-      "Sau thời hạn, chủ NFT nhận toàn bộ BANMAO và NFT sẽ được đốt.",
+      "Sau thời hạn, chủ NFT giải phóng tài sản. Tài sản trong giỏ được giải phóng độc lập và NFT được đốt sau tài sản cuối cùng.",
     safetyTitle: "Giảm thiểu niềm tin ngay từ thiết kế",
     safetyText:
       "Không có quyền admin rút token và không thể mở sớm. Luôn kiểm tra địa chỉ hợp đồng trước khi ký.",
@@ -600,6 +612,12 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     modeSingle: "Một box",
     modeBatch: "Hàng loạt (1–20)",
     modeBasket: "Giỏ (2–5 token)",
+    modeGuideTitle: "Cách chế độ này hoạt động",
+    modeSingleGuide: "Tạo một NFT Box cho một người nhận, với một lượng token chính và một ngày mở khóa. Box có thể được chuyển nhượng khi đang khóa; đến hạn, chủ NFT hiện tại mở Box và nhận token.",
+    modeBatchGuide: "Tạo 1–20 NFT Box riêng biệt trong một giao dịch nguyên tử. Mỗi dòng có người nhận và số lượng riêng, nhưng tất cả Box dùng chung ngày mở khóa. Nếu một dòng lỗi, toàn bộ lô sẽ được hoàn tác.",
+    modeBasketGuide: "Tạo một NFT Box chứa token chính cùng 1–4 ERC-20 bổ sung, dành cho một người nhận và một ngày mở khóa. Từng tài sản được giải phóng độc lập nên token lỗi có thể thử lại mà không chặn tài sản khác.",
+    quickAmount: "Chọn nhanh số lượng",
+    quickAmountHint: "Phần trăm số dư khả dụng",
     addAsset: "Thêm tài sản",
     addRecipient: "Thêm người nhận",
     batchHint: "Lô giao dịch là nguyên tử và dùng chung một ngày mở khóa.",
@@ -722,11 +740,11 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
   },
   zh: {
     back: "DeFi 首页",
-    eyebrow: "一份会等待的礼物",
-    title: "将 BANMAO 封装进定时 NFT。",
+    eyebrow: "封装资产 · 转移所有权 · 到时开启",
+    title: "封装资产。转移所有权。到时开启。",
     subtitle:
-      "创建可转让的 BanmaoBox，赠送给任意钱包，到期后由当前持有人开启。",
-    lockedMetric: "已锁定 BANMAO",
+      "将一种或多种 ERC-20 代币封装进 BanmaoBox，设定开启时间并把 NFT 发送至任意钱包。领取全部资产的权利随 NFT 持有人转移。",
+    lockedMetric: "已锁定主代币",
     activeMetric: "有效礼盒",
     walletMetric: "您的余额",
     createTitle: "创建 BanmaoBox",
@@ -772,13 +790,13 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     loadingTimedOut: "礼盒数据加载时间超出预期。请检查网络连接并重试。",
     retry: "刷新",
     howTitle: "BanmaoBox 如何运作",
-    howDescription: "一个 NFT、一份受保护的 BANMAO 和一个开启日期。",
+    howDescription: "一个 NFT 可在同一开启时间下容纳一种或多种 ERC-20 资产。",
     stepApprove: "封装",
-    stepApproveText: "授权准确数量并将 BANMAO 锁入新铸造的 ERC-721。",
-    stepGift: "赠送",
-    stepGiftText: "持有、赠送或交易 NFT；锁定资产始终跟随当前持有人。",
+    stepApproveText: "选择一至五种兼容的 ERC-20 资产，并将其锁入新铸造的 ERC-721。",
+    stepGift: "转移",
+    stepGiftText: "持有、赠送或交易 NFT；领取所有剩余资产的权利随当前持有人转移。",
     stepOpen: "开启",
-    stepOpenText: "到期后，NFT 持有人领取全部 BANMAO，礼盒 NFT 被销毁。",
+    stepOpenText: "到期后，NFT 持有人释放资产。篮子资产可独立释放，最后一项资产离开后 NFT 销毁。",
     safetyTitle: "最小信任设计",
     safetyText: "无管理员提款、不可提前开启。签名前请核对已部署合约地址。",
     phase: {
@@ -821,6 +839,12 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     modeSingle: "单个礼盒",
     modeBatch: "批量（1–20）",
     modeBasket: "资产篮（2–5 种代币）",
+    modeGuideTitle: "此模式如何运作",
+    modeSingleGuide: "为一个接收者创建一个 NFT 礼盒，设置一种主要代币数量和一个解锁日期。锁定期间可转让礼盒；到期后，当前 NFT 所有者开启礼盒并领取代币。",
+    modeBatchGuide: "通过一次原子交易创建 1–20 个独立 NFT 礼盒。每行可设置不同接收者和数量，但所有礼盒共用解锁日期。任何一行失败都会回滚整个批次。",
+    modeBasketGuide: "为一个接收者创建一个 NFT 礼盒，包含主要代币及 1–4 种额外 ERC-20，并共用一个解锁日期。各资产独立释放，异常代币可稍后重试而不阻塞其他资产。",
+    quickAmount: "快速选择数量",
+    quickAmountHint: "可用余额百分比",
     addAsset: "添加资产",
     addRecipient: "添加接收者",
     batchHint: "该批次为原子操作，并共用一个解锁日期。",
@@ -943,11 +967,11 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
   },
   ko: {
     back: "DeFi 홈",
-    eyebrow: "기다리는 선물",
-    title: "BANMAO를 타임락 NFT에 담으세요.",
+    eyebrow: "자산 포장 · 소유권 이전 · 정시에 개봉",
+    title: "자산을 담고. 소유권을 넘기고. 정시에 여세요.",
     subtitle:
-      "전송 가능한 BanmaoBox를 만들어 선물하고, 만료 후 현재 소유자가 열 수 있습니다.",
-    lockedMetric: "잠긴 BANMAO",
+      "하나 이상의 ERC-20 토큰을 BanmaoBox에 담고 개봉 시간을 설정한 뒤 NFT를 어떤 지갑으로든 보내세요. 모든 자산을 받을 권리는 NFT 소유자를 따릅니다.",
+    lockedMetric: "잠긴 기본 토큰",
     activeMetric: "활성 박스",
     walletMetric: "내 잔액",
     createTitle: "BanmaoBox 만들기",
@@ -994,14 +1018,14 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     loadingTimedOut: "박스 데이터를 불러오는 데 예상보다 오래 걸립니다. 연결을 확인하고 다시 시도하세요.",
     retry: "새로고침",
     howTitle: "BanmaoBox 작동 방식",
-    howDescription: "하나의 NFT, 보호된 BANMAO 잔액, 하나의 개봉일.",
+    howDescription: "하나의 NFT에 하나 이상의 ERC-20 자산을 같은 개봉 시간으로 담을 수 있습니다.",
     stepApprove: "포장",
-    stepApproveText: "정확한 수량을 승인하고 새 ERC-721에 BANMAO를 잠급니다.",
-    stepGift: "선물",
+    stepApproveText: "호환되는 ERC-20 자산 1~5개를 선택해 새 ERC-721에 잠급니다.",
+    stepGift: "이전",
     stepGiftText:
-      "NFT를 보관, 선물 또는 거래하면 잠긴 BANMAO도 함께 이동합니다.",
+      "NFT를 보관, 선물 또는 거래하세요. 남은 모든 자산을 받을 권리는 현재 소유자를 따릅니다.",
     stepOpen: "개봉",
-    stepOpenText: "기한 후 NFT 소유자가 BANMAO 전량을 받고 NFT는 소각됩니다.",
+    stepOpenText: "기한 후 NFT 소유자가 자산을 해제합니다. 바스켓 자산은 독립적으로 해제되며 마지막 자산이 나가면 NFT가 소각됩니다.",
     safetyTitle: "신뢰 최소화 설계",
     safetyText:
       "관리자 출금과 조기 개봉이 없습니다. 서명 전 계약 주소를 확인하세요.",
@@ -1046,6 +1070,12 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     modeSingle: "단일 박스",
     modeBatch: "일괄 (1–20)",
     modeBasket: "바스켓 (토큰 2–5개)",
+    modeGuideTitle: "이 모드의 작동 방식",
+    modeSingleGuide: "한 명의 수령인에게 기본 토큰 수량과 잠금 해제일이 지정된 NFT 박스 하나를 만듭니다. 잠금 중에도 양도할 수 있으며, 날짜가 지나면 현재 NFT 소유자가 열어 토큰을 받습니다.",
+    modeBatchGuide: "하나의 원자적 트랜잭션으로 1–20개의 개별 NFT 박스를 만듭니다. 행마다 수령인과 수량을 지정하고 모든 박스는 같은 잠금 해제일을 사용합니다. 한 행이라도 실패하면 전체가 되돌려집니다.",
+    modeBasketGuide: "한 명의 수령인을 위해 기본 토큰과 추가 ERC-20 1–4개를 담은 NFT 박스 하나를 만듭니다. 자산은 독립적으로 해제되어 문제 토큰을 나중에 재시도해도 다른 자산을 막지 않습니다.",
+    quickAmount: "수량 빠른 선택",
+    quickAmountHint: "사용 가능 잔액 비율",
     addAsset: "자산 추가",
     addRecipient: "수령인 추가",
     batchHint: "일괄 처리는 원자적으로 실행되며 하나의 잠금 해제일을 공유합니다.",
@@ -1168,11 +1198,11 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
   },
   ru: {
     back: "Главная DeFi",
-    eyebrow: "Подарок, который ждёт",
-    title: "Упакуйте BANMAO в NFT с таймлоком.",
+    eyebrow: "Упакуйте активы · Передайте право · Откройте вовремя",
+    title: "Упакуйте активы. Передайте право. Откройте вовремя.",
     subtitle:
-      "Создайте передаваемый BanmaoBox, подарите его, а владелец откроет после таймера.",
-    lockedMetric: "BANMAO заблокировано",
+      "Упакуйте один или несколько ERC-20 в BanmaoBox, задайте время открытия и отправьте NFT на любой кошелёк. Право получить все активы следует за владельцем NFT.",
+    lockedMetric: "Основной токен заблокирован",
     activeMetric: "Активные боксы",
     walletMetric: "Ваш баланс",
     createTitle: "Создать BanmaoBox",
@@ -1218,15 +1248,15 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     loadingTimedOut: "Данные боксов загружаются дольше ожидаемого. Проверьте соединение и повторите попытку.",
     retry: "Обновить",
     howTitle: "Как работает BanmaoBox",
-    howDescription: "Один NFT, защищённый баланс BANMAO и дата открытия.",
+    howDescription: "Один NFT может хранить один или несколько ERC-20 до общего времени открытия.",
     stepApprove: "Упаковать",
     stepApproveText:
-      "Одобрите точную сумму и заблокируйте BANMAO в новом ERC-721.",
-    stepGift: "Подарить",
+      "Выберите от одного до пяти совместимых ERC-20 и заблокируйте их в новом ERC-721.",
+    stepGift: "Передать",
     stepGiftText:
-      "Храните или передавайте NFT — BANMAO следует за его владельцем.",
+      "Храните, дарите или продавайте NFT. Право получить все оставшиеся активы следует за текущим владельцем.",
     stepOpen: "Открыть",
-    stepOpenText: "После срока владелец получает BANMAO, а NFT сжигается.",
+    stepOpenText: "После срока владелец NFT выводит активы. Активы корзины выводятся независимо, а NFT сжигается после последнего.",
     safetyTitle: "Минимум доверия",
     safetyText:
       "Нет вывода администратором и раннего открытия. Проверяйте адрес контракта.",
@@ -1271,6 +1301,12 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     modeSingle: "Один бокс",
     modeBatch: "Пакет (1–20)",
     modeBasket: "Корзина (2–5 токенов)",
+    modeGuideTitle: "Как работает этот режим",
+    modeSingleGuide: "Создаёт один NFT-бокс для одного получателя с указанным количеством основного токена и датой разблокировки. Бокс можно передавать во время блокировки; после даты текущий владелец NFT открывает его и получает токен.",
+    modeBatchGuide: "Создаёт 1–20 отдельных NFT-боксов одной атомарной транзакцией. У каждой строки свой получатель и сумма, но дата разблокировки общая. Ошибка в любой строке отменяет весь пакет.",
+    modeBasketGuide: "Создаёт один NFT-бокс с основным токеном и 1–4 дополнительными ERC-20 для одного получателя и одной даты. Активы освобождаются независимо: проблемный токен можно повторить позже, не блокируя остальные.",
+    quickAmount: "Быстрый выбор суммы",
+    quickAmountHint: "Процент доступного баланса",
     addAsset: "Добавить актив",
     addRecipient: "Добавить получателя",
     batchHint: "Пакет выполняется атомарно и использует общую дату разблокировки.",
@@ -1393,11 +1429,11 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
   },
   id: {
     back: "Beranda DeFi",
-    eyebrow: "Hadiah yang menunggu",
-    title: "Bungkus BANMAO dalam NFT berkunci waktu.",
+    eyebrow: "Bungkus aset · Alihkan kepemilikan · Buka tepat waktu",
+    title: "Bungkus aset. Alihkan kepemilikan. Buka tepat waktu.",
     subtitle:
-      "Buat BanmaoBox yang dapat dipindahtangankan, hadiahkan, lalu pemilik membukanya saat waktunya tiba.",
-    lockedMetric: "BANMAO terkunci",
+      "Bungkus satu atau beberapa token ERC-20 dalam BanmaoBox, tentukan waktu buka, lalu kirim NFT ke dompet mana pun. Hak menerima semua aset mengikuti pemilik NFT.",
+    lockedMetric: "Token utama terkunci",
     activeMetric: "Box aktif",
     walletMetric: "Saldo Anda",
     createTitle: "Buat BanmaoBox",
@@ -1445,16 +1481,16 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     retry: "Muat ulang",
     howTitle: "Cara kerja BanmaoBox",
     howDescription:
-      "Satu NFT, saldo BANMAO terlindungi, dan satu tanggal buka.",
+      "Satu NFT dapat menyimpan satu atau beberapa aset ERC-20 dengan satu waktu buka.",
     stepApprove: "Bungkus",
     stepApproveText:
-      "Setujui jumlah tepat dan kunci BANMAO dalam ERC-721 baru.",
-    stepGift: "Hadiahkan",
+      "Pilih satu hingga lima aset ERC-20 yang kompatibel dan kunci dalam ERC-721 baru.",
+    stepGift: "Alihkan",
     stepGiftText:
-      "Simpan atau transfer NFT; BANMAO terkunci mengikuti pemiliknya.",
+      "Simpan, hadiahkan, atau perdagangkan NFT. Hak menerima semua aset tersisa mengikuti pemilik saat ini.",
     stepOpen: "Buka",
     stepOpenText:
-      "Setelah waktunya, pemilik menerima semua BANMAO dan NFT dibakar.",
+      "Setelah waktunya, pemilik NFT melepas aset. Aset keranjang dilepas mandiri dan NFT dibakar setelah aset terakhir keluar.",
     safetyTitle: "Desain minim kepercayaan",
     safetyText:
       "Tanpa penarikan admin dan tanpa buka awal. Verifikasi alamat kontrak sebelum menandatangani.",
@@ -1499,6 +1535,12 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     modeSingle: "Satu box",
     modeBatch: "Batch (1–20)",
     modeBasket: "Keranjang (2–5 token)",
+    modeGuideTitle: "Cara kerja mode ini",
+    modeSingleGuide: "Buat satu NFT box untuk satu penerima dengan jumlah token utama dan satu tanggal buka kunci. Box dapat dipindahtangankan saat terkunci; setelah waktunya, pemilik NFT saat itu membukanya dan menerima token.",
+    modeBatchGuide: "Buat 1–20 NFT box terpisah dalam satu transaksi atomik. Setiap baris memiliki penerima dan jumlah sendiri, sedangkan semua box memakai tanggal buka yang sama. Jika satu baris gagal, seluruh batch dibatalkan.",
+    modeBasketGuide: "Buat satu NFT box berisi token utama dan 1–4 ERC-20 tambahan untuk satu penerima dan satu tanggal buka. Aset dilepas secara independen sehingga token bermasalah dapat dicoba lagi tanpa menghalangi aset lain.",
+    quickAmount: "Pilih jumlah cepat",
+    quickAmountHint: "Persentase saldo tersedia",
     addAsset: "Tambah aset",
     addRecipient: "Tambah penerima",
     batchHint: "Batch bersifat atomik dan menggunakan satu tanggal buka kunci bersama.",

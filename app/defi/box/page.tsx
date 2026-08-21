@@ -10,10 +10,12 @@ import {
   CalendarClock,
   ChevronDown,
   Clock3,
+  ClipboardPaste,
   Copy,
   Gift,
   Eye,
   ExternalLink,
+  Info,
   LoaderCircle,
   LockKeyhole,
   Maximize2,
@@ -25,6 +27,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Wallet,
   X,
 } from "lucide-react";
@@ -100,13 +103,56 @@ import {
 } from "./verificationPersistence";
 import { useBox } from "./useBox";
 import { useBoundedLoading } from "./useBoundedLoading";
-import { formatExactTokenAmount, tokenAmountInWords } from "./amountFormat";
+import {
+  formatExactTokenAmount,
+  formatTokenAmountForDisplay,
+  formatTokenAmountInput,
+  normalizeTokenAmountInput,
+  tokenBalancePercentage,
+} from "./amountFormat";
 import { tokenExplorerUrl } from "./tokenIdentity";
+import { RendererArtworkPreview, type RendererPreviewAsset } from "./RendererArtworkPreview";
 import "./box.css";
 
-const DURATION_OPTIONS = [7, 30, 90, 180, 365] as const;
+const DURATION_OPTIONS = [1, 3, 7, 14, 30, 60, 90, 180, 365, 730] as const;
 const BOXES_PER_PAGE = 6;
 const MAX_BATCH_SIZE = 20;
+
+const METADATA_CONFIRM_COPY: Record<BoxLanguage, {
+  title: string;
+  description: string;
+  gasNotice: string;
+  cancel: string;
+  continue: string;
+}> = {
+  en: { title: "Refresh NFT imagery?", description: "This sends an on-chain metadata refresh signal so wallets and marketplaces can request artwork from the latest renderer. No assets will be transferred.", gasNotice: "Your wallet will open so you can review and confirm the network gas fee.", cancel: "Cancel", continue: "Continue to wallet" },
+  vi: { title: "Làm mới hình ảnh NFT?", description: "Thao tác này gửi tín hiệu làm mới metadata on-chain để ví và marketplace có thể yêu cầu hình ảnh từ renderer mới nhất. Không có tài sản nào được chuyển.", gasNotice: "Ví của bạn sẽ mở để bạn kiểm tra và xác nhận phí gas của mạng.", cancel: "Hủy", continue: "Tiếp tục tới ví" },
+  zh: { title: "刷新 NFT 图像？", description: "此操作会发送链上元数据刷新信号，以便钱包和市场从最新渲染器请求图像。不会转移任何资产。", gasNotice: "钱包将打开，供您检查并确认网络 Gas 费用。", cancel: "取消", continue: "继续前往钱包" },
+  ko: { title: "NFT 이미지를 새로고침할까요?", description: "지갑과 마켓플레이스가 최신 렌더러에서 이미지를 요청할 수 있도록 온체인 메타데이터 새로고침 신호를 보냅니다. 자산은 전송되지 않습니다.", gasNotice: "네트워크 가스비를 검토하고 확인할 수 있도록 지갑이 열립니다.", cancel: "취소", continue: "지갑으로 계속" },
+  ru: { title: "Обновить изображение NFT?", description: "Будет отправлен on-chain сигнал обновления метаданных, чтобы кошельки и маркетплейсы запросили изображение у актуального рендерера. Активы не переводятся.", gasNotice: "Кошелёк откроется для проверки и подтверждения сетевой комиссии gas.", cancel: "Отмена", continue: "Перейти в кошелёк" },
+  id: { title: "Segarkan gambar NFT?", description: "Tindakan ini mengirim sinyal penyegaran metadata on-chain agar dompet dan marketplace dapat meminta gambar dari renderer terbaru. Tidak ada aset yang ditransfer.", gasNotice: "Dompet Anda akan terbuka agar Anda dapat meninjau dan mengonfirmasi biaya gas jaringan.", cancel: "Batal", continue: "Lanjutkan ke dompet" },
+};
+
+const RECIPIENT_ACTION_COPY: Record<BoxLanguage, {
+  clear: string;
+  paste: string;
+  pasted: string;
+  pasteFailed: string;
+  livePreview: string;
+  pendingToken: string;
+  previewBadge: string;
+  enlarge: string;
+  closePreview: string;
+  previewNote: string;
+  network: string;
+}> = {
+  en: { clear: "Clear recipient", paste: "Replace with clipboard address", pasted: "Recipient pasted", pasteFailed: "Unable to read the clipboard", livePreview: "Live NFT preview", pendingToken: "Token ID after mint", previewBadge: "Preview", enlarge: "Enlarge NFT preview", closePreview: "Close NFT preview", previewNote: "Token ID and final timestamps are assigned when minting.", network: "Network" },
+  vi: { clear: "Xóa người nhận", paste: "Thay bằng địa chỉ đã sao chép", pasted: "Đã dán người nhận", pasteFailed: "Không thể đọc bộ nhớ tạm", livePreview: "Xem trước NFT trực tiếp", pendingToken: "Token ID sau khi mint", previewBadge: "Bản xem trước", enlarge: "Phóng to NFT", closePreview: "Đóng bản xem trước NFT", previewNote: "Token ID và thời gian cuối cùng được xác định khi mint.", network: "Mạng" },
+  zh: { clear: "清除接收者", paste: "替换为剪贴板地址", pasted: "已粘贴接收者", pasteFailed: "无法读取剪贴板", livePreview: "NFT 实时预览", pendingToken: "铸造后的 Token ID", previewBadge: "预览", enlarge: "放大 NFT 预览", closePreview: "关闭 NFT 预览", previewNote: "Token ID 和最终时间戳将在铸造时确定。", network: "网络" },
+  ko: { clear: "받는 사람 지우기", paste: "클립보드 주소로 교체", pasted: "받는 사람을 붙여넣었습니다", pasteFailed: "클립보드를 읽을 수 없습니다", livePreview: "NFT 실시간 미리보기", pendingToken: "민팅 후 Token ID", previewBadge: "미리보기", enlarge: "NFT 미리보기 확대", closePreview: "NFT 미리보기 닫기", previewNote: "Token ID와 최종 타임스탬프는 민팅 시 결정됩니다.", network: "네트워크" },
+  ru: { clear: "Очистить получателя", paste: "Заменить адресом из буфера", pasted: "Получатель вставлен", pasteFailed: "Не удалось прочитать буфер обмена", livePreview: "Предпросмотр NFT", pendingToken: "Token ID после минта", previewBadge: "Предпросмотр", enlarge: "Увеличить NFT", closePreview: "Закрыть предпросмотр NFT", previewNote: "Token ID и окончательное время определяются при минте.", network: "Сеть" },
+  id: { clear: "Hapus penerima", paste: "Ganti dengan alamat clipboard", pasted: "Penerima ditempel", pasteFailed: "Tidak dapat membaca clipboard", livePreview: "Pratinjau NFT langsung", pendingToken: "Token ID setelah mint", previewBadge: "Pratinjau", enlarge: "Perbesar pratinjau NFT", closePreview: "Tutup pratinjau NFT", previewNote: "Token ID dan waktu akhir ditentukan saat mint.", network: "Jaringan" },
+};
 
 type CreateMode = "single" | "batch" | "basket";
 type BoxFilter = "all" | "ready" | "locked";
@@ -176,31 +222,27 @@ function TokenAmount({
   language: BoxLanguage;
   compact?: boolean;
 }) {
-  const numeric = formatExactTokenAmount(value, decimals, language);
-  const words = BOX_COPY[language].amountInWords(
-    tokenAmountInWords(value, decimals, language),
-    symbol,
-  );
+  const numeric = formatTokenAmountForDisplay(value, decimals, language);
   return (
-    <span className={`box-token-amount ${compact ? "box-token-amount--compact" : ""}`} title={words}>
-      <span>{numeric} {symbol}</span>
-      <small>{words}</small>
+    <span className={`box-token-amount ${compact ? "box-token-amount--compact" : ""}`}>
+      <span className="box-token-amount__number">{numeric}</span>
+      <span className="box-token-amount__symbol">{symbol}</span>
     </span>
   );
 }
 
 function GiftBoxArtwork({ ready = false }: { ready?: boolean }) {
   return (
-    <div
-      className={`box-art ${ready ? "box-art--ready" : ""}`}
-      aria-hidden="true"
-    >
+    <div className={`box-art box-art--image ${ready ? "box-art--ready" : ""}`} aria-hidden="true">
       <span className="box-art__glow" />
-      <span className="box-art__bow box-art__bow--left" />
-      <span className="box-art__bow box-art__bow--right" />
-      <span className="box-art__lid" />
-      <span className="box-art__body" />
-      <span className="box-art__ribbon" />
+      <Image
+        className="box-art__image"
+        src="/defi/banmao_box.webp"
+        alt=""
+        width={720}
+        height={560}
+        sizes="(max-width: 820px) 70vw, 420px"
+      />
       <span className="box-art__lock">
         {ready ? <PackageOpen /> : <LockKeyhole />}
       </span>
@@ -461,6 +503,7 @@ export default function BanmaoBoxPage() {
   const verificationRequestRef = useRef<BanmaoBoxVerificationRequest | undefined>(undefined);
   const collectionFixtureToastShownRef = useRef(false);
   const [createMode, setCreateMode] = useState<CreateMode>("single");
+  const [createStep, setCreateStep] = useState(1);
   const [batchRows, setBatchRows] = useState<BatchRow[]>([
     { recipient: "", amount: "" },
     { recipient: "", amount: "" },
@@ -489,7 +532,11 @@ export default function BanmaoBoxPage() {
   const [boxSort, setBoxSort] = useState<BoxSort>("ready");
   const [boxSearch, setBoxSearch] = useState("");
   const [previewEntry, setPreviewEntry] = useState<BoxEntry | null>(null);
+  const [artworkPreviewOpen, setArtworkPreviewOpen] = useState(false);
+  const [metadataRefreshTokenId, setMetadataRefreshTokenId] = useState<bigint | null>(null);
   const previewCloseRef = useRef<HTMLButtonElement | null>(null);
+  const artworkPreviewTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const artworkPreviewCloseRef = useRef<HTMLButtonElement | null>(null);
   const [inspectId, setInspectId] = useState("");
   const [inspectedBox, setInspectedBox] = useState<InspectedBox | null>(null);
   const [inspectError, setInspectError] = useState<string | null>(null);
@@ -552,6 +599,7 @@ export default function BanmaoBoxPage() {
     [baseCopy, tokenIdentity.displaySymbol, tokenIdentity.isCanonicalBanmao],
   );
   const dashboardCopy = BOX_DASHBOARD_COPY[language];
+  const recipientActionCopy = RECIPIENT_ACTION_COPY[language];
   const { timedOut: boxesTimedOut, resetTimeout: resetBoxesTimeout } =
     useBoundedLoading(boxesLoading);
   const retryBoxes = useCallback(() => {
@@ -748,6 +796,23 @@ export default function BanmaoBoxPage() {
       document.removeEventListener("keydown", closeOnEscape);
     };
   }, [previewEntry]);
+
+  useEffect(() => {
+    if (!artworkPreviewOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    const previewTrigger = artworkPreviewTriggerRef.current;
+    document.body.style.overflow = "hidden";
+    window.requestAnimationFrame(() => artworkPreviewCloseRef.current?.focus());
+    const closeOnEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") setArtworkPreviewOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", closeOnEscape);
+      window.requestAnimationFrame(() => previewTrigger?.focus());
+    };
+  }, [artworkPreviewOpen]);
 
   const closeCollection = useCallback((restoreFocus = true) => {
     if (isBusy || collectionPending) return;
@@ -1107,6 +1172,18 @@ export default function BanmaoBoxPage() {
       toast.success(copy.copied(label), { duration: 1800 });
     } catch {
       toast.error(copy.copyFailed);
+    }
+  };
+
+  const pasteRecipient = async (onPaste: (value: string) => void) => {
+    try {
+      const value = (await navigator.clipboard.readText()).trim();
+      if (!value) throw new Error("Clipboard is empty");
+      onPaste(value);
+      setFormError(null);
+      toast.success(recipientActionCopy.pasted, { duration: 1800 });
+    } catch {
+      toast.error(recipientActionCopy.pasteFailed);
     }
   };
 
@@ -1596,6 +1673,30 @@ export default function BanmaoBoxPage() {
     : createMode === "basket"
       ? copy.modeBasket
       : copy.modeSingle;
+  const previewPrimaryAmount = (() => {
+    if (createMode !== "batch") return parsedAmount;
+    try {
+      return batchRows[0]?.amount ? parseUnits(batchRows[0].amount, tokenDecimals) : 0n;
+    } catch {
+      return 0n;
+    }
+  })();
+  const previewAssets: RendererPreviewAsset[] = [
+    {
+      token: activeTokenAddress ?? chainConfig.tokenAddress ?? "0x0000000000000000000000000000000000000000",
+      amount: previewPrimaryAmount,
+      decimals: tokenDecimals,
+      symbol: tokenSymbol,
+    },
+    ...(createMode === "basket" ? extraAssets.map((asset) => {
+      let assetAmount = 0n;
+      try { assetAmount = asset.amount ? parseUnits(asset.amount, asset.decimals) : 0n; } catch { /* Keep invalid draft amounts at zero. */ }
+      return { token: asset.token, amount: assetAmount, decimals: asset.decimals, symbol: asset.symbol };
+    }) : []),
+  ];
+  const previewCreatedAt = Math.floor(now / 1000);
+  const previewUnlockTime = previewCreatedAt + Number(durationSeconds ?? 0n);
+  const previewTier = getTier(previewPrimaryAmount, tokenDecimals);
 
   return (
     <main className={`box-page ${collectionOpen && isCollectionSheet ? "box-page--collection-sheet-open" : ""}`}>
@@ -1708,14 +1809,24 @@ export default function BanmaoBoxPage() {
         </div>
 
         <div className="box-hero__art">
-          <GiftBoxArtwork />
+          <div className="box-product-mark" aria-hidden="true">
+            <span className="box-product-mark__glow" />
+            <Image
+              className="box-product-mark__image"
+              src="/defi/banmaobox-mark.svg"
+              alt=""
+              width={640}
+              height={640}
+              priority
+            />
+          </div>
           <div className="box-floating-tag box-floating-tag--top">
             <ShieldCheck />
-            ERC-721
+            ERC-721 OWNERSHIP
           </div>
           <div className="box-floating-tag box-floating-tag--bottom">
             <Clock3 />
-            TIME LOCK
+            1–5 ERC-20 · TIME LOCK
           </div>
         </div>
       </section>
@@ -1908,9 +2019,14 @@ export default function BanmaoBoxPage() {
           <form id="box-create-form" onSubmit={handleCreate} className="box-form">
             <ol className="box-create-stages" aria-label={copy.createDescription}>
               {[copy.amount, copy.recipient, copy.duration, copy.reviewTitle].map((label, index) => (
-                <li key={label}><span>{index + 1}</span>{label}</li>
+                <li key={label} className={createStep === index + 1 ? "active" : createStep > index + 1 ? "complete" : ""}>
+                  <button type="button" onClick={() => setCreateStep(index + 1)} aria-current={createStep === index + 1 ? "step" : undefined}>
+                    <span>{createStep > index + 1 ? <CheckCircle2 /> : index + 1}</span>{label}
+                  </button>
+                </li>
               ))}
             </ol>
+            <div className={`box-wizard-step ${createStep === 1 ? "is-active" : ""}`} aria-hidden={createStep !== 1}>
             <div className="box-mode-switch" role="group" aria-label="Box creation mode">
               <button type="button" className={createMode === "single" ? "active" : ""} onClick={() => setCreateMode("single")} disabled={isBusy}>
                 {copy.modeSingle}
@@ -1922,6 +2038,13 @@ export default function BanmaoBoxPage() {
                 {copy.modeBasket}
               </button>
             </div>
+            <div className="box-mode-guide" role="note" aria-live="polite">
+              <Info aria-hidden="true" />
+              <div>
+                <strong>{copy.modeGuideTitle}</strong>
+                <span>{createMode === "single" ? copy.modeSingleGuide : createMode === "batch" ? copy.modeBatchGuide : copy.modeBasketGuide}</span>
+              </div>
+            </div>
             {createMode !== "batch" ? <label className="box-field">
               <span className="box-field__label">
                 {copy.amount}
@@ -1931,7 +2054,7 @@ export default function BanmaoBoxPage() {
                     ? copy.loading
                     : tokenBalanceError
                       ? copy.unavailable
-                      : `${formatExactTokenAmount(tokenBalance, tokenDecimals, language)} ${tokenSymbol}`}
+                      : `${formatTokenAmountForDisplay(tokenBalance, tokenDecimals, language)} ${tokenSymbol}`}
                   <button
                     type="button"
                     onClick={() =>
@@ -1950,9 +2073,9 @@ export default function BanmaoBoxPage() {
               <span className="box-input-wrap">
                 <input
                   inputMode="decimal"
-                  value={amount}
+                  value={formatTokenAmountInput(amount, language)}
                   onChange={(event) => {
-                    setAmount(event.target.value.trim());
+                    setAmount(normalizeTokenAmountInput(event.target.value, language, tokenDecimals));
                     setFormError(null);
                   }}
                   placeholder={copy.amountPlaceholder}
@@ -1964,6 +2087,25 @@ export default function BanmaoBoxPage() {
                   )}
                 />
                 <b>{tokenSymbol}</b>
+              </span>
+              <span className="box-quick-amount">
+                <span className="box-quick-amount__heading"><strong>{copy.quickAmount}</strong><span>{copy.quickAmountHint}</span></span>
+                <span className="box-quick-amount__options">
+                  {[25, 50, 75, 100].map((percentage) => (
+                    <button
+                      type="button"
+                      key={percentage}
+                      onClick={() => {
+                        setAmount(tokenBalancePercentage(tokenBalance, percentage, tokenDecimals));
+                        setFormError(null);
+                      }}
+                      disabled={!isConnected || tokenBalanceLoading || Boolean(tokenBalanceError) || tokenBalance === 0n || isBusy || !isDeployed || !isDeploymentValidated}
+                      aria-label={`${copy.quickAmount} ${percentage}%`}
+                    >
+                      {percentage}%
+                    </button>
+                  ))}
+                </span>
               </span>
             </label> : null}
 
@@ -1997,13 +2139,13 @@ export default function BanmaoBoxPage() {
                   <div className="box-basket__asset" key={asset.token}>
                     <div>
                       <strong>{asset.symbol}</strong>
-                      <small title={asset.token}>{asset.token.slice(0, 8)}…{asset.token.slice(-6)} · {asset.decimals} decimals · {copy.balance} {formatExactTokenAmount(asset.balance, asset.decimals, language)}</small>
+                      <small title={asset.token}>{asset.token.slice(0, 8)}…{asset.token.slice(-6)} · {asset.decimals} decimals · {copy.balance} {formatTokenAmountForDisplay(asset.balance, asset.decimals, language)}</small>
                     </div>
                     <input
                       inputMode="decimal"
-                      value={asset.amount}
+                      value={formatTokenAmountInput(asset.amount, language)}
                       placeholder="Amount"
-                      onChange={(event) => setExtraAssets((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: event.target.value.trim() } : item))}
+                      onChange={(event) => setExtraAssets((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: normalizeTokenAmountInput(event.target.value, language, item.decimals) } : item))}
                       disabled={isBusy}
                     />
                     <button type="button" aria-label={`Remove ${asset.symbol}`} onClick={() => setExtraAssets((current) => current.filter((_, itemIndex) => itemIndex !== index))} disabled={isBusy}>
@@ -2022,7 +2164,10 @@ export default function BanmaoBoxPage() {
               <ShieldAlert aria-hidden="true" />
               <span>{copy.directTransferWarning}</span>
             </div>
+            <div className="box-wizard-actions"><span /><button type="button" className="box-button box-button--primary" onClick={() => setCreateStep(2)}>{copy.next} <ArrowRight /></button></div>
+            </div>
 
+            <div className={`box-wizard-step ${createStep === 2 ? "is-active" : ""}`} aria-hidden={createStep !== 2}>
             {createMode === "batch" ? (
               <div className="box-batch">
                 <div className="box-batch__summary">
@@ -2032,17 +2177,27 @@ export default function BanmaoBoxPage() {
                 {batchRows.map((row, index) => (
                   <div className="box-batch__row" key={index}>
                     <span>{index + 1}</span>
+                    <div className="box-batch__recipient">
+                      <input
+                        value={row.recipient}
+                        onChange={(event) => setBatchRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, recipient: event.target.value.trim() } : item))}
+                        placeholder="Recipient 0x…"
+                        aria-label={`Recipient ${index + 1}`}
+                        spellCheck={false}
+                        disabled={isBusy}
+                      />
+                      <div className="box-recipient-actions">
+                        <button type="button" onClick={() => setBatchRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, recipient: "" } : item))} disabled={isBusy || !row.recipient} aria-label={recipientActionCopy.clear} title={recipientActionCopy.clear}>
+                          <Trash2 />
+                        </button>
+                        <button type="button" onClick={() => void pasteRecipient((value) => setBatchRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, recipient: value } : item)))} disabled={isBusy} aria-label={recipientActionCopy.paste} title={recipientActionCopy.paste}>
+                          <ClipboardPaste />
+                        </button>
+                      </div>
+                    </div>
                     <input
-                      value={row.recipient}
-                      onChange={(event) => setBatchRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, recipient: event.target.value.trim() } : item))}
-                      placeholder="Recipient 0x…"
-                      aria-label={`Recipient ${index + 1}`}
-                      spellCheck={false}
-                      disabled={isBusy}
-                    />
-                    <input
-                      value={row.amount}
-                      onChange={(event) => setBatchRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: event.target.value.trim() } : item))}
+                      value={formatTokenAmountInput(row.amount, language)}
+                      onChange={(event) => setBatchRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: normalizeTokenAmountInput(event.target.value, language, tokenDecimals) } : item))}
                       placeholder={`Amount ${tokenSymbol}`}
                       aria-label={`Amount ${index + 1}`}
                       inputMode="decimal"
@@ -2066,7 +2221,7 @@ export default function BanmaoBoxPage() {
                     ? copy.loading
                     : tokenBalanceError
                       ? copy.unavailable
-                      : `${formatExactTokenAmount(tokenBalance, tokenDecimals, language)} ${tokenSymbol}`}.{" "}
+                      : `${formatTokenAmountForDisplay(tokenBalance, tokenDecimals, language)} ${tokenSymbol}`}.{" "}
                   {copy.batchHint}
                 </small>
               </div>
@@ -2086,11 +2241,22 @@ export default function BanmaoBoxPage() {
                     spellCheck={false}
                     autoComplete="off"
                   />
+                  <span className="box-recipient-actions">
+                    <button type="button" onClick={() => { setRecipient(""); setFormError(null); }} disabled={isBusy || !recipient} aria-label={recipientActionCopy.clear} title={recipientActionCopy.clear}>
+                      <Trash2 />
+                    </button>
+                    <button type="button" onClick={() => void pasteRecipient(setRecipient)} disabled={isBusy || !isDeployed || !isDeploymentValidated} aria-label={recipientActionCopy.paste} title={recipientActionCopy.paste}>
+                      <ClipboardPaste />
+                    </button>
+                  </span>
                 </span>
                 <small className="box-field__hint">{copy.recipientHint}</small>
               </label>
             )}
+            <div className="box-wizard-actions"><button type="button" className="box-button box-button--secondary" onClick={() => setCreateStep(1)}><ArrowLeft /> {copy.previous}</button><button type="button" className="box-button box-button--primary" onClick={() => setCreateStep(3)}>{copy.next} <ArrowRight /></button></div>
+            </div>
 
+            <div className={`box-wizard-step ${createStep === 3 ? "is-active" : ""}`} aria-hidden={createStep !== 3}>
             <fieldset className="box-duration">
               <legend>{copy.duration}</legend>
               <div className="box-duration__options">
@@ -2157,7 +2323,10 @@ export default function BanmaoBoxPage() {
                 </strong>
               </span>
             </div>
+            <div className="box-wizard-actions"><button type="button" className="box-button box-button--secondary" onClick={() => setCreateStep(2)}><ArrowLeft /> {copy.previous}</button><button type="button" className="box-button box-button--primary" onClick={() => setCreateStep(4)}>{copy.next} <ArrowRight /></button></div>
+            </div>
 
+            <div className={`box-wizard-step ${createStep === 4 ? "is-active" : ""}`} aria-hidden={createStep !== 4}>
             {!isCorrectChain && isConnected ? (
               <p className="box-network-note">
                 Switch your wallet to {chainConfig.chain.name} before signing.
@@ -2276,54 +2445,64 @@ export default function BanmaoBoxPage() {
                 {createDisabledReason}
               </p>
             ) : null}
+            <div className="box-wizard-actions box-wizard-actions--final"><button type="button" className="box-button box-button--secondary" onClick={() => setCreateStep(3)} disabled={isBusy}><ArrowLeft /> {copy.previous}</button></div>
+            </div>
           </form>
           </article>
 
-          <aside className="box-live-summary" aria-label={copy.reviewTitle}>
-            <div className="box-live-summary__visual" aria-hidden="true">
-              <div className="box-live-summary__badges">
+          <aside className="box-live-summary" data-create-step={createStep} aria-label={copy.reviewTitle}>
+            <div className="box-live-summary__visual box-nft-preview">
+              <div className="box-nft-preview__header">
+                <span><Sparkles aria-hidden="true" /> {recipientActionCopy.livePreview}</span>
+                <button ref={artworkPreviewTriggerRef} type="button" onClick={() => setArtworkPreviewOpen(true)} aria-label={recipientActionCopy.enlarge} title={recipientActionCopy.enlarge}>
+                  <Maximize2 aria-hidden="true" />
+                </button>
+              </div>
+              <button type="button" className="box-nft-preview__frame" onClick={() => setArtworkPreviewOpen(true)} aria-label={recipientActionCopy.enlarge}>
+                <RendererArtworkPreview
+                  assets={previewAssets}
+                  creator={address}
+                  createdAt={previewCreatedAt}
+                  unlockTime={previewUnlockTime}
+                  tier={previewTier}
+                  batchPosition={createMode === "batch" ? `1 / ${previewBoxCount}` : undefined}
+                />
+              </button>
+              <div className="box-nft-preview__badges" aria-label={`${previewModeLabel}, ${previewTier}`}>
+                <span>{recipientActionCopy.previewBadge}</span>
                 <span>{previewModeLabel}</span>
-                <span>{getTier(parsedAmount, tokenDecimals)}</span>
+                <strong>{previewTier}</strong>
+                {createMode === "batch" ? <span>1 / {previewBoxCount}</span> : null}
               </div>
-              <GiftBoxArtwork ready={parsedAmount > 0n && Boolean(durationSeconds && durationSeconds > 0n)} />
-              <div className="box-live-summary__composition">
-                <span><Box /> {previewBoxCount}</span>
-                <span><Sparkles /> {previewAssetCount}</span>
-              </div>
-              <span className="box-live-summary__status">
-                <LockKeyhole /> {durationSeconds && durationSeconds > 0n ? formatDuration(durationSeconds, language, copy) : copy.duration}
-              </span>
             </div>
             <div className="box-live-summary__content">
-              <span className="box-eyebrow"><Sparkles /> {copy.reviewTitle}</span>
-              <h2>{previewModeLabel}</h2>
-              {createMode === "basket" ? (
-                <div className="box-live-summary__assets">
-                  <span>{tokenSymbol}</span>
-                  {extraAssets.map((asset) => <span key={asset.token}>{asset.symbol}</span>)}
-                  <small>{copy.assetsInBasket(previewAssetCount)}</small>
+              <dl className="box-live-summary__essentials">
+                <div className="box-live-summary__recipient-row">
+                  <dt>{copy.recipient}</dt>
+                  <dd className="box-live-summary__address">
+                    {createMode === "batch" ? `${batchRows.length} ${copy.modeBatch}` : isAddress(recipient) ? (
+                      <a
+                        href={`${explorerBaseUrl.replace(/\/+$/, "")}/address/${recipient}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`${copy.viewExplorer}: ${recipient}`}
+                      >
+                        {recipient}
+                      </a>
+                    ) : recipient || "—"}
+                  </dd>
                 </div>
-              ) : null}
-              <dl className="box-live-summary__details">
-              <div>
-                <dt>{copy.reviewTotal}</dt>
-                <dd>{createMode === "batch" ? formatExactTokenAmount(batchTotal, tokenDecimals, language) : amount || "—"} {tokenSymbol}</dd>
-              </div>
-              <div>
-                <dt>{copy.recipient}</dt>
-                <dd className="box-live-summary__address">
-                  {createMode === "batch" ? `${batchRows.length} ${copy.modeBatch}` : recipient || "—"}
-                </dd>
-              </div>
-              <div>
-                <dt>{copy.reviewOpening}</dt>
-                <dd>{estimatedUnlock.toLocaleString(language, { dateStyle: "medium", timeStyle: "short" })}</dd>
-              </div>
-              <div>
-                <dt>Network</dt>
-                <dd>{chainConfig.chain.name}</dd>
-              </div>
-            </dl>
+                <div>
+                  <dt>{recipientActionCopy.network}</dt>
+                  <dd>{chainConfig.chain.name}</dd>
+                </div>
+                {createMode === "batch" ? (
+                  <div className="box-live-summary__batch-total">
+                    <dt>{copy.reviewTotal}</dt>
+                    <dd>{formatExactTokenAmount(batchTotal, tokenDecimals, language)} {tokenSymbol}</dd>
+                  </div>
+                ) : null}
+              </dl>
             <div className={`box-live-summary__approval ${needsApproval ? "is-needed" : isConnected && parsedAmount > 0n ? "is-ready" : "is-idle"}`}>
               {needsApproval ? <ShieldAlert /> : <ShieldCheck />}
               <span>{needsApproval ? copy.approvalNeeded : isConnected && parsedAmount > 0n ? copy.approvalReady : copy.checking}</span>
@@ -2509,9 +2688,12 @@ export default function BanmaoBoxPage() {
                       setCelebrationOpen(false);
                       setTransferEntry(entry);
                     }}
-                    onRefreshMetadata={(tokenId) =>
-                      void refreshMetadata(tokenId)
-                    }
+                    onRefreshMetadata={(tokenId) => {
+                      setCollectionOpen(false);
+                      setReviewOpen(false);
+                      setTransferEntry(null);
+                      setMetadataRefreshTokenId(tokenId);
+                    }}
                     onPreview={setPreviewEntry}
                     onCopyAddress={(value) => copyToClipboard(value, copy.tokenAddressLabel)}
                     onAddressCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })}
@@ -2763,11 +2945,46 @@ export default function BanmaoBoxPage() {
         </div>
       </details>
 
+      {artworkPreviewOpen ? (
+        <div className="box-dialog-backdrop box-preview-backdrop box-artwork-viewer-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setArtworkPreviewOpen(false);
+        }}>
+          <section className="box-preview-dialog box-artwork-viewer" role="dialog" aria-modal="true" aria-labelledby="box-artwork-viewer-title" aria-describedby="box-artwork-viewer-note">
+            <header>
+              <div>
+                <span>{recipientActionCopy.previewBadge}</span>
+                <h2 id="box-artwork-viewer-title">{recipientActionCopy.livePreview}</h2>
+              </div>
+              <button ref={artworkPreviewCloseRef} type="button" onClick={() => setArtworkPreviewOpen(false)} aria-label={recipientActionCopy.closePreview} title={recipientActionCopy.closePreview}>
+                <X aria-hidden="true" />
+              </button>
+            </header>
+            <div className="box-artwork-viewer__canvas">
+              <RendererArtworkPreview
+                assets={previewAssets}
+                creator={address}
+                createdAt={previewCreatedAt}
+                unlockTime={previewUnlockTime}
+                tier={previewTier}
+                batchPosition={createMode === "batch" ? `1 / ${previewBoxCount}` : undefined}
+              />
+            </div>
+            <div className="box-artwork-viewer__footer">
+              <div className="box-nft-preview__badges">
+                <span>{previewModeLabel}</span><strong>{previewTier}</strong>
+                {createMode === "batch" ? <span>1 / {previewBoxCount}</span> : null}
+              </div>
+              <p id="box-artwork-viewer-note">{recipientActionCopy.previewNote}</p>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
       {previewEntry?.svg ? (
-        <div className="box-dialog-backdrop box-image-preview-backdrop" role="presentation" onMouseDown={(event) => {
+        <div className="box-dialog-backdrop box-preview-backdrop box-image-preview-backdrop" role="presentation" onMouseDown={(event) => {
           if (event.target === event.currentTarget) setPreviewEntry(null);
         }}>
-          <section className="box-image-preview" role="dialog" aria-modal="true" aria-labelledby="box-image-preview-title">
+          <section className="box-preview-dialog box-image-preview" role="dialog" aria-modal="true" aria-labelledby="box-image-preview-title">
             <header>
               <div>
                 <span>{BOX_DASHBOARD_COPY[language].previewImage}</span>
@@ -2818,6 +3035,48 @@ export default function BanmaoBoxPage() {
                 </button>
               </div>
             ) : null}
+          </section>
+        </div>
+      ) : null}
+
+      {metadataRefreshTokenId !== null ? (
+        <div
+          className="box-dialog-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isBusy) setMetadataRefreshTokenId(null);
+          }}
+        >
+          <section className="box-dialog box-metadata-confirm" role="dialog" aria-modal="true" aria-labelledby="box-metadata-confirm-title" aria-describedby="box-metadata-confirm-description">
+            <button type="button" className="box-dialog__close" onClick={() => setMetadataRefreshTokenId(null)} disabled={isBusy} aria-label={METADATA_CONFIRM_COPY[language].cancel}>
+              <X />
+            </button>
+            <span className="box-metadata-confirm__icon" aria-hidden="true"><RefreshCw /></span>
+            <span className="box-eyebrow">{copy.boxNumber} #{metadataRefreshTokenId.toString()}</span>
+            <h2 id="box-metadata-confirm-title">{METADATA_CONFIRM_COPY[language].title}</h2>
+            <p id="box-metadata-confirm-description">{METADATA_CONFIRM_COPY[language].description}</p>
+            <div className="box-metadata-confirm__notice" role="note">
+              <Wallet aria-hidden="true" />
+              <span>{METADATA_CONFIRM_COPY[language].gasNotice}</span>
+            </div>
+            <div className="box-dialog__actions">
+              <button type="button" className="box-button box-button--secondary" onClick={() => setMetadataRefreshTokenId(null)} disabled={isBusy}>
+                {METADATA_CONFIRM_COPY[language].cancel}
+              </button>
+              <button
+                type="button"
+                className="box-button box-button--primary"
+                disabled={isBusy}
+                onClick={() => {
+                  const tokenId = metadataRefreshTokenId;
+                  setMetadataRefreshTokenId(null);
+                  void refreshMetadata(tokenId);
+                }}
+              >
+                {isBusy ? <LoaderCircle className="box-spin" /> : <Wallet />}
+                {METADATA_CONFIRM_COPY[language].continue}
+              </button>
+            </div>
           </section>
         </div>
       ) : null}

@@ -104,39 +104,39 @@ const BOX_PRODUCT_COPY: Record<
 > = {
   en: {
     name: "BanmaoBox",
-    description: "Lock BANMAO in a transferable, time-locked NFT gift.",
+    description: "Pack one or more ERC-20 tokens into a transferable, time-locked NFT.",
     details:
-      "Pack BANMAO into an ERC-721 gift box and choose its opening date. The NFT can be gifted or traded while locked. After the unlock time, its current owner opens the box, receives all underlying BANMAO, and the NFT is burned.",
+      "Set an opening time and send the NFT to any wallet. The right to receive every remaining asset follows its current owner; basket assets release independently and the NFT burns after the final asset leaves.",
   },
   vi: {
     name: "BanmaoBox",
-    description: "Khóa BANMAO trong món quà NFT có thể chuyển nhượng.",
+    description: "Gói một hoặc nhiều token ERC-20 vào NFT khóa thời gian có thể chuyển nhượng.",
     details:
-      "Gói BANMAO vào một hộp quà ERC-721 và chọn ngày mở. NFT có thể được tặng hoặc giao dịch trong thời gian khóa. Sau thời hạn, chủ sở hữu hiện tại mở box, nhận toàn bộ BANMAO và NFT được đốt.",
+      "Đặt thời điểm mở và gửi NFT cho bất kỳ ví nào. Quyền nhận mọi tài sản còn lại đi cùng chủ sở hữu hiện tại; tài sản trong giỏ được giải phóng độc lập và NFT được đốt sau tài sản cuối cùng.",
   },
   zh: {
     name: "BanmaoBox",
-    description: "将 BANMAO 锁入可转让的定时 NFT 礼盒。",
+    description: "将一种或多种 ERC-20 封装进可转让的定时 NFT。",
     details:
-      "将 BANMAO 封装进 ERC-721 礼盒并选择开启日期。锁定期间 NFT 仍可赠送或交易。到期后，当前持有人开启礼盒、领取全部 BANMAO，NFT 随后销毁。",
+      "设定开启时间并把 NFT 发送至任意钱包。领取所有剩余资产的权利随当前持有人转移；篮子资产独立释放，最后一项资产离开后 NFT 销毁。",
   },
   ko: {
     name: "BanmaoBox",
-    description: "BANMAO를 전송 가능한 타임락 NFT 선물에 담으세요.",
+    description: "하나 이상의 ERC-20 토큰을 전송 가능한 타임락 NFT에 담으세요.",
     details:
-      "BANMAO를 ERC-721 선물 박스에 담고 개봉일을 선택합니다. 잠긴 동안에도 NFT를 선물하거나 거래할 수 있습니다. 만료 후 현재 소유자가 박스를 열어 BANMAO 전량을 받고 NFT는 소각됩니다.",
+      "개봉 시간을 설정하고 NFT를 어떤 지갑으로든 보내세요. 남은 모든 자산을 받을 권리는 현재 소유자를 따르며, 바스켓 자산은 독립적으로 해제되고 마지막 자산 후 NFT가 소각됩니다.",
   },
   ru: {
     name: "BanmaoBox",
-    description: "Заблокируйте BANMAO в передаваемом NFT-подарке.",
+    description: "Упакуйте один или несколько ERC-20 в передаваемый NFT с таймлоком.",
     details:
-      "Упакуйте BANMAO в подарочный ERC-721 и выберите дату открытия. Во время блокировки NFT можно дарить или продавать. После срока текущий владелец получает все BANMAO, а NFT сжигается.",
+      "Задайте время открытия и отправьте NFT на любой кошелёк. Право получить оставшиеся активы следует за владельцем; активы корзины выводятся независимо, NFT сжигается после последнего.",
   },
   id: {
     name: "BanmaoBox",
-    description: "Kunci BANMAO dalam hadiah NFT yang dapat ditransfer.",
+    description: "Bungkus satu atau beberapa ERC-20 dalam NFT berkunci waktu yang dapat ditransfer.",
     details:
-      "Bungkus BANMAO dalam hadiah ERC-721 dan pilih tanggal buka. NFT tetap dapat dihadiahkan atau diperdagangkan selama terkunci. Setelah waktunya, pemilik menerima seluruh BANMAO dan NFT dibakar.",
+      "Tentukan waktu buka dan kirim NFT ke dompet mana pun. Hak menerima aset tersisa mengikuti pemilik saat ini; aset keranjang dilepas mandiri dan NFT dibakar setelah aset terakhir.",
   },
 };
 

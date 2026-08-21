@@ -56,14 +56,24 @@ describe("BanmaoBox token identity", () => {
     expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical }, "TOKEN").displaySymbol).toMatch(/^TOKEN 0x876698…89667$/);
   });
 
-  test("parameterizes token-specific copy in all six locales", () => {
+  test("keeps product messaging ERC-20 neutral while parameterizing transaction copy", () => {
+    const marketingKeys = ["title", "subtitle", "lockedMetric", "howDescription", "stepApproveText", "stepGiftText", "stepOpenText"] as const;
+    const transactionKeys = ["amount", "approvalNeeded", "insufficientBalance"] as const;
+
     for (const locale of BOX_LANGUAGES) {
-      const copy = parameterizeBoxCopy(BOX_COPY[locale], "中文", false);
-      for (const key of ["title", "lockedMetric", "amount", "approvalNeeded", "howDescription", "stepApproveText", "stepGiftText", "stepOpenText", "insufficientBalance"] as const) {
+      const baseCopy = BOX_COPY[locale];
+      const copy = parameterizeBoxCopy(baseCopy, "中文", false);
+
+      for (const key of marketingKeys) {
+        expect(baseCopy[key]).not.toContain("BANMAO");
         expect(copy[key]).not.toContain("BANMAO");
-        if (BOX_COPY[locale][key].includes("BANMAO")) expect(copy[key]).toContain("中文");
       }
-      expect(parameterizeBoxCopy(BOX_COPY[locale], "BANMAO", true).title).toBe(BOX_COPY[locale].title);
+      for (const key of transactionKeys) {
+        expect(copy[key]).not.toContain("BANMAO");
+        if (baseCopy[key].includes("BANMAO")) expect(copy[key]).toContain("中文");
+      }
+      expect(baseCopy.subtitle).toContain("ERC-20");
+      expect(parameterizeBoxCopy(baseCopy, "BANMAO", true).title).toBe(baseCopy.title);
     }
   });
 
