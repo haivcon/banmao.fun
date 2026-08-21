@@ -112,6 +112,7 @@ import {
 } from "./amountFormat";
 import { tokenExplorerUrl } from "./tokenIdentity";
 import { RendererArtworkPreview, type RendererPreviewAsset } from "./RendererArtworkPreview";
+import { BanmaoBoxProductMark } from "./BanmaoBoxProductMark";
 import "./box.css";
 
 const DURATION_OPTIONS = [1, 3, 7, 14, 30, 60, 90, 180, 365, 730] as const;
@@ -146,12 +147,12 @@ const RECIPIENT_ACTION_COPY: Record<BoxLanguage, {
   previewNote: string;
   network: string;
 }> = {
-  en: { clear: "Clear recipient", paste: "Replace with clipboard address", pasted: "Recipient pasted", pasteFailed: "Unable to read the clipboard", livePreview: "Live NFT preview", pendingToken: "Token ID after mint", previewBadge: "Preview", enlarge: "Enlarge NFT preview", closePreview: "Close NFT preview", previewNote: "Token ID and final timestamps are assigned when minting.", network: "Network" },
-  vi: { clear: "Xóa người nhận", paste: "Thay bằng địa chỉ đã sao chép", pasted: "Đã dán người nhận", pasteFailed: "Không thể đọc bộ nhớ tạm", livePreview: "Xem trước NFT trực tiếp", pendingToken: "Token ID sau khi mint", previewBadge: "Bản xem trước", enlarge: "Phóng to NFT", closePreview: "Đóng bản xem trước NFT", previewNote: "Token ID và thời gian cuối cùng được xác định khi mint.", network: "Mạng" },
-  zh: { clear: "清除接收者", paste: "替换为剪贴板地址", pasted: "已粘贴接收者", pasteFailed: "无法读取剪贴板", livePreview: "NFT 实时预览", pendingToken: "铸造后的 Token ID", previewBadge: "预览", enlarge: "放大 NFT 预览", closePreview: "关闭 NFT 预览", previewNote: "Token ID 和最终时间戳将在铸造时确定。", network: "网络" },
-  ko: { clear: "받는 사람 지우기", paste: "클립보드 주소로 교체", pasted: "받는 사람을 붙여넣었습니다", pasteFailed: "클립보드를 읽을 수 없습니다", livePreview: "NFT 실시간 미리보기", pendingToken: "민팅 후 Token ID", previewBadge: "미리보기", enlarge: "NFT 미리보기 확대", closePreview: "NFT 미리보기 닫기", previewNote: "Token ID와 최종 타임스탬프는 민팅 시 결정됩니다.", network: "네트워크" },
-  ru: { clear: "Очистить получателя", paste: "Заменить адресом из буфера", pasted: "Получатель вставлен", pasteFailed: "Не удалось прочитать буфер обмена", livePreview: "Предпросмотр NFT", pendingToken: "Token ID после минта", previewBadge: "Предпросмотр", enlarge: "Увеличить NFT", closePreview: "Закрыть предпросмотр NFT", previewNote: "Token ID и окончательное время определяются при минте.", network: "Сеть" },
-  id: { clear: "Hapus penerima", paste: "Ganti dengan alamat clipboard", pasted: "Penerima ditempel", pasteFailed: "Tidak dapat membaca clipboard", livePreview: "Pratinjau NFT langsung", pendingToken: "Token ID setelah mint", previewBadge: "Pratinjau", enlarge: "Perbesar pratinjau NFT", closePreview: "Tutup pratinjau NFT", previewNote: "Token ID dan waktu akhir ditentukan saat mint.", network: "Jaringan" },
+  en: { clear: "Clear all", paste: "Paste address", pasted: "Address pasted", pasteFailed: "Unable to read the clipboard", livePreview: "Live NFT preview", pendingToken: "Token ID after mint", previewBadge: "Preview", enlarge: "Enlarge NFT preview", closePreview: "Close NFT preview", previewNote: "Token ID and final timestamps are assigned when minting.", network: "Network" },
+  vi: { clear: "Xóa tất cả", paste: "Dán địa chỉ", pasted: "Đã dán địa chỉ", pasteFailed: "Không thể đọc bộ nhớ tạm", livePreview: "Xem trước NFT trực tiếp", pendingToken: "Token ID sau khi mint", previewBadge: "Bản xem trước", enlarge: "Phóng to NFT", closePreview: "Đóng bản xem trước NFT", previewNote: "Token ID và thời gian cuối cùng được xác định khi mint.", network: "Mạng" },
+  zh: { clear: "全部清除", paste: "粘贴地址", pasted: "地址已粘贴", pasteFailed: "无法读取剪贴板", livePreview: "NFT 实时预览", pendingToken: "铸造后的 Token ID", previewBadge: "预览", enlarge: "放大 NFT 预览", closePreview: "关闭 NFT 预览", previewNote: "Token ID 和最终时间戳将在铸造时确定。", network: "网络" },
+  ko: { clear: "모두 지우기", paste: "주소 붙여넣기", pasted: "주소를 붙여넣었습니다", pasteFailed: "클립보드를 읽을 수 없습니다", livePreview: "NFT 실시간 미리보기", pendingToken: "민팅 후 Token ID", previewBadge: "미리보기", enlarge: "NFT 미리보기 확대", closePreview: "NFT 미리보기 닫기", previewNote: "Token ID와 최종 타임스탬프는 민팅 시 결정됩니다.", network: "네트워크" },
+  ru: { clear: "Очистить всё", paste: "Вставить адрес", pasted: "Адрес вставлен", pasteFailed: "Не удалось прочитать буфер обмена", livePreview: "Предпросмотр NFT", pendingToken: "Token ID после минта", previewBadge: "Предпросмотр", enlarge: "Увеличить NFT", closePreview: "Закрыть предпросмотр NFT", previewNote: "Token ID и окончательное время определяются при минте.", network: "Сеть" },
+  id: { clear: "Hapus semua", paste: "Tempel alamat", pasted: "Alamat ditempel", pasteFailed: "Tidak dapat membaca clipboard", livePreview: "Pratinjau NFT langsung", pendingToken: "Token ID setelah mint", previewBadge: "Pratinjau", enlarge: "Perbesar pratinjau NFT", closePreview: "Tutup pratinjau NFT", previewNote: "Token ID dan waktu akhir ditentukan saat mint.", network: "Jaringan" },
 };
 
 type CreateMode = "single" | "batch" | "basket";
@@ -495,6 +496,7 @@ export default function BanmaoBoxPage() {
   const collectionToggleRef = useRef<HTMLButtonElement | null>(null);
   const collectionDialogRef = useRef<HTMLDivElement | null>(null);
   const collectionInputRef = useRef<HTMLInputElement | null>(null);
+  const previousWalletAddressRef = useRef<Address | undefined>(undefined);
   const [collectionLifecycle, setCollectionLifecycle] =
     useState<CollectionLifecycleDetails | null>(null);
   const collectionLifecycleRef = useRef<CollectionLifecycleDetails | null>(null);
@@ -867,8 +869,10 @@ export default function BanmaoBoxPage() {
   useEffect(() => () => verificationRequestRef.current?.cancel(), []);
 
   useEffect(() => {
-    if (address && !recipient) setRecipient(address);
-  }, [address, recipient]);
+    const previousAddress = previousWalletAddressRef.current;
+    previousWalletAddressRef.current = address;
+    if (address && address !== previousAddress) setRecipient(address);
+  }, [address]);
 
   useEffect(() => {
     if (phase === "success") {
@@ -1175,7 +1179,7 @@ export default function BanmaoBoxPage() {
     }
   };
 
-  const pasteRecipient = async (onPaste: (value: string) => void) => {
+  const pasteAddress = async (onPaste: (value: string) => void) => {
     try {
       const value = (await navigator.clipboard.readText()).trim();
       if (!value) throw new Error("Clipboard is empty");
@@ -1809,17 +1813,7 @@ export default function BanmaoBoxPage() {
         </div>
 
         <div className="box-hero__art">
-          <div className="box-product-mark" aria-hidden="true">
-            <span className="box-product-mark__glow" />
-            <Image
-              className="box-product-mark__image"
-              src="/defi/banmaobox-mark.svg"
-              alt=""
-              width={640}
-              height={640}
-              priority
-            />
-          </div>
+          <BanmaoBoxProductMark />
           <div className="box-floating-tag box-floating-tag--top">
             <ShieldCheck />
             ERC-721 OWNERSHIP
@@ -1905,20 +1899,42 @@ export default function BanmaoBoxPage() {
             </header>
             <span className="box-collection-hint">{copy.collectionHint}</span>
             <div className="box-collection-controls">
-              <input
-                ref={collectionInputRef}
-                value={collectionToken}
-                onChange={(event) => {
-                  collectionRequestRef.current += 1;
-                  verificationRequestRef.current?.cancel();
-                  setCollectionPending(false);
-                  setCollectionError(null);
-                  setCollectionToken(event.target.value.trim());
-                }}
-                placeholder="Primary ERC-20 address (0x…)"
-                spellCheck={false}
-                disabled={isBusy}
-              />
+              <div className="box-address-control">
+                <input
+                  ref={collectionInputRef}
+                  value={collectionToken}
+                  onChange={(event) => {
+                    collectionRequestRef.current += 1;
+                    verificationRequestRef.current?.cancel();
+                    setCollectionPending(false);
+                    setCollectionError(null);
+                    setCollectionToken(event.target.value.trim());
+                  }}
+                  placeholder="Primary ERC-20 address (0x…)"
+                  spellCheck={false}
+                  disabled={isBusy}
+                />
+                <span className="box-recipient-actions">
+                  <button type="button" onClick={() => {
+                    collectionRequestRef.current += 1;
+                    verificationRequestRef.current?.cancel();
+                    setCollectionPending(false);
+                    setCollectionError(null);
+                    setCollectionToken("");
+                  }} disabled={isBusy || !collectionToken} aria-label={recipientActionCopy.clear} title={recipientActionCopy.clear}>
+                    <Trash2 />
+                  </button>
+                  <button type="button" onClick={() => void pasteAddress((value) => {
+                    collectionRequestRef.current += 1;
+                    verificationRequestRef.current?.cancel();
+                    setCollectionPending(false);
+                    setCollectionError(null);
+                    setCollectionToken(value);
+                  })} disabled={isBusy} aria-label={recipientActionCopy.paste} title={recipientActionCopy.paste}>
+                    <ClipboardPaste />
+                  </button>
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => void handleCollection(false)}
@@ -2112,13 +2128,23 @@ export default function BanmaoBoxPage() {
             {createMode === "basket" ? (
               <div className="box-basket">
                 <div className="box-basket__add">
-                  <input
-                    value={newAssetToken}
-                    onChange={(event) => setNewAssetToken(event.target.value.trim())}
-                    placeholder="Additional ERC-20 address"
-                    spellCheck={false}
-                    disabled={isBusy || extraAssets.length >= 4}
-                  />
+                  <div className="box-address-control">
+                    <input
+                      value={newAssetToken}
+                      onChange={(event) => setNewAssetToken(event.target.value.trim())}
+                      placeholder="Additional ERC-20 address"
+                      spellCheck={false}
+                      disabled={isBusy || extraAssets.length >= 4}
+                    />
+                    <span className="box-recipient-actions">
+                      <button type="button" onClick={() => { setNewAssetToken(""); setFormError(null); }} disabled={isBusy || !newAssetToken} aria-label={recipientActionCopy.clear} title={recipientActionCopy.clear}>
+                        <Trash2 />
+                      </button>
+                      <button type="button" onClick={() => void pasteAddress(setNewAssetToken)} disabled={isBusy || extraAssets.length >= 4} aria-label={recipientActionCopy.paste} title={recipientActionCopy.paste}>
+                        <ClipboardPaste />
+                      </button>
+                    </span>
+                  </div>
                   <button type="button" onClick={() => void handleAddAsset()} disabled={isBusy || extraAssets.length >= 4}>
                     {copy.addAsset}
                   </button>
@@ -2190,7 +2216,7 @@ export default function BanmaoBoxPage() {
                         <button type="button" onClick={() => setBatchRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, recipient: "" } : item))} disabled={isBusy || !row.recipient} aria-label={recipientActionCopy.clear} title={recipientActionCopy.clear}>
                           <Trash2 />
                         </button>
-                        <button type="button" onClick={() => void pasteRecipient((value) => setBatchRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, recipient: value } : item)))} disabled={isBusy} aria-label={recipientActionCopy.paste} title={recipientActionCopy.paste}>
+                        <button type="button" onClick={() => void pasteAddress((value) => setBatchRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, recipient: value } : item)))} disabled={isBusy} aria-label={recipientActionCopy.paste} title={recipientActionCopy.paste}>
                           <ClipboardPaste />
                         </button>
                       </div>
@@ -2245,7 +2271,7 @@ export default function BanmaoBoxPage() {
                     <button type="button" onClick={() => { setRecipient(""); setFormError(null); }} disabled={isBusy || !recipient} aria-label={recipientActionCopy.clear} title={recipientActionCopy.clear}>
                       <Trash2 />
                     </button>
-                    <button type="button" onClick={() => void pasteRecipient(setRecipient)} disabled={isBusy || !isDeployed || !isDeploymentValidated} aria-label={recipientActionCopy.paste} title={recipientActionCopy.paste}>
+                    <button type="button" onClick={() => void pasteAddress(setRecipient)} disabled={isBusy || !isDeployed || !isDeploymentValidated} aria-label={recipientActionCopy.paste} title={recipientActionCopy.paste}>
                       <ClipboardPaste />
                     </button>
                   </span>
@@ -3192,6 +3218,14 @@ export default function BanmaoBoxPage() {
                     disabled={isBusy}
                     spellCheck={false}
                   />
+                  <span className="box-recipient-actions">
+                    <button type="button" onClick={() => { setTransferRecipient(""); setTransferError(null); }} disabled={isBusy || !transferRecipient} aria-label={recipientActionCopy.clear} title={recipientActionCopy.clear}>
+                      <Trash2 />
+                    </button>
+                    <button type="button" onClick={() => void pasteAddress((value) => { setTransferRecipient(value); setTransferError(null); })} disabled={isBusy} aria-label={recipientActionCopy.paste} title={recipientActionCopy.paste}>
+                      <ClipboardPaste />
+                    </button>
+                  </span>
                 </span>
               </label>
 

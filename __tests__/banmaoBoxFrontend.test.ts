@@ -439,7 +439,13 @@ describe("BanmaoBox transaction UX contract", () => {
     const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
 
     expect(page).toContain("navigator.clipboard.readText()");
+    expect(page).toContain("const pasteAddress = async");
     expect(page).toContain("setRecipient(\"\")");
+    expect(page).toContain("setCollectionToken(\"\")");
+    expect(page).toContain("setNewAssetToken(\"\")");
+    expect(page).toContain("setTransferRecipient(\"\")");
+    expect(page).toContain("previousWalletAddressRef.current = address");
+    expect(page).not.toContain("if (address && !recipient) setRecipient(address)");
     expect(page).toContain("ClipboardPaste");
     expect(page).toContain("Trash2");
     expect(page).toContain("[1, 3, 7, 14, 30, 60, 90, 180, 365, 730]");
@@ -485,7 +491,25 @@ describe("BanmaoBox transaction UX contract", () => {
     const hub = fs.readFileSync(path.join(process.cwd(), "app/defi/page.tsx"), "utf8");
     const mark = fs.readFileSync(path.join(process.cwd(), "public/defi/banmaobox-mark.svg"), "utf8");
 
-    expect(page).toContain('src="/defi/banmaobox-mark.svg"');
+    const animatedMark = fs.readFileSync(path.join(process.cwd(), "app/defi/box/BanmaoBoxProductMark.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
+
+    expect(page).toContain("<BanmaoBoxProductMark />");
+    expect(animatedMark).toContain('className="box-product-mark__motion"');
+    expect(animatedMark).toContain('className="box-mark-orbit box-mark-orbit--mint"');
+    expect(animatedMark).toContain('className="box-mark-lock__hands"');
+    expect(animatedMark).toContain("onPointerMove={handlePointerMove}");
+    expect(css).toContain("@keyframes box-mark-scene-float");
+    expect(css).toMatch(/\.box-product-mark__motion\s*\{[^}]*animation:\s*box-mark-scene-float 3\.6s ease-in-out infinite/);
+    expect(css).toMatch(/\.box-product-mark__svg\s*\{[^}]*display:\s*block[^}]*width:\s*100%/);
+    expect(css).not.toMatch(/\.box-product-mark__svg\s*\{[^}]*animation:/);
+    expect(css).toContain("@keyframes box-mark-orbit-forward");
+    expect(css).toContain("@keyframes box-mark-lock-pulse");
+    expect(css).toMatch(/\.box-mark-orbit\s*\{[^}]*transform-box:\s*view-box[^}]*transform-origin:\s*50%\s+50%/);
+    expect(css).toMatch(/\.box-mark-vault__light\s*\{[^}]*transform-box:\s*fill-box[^}]*transform-origin:\s*center/);
+    expect(css).not.toContain("translate3d(0,4px,18px)");
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]*\.box-mark-orbit/);
+    expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*\.box-mark-orbit--blue[^}]*display:\s*none/);
     expect(page).toContain("1–5 ERC-20 · TIME LOCK");
     expect(layout).toContain("Pack one or more ERC-20 tokens");
     expect(layout).not.toContain("Time-Locked BANMAO NFT");
@@ -502,11 +526,16 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(css).toMatch(/\.box-submit[\s\S]*min-height:\s*56px/);
     expect(css).toMatch(/\.box-create-workspace\s*\{[\s\S]*grid-template-columns:/);
     expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*\.box-live-summary\s*\{[\s\S]*display:\s*block/);
-    expect(css).toMatch(/\.box-live-summary:not\(\[data-create-step="4"\]\) \.box-nft-preview__frame/);
+    expect(css).toMatch(/\.box-live-summary:not\(\[data-create-step="4"\]\) \.box-nft-preview__frame\s*\{[^}]*width:\s*min\(100%,\s*420px\)[^}]*max-height:\s*none[^}]*margin-inline:\s*auto/);
+    expect(css).toMatch(/\.box-live-summary:not\(\[data-create-step="4"\]\) \.box-nft-preview__frame \.box-renderer-preview\s*\{[^}]*transform:\s*none/);
+    expect(css).not.toContain("transform: translateY(-8%)");
     expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*\.box-hero__art\s*\{[\s\S]*display:\s*grid/);
+    expect(css).toMatch(/@media \(max-width: 520px\)[\s\S]*\.box-create-stages\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+    expect(css).toMatch(/@media \(max-width: 520px\)[\s\S]*\.box-create-stages li button\s*\{[^}]*width:\s*100%[^}]*overflow-wrap:\s*anywhere[^}]*white-space:\s*normal/);
+    expect(css).toMatch(/@media \(max-width: 520px\)[\s\S]*\.box-wizard-actions\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
   });
 
-  test("contains the mobile collection manager as one accessible modal sheet without changing desktop inline layout", () => {
+  test("centers the mobile collection manager above navigation without changing desktop inline layout", () => {
     const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
     const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
     const mobile = css.slice(css.indexOf("@media (max-width: 820px)", css.indexOf(".box-collection-layer")));
@@ -527,9 +556,10 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(page.match(/box-collection-controls/g)).toHaveLength(1);
 
     expect(css).toMatch(/\.box-collection-layer\s*\{\s*display:\s*contents/);
-    expect(mobile).toMatch(/\.box-collection-layer\s*\{[\s\S]*position:\s*fixed[\s\S]*inset:\s*0[\s\S]*z-index:\s*900/);
-    expect(mobile).toMatch(/\.box-collection-body\s*\{[\s\S]*width:\s*100%[\s\S]*max-height:\s*88dvh[\s\S]*overflow-y:\s*auto/);
+    expect(mobile).toMatch(/\.box-collection-layer\s*\{[\s\S]*position:\s*fixed[\s\S]*inset:\s*var\(--defi-shell-header-height,\s*60px\)\s+0\s+0[\s\S]*z-index:\s*1500[\s\S]*align-items:\s*center[\s\S]*justify-content:\s*center/);
+    expect(mobile).toMatch(/\.box-collection-body\s*\{[\s\S]*width:\s*min\(720px,\s*100%\)[\s\S]*max-height:\s*calc\(100dvh\s*-\s*var\(--defi-shell-header-height,\s*60px\)\s*-\s*32px\)[\s\S]*overflow-y:\s*auto/);
     expect(mobile).toMatch(/padding-bottom:\s*calc\([^;]*env\(safe-area-inset-bottom\)/);
+    expect(mobile).not.toMatch(/\.box-collection-layer\s*\{[^}]*align-items:\s*flex-end/);
     expect(mobile).toMatch(/\.box-collection-controls input\s*\{[\s\S]*font-size:\s*16px/);
     expect(mobile).toMatch(/\.box-collection-controls button[\s\S]*min-height:\s*44px/);
     expect(mobile).toMatch(/body:has\(\.box-collection-layer\.is-open\) \.banmao-ai-launcher[\s\S]*display:\s*none/);
@@ -558,6 +588,10 @@ describe("BanmaoBox transaction UX contract", () => {
 
     expect(transferRule).toMatch(/width:\s*min\(700px,\s*calc\(100vw\s*-\s*48px\)\)/);
     expect(page).toContain('className="box-dialog box-transfer-dialog"');
+    expect(css).toMatch(/\.box-dialog-backdrop\s*\{[^}]*z-index:\s*1500[^}]*inset:\s*var\(--defi-shell-header-height,\s*68px\)\s+0\s+0/);
+    expect(css).toMatch(/\.box-preview-backdrop\s*\{[^}]*z-index:\s*1600/);
+    expect(css).toMatch(/@media \(max-width:\s*820px\)[\s\S]*\.box-dialog-backdrop\s*\{[^}]*align-items:\s*center[^}]*padding:\s*16px/);
+    expect(css).not.toMatch(/@media \(max-width:\s*820px\)[\s\S]*\.box-dialog-backdrop\s*\{[^}]*align-items:\s*end/);
   });
 
   test("classifies mocked provider lifecycle failures without claiming submission", () => {
@@ -667,7 +701,7 @@ describe("BanmaoBox portfolio dashboard", () => {
     expect(page).toContain("copyToClipboard(value, copy.tokenAddressLabel)");
     expect(css).toMatch(/\.box-preview-backdrop\s*\{[^}]*inset:\s*var\(--defi-shell-header-height,\s*68px\)\s+0\s+0/);
     expect(css).toMatch(/\.box-preview-dialog\s*\{[^}]*max-height:\s*calc\(100dvh\s*-\s*var\(--defi-shell-header-height,\s*68px\)\s*-\s*36px\)/);
-    expect(css).toMatch(/@media \(max-width:\s*820px\)[\s\S]*\.box-preview-dialog\s*\{[^}]*max-height:\s*calc\(100dvh\s*-\s*var\(--defi-shell-header-height,\s*68px\)\s*-\s*24px\)/);
+    expect(css).toMatch(/@media \(max-width:\s*820px\)[\s\S]*\.box-preview-dialog\s*\{[^}]*max-height:\s*calc\(100dvh\s*-\s*var\(--defi-shell-header-height,\s*60px\)\s*-\s*24px\)/);
     expect(css).toMatch(/\.box-image-preview__canvas\s*\{[^}]*overflow:\s*auto/);
     expect(css).toMatch(/\.box-image-preview__image\s*\{[^}]*object-fit:\s*contain/);
     expect(css).toMatch(/\.box-item__svg\s*\{[\s\S]*object-fit:\s*contain/);
