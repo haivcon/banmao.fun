@@ -50,6 +50,20 @@ test("desktop low-height panel reserves the root offset and panel gap", () => {
   expect(rule).toMatch(/bottom:\s*72px/);
 });
 
+test("website and Collection display controls are prominent before the composer", () => {
+  const panel=fs.readFileSync(path.join(process.cwd(), "app/components/ai/AIChatPanel.tsx"), "utf8");
+  const controls=fs.readFileSync(path.join(process.cwd(), "app/components/ai/CollectionDisplayControls.tsx"), "utf8");
+  const websiteControl=panel.indexOf('<WebsiteDisplayControls language={props.language} />');
+  const collectionControl=panel.indexOf('{props.surface === "collection" && <CollectionDisplayControls');
+  const composer=panel.indexOf('<form className="banmao-ai-composer"');
+  expect(websiteControl).toBeGreaterThan(-1);
+  expect(websiteControl).toBeLessThan(composer);
+  expect(collectionControl).toBeGreaterThan(-1);
+  expect(collectionControl).toBeLessThan(composer);
+  expect(controls).toContain('className="banmao-ai-display-settings" open');
+  expect(controls).toContain('Cài đặt hiển thị thủ công');
+});
+
 test("markdown horizontal rules render as separators instead of literal text", () => {
   const html=renderToStaticMarkup(createElement(MarkdownRenderer,{content:"First\n\n---\n\nSecond",language:"en"}));
   expect(html).toContain("<hr/>");

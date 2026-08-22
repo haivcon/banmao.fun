@@ -24,6 +24,7 @@ export function showLegalRiskModal(
         document.getElementById("okx-flag-overlay")?.remove();
         const overlay = document.createElement("div");
         overlay.id = "okx-flag-overlay";
+        overlay.className = "airdrop-viewport-overlay";
         Object.assign(overlay.style, {
             position: "fixed", inset: "0", zIndex: "999999",
             background: "rgba(0,0,0,0.8)", backdropFilter: "blur(6px)",
@@ -41,7 +42,7 @@ export function showLegalRiskModal(
         ).join("");
 
         overlay.innerHTML = `
-            <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #ff4444;border-radius:16px;padding:24px;width:min(92vw,540px);box-shadow:0 0 60px rgba(255,68,68,0.4);max-height:85vh;display:flex;flex-direction:column;">
+            <div class="airdrop-viewport-dialog" role="dialog" aria-modal="true" style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #ff4444;border-radius:16px;padding:24px;width:min(92vw,540px);box-shadow:0 0 60px rgba(255,68,68,0.4);max-height:85vh;display:flex;flex-direction:column;">
                 <div style="font-size:22px;font-weight:700;color:#ff6b6b;margin-bottom:8px;text-align:center;">⚠️ ${labels.title}</div>
                 <div style="font-size:12px;color:#ccc;margin-bottom:10px;text-align:center;line-height:1.5;">${labels.desc}</div>
                 <div style="font-size:11px;color:#888;margin-bottom:10px;text-align:center;">📦 ${labels.batch}: ${batchSize} ${labels.addresses}</div>

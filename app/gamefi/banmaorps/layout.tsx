@@ -2,13 +2,15 @@
 // Server layout with proper manifest metadata for PWA install
 
 import type { Metadata } from "next";
+import { createStandardViewport } from "../../../lib/responsive/displayStandard";
 import GameLayoutClient from "./GameLayoutClient";
+
+export const viewport = createStandardViewport("#FFD700");
 
 export const metadata: Metadata = {
     title: "BANMAO RPS",
     description: "Play Rock–Paper–Scissors using $BANMAO on XLayer",
     manifest: "/manifest-game.json",
-    themeColor: "#FFD700",
     appleWebApp: {
         capable: true,
         statusBarStyle: "black-translucent",

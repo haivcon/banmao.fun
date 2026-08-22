@@ -1,16 +1,8 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
+import { createStandardViewport } from "../../lib/responsive/displayStandard";
 import DeFiLayoutClient from "./DeFiLayoutClient";
 
-// Use one ultra-dense viewport across every DeFi route. A 0.375 initial scale
-// gives small phones a roughly 1000px-wide workspace while navigation, portals
-// and module content continue to share one coordinate system.
-export const viewport: Viewport = {
-    width: "device-width",
-    initialScale: 0.375,
-    minimumScale: 0.375,
-    userScalable: true,
-    themeColor: "#05070d",
-};
+export const viewport = createStandardViewport("#05070d");
 
 export const metadata: Metadata = {
     title: "DeFi Hub | BANMAO",

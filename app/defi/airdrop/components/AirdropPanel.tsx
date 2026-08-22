@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import Image from "next/image";
 import { useAccount, useWriteContract, useBalance, useReadContract, usePublicClient } from "wagmi";
 import { parseUnits, isAddress, formatUnits } from "viem";
 import AIcon from "./AirdropIcons";
@@ -247,6 +248,8 @@ function generateResultCSV(results: SendResult[]): string {
     ).join("\n");
 }
 
+const passthroughImageLoader = ({ src }: { src: string }) => src;
+
 function downloadFile(content: string, filename: string) {
     const blob = new Blob([content], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
@@ -267,8 +270,13 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     // === Session persistence helper ===
     const SESSION_KEY = "banmao_airdrop_session";
     const loadSession = () => { try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null"); } catch { return null; } };
-    const saveSession = (data: Record<string, any>) => { try { const prev = loadSession() || {}; sessionStorage.setItem(SESSION_KEY, JSON.stringify({ ...prev, ...data })); } catch {} };
-    const clearSession = () => { try { sessionStorage.removeItem(SESSION_KEY); } catch {} };
+    const saveSession = useCallback((data: Record<string, any>) => {
+        try {
+            const prev = JSON.parse(sessionStorage.getItem(SESSION_KEY) || "null") || {};
+            sessionStorage.setItem(SESSION_KEY, JSON.stringify({ ...prev, ...data }));
+        } catch {}
+    }, []);
+    const clearSession = useCallback(() => { try { sessionStorage.removeItem(SESSION_KEY); } catch {} }, []);
     const saved = useRef(loadSession());
 
     // State (with session restore)
@@ -370,6 +378,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             document.getElementById("okx-flag-overlay")?.remove();
             const overlay = document.createElement("div");
             overlay.id = "okx-flag-overlay";
+            overlay.className = "airdrop-viewport-overlay";
             Object.assign(overlay.style, {
                 position: "fixed", inset: "0", zIndex: "999999",
                 background: "rgba(0,0,0,0.8)", backdropFilter: "blur(6px)",
@@ -387,7 +396,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             ).join("");
             const totalAddrs = (batchAddrs || []).length;
             overlay.innerHTML = `
-                <div style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #ff4444;border-radius:16px;padding:24px;width:min(92vw,540px);box-shadow:0 0 60px rgba(255,68,68,0.4);max-height:85vh;display:flex;flex-direction:column;">
+                <div class="airdrop-viewport-dialog" role="dialog" aria-modal="true" style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:2px solid #ff4444;border-radius:16px;padding:24px;width:min(92vw,540px);box-shadow:0 0 60px rgba(255,68,68,0.4);max-height:85vh;display:flex;flex-direction:column;">
                     <div style="font-size:22px;font-weight:700;color:#ff6b6b;margin-bottom:8px;text-align:center;">⚠️ ${labels.title}</div>
                     <div style="font-size:12px;color:#ccc;margin-bottom:10px;text-align:center;line-height:1.5;">${labels.desc}</div>
                     <div style="font-size:11px;color:#888;margin-bottom:10px;text-align:center;">📦 ${labels.batch}: ${batchSize} ${labels.addresses}</div>
@@ -579,6 +588,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     // Analytics state (#12)
     const [analyticsData, setAnalyticsData] = useState<any>(null);
     const [rightTab, setRightTab] = useState<"history" | "analytics">("history");
+    const [mobileWorkspace, setMobileWorkspace] = useState<"send" | "leaderboard" | "history">("send");
     // Profile editing state
     const AVATARS = ["🐱", "🦁", "🐯", "🐻", "🦊", "🐼", "🐲", "🦅"];
     const [profileMap, setProfileMap] = useState<Record<string, { name: string; avatar: number; telegram?: string; twitter?: string }>>({});
@@ -729,7 +739,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             customAmounts: Object.fromEntries(customAmounts),
             tokenAddress, tokenSymbol, tokenDecimals,
         });
-    }, [step, activeTab, sendMode, amountMode, addressInput, parsedAddresses, amountPerWallet, customAmounts, tokenAddress, tokenSymbol, tokenDecimals]);
+    }, [step, activeTab, sendMode, amountMode, addressInput, parsedAddresses, amountPerWallet, customAmounts, tokenAddress, tokenSymbol, tokenDecimals, saveSession, clearSession]);
 
     // Auto-fetch leaderboard & history — re-runs when tokenAddress changes
     useEffect(() => {
@@ -800,11 +810,11 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     };
 
     // Toast helper — supports stacking, progress bar, close button
-    const showToast = (msg: string) => {
+    const showToast = useCallback((msg: string) => {
         const id = ++toastIdRef.current;
         setToasts(prev => [...prev.slice(-3), { id, msg, ts: Date.now() }]);
         setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
-    };
+    }, []);
     const dismissToast = (id: number) => setToasts(prev => prev.filter(t => t.id !== id));
 
     // Load storage
@@ -2059,7 +2069,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
     };
 
     // ========== Holder Scanning ==========
-    const fetchHotTokens = async (chain: string) => {
+    const fetchHotTokens = useCallback(async (chain: string) => {
         setHotTokensLoading(true);
         setHotTokens([]);
         try {
@@ -2074,7 +2084,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             showToast(t("hotTokensEmpty") || "Failed to load tokens");
         }
         setHotTokensLoading(false);
-    };
+    }, [showToast, t]);
 
     const handleChainChange = (chain: string) => {
         playClick();
@@ -2083,16 +2093,14 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
         setSelectedHotToken("");
         setSelectedHolders(new Set());
         setHolderMinBalance("");
-        fetchHotTokens(chain);
     };
 
-    // Auto-load trending tokens when entering holders mode
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Auto-load trending tokens when entering holders mode or changing holder chain
     useEffect(() => {
-        if (scanMode === "holders" && hotTokens.length === 0 && !hotTokensLoading) {
-            fetchHotTokens(holderChain);
+        if (scanMode === "holders") {
+            void fetchHotTokens(holderChain);
         }
-    }, [scanMode]);
+    }, [scanMode, holderChain, fetchHotTokens]);
 
     const scanHolders = async (tokenAddr?: string) => {
         const addr = tokenAddr || selectedHotToken || holderTokenInput;
@@ -2920,7 +2928,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             )}
             <div className="airdrop-token-selector">
                 <button className="airdrop-token-current" onClick={() => { playClick(); const opening = !showTokenSelector; setShowTokenSelector(opening); if (opening) { fetchTokenBalances(); fetchPresetTokenMeta(); } }}>
-                    {(() => { const preset = PRESET_TOKENS.find(p => p.address.toLowerCase() === tokenAddress.toLowerCase()); return preset ? <img src={preset.logo} alt="" className="token-current-logo" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} /> : <AIcon name="coins" size={14} />; })()}
+                    {(() => { const preset = PRESET_TOKENS.find(p => p.address.toLowerCase() === tokenAddress.toLowerCase()); return preset ? <Image loader={passthroughImageLoader} unoptimized src={preset.logo} alt="" width={20} height={20} className="token-current-logo" onError={e => { e.currentTarget.style.display = "none"; }} /> : <AIcon name="coins" size={14} />; })()}
                     <span className="airdrop-token-symbol">${tokenSymbol}</span>
                     <span className="airdrop-token-addr-full">{tokenAddress}</span>
                     <span className="airdrop-token-copy-btn" role="button" tabIndex={0} onClick={e => { e.stopPropagation(); copyText(tokenAddress); showToast(t("airdropAddressCopied")); }} title="Copy address"><AIcon name="copy" size={10} /></span>
@@ -2959,7 +2967,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                             <div key={pt.address} className={`airdrop-book-item preset-token-item ${isActive ? "selected" : ""}`}
                                 style={{ cursor: "pointer", border: "none", background: isActive ? "rgba(249,115,22,0.12)" : "transparent", width: "100%", display: "flex", alignItems: "center" }}
                                 onClick={() => { setTokenAddress(pt.address); setTokenSymbol(pt.symbol); setTokenDecimals(pt.decimals); setShowTokenSelector(false); playClick(); }}>
-                                <img src={pt.logo} alt="" className="preset-token-logo" onError={e => { (e.target as HTMLImageElement).src = ""; (e.target as HTMLImageElement).style.display = "none"; }} />
+                                <Image loader={passthroughImageLoader} unoptimized src={pt.logo} alt="" width={32} height={32} className="preset-token-logo" onError={e => { e.currentTarget.style.display = "none"; }} />
                                 <div className="preset-token-info">
                                     <div className="preset-token-top">
                                         <span className="preset-token-symbol">${pt.symbol}</span>
@@ -3034,7 +3042,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                     >
                                         <div className="token-search-result-main" onClick={() => selectSearchResult(tok)}>
                                             {tok.tokenLogoUrl ? (
-                                                <img src={tok.tokenLogoUrl} alt="" className="token-search-logo" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                                <Image loader={passthroughImageLoader} unoptimized src={tok.tokenLogoUrl} alt="" width={28} height={28} className="token-search-logo" onError={e => { e.currentTarget.style.display = "none"; }} />
                                             ) : (
                                                 <span className="token-search-logo-placeholder"><AIcon name="coins" size={16} /></span>
                                             )}
@@ -3357,7 +3365,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                                         {/* 3. Multi-token chips (top 3, exclude OKB to avoid duplication) */}
                                                         {wTokens.filter(t => t.symbol !== "OKB").slice(0, 3).map(tok => (
                                                             <span key={tok.symbol + tok.tokenAddress} className="airdrop-wallet-bal">
-                                                                {tok.logoUrl ? <img src={tok.logoUrl} alt="" className="wallet-token-chip-logo" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : <AIcon name="coins" size={11} />}
+                                                                {tok.logoUrl ? <Image loader={passthroughImageLoader} unoptimized src={tok.logoUrl} alt="" width={14} height={14} className="wallet-token-chip-logo" onError={e => { e.currentTarget.style.display = "none"; }} /> : <AIcon name="coins" size={11} />}
                                                                 {fmtBal(tok.balance)} {tok.symbol}
                                                             </span>
                                                         ))}
@@ -3396,7 +3404,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                                             {wTokens.map(tok => (
                                                                 <div key={tok.symbol + tok.tokenAddress} className="airdrop-wallet-asset">
                                                                     <span className="asset-label">
-                                                                        {tok.logoUrl ? <img src={tok.logoUrl} alt="" className="wallet-asset-logo" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} /> : null}
+                                                                        {tok.logoUrl ? <Image loader={passthroughImageLoader} unoptimized src={tok.logoUrl} alt="" width={16} height={16} className="wallet-asset-logo" onError={e => { e.currentTarget.style.display = "none"; }} /> : null}
                                                                         {tok.symbol}
                                                                     </span>
                                                                     <span className="asset-value">
@@ -3757,7 +3765,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             {/* QR Scanner Modal (#6) */}
             {showQrScanner && (
                 <div className="airdrop-qr-modal">
-                    <div className="airdrop-qr-content">
+                    <div className="airdrop-qr-content" role="dialog" aria-modal="true" aria-label={t("scanQrCode") || "Scan QR code"}>
                         <div className="airdrop-qr-header">
                             <span><AIcon name="target" size={16} /> {t("qrScanTitle") || "Scan QR Code"}</span>
                             <button onClick={stopQrScanner}><AIcon name="xCircle" size={18} /></button>
@@ -4071,7 +4079,12 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
 
     return (
         <>
-            <div className="airdrop-layout-3col">
+            <nav className="airdrop-mobile-workspace-tabs" aria-label={lang === "vi" ? "Không gian làm việc" : "Airdrop workspace"}>
+                <button type="button" className={mobileWorkspace === "send" ? "active" : ""} onClick={() => setMobileWorkspace("send")}>🚀 {lang === "vi" ? "Gửi" : "Send"}</button>
+                <button type="button" className={mobileWorkspace === "leaderboard" ? "active" : ""} onClick={() => setMobileWorkspace("leaderboard")}>🏆 {t("lbTab") || "Leaderboard"}</button>
+                <button type="button" className={mobileWorkspace === "history" ? "active" : ""} onClick={() => { setRightTab("history"); setMobileWorkspace("history"); }}>🕐 {t("histTab") || "History"}</button>
+            </nav>
+            <div className={`airdrop-layout-3col mobile-workspace-${mobileWorkspace}`}>
                 {leaderboardPanel}
                 {mainPanel}
                 {rightPanel}
@@ -4079,7 +4092,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
             {/* Profile Edit Modal — rendered at top level to escape stacking context */}
             {showProfileEdit && (
                 <div className="lb-profile-modal-overlay" onClick={() => setShowProfileEdit(false)}>
-                    <div className="lb-profile-modal" onClick={e => e.stopPropagation()}>
+                    <div className="lb-profile-modal" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
                         <div className="lb-profile-title">{t("editProfile") || "Edit Profile"}</div>
                         <div className="lb-profile-avatar-row">
                             {AVATARS.map((a, i) => (
@@ -4118,7 +4131,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                 const isViewMe = address?.toLowerCase() === viewProfileAddr.toLowerCase();
                 return (
                     <div className="lb-profile-modal-overlay" onClick={() => setViewProfileAddr(null)}>
-                        <div className="lb-profile-modal" onClick={e => e.stopPropagation()}>
+                        <div className="lb-profile-modal" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
                             <div className="lb-profile-view-avatar">{vAvatar}</div>
                             <div className="lb-profile-view-name">{vName}</div>
                             <div className="lb-profile-view-address">

@@ -42,6 +42,74 @@ body {
     font-size: 14px;
 }
 
+/* Burn light theme uses the same persisted preference as the other DeFi tools. */
+.burn-page.light {
+    --burn-bg-start: #fff7ed;
+    --burn-bg-end: #f5f3ff;
+    --burn-glass-bg: rgba(255, 255, 255, 0.76);
+    --burn-glass-border: rgba(124, 45, 18, 0.1);
+    --burn-text: #291b24;
+    --burn-text-muted: #71636c;
+    background:
+        radial-gradient(circle at 50% 0%, rgba(249, 115, 22, 0.12) 0%, transparent 48%),
+        radial-gradient(circle at 80% 20%, rgba(239, 68, 68, 0.07) 0%, transparent 38%),
+        linear-gradient(180deg, var(--burn-bg-start) 0%, var(--burn-bg-end) 100%);
+}
+
+.burn-page.light .burn-header {
+    background: linear-gradient(135deg, rgba(255, 250, 245, 0.96), rgba(245, 243, 255, 0.94));
+    box-shadow: 0 4px 24px rgba(71, 45, 55, 0.1), 0 1px 0 rgba(249, 115, 22, 0.14) inset;
+}
+
+.burn-page.light .burn-bento-container,
+.burn-page.light .burn-card,
+.burn-page.light .burn-stat-card,
+.burn-page.light .burn-my-contribution {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(124, 45, 18, 0.1);
+    box-shadow: 0 10px 30px rgba(71, 45, 55, 0.08);
+}
+
+.burn-page.light .burn-bento-cell {
+    background: rgba(255, 250, 245, 0.76);
+    border-color: rgba(124, 45, 18, 0.1);
+}
+
+.burn-page.light :is(
+    .burn-balance-value,
+    .burn-bento-info h3,
+    .burn-bento-title h2,
+    .burn-card h3,
+    .burn-bento-allocation .alloc-title
+) {
+    color: #291b24;
+}
+
+.burn-page.light :is(
+    .burn-balance-label,
+    .burn-bento-title p,
+    .burn-bento-info p,
+    .burn-bento-stat .stat-label,
+    .burn-bento-stat .stat-unit,
+    .burn-bento-allocation .alloc-desc
+) {
+    color: rgba(41, 27, 36, 0.62) !important;
+}
+
+.burn-page.light .burn-balance-pill.banmao {
+    background: rgba(249, 115, 22, 0.1);
+}
+
+.burn-page.light .burn-balance-pill.okb {
+    background: rgba(59, 130, 246, 0.09);
+}
+
+.burn-page.light :is(.burn-form-input, .burn-wallet-box) {
+    background: rgba(255, 255, 255, 0.72);
+    border-color: rgba(41, 27, 36, 0.12);
+    color: #291b24;
+}
+
 /* Background Noise Texture */
 .burn-page::before {
     content: "";
@@ -295,6 +363,29 @@ body,
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+.burn-theme-btn {
+    display: flex;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    border-radius: 50%;
+    background: rgba(249, 115, 22, 0.14);
+    color: var(--burn-text);
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.burn-theme-btn:hover {
+    border-color: rgba(249, 115, 22, 0.55);
+    background: rgba(249, 115, 22, 0.25);
+    transform: scale(1.06);
 }
 
 .burn-back-btn {
@@ -2236,3 +2327,326 @@ body,
     }
 }
 
+
+/* ===================== COMPACT RESPONSIVE WORKSPACE ===================== */
+.burn-tour-tooltip {
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+.burn-bento-modal,
+.burn-modal-content {
+    max-height: min(85dvh, 760px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+@media (max-width: 768px), (max-height: 700px) {
+    .burn-page-content {
+        padding-bottom: 20px;
+    }
+
+    .burn-page {
+        font-size: 12px;
+    }
+
+    .burn-header {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        justify-content: stretch;
+        gap: 6px !important;
+        overflow: hidden;
+    }
+
+    .burn-header-left {
+        display: none;
+    }
+
+    .burn-header-center {
+        min-width: 0;
+        width: 100%;
+        justify-content: flex-start;
+        gap: 4px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .burn-header-center::-webkit-scrollbar {
+        display: none;
+    }
+
+    .burn-balance-pill {
+        flex: 0 0 auto;
+        gap: 3px;
+        min-height: 30px;
+        padding: 4px 7px;
+        font-size: 10px;
+    }
+
+    .burn-balance-icon {
+        font-size: 12px;
+    }
+
+    .burn-balance-value {
+        max-width: 62px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .burn-balance-label {
+        display: none;
+    }
+
+    .burn-header-right {
+        min-width: max-content;
+        justify-self: end;
+        flex-wrap: nowrap;
+        gap: 4px;
+    }
+
+    .burn-theme-btn,
+    .burn-help-btn,
+    .burn-sound-btn {
+        width: 30px !important;
+        height: 30px !important;
+        flex: 0 0 30px;
+        font-size: 13px !important;
+    }
+
+    .burn-bento-container {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        padding: 7px;
+        margin-bottom: 10px;
+        border-radius: 14px;
+    }
+
+    .burn-bento-title {
+        padding: 8px 4px;
+    }
+
+    .burn-bento-title h2 {
+        margin-bottom: 2px;
+        font-size: 1.15rem;
+    }
+
+    .burn-bento-title p {
+        font-size: 11px;
+        line-height: 1.35;
+    }
+
+    .burn-bento-cell {
+        min-width: 0;
+        min-height: 76px;
+        padding: 7px 5px;
+        border-radius: 10px;
+    }
+
+    .burn-bento-stat .stat-label {
+        font-size: 8px;
+        letter-spacing: .03em;
+    }
+
+    .burn-bento-stat .stat-value {
+        max-width: 100%;
+        overflow: hidden;
+        font-size: clamp(.86rem, 4.2vw, 1.08rem) !important;
+        line-height: 1.1;
+        text-overflow: ellipsis;
+    }
+
+    .burn-bento-stat .stat-unit {
+        margin-top: 3px;
+        font-size: 7px;
+    }
+
+    .burn-bento-info .burn-3d-icon {
+        width: 36px;
+        height: 36px;
+        margin-bottom: 3px !important;
+    }
+
+    .burn-bento-info h3 {
+        font-size: 13px !important;
+        line-height: 1.25;
+    }
+
+    .burn-bento-info p {
+        font-size: 8px !important;
+        line-height: 1.3 !important;
+    }
+
+    .burn-bento-allocation {
+        min-height: 88px;
+        gap: 3px;
+    }
+
+    .burn-bento-allocation .alloc-icon {
+        width: 26px;
+        height: 26px;
+    }
+
+    .burn-bento-allocation .alloc-title {
+        font-size: 10px;
+        line-height: 1.2;
+    }
+
+    .burn-bento-allocation .alloc-desc {
+        display: -webkit-box;
+        overflow: hidden;
+        font-size: 9px;
+        line-height: 1.3;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+    }
+
+    .burn-bg-watermark {
+        opacity: .045;
+        background-size: 58px auto;
+    }
+
+    .burn-bento-modal-overlay,
+    .burn-modal-overlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .burn-bento-modal,
+    .burn-modal-content {
+        width: 100%;
+        max-width: none;
+        max-height: calc(100dvh - var(--defi-shell-header-height) - 64px - env(safe-area-inset-bottom));
+        padding: 18px 14px calc(14px + env(safe-area-inset-bottom));
+        border-radius: 20px 20px 0 0;
+    }
+
+    .burn-bento-modal-image {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 8px;
+    }
+
+    .burn-bento-modal-title {
+        margin-bottom: 8px;
+        font-size: 1.1rem;
+    }
+
+    .burn-bento-modal-description {
+        font-size: 12px;
+        line-height: 1.5;
+    }
+
+    .burn-tour-tooltip {
+        top: auto !important;
+        right: 8px !important;
+        bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+        left: 8px !important;
+        width: auto !important;
+        max-width: none !important;
+        max-height: min(42dvh, 300px) !important;
+        padding: 12px !important;
+        transform: none !important;
+        border-radius: 16px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .burn-bento-container {
+        gap: 6px;
+        padding: 7px;
+    }
+
+    .burn-bento-cell {
+        min-height: 72px;
+        padding-inline: 4px;
+    }
+
+    .burn-bento-allocation {
+        min-height: 84px;
+    }
+}
+
+
+
+
+/* ===================== VIEWPORT-SAFE MODAL STANDARD ===================== */
+.burn-viewport-overlay,
+.burn-bento-modal-overlay,
+.burn-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    overflow: hidden;
+    background: rgba(0, 0, 0, .84);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.burn-viewport-dialog,
+.burn-bento-modal,
+.burn-modal-content {
+    box-sizing: border-box;
+    width: min(100%, 520px);
+    max-width: 520px;
+    max-height: min(85dvh, 760px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+.burn-viewport-dialog {
+    position: relative;
+    padding: clamp(20px, 5vw, 32px);
+    border: 2px solid rgba(249, 115, 22, .3);
+    border-radius: 24px;
+    background: linear-gradient(145deg, #1e1b4b, #0f172a);
+    text-align: center;
+}
+
+.burn-share-dialog { max-width: 400px; }
+.burn-success-dialog {
+    max-width: 404px;
+    background: linear-gradient(145deg, rgba(15, 23, 42, .98), rgba(30, 41, 59, .98));
+    border-color: rgba(249, 115, 22, .4);
+    box-shadow: 0 0 60px rgba(249, 115, 22, .3);
+}
+.burn-history-dialog { max-width: 520px; }
+.burn-verifying-dialog { flex-direction: column; text-align: center; }
+
+@media (max-width: 768px), (max-height: 700px) {
+    .burn-viewport-overlay,
+    .burn-bento-modal-overlay,
+    .burn-modal-overlay {
+        align-items: flex-end;
+        padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left));
+    }
+
+    .burn-viewport-dialog,
+    .burn-bento-modal,
+    .burn-modal-content {
+        width: 100%;
+        max-width: none;
+        max-height: calc(100dvh - max(8px, env(safe-area-inset-top)) - var(--defi-shell-header-height, 0px));
+        padding: 18px 14px calc(14px + env(safe-area-inset-bottom));
+        border-radius: 20px 20px 0 0;
+    }
+
+    .burn-verifying-dialog {
+        align-items: center;
+        justify-content: center;
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+
+    .burn-success-dialog h2 { font-size: 20px !important; }
+    .burn-success-dialog > div[style*="font-size: 32px"] { font-size: 24px !important; overflow-wrap: anywhere; }
+    .burn-success-dialog button { min-height: 44px; }
+}

@@ -22,6 +22,8 @@ const AirdropPanel = dynamic(() => import("./components/AirdropPanel"), {
 });
 
 // ===================== SPOTLIGHT TOUR (same pattern as /defi/burn) =====================
+const AIRDROP_TOUR_STORAGE_KEY = "banmao_airdrop_tour_v2_dismissed";
+
 type TourPosition = "top" | "bottom" | "left" | "right";
 interface TourStep {
     selector: string;
@@ -30,12 +32,16 @@ interface TourStep {
     position: TourPosition;
 }
 
-function AirdropTourModal({ t, theme, onClose, onDismissForever }: { t: (key: string) => string; theme: "dark" | "light"; onClose: () => void; onDismissForever: () => void }) {
+function AirdropTourModal({ t, theme, compact, onClose, onDismissForever }: { t: (key: string) => string; theme: "dark" | "light"; compact: boolean; onClose: () => void; onDismissForever: () => void }) {
     const [step, setStep] = useState(0);
     const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
     const [dontShowAgain, setDontShowAgain] = useState(false);
 
-    const steps = useMemo<TourStep[]>(() => [
+    const steps = useMemo<TourStep[]>(() => compact ? [
+        { selector: ".airdrop-panel-header-v2", title: t("tourAirdropStep1Title"), desc: t("tourAirdropStep1Desc"), position: "bottom" },
+        { selector: ".airdrop-token-selector", title: t("tourAirdropStep4Title"), desc: t("tourAirdropStep4Desc"), position: "bottom" },
+        { selector: ".airdrop-execute-btn", title: t("tourAirdropStep7Title"), desc: t("tourAirdropStep7Desc"), position: "top" },
+    ] : [
         { selector: ".airdrop-panel-header-v2", title: t("tourAirdropStep1Title"), desc: t("tourAirdropStep1Desc"), position: "bottom" },
         { selector: ".airdrop-data-tabs", title: t("tourAirdropStep2Title"), desc: t("tourAirdropStep2Desc"), position: "bottom" },
         { selector: ".airdrop-tab[data-tab='manual']", title: t("tourManualTitle"), desc: t("tourManualDesc"), position: "bottom" },
@@ -46,7 +52,7 @@ function AirdropTourModal({ t, theme, onClose, onDismissForever }: { t: (key: st
         { selector: ".airdrop-balance-gas-row", title: t("tourAirdropStep6Title"), desc: t("tourAirdropStep6Desc"), position: "top" },
         { selector: ".airdrop-speed-mode", title: t("tourSpeedTitle"), desc: t("tourSpeedDesc"), position: "top" },
         { selector: ".airdrop-execute-btn", title: t("tourAirdropStep7Title"), desc: t("tourAirdropStep7Desc"), position: "top" },
-    ], [t]);
+    ], [compact, t]);
 
     useEffect(() => {
         const currentStep = steps[step];
@@ -214,7 +220,7 @@ function AirdropTourModal({ t, theme, onClose, onDismissForever }: { t: (key: st
             `}</style>
 
             {/* Dark overlay with spotlight cutout */}
-            <div style={{ position: "fixed", inset: 0, zIndex: 99990, pointerEvents: "none" }}>
+            <div className="airdrop-tour-layer" style={{ position: "fixed", inset: 0, zIndex: 99990, pointerEvents: "none" }}>
                 <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "auto" }} onClick={onClose}>
                     <defs>
                         <mask id="airdrop-spotlight-mask">
@@ -258,6 +264,10 @@ function AirdropTourModal({ t, theme, onClose, onDismissForever }: { t: (key: st
                 {/* Tooltip */}
                 <div
                     key={step}
+                    className="airdrop-tour-tooltip"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={steps[step].title}
                     style={{
                         position: "fixed", ...getTooltipStyle(),
                         background: theme === "light" ? "linear-gradient(145deg, #f7f2ed, #efe8e0)" : "linear-gradient(145deg, rgba(35, 25, 60, 0.98), rgba(20, 12, 45, 0.98))",
@@ -338,6 +348,8 @@ function AirdropTourModal({ t, theme, onClose, onDismissForever }: { t: (key: st
 export default function AirdropPage() {
     const [lang, setLang] = useState<Language>("en");
     const [showTour, setShowTour] = useState(false);
+    const [showTourPrompt, setShowTourPrompt] = useState(false);
+    const [compactTour, setCompactTour] = useState(false);
     const [theme, setTheme] = useState<"dark" | "light">("dark");
     const [footerStats, setFooterStats] = useState<any>(null);
     const [footerCopied, setFooterCopied] = useState<string | null>(null);
@@ -386,8 +398,15 @@ export default function AirdropPage() {
 
     // Open only after the first target has been committed and is measurable.
     useEffect(() => {
-        const dismissed = localStorage.getItem("banmao_airdrop_tour_dismissed");
+        const dismissed = localStorage.getItem(AIRDROP_TOUR_STORAGE_KEY);
         if (dismissed) return;
+
+        const isCompact = window.matchMedia("(max-width: 768px)").matches;
+        setCompactTour(isCompact);
+        if (isCompact) {
+            setShowTourPrompt(true);
+            return;
+        }
 
         let cancelled = false;
         let attempts = 0;
@@ -480,6 +499,25 @@ export default function AirdropPage() {
 
             {/* Main Content */}
             <main className="defi-airdrop-main">
+                {showTourPrompt && (
+                    <aside className="airdrop-tour-prompt" aria-label={lang === "vi" ? "Hướng dẫn nhanh" : "Quick guide"}>
+                        <div>
+                            <strong>{lang === "vi" ? "Mới dùng Airdrop?" : "New to Airdrop?"}</strong>
+                            <span>{lang === "vi" ? "Xem hướng dẫn nhanh trong 3 bước." : "Take a compact 3-step tour."}</span>
+                        </div>
+                        <div className="airdrop-tour-prompt-actions">
+                            <button type="button" onClick={() => {
+                                localStorage.setItem(AIRDROP_TOUR_STORAGE_KEY, "1");
+                                setShowTourPrompt(false);
+                            }}>{lang === "vi" ? "Bỏ qua" : "Not now"}</button>
+                            <button type="button" className="primary" onClick={() => {
+                                setCompactTour(true);
+                                setShowTourPrompt(false);
+                                setShowTour(true);
+                            }}>{lang === "vi" ? "Bắt đầu" : "Start"}</button>
+                        </div>
+                    </aside>
+                )}
                 <AirdropPanel
                     t={t}
                     lang={lang}
@@ -585,9 +623,13 @@ export default function AirdropPage() {
                 <AirdropTourModal
                     t={t}
                     theme={theme}
-                    onClose={() => setShowTour(false)}
+                    compact={compactTour}
+                    onClose={() => {
+                        localStorage.setItem(AIRDROP_TOUR_STORAGE_KEY, "1");
+                        setShowTour(false);
+                    }}
                     onDismissForever={() => {
-                        localStorage.setItem("banmao_airdrop_tour_dismissed", "1");
+                        localStorage.setItem(AIRDROP_TOUR_STORAGE_KEY, "1");
                     }}
                 />
             )}

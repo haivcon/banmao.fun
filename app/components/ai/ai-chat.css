@@ -202,7 +202,7 @@
 .banmao-ai-suggestions::-webkit-scrollbar { display:none; }
 .banmao-ai-suggestions button { flex:0 0 auto; min-height:29px; padding:4px 9px; border:1px solid var(--ai-border); border-radius:999px; background:rgba(255,255,255,.025); color:#9993a2; font-size:9.5px; cursor:pointer; transition:.18s ease; }
 .banmao-ai-suggestions button:hover { border-color:rgba(var(--ai-aura-rgb),.28); background:rgba(var(--ai-aura-rgb),.07); color:#e3dfe7; }
-.banmao-ai-footer { flex:0 0 auto; padding:8px 14px 10px; border-top:1px solid rgba(255,255,255,.055); background:linear-gradient(180deg,rgba(9,8,18,.8),#090812); }
+.banmao-ai-footer { flex:0 0 auto; max-height:62%; padding:8px 14px 10px; overflow-y:auto; overscroll-behavior:contain; border-top:1px solid rgba(255,255,255,.055); background:linear-gradient(180deg,rgba(9,8,18,.8),#090812); scrollbar-width:thin; scrollbar-color:rgba(var(--ai-aura-rgb),.28) transparent; }
 .banmao-ai-composer { overflow:hidden; border:1px solid rgba(255,255,255,.12); border-radius:16px; background:#15121e; box-shadow:0 8px 24px rgba(0,0,0,.22); transition:border-color .2s ease,box-shadow .2s ease; }
 .banmao-ai-composer:focus-within { border-color:rgba(var(--ai-aura-rgb),.5); box-shadow:0 8px 28px rgba(0,0,0,.28),0 0 0 3px rgba(var(--ai-aura-rgb),.07); }
 .banmao-ai-composer textarea { display:block; width:100%; min-height:44px; max-height:128px; padding:12px 13px 6px; overflow-y:auto; border:0; outline:0; resize:none; background:transparent; color:var(--ai-text); line-height:1.45; }
@@ -225,8 +225,22 @@
 .banmao-ai-disclaimer svg { color:#4ade80; }
 
 /* Settings and transaction copilot */
+.banmao-ai-display-settings { margin:0 0 8px; border:1px solid rgba(var(--ai-aura-rgb),.28); border-radius:13px; background:rgba(var(--ai-aura-rgb),.07); }
+.banmao-ai-display-settings + .banmao-ai-display-settings { margin-top:-2px; }
 .banmao-ai-privacy { margin-top:5px; border-top:1px solid rgba(255,255,255,.045); }
-.banmao-ai-privacy > summary, .banmao-ai-transaction > summary { display:flex; align-items:center; gap:6px; padding:7px 2px 2px; list-style:none; color:#756f7d; font-size:9.5px; cursor:pointer; }
+.banmao-ai-display-settings > summary, .banmao-ai-privacy > summary, .banmao-ai-transaction > summary { display:flex; align-items:center; gap:6px; padding:7px 2px 2px; list-style:none; color:#938b9d; font-size:10px; cursor:pointer; }
+.banmao-ai-display-settings > summary { justify-content:space-between; min-height:42px; padding:8px 10px; color:var(--ai-text); font-size:12px; font-weight:700; }
+.banmao-ai-display-settings > summary > span { display:flex; align-items:center; gap:8px; }
+.banmao-ai-display-settings > summary > span > svg { color:var(--ai-aura); }
+.banmao-ai-display-settings > summary::-webkit-details-marker { display:none; }
+.banmao-ai-display-chevron { color:var(--ai-muted); transition:transform 180ms ease; }
+.banmao-ai-display-settings[open] .banmao-ai-display-chevron { transform:rotate(180deg); }
+.banmao-ai-display-body { display:grid; gap:9px; max-height:min(310px,40dvh); padding:10px; overflow-y:auto; border-top:1px solid rgba(var(--ai-aura-rgb),.18); background:rgba(5,5,12,.28); }
+.banmao-ai-display-body > p { margin:0 0 2px; color:#89828f; font-size:10px; }
+.banmao-ai-display-field { display:grid; grid-template-columns:minmax(0,1fr) 138px; align-items:center; gap:10px; color:#bdb6c4; font-size:11px; }
+.banmao-ai-display-field select { width:100%; min-height:34px; padding:5px 8px; border:1px solid var(--ai-border); border-radius:8px; background:#11101a; color:var(--ai-text); }
+.banmao-ai-display-reset { display:flex; align-items:center; justify-content:center; gap:6px; min-height:34px; border:1px solid var(--ai-border); border-radius:8px; background:rgba(255,255,255,.03); color:#aaa3b2; cursor:pointer; }
+.banmao-ai-privacy > summary, .banmao-ai-transaction > summary { color:#756f7d; font-size:9.5px; }
 .banmao-ai-privacy > summary::-webkit-details-marker, .banmao-ai-transaction > summary::-webkit-details-marker { display:none; }
 .banmao-ai-privacy-body { display:grid; gap:8px; padding:9px; border:1px solid var(--ai-border); border-radius:11px; background:rgba(255,255,255,.022); }
 .banmao-ai-privacy-body > p { margin:0 0 2px; color:#756f7d; font-size:9px; }

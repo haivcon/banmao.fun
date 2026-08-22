@@ -10,11 +10,13 @@ import type { AISurface } from "../../../lib/ai/contracts";
 import AIMessage from "./AIMessage";
 import CitationCard from "./CitationCard";
 import CollectionResultCards from "./CollectionResultCards";
+import CollectionDisplayControls from "./CollectionDisplayControls";
 import ModelSelector from "./ModelSelector";
 import PageActionCard from "./PageActionCard";
 import PrivacyControls from "./PrivacyControls";
 import SessionManager from "./SessionManager";
 import ToolCard from "./ToolCard";
+import WebsiteDisplayControls from "./WebsiteDisplayControls";
 import { getFloatingPanelPosition, type FloatingPanelPosition, type FloatingRect } from "./floatingPosition";
 import BanmaoAIMascot from "./mascot/BanmaoAIMascot";
 
@@ -171,6 +173,8 @@ export default function AIChatPanel(props: Props) {
     {showScroll && <button className="banmao-ai-scroll-bottom" type="button" onClick={scrollToBottom} aria-label={t("latest")}><ArrowDown size={17} /></button>}
 
     <footer className="banmao-ai-footer">
+      <WebsiteDisplayControls language={props.language} />
+      {props.surface === "collection" && <CollectionDisplayControls language={props.language} />}
       <form className="banmao-ai-composer" onSubmit={props.submit}>
         <label htmlFor="banmao-ai-input" className="banmao-ai-sr-only">{t("message")}</label>
         <textarea ref={inputRef} id="banmao-ai-input" maxLength={8000} rows={1} required value={props.input} disabled={streaming} placeholder={streaming ? t("responding") : t("ask")} onFocus={props.onInputFocus} onKeyDown={onKeyDown} onChange={(event) => props.setInput(event.target.value)} />

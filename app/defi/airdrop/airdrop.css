@@ -7815,3 +7815,571 @@ html:has(.defi-airdrop-page) body::-webkit-scrollbar-thumb:hover {
     overflow-y: auto;
 }
 
+
+/* ===================== COMPACT RESPONSIVE WORKSPACE ===================== */
+.airdrop-mobile-workspace-tabs {
+    display: none;
+}
+
+.airdrop-tour-prompt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: min(calc(100% - 16px), 720px);
+    margin: 0 auto 8px;
+    padding: 10px 12px;
+    border: 1px solid rgba(249, 115, 22, .28);
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(249, 115, 22, .12), rgba(168, 85, 247, .08));
+    box-sizing: border-box;
+}
+
+.airdrop-tour-prompt > div:first-child {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.airdrop-tour-prompt strong {
+    color: #f97316;
+    font-size: 12px;
+}
+
+.airdrop-tour-prompt span {
+    color: rgba(255, 255, 255, .62);
+    font-size: 10px;
+}
+
+.airdrop-tour-prompt-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 6px;
+}
+
+.airdrop-tour-prompt button {
+    min-height: 36px;
+    padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, .12);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, .06);
+    color: rgba(255, 255, 255, .72);
+    font: inherit;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.airdrop-tour-prompt button.primary {
+    border-color: transparent;
+    background: linear-gradient(135deg, #f97316, #ea580c);
+    color: #fff;
+}
+
+.defi-airdrop-page.light .airdrop-tour-prompt span,
+.defi-airdrop-page.light .airdrop-tour-prompt button {
+    color: rgba(30, 20, 35, .68);
+}
+
+.defi-airdrop-page.light .airdrop-tour-prompt button.primary {
+    color: #fff;
+}
+
+.airdrop-tour-tooltip,
+.airdrop-qr-content,
+.lb-profile-modal,
+.airdrop-viewport-dialog {
+    overscroll-behavior: contain;
+}
+
+.airdrop-qr-content,
+.lb-profile-modal,
+.airdrop-viewport-dialog {
+    max-height: min(85dvh, 760px);
+    overflow-y: auto;
+}
+
+.airdrop-viewport-overlay {
+    box-sizing: border-box;
+    padding: 16px;
+}
+
+@media (max-width: 768px) {
+    .defi-airdrop-page {
+        font-size: 12px;
+    }
+
+    .defi-airdrop-header {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        justify-content: stretch;
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+        overflow: hidden;
+    }
+
+    .defi-airdrop-nav,
+    .defi-airdrop-actions {
+        min-width: 0;
+        gap: 4px;
+    }
+
+    .defi-airdrop-actions {
+        justify-self: end;
+        overflow: visible;
+    }
+
+    .defi-airdrop-brand {
+        min-width: 0;
+        font-size: 13px;
+    }
+
+    .defi-airdrop-brand span {
+        display: inline;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .defi-airdrop-help-btn,
+    .defi-airdrop-theme-btn {
+        width: 30px;
+        min-width: 30px;
+        height: 30px;
+        font-size: 13px;
+    }
+
+    .defi-airdrop-main {
+        padding: 8px 0 20px !important;
+    }
+
+    .airdrop-mobile-workspace-tabs {
+        position: sticky;
+        /* The contextual page toolbar now scrolls in normal flow. Reserve only
+           the fixed global DeFi header when these workspace tabs become sticky. */
+        top: calc(var(--defi-shell-header-height) + 6px);
+        z-index: 50;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 4px;
+        width: calc(100% - 16px);
+        margin: 0 auto 8px;
+        padding: 4px;
+        border: 1px solid rgba(255, 255, 255, .08);
+        border-radius: 12px;
+        background: rgba(12, 9, 22, .9);
+        backdrop-filter: blur(16px);
+        box-sizing: border-box;
+    }
+
+    .airdrop-mobile-workspace-tabs button {
+        min-width: 0;
+        min-height: 40px;
+        padding: 7px 4px;
+        overflow: hidden;
+        border: 1px solid transparent;
+        border-radius: 9px;
+        background: transparent;
+        color: rgba(255, 255, 255, .56);
+        font: inherit;
+        font-size: 10px;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .airdrop-mobile-workspace-tabs button.active {
+        border-color: rgba(249, 115, 22, .25);
+        background: rgba(249, 115, 22, .14);
+        color: #fb923c;
+    }
+
+    .defi-airdrop-page.light .airdrop-mobile-workspace-tabs {
+        border-color: rgba(0, 0, 0, .08);
+        background: rgba(250, 247, 244, .92);
+    }
+
+    .defi-airdrop-page.light .airdrop-mobile-workspace-tabs button {
+        color: rgba(20, 15, 30, .55);
+    }
+
+    .defi-airdrop-page.light .airdrop-mobile-workspace-tabs button.active {
+        color: #ea580c;
+    }
+
+    .airdrop-layout-3col > * {
+        display: none !important;
+    }
+
+    .airdrop-layout-3col.mobile-workspace-send > .airdrop-panel,
+    .airdrop-layout-3col.mobile-workspace-leaderboard > .side-leaderboard,
+    .airdrop-layout-3col.mobile-workspace-history > .airdrop-right-panel {
+        display: block !important;
+    }
+
+    .airdrop-layout-3col {
+        gap: 8px;
+        padding: 0 8px;
+    }
+
+    .airdrop-layout-3col > .airdrop-panel {
+        padding: 10px 8px;
+        border-radius: 16px;
+    }
+
+    .airdrop-panel-header-v2 {
+        flex-direction: row;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 6px;
+    }
+
+    .airdrop-header-left {
+        gap: 6px;
+        align-items: center;
+    }
+
+    .airdrop-header-left > svg {
+        width: 16px;
+        height: 16px;
+        margin-top: 0;
+    }
+
+    .airdrop-panel-title-v2 {
+        font-size: 13px;
+        line-height: 1.2;
+    }
+
+    .airdrop-panel-subtitle-v2 {
+        display: none;
+    }
+
+    .airdrop-header-utils {
+        align-self: center;
+        margin-left: auto;
+        gap: 3px;
+    }
+
+    .airdrop-util-btn {
+        width: 28px;
+        height: 28px;
+    }
+
+    .airdrop-data-tabs,
+    .airdrop-tabs {
+        gap: 3px;
+        margin-bottom: 6px;
+        padding: 3px;
+        border-radius: 9px;
+    }
+
+    .airdrop-data-tab {
+        min-height: 28px;
+        padding: 4px 3px;
+        font-size: 9px;
+    }
+
+    .airdrop-tab-badge {
+        min-width: 14px;
+        height: 14px;
+        padding-inline: 3px;
+        font-size: 8px;
+    }
+
+    .airdrop-tab {
+        min-height: 34px;
+        padding: 6px 5px;
+        font-size: 10px;
+    }
+
+    .airdrop-tab-content {
+        min-height: 120px;
+    }
+
+    .airdrop-dashboard,
+    .scan-stats-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 5px;
+    }
+
+    .airdrop-dash-stat,
+    .scan-stat-card {
+        min-width: 0;
+        gap: 4px;
+        padding: 5px 4px;
+        border-radius: 8px;
+    }
+
+    .airdrop-dash-stat > svg {
+        width: 12px;
+        height: 12px;
+    }
+
+    .airdrop-dash-value,
+    .scan-stat-value {
+        overflow: hidden;
+        font-size: 11px;
+        line-height: 1.15;
+        text-overflow: ellipsis;
+    }
+
+    .airdrop-dash-label,
+    .scan-stat-label {
+        font-size: 7px;
+        letter-spacing: .02em;
+    }
+
+    .airdrop-token-selector,
+    .airdrop-amount-section,
+    .airdrop-balance-gas-row,
+    .airdrop-speed-mode,
+    .airdrop-summary,
+    .airdrop-scheduler {
+        margin-bottom: 6px;
+    }
+
+    .airdrop-token-current {
+        min-height: 34px;
+        gap: 5px;
+        padding: 5px 9px;
+        font-size: 10px;
+    }
+
+    .token-current-logo {
+        width: 16px;
+        height: 16px;
+    }
+
+    .airdrop-label,
+    .airdrop-speed-label,
+    .airdrop-summary-row,
+    .airdrop-balance-display,
+    .airdrop-gas-display {
+        font-size: 10px;
+    }
+
+    .airdrop-input-group {
+        margin-bottom: 9px;
+    }
+
+    .airdrop-label {
+        margin-bottom: 5px;
+    }
+
+    .airdrop-textarea {
+        min-height: 84px;
+        padding: 9px 11px;
+        border-radius: 12px;
+        font-size: 10px;
+        line-height: 1.45;
+    }
+
+    .airdrop-amount-section {
+        margin-top: 10px;
+        padding-top: 10px;
+    }
+
+    .airdrop-amount-input {
+        min-height: 38px;
+        padding: 8px 112px 8px 12px;
+        font-size: 13px;
+    }
+
+    .airdrop-amount-actions {
+        right: 7px;
+        gap: 4px;
+    }
+
+    .airdrop-amount-suffix,
+    .airdrop-quick-btn,
+    .airdrop-mode-btn,
+    .airdrop-speed-btn {
+        font-size: 9px;
+    }
+
+    .airdrop-quick-amounts {
+        gap: 4px;
+        margin-top: 6px;
+    }
+
+    .airdrop-quick-btn,
+    .airdrop-mode-btn {
+        padding: 4px 8px;
+    }
+
+    .airdrop-speed-mode {
+        gap: 6px;
+    }
+
+    .airdrop-speed-btn {
+        min-height: 34px;
+        padding: 6px 5px;
+    }
+
+    .airdrop-summary {
+        margin-top: 8px;
+        padding: 8px 10px;
+        border-radius: 12px;
+    }
+
+    .airdrop-summary-row {
+        padding: 3px 0;
+    }
+
+    .airdrop-summary-row.total {
+        margin-top: 3px;
+        padding-top: 6px;
+        font-size: 11px;
+    }
+
+    .airdrop-execute-btn {
+        min-height: 40px;
+        margin-top: 10px;
+        padding: 9px 14px;
+        font-size: 11px;
+    }
+
+    .airdrop-side-panel,
+    .airdrop-right-panel > .airdrop-side-panel {
+        max-height: 300px;
+        padding: 9px 8px;
+        border-radius: 12px;
+    }
+
+    .lb-body,
+    .hist-list {
+        max-height: 220px;
+    }
+
+    .airdrop-qr-modal,
+    .lb-profile-modal-overlay,
+    .airdrop-viewport-overlay {
+        align-items: flex-end !important;
+        padding: 0 !important;
+    }
+
+    .airdrop-qr-content,
+    .lb-profile-modal,
+    .airdrop-viewport-dialog {
+        width: 100% !important;
+        max-width: none !important;
+        max-height: calc(100dvh - var(--defi-shell-header-height) - 64px - env(safe-area-inset-bottom)) !important;
+        padding: 14px 12px calc(14px + env(safe-area-inset-bottom)) !important;
+        border-radius: 20px 20px 0 0 !important;
+        box-sizing: border-box;
+    }
+
+    .airdrop-qr-content {
+        padding: 0 0 env(safe-area-inset-bottom) !important;
+
+    }
+
+    .airdrop-tour-tooltip {
+        top: auto !important;
+        right: 8px !important;
+        bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+        left: 8px !important;
+        width: auto !important;
+        max-width: none !important;
+        max-height: min(42dvh, 300px) !important;
+        padding: 12px !important;
+        transform: none !important;
+        border-radius: 16px !important;
+    }
+
+    .airdrop-tour-tooltip p {
+        margin-bottom: 10px !important;
+        font-size: 12px !important;
+        line-height: 1.45 !important;
+    }
+
+    .airdrop-footer {
+        padding-bottom: 10px;
+    }
+}
+
+@media (max-width: 360px) {
+    .airdrop-dashboard,
+    .scan-stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .defi-airdrop-brand span {
+        display: none;
+    }
+}
+
+
+/* ===================== VIEWPORT-SAFE MODAL STANDARD ===================== */
+.airdrop-guide-overlay,
+.airdrop-qr-modal,
+.lb-profile-modal-overlay,
+.airdrop-viewport-overlay {
+    box-sizing: border-box;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    overflow: hidden;
+}
+
+.airdrop-guide-modal,
+.airdrop-qr-content,
+.lb-profile-modal,
+.airdrop-viewport-dialog,
+.airdrop-tour-tooltip {
+    box-sizing: border-box;
+    width: min(100%, 540px);
+    max-height: min(85dvh, 760px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+.airdrop-guide-modal { max-width: 480px; }
+.airdrop-qr-content { max-width: 400px; }
+.lb-profile-modal { max-width: 520px; }
+.airdrop-viewport-dialog { max-width: 540px; }
+
+.airdrop-viewport-dialog #okx-addr-list {
+    min-height: 0;
+    overscroll-behavior: contain;
+}
+
+@media (max-width: 768px), (max-height: 700px) {
+    .airdrop-guide-overlay,
+    .airdrop-qr-modal,
+    .lb-profile-modal-overlay,
+    .airdrop-viewport-overlay {
+        align-items: flex-end;
+        padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) 0 max(8px, env(safe-area-inset-left));
+    }
+
+    .airdrop-guide-modal,
+    .airdrop-qr-content,
+    .lb-profile-modal,
+    .airdrop-viewport-dialog {
+        width: 100% !important;
+        max-width: none;
+        max-height: calc(100dvh - max(8px, env(safe-area-inset-top)) - var(--defi-shell-header-height, 0px)) !important;
+        padding: 18px 14px calc(14px + env(safe-area-inset-bottom)) !important;
+        border-radius: 20px 20px 0 0 !important;
+    }
+
+    .airdrop-qr-content { padding: 0 0 env(safe-area-inset-bottom) !important; }
+    .airdrop-guide-content { min-height: 0; }
+    .airdrop-guide-icon { font-size: 40px; margin-bottom: 10px; }
+    .airdrop-guide-dots { margin-bottom: 14px; }
+
+    .airdrop-tour-tooltip {
+        max-height: min(46dvh, 340px) !important;
+        overflow-y: auto !important;
+    }
+
+    .airdrop-viewport-dialog #okx-addr-list { max-height: min(30dvh, 200px) !important; }
+    .airdrop-viewport-dialog button,
+    .airdrop-qr-header button,
+    .lb-profile-modal button { min-height: 44px; }
+}
+

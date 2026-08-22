@@ -64,6 +64,7 @@ const ERC20_ABI = [
 export default function BurnPage() {
     const { address, isConnected } = useAccount();
     const [lang, setLang] = useState<Language>("en");
+    const [theme, setTheme] = useState<"dark" | "light">("dark");
     const [contributors, setContributors] = useState<LeaderboardContributor[]>([]);
     const [totalDonated, setTotalDonated] = useState("0");
     const [totalDonatedFormatted, setTotalDonatedFormatted] = useState("0");
@@ -180,6 +181,19 @@ export default function BurnPage() {
         [lang],
     );
 
+    useEffect(() => {
+        const savedTheme = localStorage.getItem("banmao_theme");
+        if (savedTheme === "light" || savedTheme === "dark") {
+            setTheme(savedTheme);
+        }
+    }, []);
+
+    const toggleTheme = () => {
+        const nextTheme = theme === "dark" ? "light" : "dark";
+        setTheme(nextTheme);
+        localStorage.setItem("banmao_theme", nextTheme);
+    };
+
     // Bento detail modal state (must be after t function because bentoCellData uses t)
     type BentoCellType = "donated" | "burned" | "contributors" | "burn" | "games" | "airdrops" | "dev" | null;
     const [selectedBentoCell, setSelectedBentoCell] = useState<BentoCellType>(null);
@@ -208,10 +222,10 @@ export default function BurnPage() {
         const cellData = bentoCellData[selectedBentoCell];
         return (
             <div className="burn-bento-modal-overlay" onClick={() => setSelectedBentoCell(null)}>
-                <div className="burn-bento-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="burn-bento-modal" role="dialog" aria-modal="true" aria-labelledby="burn-bento-title" onClick={(e) => e.stopPropagation()}>
                     <button className="burn-bento-modal-close" onClick={() => setSelectedBentoCell(null)}>✕</button>
                     <Image src={cellData.image} alt={cellData.title} width={120} height={120} className="burn-bento-modal-image animate-float" />
-                    <h3 className="burn-bento-modal-title">{cellData.title}</h3>
+                    <h3 id="burn-bento-title" className="burn-bento-modal-title">{cellData.title}</h3>
                     <p className="burn-bento-modal-description">{t(cellData.detailKey)}</p>
                 </div>
             </div>
@@ -303,14 +317,16 @@ export default function BurnPage() {
         return (
             <div className="burn-bento-modal-overlay" onClick={() => { setShowBurnHistoryModal(false); setVerifyMessage(null); }}>
                 <div
-                    className="burn-bento-modal"
+                    className="burn-bento-modal burn-history-dialog"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="burn-history-title"
                     onClick={(e) => e.stopPropagation()}
-                    style={{ maxWidth: "520px", width: "95%", maxHeight: "80vh", display: "flex", flexDirection: "column" }}
                 >
                     <button className="burn-bento-modal-close" onClick={() => { setShowBurnHistoryModal(false); setVerifyMessage(null); }}>✕</button>
 
                     {/* Title */}
-                    <h3 className="burn-bento-modal-title" style={{ marginBottom: "16px" }}>
+                    <h3 id="burn-history-title" className="burn-bento-modal-title" style={{ marginBottom: "16px" }}>
                         {t("burnHistoryTitle")}
                     </h3>
                     <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.6)", marginBottom: "16px" }}>
@@ -946,7 +962,7 @@ export default function BurnPage() {
                 `}</style>
 
                 {/* Dark overlay */}
-                <div style={{
+                <div className="burn-tour-layer" style={{
                     position: "fixed",
                     inset: 0,
                     zIndex: 99990,
@@ -1013,6 +1029,10 @@ export default function BurnPage() {
                     {/* Tooltip */}
                     <div
                         key={step}
+                        className="burn-tour-tooltip"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={steps[step].title}
                         style={{
                             position: "fixed",
                             ...getTooltipStyle(),
@@ -1246,30 +1266,8 @@ export default function BurnPage() {
         };
 
         return createPortal(
-            <div
-                style={{
-                    position: "fixed",
-                    top: 0, left: 0, right: 0, bottom: 0,
-                    background: "rgba(0,0,0,0.8)",
-                    zIndex: 99998,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center"
-                }}
-                onClick={() => setShowShareModal(false)}
-            >
-                <div
-                    style={{
-                        background: "linear-gradient(145deg, #1e1b4b, #0f172a)",
-                        borderRadius: "24px",
-                        padding: "32px",
-                        maxWidth: "400px",
-                        width: "90%",
-                        border: "2px solid rgba(249, 115, 22, 0.3)",
-                        textAlign: "center"
-                    }}
-                    onClick={e => e.stopPropagation()}
-                >
+            <div className="burn-viewport-overlay burn-share-overlay" onClick={() => setShowShareModal(false)}>
+                <div className="burn-viewport-dialog burn-share-dialog" role="dialog" aria-modal="true" aria-label="Share donation" onClick={e => e.stopPropagation()}>
                     <div style={{ fontSize: "48px", marginBottom: "16px" }}>🎉</div>
                     <h3 style={{ fontSize: "24px", fontWeight: 700, marginBottom: "8px" }}>
                         Donation Successful!
@@ -1356,20 +1354,7 @@ export default function BurnPage() {
         if (!submitting && !isSending && !isTxPending) return null;
 
         return createPortal(
-            <div style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: "rgba(0,0,0,0.9)",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 99999,
-                backdropFilter: "blur(10px)"
-            }}>
+            <div className="burn-viewport-overlay burn-verifying-dialog" role="dialog" aria-modal="true" aria-live="polite" aria-label={isSending || isTxPending ? t("sending") : t("verifying")}>
                 {/* Spinning Banmao Logo */}
                 <div style={{
                     width: "100px",
@@ -1458,31 +1443,9 @@ export default function BurnPage() {
         };
 
         return createPortal(
-            <div style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-                background: "rgba(0,0,0,0.85)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                zIndex: 99999,
-                backdropFilter: "blur(10px)"
-            }}>
-                <div style={{
-                    background: "linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.98))",
-                    borderRadius: "24px",
-                    padding: "77px",
-                    maxWidth: "404px",
-                    width: "90%",
-                    textAlign: "center",
-                    border: "2px solid rgba(249, 115, 22, 0.4)",
-                    boxShadow: "0 0 60px rgba(249, 115, 22, 0.3)",
-                    position: "relative",
-                    overflow: "hidden"
-                }}>
+            <div className="burn-viewport-overlay burn-success-overlay">
+                <div className="burn-viewport-dialog burn-success-dialog" role="dialog" aria-modal="true" aria-labelledby="burn-donation-success-title">
+
                     {/* Background Banmao Image with Breathing Effect */}
                     <div style={{
                         position: "absolute",
@@ -1504,7 +1467,7 @@ export default function BurnPage() {
                     </div>
 
                     {/* Title */}
-                    <h2 style={{
+                    <h2 id="burn-donation-success-title" style={{
                         fontSize: "24px",
                         fontWeight: 700,
                         background: "linear-gradient(135deg, #f97316, #fbbf24)",
@@ -1607,7 +1570,7 @@ export default function BurnPage() {
     };
 
     return (
-        <div className="burn-page">
+        <div className={`burn-page ${theme}`}>
             {/* Fixed Toast Notification */}
             {message && (
                 <div className={`burn-toast ${message.type}`}>
@@ -1655,8 +1618,17 @@ export default function BurnPage() {
                         </div>
                     )}
 
-                    {/* Right: Help, Language, Wallet, Back */}
+                    {/* Right: Help, theme and sound */}
                     <div className="burn-header-right">
+                        <button
+                            type="button"
+                            onClick={toggleTheme}
+                            className="burn-theme-btn"
+                            title={theme === "dark" ? "Light mode" : "Dark mode"}
+                            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                        >
+                            {theme === "dark" ? "☀️" : "🌙"}
+                        </button>
                         <button
                             onClick={() => { playClick(); setShowTour(true); }}
                             className="burn-help-btn"

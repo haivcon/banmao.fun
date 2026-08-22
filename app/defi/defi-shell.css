@@ -17,7 +17,9 @@
   --defi-shell-header-height: 68px;
   --defi-context-header-height: 52px;
   --defi-context-gap: 16px;
-  --defi-sticky-safe-top: calc(var(--defi-shell-header-height) + var(--defi-context-header-height) + var(--defi-context-gap));
+  /* Contextual Burn/Airdrop controls stay in document flow, so only the fixed
+     global shell needs to be reserved when a target is scrolled into view. */
+  --defi-sticky-safe-top: calc(var(--defi-shell-header-height) + var(--defi-context-gap));
   --defi-shell-content-width: 1180px;
 }
 
@@ -327,16 +329,14 @@ body > .defi-lang-dropdown .defi-lang-check {
   display: none !important;
 }
 
-/* Contextual product bars share one predictable geometry. The shell owns the
-   global-header offset; product pages must not add a second top spacer. */
+/* Contextual product bars share one predictable geometry. They remain in
+   normal document flow directly below the fixed shell. Keeping them non-sticky
+   prevents a second header layer from covering Burn/Airdrop content while the
+   page is scrolled or the website interface scale is enlarged. */
 .defi-app-shell :is(.burn-header, .defi-airdrop-header, .launchpad-header) {
-  position: sticky !important;
-  /* Sticky offsets do not add layout space: this keeps the contextual bar
-     directly under the fixed shell while scrolling without creating a gap. */
-  top: var(--defi-shell-header-height) !important;
-  /* Module tours intentionally shade page content, but must never obscure
-     the contextual product header directly below the global navigation. */
-  z-index: 1000010 !important;
+  position: relative !important;
+  top: auto !important;
+  z-index: 20 !important;
   width: 100%;
   min-height: var(--defi-context-header-height);
   height: var(--defi-context-header-height);
@@ -654,5 +654,44 @@ body > .defi-lang-dropdown .defi-lang-check {
   .banmao-toast-region > div {
     width: 100%;
     margin: 0 !important;
+  }
+}
+
+/* Burn and Airdrop own the first row below the shell. Their AI context is
+   rendered after the product workspace so it cannot create a header gap. */
+.defi-app-shell__content > :is(.burn-page, .defi-airdrop-page) + .defi-ai-context {
+  width: min(calc(100% - 32px), var(--defi-shell-content-width));
+  margin: 16px auto;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px), (max-height: 700px) {
+  :root {
+    --defi-context-header-height: 44px;
+    --defi-context-gap: 8px;
+  }
+
+  .defi-app-shell :is(.burn-header, .defi-airdrop-header) {
+    min-height: var(--defi-context-header-height) !important;
+    height: var(--defi-context-header-height) !important;
+    padding-block: 4px !important;
+  }
+
+  .defi-app-shell__content > :is(.burn-page, .defi-airdrop-page) + .defi-ai-context {
+    width: calc(100% - 20px);
+    gap: 5px;
+    margin: 10px auto;
+    padding: 8px;
+    border-radius: 10px;
+  }
+
+  .defi-app-shell__content > :is(.burn-page, .defi-airdrop-page) + .defi-ai-context > span {
+    font-size: 10px;
+  }
+
+  .defi-app-shell__content > :is(.burn-page, .defi-airdrop-page) + .defi-ai-context > button {
+    min-height: 40px;
+    padding: 7px 10px;
+    font-size: 11px;
   }
 }

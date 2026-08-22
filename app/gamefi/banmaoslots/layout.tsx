@@ -1,17 +1,11 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
+import { createStandardViewport } from "../../../lib/responsive/displayStandard";
 // NOTE: We don't wrap with SharedProviders here because the parent
 // GameFiLayoutClient already provides it. This prevents duplicate WalletConnect initialization.
 
 export const dynamic = 'force-dynamic';
 
-export const viewport: Viewport = {
-    width: 'device-width',
-    initialScale: 0.45,
-    minimumScale: 0.3,
-    maximumScale: 3.0,
-    userScalable: true,
-    themeColor: '#0a0a1a',
-};
+export const viewport = createStandardViewport("#0a0a1a");
 
 export const metadata: Metadata = {
     title: "BANMAO SLOTS | GameFi",

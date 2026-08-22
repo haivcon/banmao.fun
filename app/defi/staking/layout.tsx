@@ -1,15 +1,8 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
+import { createStandardViewport } from "../../../lib/responsive/displayStandard";
 import StakingLayoutClient from "./StakingLayoutClient";
 
-// Match the shared DeFi density exactly so entering or leaving Staking never
-// changes zoom. Small phones get a roughly 1000px-wide workspace at 0.375.
-export const viewport: Viewport = {
-    width: "device-width",
-    initialScale: 0.375,
-    minimumScale: 0.375,
-    userScalable: true,
-    themeColor: "#00d4ff",
-};
+export const viewport = createStandardViewport("#00d4ff");
 
 export const metadata: Metadata = {
     title: "Staking | BANMAO",

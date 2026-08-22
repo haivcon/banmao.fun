@@ -370,8 +370,17 @@ function PublicDeFiShell({
       </header>
 
       <main id="defi-main-content" className="defi-app-shell__content">
-        <DeFiAIContext app={aiAppForPath(pathname)} lang={lang} />
-        {children}
+        {pathname.startsWith("/defi/burn") || pathname.startsWith("/defi/airdrop") ? (
+          <>
+            {children}
+            <DeFiAIContext app={aiAppForPath(pathname)} lang={lang} />
+          </>
+        ) : (
+          <>
+            <DeFiAIContext app={aiAppForPath(pathname)} lang={lang} />
+            {children}
+          </>
+        )}
       </main>
 
       <nav

@@ -1,5 +1,6 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { createStandardViewport } from "../../../lib/responsive/displayStandard";
 
 export const metadata: Metadata = {
   title: "BanmaoBox | Transferable Time-Locked Token Vault",
@@ -30,11 +31,9 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  themeColor: "#07090f",
-  colorScheme: "dark",
+export const viewport = {
+  ...createStandardViewport("#07090f"),
+  colorScheme: "dark" as const,
 };
 
 export default function BanmaoBoxLayout({

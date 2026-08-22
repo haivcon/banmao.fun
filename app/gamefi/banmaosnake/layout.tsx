@@ -2,13 +2,15 @@
 // Server layout with proper manifest metadata for PWA install
 
 import type { Metadata } from "next";
+import { createStandardViewport } from "../../../lib/responsive/displayStandard";
 import SnakeLayoutClient from "./SnakeLayoutClient";
+
+export const viewport = createStandardViewport("#22d3ee");
 
 export const metadata: Metadata = {
     title: "$banmao+snake",
     description: "Play Snake game and collect $BANMAO tokens on XLayer",
     manifest: "/manifest-snake.json",
-    themeColor: "#22d3ee",
     appleWebApp: {
         capable: true,
         statusBarStyle: "black-translucent",

@@ -2,6 +2,7 @@
  * BanMaoFomo Layout
  */
 import type { Metadata } from "next";
+import { createStandardViewport } from "../../../lib/responsive/displayStandard";
 
 export const metadata: Metadata = {
     title: "BANMAO FOMO - Last Attacker Wins!",
@@ -21,9 +22,7 @@ export const metadata: Metadata = {
     }
 };
 
-export const viewport = {
-    themeColor: "#000000",
-};
+export const viewport = createStandardViewport("#000000");
 
 export default function BanMaoFomoLayout({
     children,

@@ -1,0 +1,97 @@
+/* BANMAO responsive display standard. Runtime values are defined in
+   lib/responsive/displayStandard.ts. Never emulate desktop by shrinking the viewport. */
+
+:root {
+  --bm-app-min-width: 320px;
+  --bm-content-max: 1440px;
+  --bm-readable-text-floor: 12px;
+  --bm-touch-target: 44px;
+  --bm-display-scale: 1;
+  --bm-viewport-width: 100vw;
+  --bm-page-gutter: clamp(12px, 2vw, 32px);
+}
+
+html {
+  min-width: min(100%, var(--bm-app-min-width));
+  font-size: calc(16px * var(--bm-display-scale));
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body { min-width: 0; }
+
+:where([data-bm-app-group]) :where(p, li, dd, dt, label, small, td, th, code) {
+  overflow-wrap: anywhere;
+}
+
+:where([data-bm-app-group]) :where(img, video, canvas) {
+  max-inline-size: 100%;
+}
+
+:where([data-bm-app-group]) :where(.gamefi-hub__container, .defi-overview__container, .col-section, .col-footer-content, .hub-feed-container) {
+  width: min(100%, var(--bm-content-max));
+}
+
+html[data-bm-app-group="gamefi"] .gamefi-hub__container {
+  max-width: var(--bm-content-max);
+}
+
+/* Neutralize legacy inverse-zoom geometry in RPS. */
+html[data-bm-app-group="gamefi"] body[data-ui-scale] {
+  min-width: 100% !important;
+  min-height: 100dvh !important;
+}
+
+html[data-bm-app-group="gamefi"] .gamefi-hub__grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+
+html[data-bm-app-group="defi"] .defi-overview {
+  --overview-max-width: var(--bm-content-max);
+}
+
+html[data-bm-app-group="defi"] .defi-app-shell {
+  --defi-shell-content-width: var(--bm-content-max);
+}
+
+html[data-bm-app-group="collection"] :where(.col-section, .col-footer-content, .hub-feed-container, .hub-gallery-container) {
+  max-width: var(--bm-content-max) !important;
+}
+
+@media (min-width: 1800px) {
+  :root { --bm-page-gutter: clamp(24px, 3vw, 56px); }
+
+  html[data-bm-app-group="gamefi"] .gamefi-hub__grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+
+  html[data-bm-app-group="collection"] .hub-feed-grid {
+    column-count: 4 !important;
+  }
+}
+
+@media (max-width: 700px) {
+  :root { --bm-page-gutter: max(12px, env(safe-area-inset-left)); }
+
+  :where([data-bm-app-group]) :where(.gamefi-hub__container, .defi-overview, .col-section, .hub-feed-container) {
+    padding-inline: var(--bm-page-gutter) !important;
+  }
+
+  :where([data-bm-app-group]) :where(.gamefi-hub__grid, .defi-overview__hero) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (pointer: coarse) {
+  :where([data-bm-app-group]) :where(button, [role="button"], input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+    min-block-size: var(--bm-touch-target);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where([data-bm-app-group]) *,
+  :where([data-bm-app-group]) *::before,
+  :where([data-bm-app-group]) *::after {
+    scroll-behavior: auto !important;
+  }
+}

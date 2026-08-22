@@ -2,13 +2,18 @@
 import "./landing.css";
 import "./web2d/web2d.css";
 import "./design-tokens.css";
-import type { Metadata } from "next";
+import "./responsive-standard.css";
+import type { Metadata, Viewport } from "next";
 import { Orbitron, Rajdhani, Share_Tech_Mono, Space_Mono } from "next/font/google";
 
 import Script from "next/script";
 import SharedProviders from "./providers";
 import AIChatMount from "./components/ai/AIChatMount";
+import ResponsiveDisplayProvider from "./components/responsive/ResponsiveDisplayProvider";
+import { createStandardViewport } from "../lib/responsive/displayStandard";
 import "./components/ai/ai-chat.css";
+
+export const viewport: Viewport = createStandardViewport("#a855f7");
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://banmao.fun"),
@@ -118,11 +123,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${orbitron.variable} ${rajdhani.variable} ${shareTech.variable} ${spaceMono.variable}`}>
       <head>
-        {/* Viewport for mobile */}
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes"
-        />
         {/* Early PWA: inject manifest and capture install prompt BEFORE browser checks */}
         <Script
           id="pwa-manifest-script"
@@ -169,7 +169,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className={spaceMono.className}>
-        <SharedProviders><AIChatMount />{children}</SharedProviders>
+        <ResponsiveDisplayProvider>
+          <SharedProviders><AIChatMount />{children}</SharedProviders>
+        </ResponsiveDisplayProvider>
       </body>
     </html>
   );
