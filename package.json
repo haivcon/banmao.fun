@@ -19,6 +19,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit --incremental false",
     "test": "jest",
+    "audit:responsive": "node scripts/responsive-audit.mjs",
     "test:contracts": "jest __tests__/contracts/banmaoBox.security.test.ts --runInBand",
     "test:release": "jest __tests__/banmaoBoxVerificationRelease.test.ts --runInBand",
     "generate:banmaobox": "node scripts/generate-banmaobox-abis.cjs",

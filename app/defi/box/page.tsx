@@ -113,6 +113,7 @@ import {
 import { tokenExplorerUrl } from "./tokenIdentity";
 import { RendererArtworkPreview, type RendererPreviewAsset } from "./RendererArtworkPreview";
 import { BanmaoBoxProductMark } from "./BanmaoBoxProductMark";
+import { useRendererAdminAccess } from "./rendererAdminAccess";
 import "./box.css";
 
 const DURATION_OPTIONS = [1, 3, 7, 14, 30, 60, 90, 180, 365, 730] as const;
@@ -551,6 +552,7 @@ export default function BanmaoBoxPage() {
   );
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const chainConfig = getBoxChainConfig(selectedChainId);
+  const rendererAdminAccess = useRendererAdminAccess(selectedChainId);
   const baseCopy = BOX_COPY[language];
   const explorerBaseUrl = chainConfig.chain.blockExplorers.default.url;
 
@@ -1739,10 +1741,12 @@ export default function BanmaoBoxPage() {
               </button>
             ) : null}
           </div>
-          <Link href="/defi/box/admin" className="box-ops-link">
-            <ShieldCheck />
-            {copy.operations}
-          </Link>
+          {rendererAdminAccess.isAuthorized ? (
+            <Link href="/defi/box/admin" className="box-ops-link">
+              <ShieldCheck />
+              {copy.operations}
+            </Link>
+          ) : null}
         </div>
       </header>
 

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { createStandardViewport } from "../../lib/responsive/displayStandard";
+import { createDesktopViewport } from "../../lib/responsive/displayStandard";
 import DeFiLayoutClient from "./DeFiLayoutClient";
 
-export const viewport = createStandardViewport("#05070d");
+export const viewport = createDesktopViewport("#05070d");
 
 export const metadata: Metadata = {
     title: "DeFi Hub | BANMAO",

@@ -2,11 +2,15 @@ import type { Viewport } from "next";
 
 export type DisplayAppGroup = "platform" | "gamefi" | "defi" | "collection";
 export type DisplayDensity = "compact" | "standard" | "expanded" | "wide";
+export type DisplayMode = "responsive" | "desktop-canvas";
+
+export const DESKTOP_CANVAS_WIDTH = 1280;
 
 export type DisplayProfile = {
   id: string;
   routePrefix: string;
   group: DisplayAppGroup;
+  mode: DisplayMode;
   minimumLayoutWidth: number;
   contentMaxWidth: number;
   readableTextFloor: number;
@@ -14,11 +18,11 @@ export type DisplayProfile = {
 };
 
 /**
- * The web-safe viewport shared by every BANMAO route.
+ * The web-safe viewport for responsive BANMAO routes.
  *
  * xKey can override Android smallestScreenWidthDp at Activity level. A website
- * cannot do that safely, so BANMAO keeps a 1:1 CSS viewport and gains density
- * through reflow, wider containers, and additional columns instead.
+ * cannot do that safely, so mobile-native routes keep a 1:1 CSS viewport and
+ * gain density through reflow and additional columns instead.
  */
 export function createStandardViewport(themeColor: string): Viewport {
   return {
@@ -28,6 +32,22 @@ export function createStandardViewport(themeColor: string): Viewport {
     userScalable: true,
     viewportFit: "cover",
     themeColor,
+  };
+}
+
+/**
+ * Presents routes that require their full desktop information architecture on
+ * narrow devices. Browsers scale the 1280px layout viewport to fit while user
+ * zoom remains available; this intentionally mirrors "Request Desktop Site".
+ */
+export function createDesktopViewport(themeColor: string): Viewport {
+  const viewport = createStandardViewport(themeColor);
+  return {
+    ...viewport,
+    width: DESKTOP_CANVAS_WIDTH,
+    // Let mobile browsers calculate the fit-to-width scale for the desktop
+    // canvas. Explicit initialScale: 1 would crop it on some engines.
+    initialScale: undefined,
   };
 }
 
@@ -43,10 +63,41 @@ export const DISPLAY_SCALE_LIMITS = Object.freeze({
 
 export const DISPLAY_PROFILES = Object.freeze([
   {
+    id: "defi-staking",
+    routePrefix: "/defi/staking",
+    group: "defi",
+    mode: "responsive",
+    minimumLayoutWidth: 320,
+    contentMaxWidth: 1520,
+    readableTextFloor: 12,
+    touchTarget: 44,
+  },
+  {
+    id: "gamefi-snake",
+    routePrefix: "/gamefi/banmaosnake",
+    group: "gamefi",
+    mode: "responsive",
+    minimumLayoutWidth: 320,
+    contentMaxWidth: 1600,
+    readableTextFloor: 12,
+    touchTarget: 44,
+  },
+  {
+    id: "gamefi-fomo",
+    routePrefix: "/gamefi/banmaofomo",
+    group: "gamefi",
+    mode: "responsive",
+    minimumLayoutWidth: 320,
+    contentMaxWidth: 1600,
+    readableTextFloor: 12,
+    touchTarget: 44,
+  },
+  {
     id: "collection",
     routePrefix: "/collection",
     group: "collection",
-    minimumLayoutWidth: 320,
+    mode: "desktop-canvas",
+    minimumLayoutWidth: DESKTOP_CANVAS_WIDTH,
     contentMaxWidth: 1600,
     readableTextFloor: 12,
     touchTarget: 44,
@@ -55,7 +106,8 @@ export const DISPLAY_PROFILES = Object.freeze([
     id: "gamefi",
     routePrefix: "/gamefi",
     group: "gamefi",
-    minimumLayoutWidth: 320,
+    mode: "desktop-canvas",
+    minimumLayoutWidth: DESKTOP_CANVAS_WIDTH,
     contentMaxWidth: 1600,
     readableTextFloor: 12,
     touchTarget: 44,
@@ -64,7 +116,8 @@ export const DISPLAY_PROFILES = Object.freeze([
     id: "defi",
     routePrefix: "/defi",
     group: "defi",
-    minimumLayoutWidth: 320,
+    mode: "desktop-canvas",
+    minimumLayoutWidth: DESKTOP_CANVAS_WIDTH,
     contentMaxWidth: 1520,
     readableTextFloor: 12,
     touchTarget: 44,
@@ -73,6 +126,7 @@ export const DISPLAY_PROFILES = Object.freeze([
     id: "platform",
     routePrefix: "/",
     group: "platform",
+    mode: "responsive",
     minimumLayoutWidth: 320,
     contentMaxWidth: 1440,
     readableTextFloor: 12,

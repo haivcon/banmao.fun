@@ -29,8 +29,10 @@ export default function ResponsiveDisplayProvider({ children }: { children: Reac
 
     root.dataset.bmApp = profile.id;
     root.dataset.bmAppGroup = profile.group;
+    root.dataset.bmDisplayMode = profile.mode;
     body.dataset.bmApp = profile.id;
     body.dataset.bmAppGroup = profile.group;
+    body.dataset.bmDisplayMode = profile.mode;
     Object.entries(variables).forEach(([name, value]) => root.style.setProperty(name, value));
 
     const syncDensity = () => {

@@ -56,13 +56,13 @@ describe("BANMAO AI DeFi integration", () => {
   ])("gates documentation retrieval for %s", (message, expected) => expect(shouldRetrieveDocs(message)).toBe(expected));
 });
 
-test("DeFi AI shell exposes prepared prompts without auto-send and health/context UI", () => {
+test("DeFi shell does not render a contextual AI banner", () => {
   const fs = require("node:fs") as typeof import("node:fs");
   const path = require("node:path") as typeof import("node:path");
-  const shell = fs.readFileSync(path.join(process.cwd(), "app/defi/DeFiAIContext.tsx"), "utf8");
-  expect(shell).toContain("requestAIChatOpen");
-  expect(shell).toContain("read-only");
-  expect(shell).toContain("X Layer");
-  expect(shell).toContain("data-banmao-ai-id");
-  expect(shell).not.toContain("requestSubmit");
+  const shell = fs.readFileSync(path.join(process.cwd(), "app/defi/DeFiLayoutClient.tsx"), "utf8");
+  const css = fs.readFileSync(path.join(process.cwd(), "app/defi/defi-shell.css"), "utf8");
+  expect(shell).not.toContain("DeFiAIContext");
+  expect(shell).not.toContain("data-banmao-ai-id");
+  expect(css).not.toContain("defi-ai-context");
+  expect(fs.existsSync(path.join(process.cwd(), "app/defi/DeFiAIContext.tsx"))).toBe(false);
 });

@@ -707,12 +707,18 @@ describe("BanmaoBox portfolio dashboard", () => {
     expect(css).toMatch(/\.box-item__svg\s*\{[\s\S]*object-fit:\s*contain/);
   });
 
-  test("restricts renderer administration to the immutable on-chain admin", () => {
+  test("restricts the Operations link and dashboard to matching immutable on-chain admins", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
     const admin = fs.readFileSync(path.join(process.cwd(), "app/defi/box/admin/page.tsx"), "utf8");
-    expect(admin).toContain('functionName: "rendererAdmin"');
+    const access = fs.readFileSync(path.join(process.cwd(), "app/defi/box/rendererAdminAccess.ts"), "utf8");
+    const policy = fs.readFileSync(path.join(process.cwd(), "app/defi/box/rendererAdminPolicy.ts"), "utf8");
+    expect(access.match(/functionName: "rendererAdmin"/g)).toHaveLength(2);
+    expect(policy).toContain('return "role-mismatch"');
+    expect(policy).toContain('return sameAddress(wallet, factoryAdmin) ? "authorized" : "unauthorized"');
+    expect(page).toContain("rendererAdminAccess.isAuthorized ? (");
+    expect(admin).toContain("if (!rendererAdminAccess.isAuthorized)");
     expect(admin).toContain('functionName: "setDefaultRenderer"');
     expect(admin).toContain('functionName: "setRenderer"');
-    expect(admin).toContain("connectedIsRendererAdmin ? (");
     expect(admin).toContain("simulateContract");
     expect(admin).toContain("waitForTransactionReceipt");
   });

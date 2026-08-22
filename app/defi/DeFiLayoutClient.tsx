@@ -27,8 +27,6 @@ import {
   type Language,
 } from "../web3d/locals";
 import { LanguageSelector } from "./LanguageSelector";
-import DeFiAIContext from "./DeFiAIContext";
-import type { DeFiApp } from "../../lib/ai/contracts";
 import "./defi-shell.css";
 
 const NAV_ITEMS = [
@@ -170,14 +168,6 @@ const SHELL_COPY: Record<
 function isCurrentRoute(pathname: string, href: string) {
   if (href === "/defi") return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
-}
-
-function aiAppForPath(pathname: string): DeFiApp {
-  if (pathname.startsWith("/defi/staking")) return "staking";
-  if (pathname.startsWith("/defi/burn")) return "burn";
-  if (pathname.startsWith("/defi/airdrop")) return "airdrop";
-  if (pathname.startsWith("/defi/box")) return "box";
-  return "overview";
 }
 
 function isAdminRoute(pathname: string) {
@@ -370,17 +360,7 @@ function PublicDeFiShell({
       </header>
 
       <main id="defi-main-content" className="defi-app-shell__content">
-        {pathname.startsWith("/defi/burn") || pathname.startsWith("/defi/airdrop") ? (
-          <>
-            {children}
-            <DeFiAIContext app={aiAppForPath(pathname)} lang={lang} />
-          </>
-        ) : (
-          <>
-            <DeFiAIContext app={aiAppForPath(pathname)} lang={lang} />
-            {children}
-          </>
-        )}
+        {children}
       </main>
 
       <nav

@@ -8,6 +8,7 @@ import {
   sameAddress,
   svgImageDataUri,
 } from "../app/defi/box/safety";
+import { classifyRendererAdminAccess } from "../app/defi/box/rendererAdminPolicy";
 import {
   MAX_LOCK_DURATION_SECONDS,
   addAddressHistoryEntry,
@@ -23,6 +24,16 @@ describe("BanmaoBox frontend safety helpers", () => {
     expect(isCanonicalBoxCollection(address("1"), address("2"), address("1"), address("2"))).toBe(true);
     expect(isCanonicalBoxCollection(address("1"), address("3"), address("1"), address("2"))).toBe(false);
     expect(sameAddress(address("a"), address("A"))).toBe(true);
+  });
+
+  test("fails closed unless wallet, chain, Factory admin, and Collection admin all match", () => {
+    const admin = address("a");
+    expect(classifyRendererAdminAccess(undefined, 196, 196, admin, admin)).toBe("disconnected");
+    expect(classifyRendererAdminAccess(admin, 195, 196, admin, admin)).toBe("wrong-network");
+    expect(classifyRendererAdminAccess(admin, 196, 196, undefined, admin)).toBe("unavailable");
+    expect(classifyRendererAdminAccess(admin, 196, 196, admin, address("b"))).toBe("role-mismatch");
+    expect(classifyRendererAdminAccess(address("b"), 196, 196, admin, admin)).toBe("unauthorized");
+    expect(classifyRendererAdminAccess(address("A"), 196, 196, admin, admin)).toBe("authorized");
   });
 
   test("normalizes untrusted ERC-20 display metadata", () => {

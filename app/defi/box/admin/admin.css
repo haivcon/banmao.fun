@@ -17,6 +17,27 @@
 .box-ops * {
   box-sizing: border-box;
 }
+.ops-gate {
+  width: min(620px, calc(100% - 48px));
+  min-height: 420px;
+  margin: 11vh auto 0;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 16px;
+  border: 1px solid rgba(255, 216, 90, 0.22);
+  border-radius: 24px;
+  background: rgba(17, 21, 31, 0.82);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
+}
+.ops-gate > svg { width: 42px; height: 42px; color: var(--gold); }
+.ops-gate h1 { margin: 0; font-size: clamp(32px, 5vw, 54px); line-height: 1; letter-spacing: -0.05em; }
+.ops-gate p { margin: 0; color: #a4adbd; line-height: 1.65; }
+.ops-gate small { color: #707b8d; }
+.ops-gate a { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; color: var(--gold); font-weight: 800; text-decoration: none; }
+.ops-gate a svg { width: 16px; }
 .ops-header {
   width: min(1320px, calc(100% - 48px));
   min-height: 78px;

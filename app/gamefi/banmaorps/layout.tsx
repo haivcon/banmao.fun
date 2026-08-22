@@ -2,10 +2,10 @@
 // Server layout with proper manifest metadata for PWA install
 
 import type { Metadata } from "next";
-import { createStandardViewport } from "../../../lib/responsive/displayStandard";
+import { createDesktopViewport } from "../../../lib/responsive/displayStandard";
 import GameLayoutClient from "./GameLayoutClient";
 
-export const viewport = createStandardViewport("#FFD700");
+export const viewport = createDesktopViewport("#FFD700");
 
 export const metadata: Metadata = {
     title: "BANMAO RPS",

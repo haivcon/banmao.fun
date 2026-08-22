@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { createStandardViewport } from "../../lib/responsive/displayStandard";
+import { createDesktopViewport } from "../../lib/responsive/displayStandard";
 import GameFiLayoutClient from "./GameFiLayoutClient";
 
-export const viewport = createStandardViewport("#22d3ee");
+export const viewport = createDesktopViewport("#22d3ee");
 
 export const metadata: Metadata = {
     title: "GameFi Zone | BANMAO",

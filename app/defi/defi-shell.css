@@ -432,11 +432,6 @@ body > .defi-lang-dropdown .defi-lang-check {
   display: none;
 }
 
-.defi-ai-context { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; margin:0 auto 1rem; max-width:1180px; padding:.65rem .8rem; border:1px solid rgba(255,216,90,.24); border-radius:14px; background:rgba(15,18,27,.72); color:#dbe3ef; }
-.defi-ai-context > span { padding:.24rem .48rem; border-radius:999px; background:rgba(255,216,90,.1); font-size:.78rem; text-transform:capitalize; }
-.defi-ai-context > button { margin-left:auto; border:0; border-radius:9px; padding:.48rem .72rem; background:#ffd85a; color:#171717; font-weight:700; cursor:pointer; }
-@media (max-width:640px){.defi-ai-context > button{width:100%;margin-left:0;text-align:left}}
-
 .defi-shell-skip-link {
   position: fixed;
   top: 8px;
@@ -657,14 +652,6 @@ body > .defi-lang-dropdown .defi-lang-check {
   }
 }
 
-/* Burn and Airdrop own the first row below the shell. Their AI context is
-   rendered after the product workspace so it cannot create a header gap. */
-.defi-app-shell__content > :is(.burn-page, .defi-airdrop-page) + .defi-ai-context {
-  width: min(calc(100% - 32px), var(--defi-shell-content-width));
-  margin: 16px auto;
-  box-sizing: border-box;
-}
-
 @media (max-width: 768px), (max-height: 700px) {
   :root {
     --defi-context-header-height: 44px;
@@ -677,21 +664,4 @@ body > .defi-lang-dropdown .defi-lang-check {
     padding-block: 4px !important;
   }
 
-  .defi-app-shell__content > :is(.burn-page, .defi-airdrop-page) + .defi-ai-context {
-    width: calc(100% - 20px);
-    gap: 5px;
-    margin: 10px auto;
-    padding: 8px;
-    border-radius: 10px;
-  }
-
-  .defi-app-shell__content > :is(.burn-page, .defi-airdrop-page) + .defi-ai-context > span {
-    font-size: 10px;
-  }
-
-  .defi-app-shell__content > :is(.burn-page, .defi-airdrop-page) + .defi-ai-context > button {
-    min-height: 40px;
-    padding: 7px 10px;
-    font-size: 11px;
-  }
 }

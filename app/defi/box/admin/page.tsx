@@ -38,10 +38,22 @@ import { resolveStoredAssetSymbol } from "../transactionPresentation";
 import { ExplorerValueRow } from "../ExplorerValueRow";
 import { getAdminCreationFixture } from "../adminCreationFixture";
 import { useBoundedLoading } from "../useBoundedLoading";
+import { useRendererAdminAccess, type RendererAdminAccessStatus } from "../rendererAdminAccess";
 import type { BanmaoBoxVerificationRequest } from "../requestVerification";
 import "./admin.css";
 
 const metric = (v: bigint, d: number) => formatExactTokenAmount(v, d, "en");
+
+const ACCESS_COPY: Record<RendererAdminAccessStatus, { title: string; detail: string }> = {
+  disconnected: { title: "Renderer-admin wallet required", detail: "Connect the verified on-chain renderer-admin wallet to open BanmaoBox Operations." },
+  "wrong-network": { title: "Switch to X Layer Mainnet", detail: "Authorization is verified against the deployed Factory and Collection on chain 196." },
+  loading: { title: "Verifying on-chain authority", detail: "Reading rendererAdmin from both the Factory and canonical Collection…" },
+  authorized: { title: "Renderer-admin verified", detail: "On-chain authority confirmed." },
+  unauthorized: { title: "Access denied", detail: "The connected wallet is not the verified rendererAdmin for BanmaoBox Operations." },
+  "role-mismatch": { title: "Access unavailable", detail: "Factory and Collection rendererAdmin values do not match. Operations are disabled fail-closed." },
+  unavailable: { title: "Unable to verify authority", detail: "The required on-chain roles could not be read. Operations remain disabled fail-closed." },
+};
+
 export default function BoxOperationsPage() {
   const [network] = useState<BoxChainId>(XLAYER_CHAIN_ID),
     [tokenId, setTokenId] = useState(""),
@@ -52,8 +64,6 @@ export default function BoxOperationsPage() {
     [factoryRendererInput, setFactoryRendererInput] = useState(""),
     [boxRendererInput, setBoxRendererInput] = useState("");
   const [rendererRoles, setRendererRoles] = useState<{
-    factoryAdmin?: Address;
-    boxAdmin?: Address;
     defaultRenderer?: Address;
     boxRenderer?: Address;
   }>({});
@@ -89,13 +99,8 @@ export default function BoxOperationsPage() {
     box = useBox(network),
     explorer = config.chain.blockExplorers?.default.url;
   const { writeContractAsync } = useWriteContract();
-  const connectedIsRendererAdmin = Boolean(
-    address &&
-    rendererRoles.factoryAdmin &&
-    rendererRoles.boxAdmin &&
-    address.toLowerCase() === rendererRoles.factoryAdmin.toLowerCase() &&
-    address.toLowerCase() === rendererRoles.boxAdmin.toLowerCase(),
-  );
+  const rendererAdminAccess = useRendererAdminAccess(network);
+  const connectedIsRendererAdmin = rendererAdminAccess.isAuthorized;
   const deploymentLoading = !box.isDeploymentValidated && !box.deploymentError;
   const { timedOut: deploymentTimedOut, resetTimeout: resetDeploymentTimeout } =
     useBoundedLoading(deploymentLoading);
@@ -111,14 +116,12 @@ export default function BoxOperationsPage() {
         return;
       }
       try {
-        const [factoryAdmin, boxAdmin, defaultRenderer, boxRenderer] = await Promise.all([
-          client.readContract({ address: config.factoryAddress, abi: BANMAO_BOX_FACTORY_ABI, functionName: "rendererAdmin" } as never) as Promise<Address>,
-          client.readContract({ address: config.boxAddress, abi: BANMAO_BOX_ABI, functionName: "rendererAdmin" } as never) as Promise<Address>,
+        const [defaultRenderer, boxRenderer] = await Promise.all([
           client.readContract({ address: config.factoryAddress, abi: BANMAO_BOX_FACTORY_ABI, functionName: "defaultRenderer" } as never) as Promise<Address>,
           client.readContract({ address: config.boxAddress, abi: BANMAO_BOX_ABI, functionName: "renderer" } as never) as Promise<Address>,
         ]);
         if (active) {
-          setRendererRoles({ factoryAdmin, boxAdmin, defaultRenderer, boxRenderer });
+          setRendererRoles({ defaultRenderer, boxRenderer });
           setFactoryRendererInput((value) => value || defaultRenderer);
           setBoxRendererInput((value) => value || boxRenderer);
         }
@@ -129,6 +132,30 @@ export default function BoxOperationsPage() {
     void loadRendererRoles();
     return () => { active = false; };
   }, [client, config.factoryAddress, config.boxAddress]);
+
+  if (!rendererAdminAccess.isAuthorized) {
+    const accessCopy = ACCESS_COPY[rendererAdminAccess.status];
+    return (
+      <main className="box-ops box-ops--access-gate">
+        <header className="ops-header">
+          <div>
+            <Link href="/defi/box"><ArrowLeft /> User app</Link>
+            <span>BanmaoBox / Operations</span>
+          </div>
+          <ConnectButton targetChainId={network} supportedChainIds={[XLAYER_CHAIN_ID]} />
+        </header>
+        <section className="ops-gate" role={rendererAdminAccess.status === "loading" ? "status" : "alert"}>
+          {rendererAdminAccess.status === "loading" ? <LoaderCircle className="spin" /> : <ShieldCheck />}
+          <span className="ops-kicker">VERIFIED ON-CHAIN ACCESS</span>
+          <h1>{accessCopy.title}</h1>
+          <p>{accessCopy.detail}</p>
+          <small>Required: connected wallet = Factory rendererAdmin = Collection rendererAdmin</small>
+          <Link href="/defi/box"><ArrowLeft /> Return to BanmaoBox</Link>
+        </section>
+      </main>
+    );
+  }
+
   const inspect = async (e: FormEvent) => {
     e.preventDefault();
     setMessage(null);
@@ -307,7 +334,7 @@ export default function BoxOperationsPage() {
     candidate: string,
   ) => {
     setMessage(null);
-    if (!client || !address || !connectedIsRendererAdmin) {
+    if (!client || !address || !rendererAdminAccess.isAuthorized) {
       return setMessage("Connect the immutable renderer-admin wallet to use this control.");
     }
     if (!isAddress(candidate)) return setMessage("Enter a valid renderer contract address.");
@@ -629,29 +656,20 @@ export default function BoxOperationsPage() {
               <small>Immutable role · metadata and SVG only</small>
             </span>
           </header>
-          <div className={`ops-access ${connectedIsRendererAdmin ? "pass" : "restricted"}`}>
-            {connectedIsRendererAdmin ? <CheckCircle2 /> : <ShieldCheck />}
+          <div className="ops-access pass">
+            <CheckCircle2 />
             <span>
-              <strong>{connectedIsRendererAdmin ? "Renderer-admin wallet verified" : "Owner wallet required"}</strong>
-              <small>
-                {address
-                  ? connectedIsRendererAdmin
-                    ? address
-                    : `Connected wallet has read-only access. Required: ${rendererRoles.factoryAdmin ?? "loading…"}`
-                  : `Connect renderer admin: ${rendererRoles.factoryAdmin ?? "loading…"}`}
-              </small>
+              <strong>Renderer-admin wallet verified</strong>
+              <small>{address}</small>
             </span>
           </div>
-          {rendererRoles.factoryAdmin && rendererRoles.boxAdmin && rendererRoles.factoryAdmin.toLowerCase() !== rendererRoles.boxAdmin.toLowerCase() ? (
-            <div className="ops-warning" role="alert"><TriangleAlert /> Factory and Box renderer-admin roles do not match. Writes are disabled.</div>
-          ) : null}
           <dl className="ops-renderer-state">
-            <div><dt>Factory renderer admin</dt><dd>{rendererRoles.factoryAdmin ?? "Loading…"}</dd></div>
-            <div><dt>Box renderer admin</dt><dd>{rendererRoles.boxAdmin ?? "Loading…"}</dd></div>
+            <div><dt>Factory renderer admin</dt><dd>{rendererAdminAccess.factoryAdmin}</dd></div>
+            <div><dt>Box renderer admin</dt><dd>{rendererAdminAccess.boxAdmin}</dd></div>
             <div><dt>Default renderer</dt><dd>{rendererRoles.defaultRenderer ?? "Loading…"}</dd></div>
             <div><dt>Canonical Box renderer</dt><dd>{rendererRoles.boxRenderer ?? "Loading…"}</dd></div>
           </dl>
-          {connectedIsRendererAdmin ? (
+          {rendererAdminAccess.isAuthorized ? (
             <div className="ops-renderer-forms">
               <form className="ops-form ops-form--renderer" onSubmit={(event) => { event.preventDefault(); void updateRenderer("factory", factoryRendererInput); }}>
                 <label htmlFor="factory-renderer">Future collections</label>
