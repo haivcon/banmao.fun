@@ -1,0 +1,28 @@
+import { getInitialBoxLanguage, type BoxLanguage } from "../i18n";
+
+const en = {
+  back: "Back to BanmaoBox", eyebrow: "ON-CHAIN COLLECTION REGISTRY", title: "Collection Explorer",
+  subtitle: "Discover every collection emitted by the BanmaoBox Factory, inspect live NFT supply and verify its provenance on chain.",
+  collections: "Collections", nfts: "Active NFTs", verified: "Verified", factories: "Factory generations",
+  search: "Search name, symbol, token, collection or creator", sort: "Sort collections", newest: "Newest", oldest: "Oldest", supply: "Most NFTs", locked: "Most locked",
+  refresh: "Refresh index", loading: "Reading Factory events and contract state…", error: "The on-chain index is temporarily unavailable.", retry: "Try again",
+  empty: "No collections match this search.", clear: "Clear search", live: "Live on X Layer", observed: "Observed", block: "Block",
+  supplyLabel: "NFT supply", lockedLabel: "Primary token locked", created: "Created", creator: "Creator", token: "Underlying token", collection: "Collection contract",
+  details: "View collection", currentFactory: "Current Factory", predecessor: "Predecessor Factory", lineage: "Factory lineage", lineageHelp: "Registry discovery follows the immutable previousFactory chain.",
+  page: "Page", previous: "Previous", next: "Next", verifiedStatus: "Factory verified", warningStatus: "Verified with warning", unverifiedStatus: "Unverified",
+  detailTitle: "Collection details", verification: "Verification report", provenance: "Contract provenance", activity: "Recent mints", noActivity: "No mint activity found.",
+  registry: "Factory registry", canonical: "Canonical for token", runtime: "Reviewed runtime", rendererAdmin: "Renderer admin", renderer: "Active renderer", factory: "Source Factory",
+  pass: "Pass", fail: "Fail", transaction: "Creation transaction", openExplorer: "Open in explorer", recipient: "Recipient", tokenId: "Token ID",
+};
+export type ExplorerCopy = typeof en;
+const overrides: Partial<Record<BoxLanguage, Partial<ExplorerCopy>>> = {
+  vi: { back: "Quay lại BanmaoBox", eyebrow: "SỔ ĐĂNG KÝ COLLECTION ON-CHAIN", title: "Khám phá Collection", subtitle: "Khám phá mọi collection do BanmaoBox Factory tạo, xem số NFT trực tiếp và xác minh nguồn gốc on-chain.", collections: "Collection", nfts: "NFT đang hoạt động", verified: "Đã xác minh", factories: "Thế hệ Factory", search: "Tìm tên, symbol, token, collection hoặc người tạo", sort: "Sắp xếp collection", newest: "Mới nhất", oldest: "Cũ nhất", supply: "Nhiều NFT nhất", locked: "Khóa nhiều nhất", refresh: "Làm mới chỉ mục", loading: "Đang đọc sự kiện Factory và trạng thái contract…", error: "Chỉ mục on-chain tạm thời không khả dụng.", retry: "Thử lại", empty: "Không có collection phù hợp.", clear: "Xóa tìm kiếm", live: "Trực tiếp trên X Layer", observed: "Ghi nhận lúc", supplyLabel: "Số lượng NFT", lockedLabel: "Token chính đang khóa", created: "Ngày tạo", creator: "Người tạo", token: "Token cơ sở", collection: "Contract collection", details: "Xem collection", currentFactory: "Factory hiện tại", predecessor: "Factory tiền nhiệm", lineage: "Chuỗi Factory", lineageHelp: "Registry được khám phá theo chuỗi previousFactory bất biến.", page: "Trang", previous: "Trước", next: "Sau", verifiedStatus: "Factory đã xác minh", warningStatus: "Xác minh có cảnh báo", unverifiedStatus: "Chưa xác minh", detailTitle: "Chi tiết collection", verification: "Báo cáo xác minh", provenance: "Nguồn gốc contract", activity: "NFT mint gần đây", noActivity: "Chưa tìm thấy hoạt động mint.", registry: "Đăng ký Factory", canonical: "Canonical theo token", runtime: "Runtime đã duyệt", rendererAdmin: "Quản trị renderer", renderer: "Renderer hiện tại", factory: "Factory nguồn", pass: "Đạt", fail: "Không đạt", transaction: "Giao dịch tạo", openExplorer: "Mở trên explorer", recipient: "Người nhận" },
+  zh: { title: "合集浏览器", back: "返回 BanmaoBox", collections: "合集", nfts: "活跃 NFT", verified: "已验证", search: "搜索名称、代币、合集或创建者", refresh: "刷新索引", details: "查看合集", verification: "验证报告" },
+  ko: { title: "컬렉션 탐색기", back: "BanmaoBox로 돌아가기", collections: "컬렉션", nfts: "활성 NFT", verified: "검증됨", search: "이름, 토큰, 컬렉션 또는 생성자 검색", refresh: "인덱스 새로고침", details: "컬렉션 보기", verification: "검증 보고서" },
+  ru: { title: "Обозреватель коллекций", back: "Назад к BanmaoBox", collections: "Коллекции", nfts: "Активные NFT", verified: "Проверено", search: "Поиск по имени, токену, коллекции или создателю", refresh: "Обновить индекс", details: "Открыть коллекцию", verification: "Отчёт проверки" },
+  id: { title: "Penjelajah Koleksi", back: "Kembali ke BanmaoBox", collections: "Koleksi", nfts: "NFT aktif", verified: "Terverifikasi", search: "Cari nama, token, koleksi, atau pembuat", refresh: "Segarkan indeks", details: "Lihat koleksi", verification: "Laporan verifikasi" },
+};
+export function explorerCopy(language?: BoxLanguage): ExplorerCopy {
+  const locale = language ?? getInitialBoxLanguage();
+  return { ...en, ...overrides[locale] };
+}

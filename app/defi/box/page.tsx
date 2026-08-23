@@ -85,6 +85,8 @@ import {
   transactionProgressIndex,
 } from "./transactionPresentation";
 import { ExplorerValueRow } from "./ExplorerValueRow";
+import { TokenLogo } from "./explorer/TokenLogo";
+import type { BanmaoBoxCollection, CollectionExplorerResponse } from "./explorer/types";
 import {
   collectionLifecycleOwnsTransaction,
   collectionLifecycleSteps,
@@ -155,6 +157,11 @@ const RECIPIENT_ACTION_COPY: Record<BoxLanguage, {
   ru: { clear: "Очистить всё", paste: "Вставить адрес", pasted: "Адрес вставлен", pasteFailed: "Не удалось прочитать буфер обмена", livePreview: "Предпросмотр NFT", pendingToken: "Token ID после минта", previewBadge: "Предпросмотр", enlarge: "Увеличить NFT", closePreview: "Закрыть предпросмотр NFT", previewNote: "Token ID и окончательное время определяются при минте.", network: "Сеть" },
   id: { clear: "Hapus semua", paste: "Tempel alamat", pasted: "Alamat ditempel", pasteFailed: "Tidak dapat membaca clipboard", livePreview: "Pratinjau NFT langsung", pendingToken: "Token ID setelah mint", previewBadge: "Pratinjau", enlarge: "Perbesar pratinjau NFT", closePreview: "Tutup pratinjau NFT", previewNote: "Token ID dan waktu akhir ditentukan saat mint.", network: "Jaringan" },
 };
+
+const COLLECTION_PICKER_COPY = {
+  en: { title: "Indexed collections", hint: "Choose a verified Factory collection or search by token name, symbol, or address.", searchPlaceholder: "Search collections", loading: "Loading indexed collections…", loadError: "Indexed collections are temporarily unavailable. You can still enter an address below.", empty: "No matching collections.", active: "Active", select: "Use collection" },
+  vi: { title: "Bộ sưu tập đã lập chỉ mục", hint: "Chọn bộ sưu tập đã xác minh qua Factory hoặc tìm theo tên, ký hiệu và địa chỉ token.", searchPlaceholder: "Tìm bộ sưu tập", loading: "Đang tải các bộ sưu tập…", loadError: "Tạm thời chưa tải được danh sách. Bạn vẫn có thể nhập địa chỉ bên dưới.", empty: "Không có bộ sưu tập phù hợp.", active: "Đang dùng", select: "Chọn bộ sưu tập" },
+} as const;
 
 type CreateMode = "single" | "batch" | "basket";
 type BoxFilter = "all" | "ready" | "locked";
@@ -493,6 +500,10 @@ export default function BanmaoBoxPage() {
   const [collectionError, setCollectionError] = useState<string | null>(null);
   const [collectionPending, setCollectionPending] = useState(false);
   const [collectionOpen, setCollectionOpen] = useState(false);
+  const [indexedCollections, setIndexedCollections] = useState<BanmaoBoxCollection[]>([]);
+  const [collectionSearch, setCollectionSearch] = useState("");
+  const [collectionsLoading, setCollectionsLoading] = useState(false);
+  const [collectionsLoadError, setCollectionsLoadError] = useState(false);
   const [isCollectionSheet, setIsCollectionSheet] = useState(false);
   const collectionToggleRef = useRef<HTMLButtonElement | null>(null);
   const collectionDialogRef = useRef<HTMLDivElement | null>(null);
@@ -604,6 +615,7 @@ export default function BanmaoBoxPage() {
   );
   const dashboardCopy = BOX_DASHBOARD_COPY[language];
   const recipientActionCopy = RECIPIENT_ACTION_COPY[language];
+  const collectionPickerCopy = COLLECTION_PICKER_COPY[language === "vi" ? "vi" : "en"];
   const { timedOut: boxesTimedOut, resetTimeout: resetBoxesTimeout } =
     useBoundedLoading(boxesLoading);
   const retryBoxes = useCallback(() => {
@@ -817,6 +829,29 @@ export default function BanmaoBoxPage() {
       window.requestAnimationFrame(() => previewTrigger?.focus());
     };
   }, [artworkPreviewOpen]);
+
+  useEffect(() => {
+    if (!collectionOpen) return;
+    const controller = new AbortController();
+    setCollectionsLoading(true);
+    setCollectionsLoadError(false);
+    setIndexedCollections([]);
+
+    void fetch(`/api/banmaobox/collections?chainId=${selectedChainId}&page=1&pageSize=50&sort=newest&prioritizeToken=${chainConfig.tokenAddress}`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Collection index unavailable");
+        return response.json() as Promise<CollectionExplorerResponse>;
+      })
+      .then((data) => setIndexedCollections(data.collections))
+      .catch((error: unknown) => {
+        if (!(error instanceof DOMException && error.name === "AbortError")) setCollectionsLoadError(true);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setCollectionsLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [chainConfig.tokenAddress, collectionOpen, selectedChainId]);
 
   const closeCollection = useCallback((restoreFocus = true) => {
     if (isBusy || collectionPending) return;
@@ -1237,17 +1272,18 @@ export default function BanmaoBoxPage() {
     }
   };
 
-  const handleCollection = async (createIfMissing: boolean) => {
+  const handleCollection = async (createIfMissing: boolean, requestedToken = collectionToken) => {
     const requestId = ++collectionRequestRef.current;
     verificationRequestRef.current?.cancel();
     verificationRequestRef.current = undefined;
     setCollectionError(null);
-    if (!isAddress(collectionToken)) {
+    setCollectionToken(requestedToken);
+    if (!isAddress(requestedToken)) {
       setCollectionError("Enter a valid primary ERC-20 address.");
       return;
     }
 
-    const token = getAddress(collectionToken);
+    const token = getAddress(requestedToken);
     let lifecycleDetails: CollectionLifecycleDetails | null = null;
     setCollectionPending(true);
     try {
@@ -1703,6 +1739,17 @@ export default function BanmaoBoxPage() {
   const previewCreatedAt = Math.floor(now / 1000);
   const previewUnlockTime = previewCreatedAt + Number(durationSeconds ?? 0n);
   const previewTier = getTier(previewPrimaryAmount, tokenDecimals);
+  const visibleCollections = indexedCollections
+    .filter((item) => {
+      const query = collectionSearch.trim().toLowerCase();
+      return !query || [item.name, item.symbol, item.tokenAddress, item.boxAddress].some((value) => value.toLowerCase().includes(query));
+    })
+    .sort((left, right) => {
+      const canonicalToken = chainConfig.tokenAddress?.toLowerCase();
+      const leftIsBanmao = left.tokenAddress.toLowerCase() === canonicalToken;
+      const rightIsBanmao = right.tokenAddress.toLowerCase() === canonicalToken;
+      return Number(rightIsBanmao) - Number(leftIsBanmao);
+    });
 
   return (
     <main className={`box-page ${collectionOpen && isCollectionSheet ? "box-page--collection-sheet-open" : ""}`}>
@@ -1741,6 +1788,14 @@ export default function BanmaoBoxPage() {
               </button>
             ) : null}
           </div>
+          <Link
+            href="/defi/box/explorer"
+            className="box-explorer-link"
+            aria-label="Open BanmaoBox Collection Explorer"
+          >
+            <Search aria-hidden="true" />
+            <span>Explorer</span>
+          </Link>
           {rendererAdminAccess.isAuthorized ? (
             <Link href="/defi/box/admin" className="box-ops-link">
               <ShieldCheck />
@@ -1901,6 +1956,42 @@ export default function BanmaoBoxPage() {
                 aria-label={copy.cancel}
               ><X /></button>
             </header>
+            <section className="box-collection-picker" aria-labelledby="box-collection-picker-title">
+              <div className="box-collection-picker__heading">
+                <div>
+                  <strong id="box-collection-picker-title">{collectionPickerCopy.title}</strong>
+                  <small>{collectionPickerCopy.hint}</small>
+                </div>
+                <label className="box-collection-search">
+                  <Search aria-hidden="true" />
+                  <span className="box-sr-only">{collectionPickerCopy.searchPlaceholder}</span>
+                  <input type="search" value={collectionSearch} onChange={(event) => setCollectionSearch(event.target.value)} placeholder={collectionPickerCopy.searchPlaceholder} disabled={collectionsLoading} />
+                </label>
+              </div>
+              <div className="box-collection-list" aria-live="polite">
+                {collectionsLoading ? (
+                  <div className="box-collection-list__state"><LoaderCircle className="box-spin" /> {collectionPickerCopy.loading}</div>
+                ) : collectionsLoadError ? (
+                  <div className="box-collection-list__state is-error">{collectionPickerCopy.loadError}</div>
+                ) : visibleCollections.length === 0 ? (
+                  <div className="box-collection-list__state">{collectionPickerCopy.empty}</div>
+                ) : visibleCollections.map((item) => {
+                  const active = activeTokenAddress?.toLowerCase() === item.tokenAddress.toLowerCase();
+                  return (
+                    <button type="button" key={item.boxAddress} className={`box-collection-option ${active ? "is-active" : ""}`} onClick={() => void handleCollection(false, item.tokenAddress)} disabled={isBusy || collectionPending || active} aria-pressed={active} aria-label={`${active ? collectionPickerCopy.active : collectionPickerCopy.select}: ${item.name} (${item.symbol})`}>
+                      <TokenLogo chainId={item.chainId} tokenAddress={item.tokenAddress} symbol={item.symbol} />
+                      <span className="box-collection-option__identity">
+                        <strong>{item.name}</strong>
+                        <small>{item.symbol} · {item.tokenAddress}</small>
+                      </span>
+                      <span className="box-collection-option__status">
+                        {active ? <><CheckCircle2 /> {collectionPickerCopy.active}</> : collectionPickerCopy.select}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
             <span className="box-collection-hint">{copy.collectionHint}</span>
             <div className="box-collection-controls">
               <div className="box-address-control">

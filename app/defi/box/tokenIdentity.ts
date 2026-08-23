@@ -88,7 +88,9 @@ export function buildTokenIdentity(
 ): TokenIdentity {
   const live = normalizeLiveTokenSymbol(input.liveSymbol);
   const stored = normalizeLiveTokenSymbol(input.storedSymbol);
-  const selected = live ?? stored;
+  // Older Box snapshots used the literal TOKEN when token metadata could not be
+  // decoded. It is not authoritative; a live ERC-20 symbol of TOKEN still is.
+  const selected = live ?? (stored?.full.trim().toUpperCase() === "TOKEN" ? null : stored);
   const fallback = tokenSymbolFallback(input.address, genericToken);
   const name = normalizeLiveTokenName(input.liveName)?.full ?? selected?.full ?? fallback;
   const decimals = Number(input.decimals);

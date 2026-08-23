@@ -53,6 +53,8 @@ describe("BanmaoBox token identity", () => {
       isCanonicalBanmao: false,
     });
     expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical, liveSymbol: "\u202e", storedSymbol: "USD₮0" }, "TOKEN").symbol).toBe("USD₮0");
+    expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical, liveSymbol: "TOKEN", storedSymbol: "OLD" }, "TOKEN").symbol).toBe("TOKEN");
+    expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical, storedSymbol: "TOKEN" }, "TOKEN").displaySymbol).toMatch(/^TOKEN 0x876698…89667$/);
     expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical }, "TOKEN").displaySymbol).toMatch(/^TOKEN 0x876698…89667$/);
   });
 

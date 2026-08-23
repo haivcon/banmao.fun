@@ -518,6 +518,20 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(mark).toContain("A time-locked cat box surrounded by token symbols");
   });
 
+  test("exposes the Collection Explorer from the BanmaoBox header on desktop and mobile", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
+    const explorerLink = page.indexOf('href="/defi/box/explorer"');
+    const adminGuard = page.indexOf("rendererAdminAccess.isAuthorized", explorerLink);
+
+    expect(explorerLink).toBeGreaterThan(-1);
+    expect(adminGuard).toBeGreaterThan(explorerLink);
+    expect(page).toContain('className="box-explorer-link"');
+    expect(page).toContain('aria-label="Open BanmaoBox Collection Explorer"');
+    expect(css).toMatch(/\.box-explorer-link\s*\{[^}]*min-height:\s*44px/);
+    expect(css).not.toMatch(/\.box-back span,[\s\S]*\.box-explorer-link\s*\{?\s*display:\s*none/);
+  });
+
   test("Phase 1 mobile geometry keeps readable type and 44px controls", () => {
     const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
     expect(css).toMatch(/@media \(max-width: 820px\)[\s\S]*\.box-page\s*\{[\s\S]*font-size:\s*14px/);
@@ -554,10 +568,19 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(page).toContain("setTransferEntry(null)");
     expect(page).toContain("setCelebrationOpen(false)");
     expect(page.match(/box-collection-controls/g)).toHaveLength(1);
+    expect(page).toContain('className="box-collection-list"');
+    expect(page).toContain("collectionPickerCopy.searchPlaceholder");
+    expect(page).toContain("<TokenLogo");
+    expect(page).toContain("handleCollection(false, item.tokenAddress)");
+    expect(page).toContain("&prioritizeToken=${chainConfig.tokenAddress}");
+    expect(page).toContain("left.tokenAddress.toLowerCase() === canonicalToken");
+    expect(page).toContain("Number(rightIsBanmao) - Number(leftIsBanmao)");
+    expect(css).toMatch(/\.box-collection-list\s*\{[^}]*overflow-y:\s*auto[^}]*overscroll-behavior-y:\s*auto[^}]*touch-action:\s*pan-y/);
+    expect(css).toMatch(/\.box-collection-option\.is-active\s*\{/);
 
     expect(css).toMatch(/\.box-collection-layer\s*\{\s*display:\s*contents/);
-    expect(mobile).toMatch(/\.box-collection-layer\s*\{[\s\S]*position:\s*fixed[\s\S]*inset:\s*var\(--defi-shell-header-height,\s*60px\)\s+0\s+0[\s\S]*z-index:\s*1500[\s\S]*align-items:\s*center[\s\S]*justify-content:\s*center/);
-    expect(mobile).toMatch(/\.box-collection-body\s*\{[\s\S]*width:\s*min\(720px,\s*100%\)[\s\S]*max-height:\s*calc\(100dvh\s*-\s*var\(--defi-shell-header-height,\s*60px\)\s*-\s*32px\)[\s\S]*overflow-y:\s*auto/);
+    expect(mobile).toMatch(/\.box-collection-layer\s*\{[\s\S]*position:\s*fixed[\s\S]*inset:\s*var\(--defi-shell-header-height,\s*60px\)\s+0\s+0[\s\S]*z-index:\s*1500[\s\S]*align-items:\s*flex-start[\s\S]*justify-content:\s*center[\s\S]*overflow-y:\s*auto[\s\S]*touch-action:\s*pan-y/);
+    expect(mobile).toMatch(/\.box-collection-body\s*\{[\s\S]*width:\s*min\(720px,\s*100%\)[\s\S]*min-height:\s*0[\s\S]*max-height:\s*calc\(100dvh\s*-\s*var\(--defi-shell-header-height,\s*60px\)\s*-\s*32px\)[\s\S]*overflow-y:\s*auto[\s\S]*touch-action:\s*pan-y/);
     expect(mobile).toMatch(/padding-bottom:\s*calc\([^;]*env\(safe-area-inset-bottom\)/);
     expect(mobile).not.toMatch(/\.box-collection-layer\s*\{[^}]*align-items:\s*flex-end/);
     expect(mobile).toMatch(/\.box-collection-controls input\s*\{[\s\S]*font-size:\s*16px/);
@@ -664,6 +687,8 @@ describe("BanmaoBox Renderer-consistent token symbols", () => {
   test("source uses one resolver for stored Box assets", () => {
     const hook = fs.readFileSync(path.join(process.cwd(), "app/defi/box/useBox.ts"), "utf8");
     expect(hook).toContain("resolveStoredAssetSymbol");
+    expect(hook).toContain('functionName: "name"');
+    expect(hook).toContain("liveName: liveTokenNameQuery.data");
     expect(hook).not.toContain("symbol: asset.symbol ?? fallback?.symbol");
     expect(hook).not.toContain("symbol: asset.symbol ?? fallback.symbol");
     expect(hook.match(/resolveStoredAssetSymbol\(asset\.symbol/g)).toHaveLength(2);

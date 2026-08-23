@@ -9,7 +9,7 @@ import {
   useSwitchChain,
   useWriteContract,
 } from "wagmi";
-import { decodeEventLog, keccak256, parseUnits, type Address, type Hash } from "viem";
+import { decodeEventLog, keccak256, parseAbi, parseUnits, type Address, type Hash } from "viem";
 import {
   BANMAO_BOX_ABI,
   BANMAO_BOX_FACTORY_ABI,
@@ -31,6 +31,8 @@ import {
 import { resolveStoredAssetSymbol } from "./transactionPresentation";
 import { buildTokenIdentity } from "./tokenIdentity";
 import { validateBanmaoBoxDeployment } from "./deploymentValidation";
+
+const ERC20_NAME_ABI = parseAbi(["function name() view returns (string)"]);
 
 export type BoxTransactionPhase =
   | "idle"
@@ -162,6 +164,14 @@ export function useBox(
     query: { enabled: !suspended && Boolean(tokenAddress), staleTime: Number.POSITIVE_INFINITY },
   });
 
+  const liveTokenNameQuery = useReadContract({
+    address: tokenAddress,
+    abi: ERC20_NAME_ABI,
+    functionName: "name",
+    chainId: selectedChainId,
+    query: { enabled: !suspended && Boolean(tokenAddress), staleTime: Number.POSITIVE_INFINITY },
+  });
+
   const maxLockDurationQuery = useReadContract({
     address: boxAddress,
     abi: BANMAO_BOX_ABI,
@@ -177,6 +187,7 @@ export function useBox(
     address: tokenAddress,
     collectionAddress: boxAddress,
     canonicalAddress: chainConfig.tokenAddress,
+    liveName: liveTokenNameQuery.data,
     liveSymbol: liveTokenSymbolQuery.data,
     storedSymbol: tokenSymbolQuery.data,
     decimals: liveTokenDecimalsQuery.data ?? tokenDecimalsQuery.data,
