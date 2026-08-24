@@ -35,6 +35,16 @@ describe("BanmaoBox collection verification", () => {
     expect(detail).toContain("copy.verifySource");
   });
 
+  it("reads recent NFT activity beyond the collection discovery scan window", () => {
+    const server = fs.readFileSync(path.join(process.cwd(), "lib/banmaobox/collectionExplorerServer.ts"), "utf8");
+    const activityReader = server.slice(server.indexOf("async function recentTokenIds"));
+    expect(activityReader).toContain('functionName: "tokenByIndex"');
+    expect(activityReader).toContain('functionName: "boxDetails"');
+    expect(activityReader).toContain("firstBlockAtTimestamp");
+    expect(activityReader).toContain("event: boxCreatedEvent");
+    expect(activityReader).not.toContain("latestBlock - INITIAL_SCAN_BLOCKS");
+  });
+
   it("normalizes every immutable range without changing other runtime bytes", () => {
     const code = "0x010203040506" as Hex;
     expect(normalizeBanmaoBoxRuntime(code, {

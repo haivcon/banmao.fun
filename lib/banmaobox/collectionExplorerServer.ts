@@ -19,6 +19,8 @@ const boxAbi = parseAbi([
   "function rendererAdmin() view returns (address)", "function tokenSymbol() view returns (string)",
   "function tokenDecimals() view returns (uint8)",
   "function totalSupply() view returns (uint256)", "function totalTokensLocked() view returns (uint256)",
+  "function tokenByIndex(uint256 index) view returns (uint256)",
+  "function boxDetails(uint256 tokenId) view returns (uint256 amount, address creator, uint64 createdAt, uint64 unlockTime)",
 ]);
 const erc20MetadataAbi = parseAbi([
   "function name() view returns (string)",
@@ -26,17 +28,17 @@ const erc20MetadataAbi = parseAbi([
   "function decimals() view returns (uint8)",
 ]);
 const creationEvent = parseAbiItem("event TokenBoxCreated(address indexed token, address indexed box, address indexed creator)");
-const mintEvent = parseAbiItem("event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)");
+const boxCreatedEvent = parseAbiItem("event BoxCreated(uint256 indexed tokenId, address indexed creator, address indexed recipient, uint256 amount, uint256 unlockTime)");
 const CACHE_TTL_MS = 60_000;
 const BLOCK_CHUNK = BigInt(process.env.BANMAOBOX_LOG_BLOCK_CHUNK || "100");
 const INITIAL_SCAN_BLOCKS = BigInt(process.env.BANMAOBOX_INITIAL_SCAN_BLOCKS || "2000");
 const SCAN_CONCURRENCY = 8;
-const REORG_WINDOW = 12n, MAX_FACTORIES = 16, MAX_ACTIVITY = 12;
+const REORG_WINDOW = 12n, MAX_FACTORIES = 16, MAX_ACTIVITY = 12, ACTIVITY_READ_CONCURRENCY = 20;
 
 type SupportedChain = 196 | 1952;
 type Manifest = { chainId: number; rpcUrl: string; status: string; contracts: { factory?: string }; transactions?: { factory?: string; createTokenBox?: string } };
 type Creation = { token: Address; box: Address; creator: Address; factory: FactoryLineageEntry; transactionHash: Hash; blockNumber: bigint; logIndex: number };
-type MintLog = { args: { tokenId: bigint; to: Address }; transactionHash: Hash; blockNumber: bigint };
+type MintCandidate = { tokenId: bigint; createdAt: bigint };
 type Snapshot = { observedAt: string; latestBlock: bigint; lineage: FactoryLineageEntry[]; collections: BanmaoBoxCollection[] };
 const manifests: Record<SupportedChain, Manifest> = { 196: mainnetManifest as Manifest, 1952: testnetManifest as Manifest };
 const cache = new Map<number, { expiresAt: number; value: Promise<Snapshot> }>();
@@ -273,29 +275,71 @@ export async function listBanmaoBoxCollections(input: { chainId: SupportedChain;
   };
 }
 
+async function firstBlockAtTimestamp(client: ExplorerClient, fromBlock: bigint, toBlock: bigint, timestamp: bigint) {
+  let low = fromBlock, high = toBlock;
+  while (low < high) {
+    const middle = (low + high) / 2n;
+    const block = await client.getBlock({ blockNumber: middle });
+    if (block.timestamp < timestamp) low = middle + 1n;
+    else high = middle;
+  }
+  return low;
+}
+
+async function recentTokenIds(client: ExplorerClient, collection: BanmaoBoxCollection) {
+  const supply = BigInt(collection.totalSupply), tokenIds: bigint[] = [];
+  for (let start = 0n; start < supply; start += BigInt(ACTIVITY_READ_CONCURRENCY)) {
+    const size = Number(supply - start < BigInt(ACTIVITY_READ_CONCURRENCY) ? supply - start : BigInt(ACTIVITY_READ_CONCURRENCY));
+    const batch = await Promise.all(Array.from({ length: size }, (_, offset) => client.readContract({
+      address: collection.boxAddress, abi: boxAbi, functionName: "tokenByIndex", args: [start + BigInt(offset)],
+    } as never) as Promise<bigint>));
+    tokenIds.push(...batch);
+  }
+  return tokenIds.sort((left, right) => left === right ? 0 : left > right ? -1 : 1).slice(0, MAX_ACTIVITY);
+}
+
+async function recentMintActivity(client: ExplorerClient, collection: BanmaoBoxCollection, latestBlock: bigint): Promise<BanmaoBoxActivity[]> {
+  if (BigInt(collection.totalSupply) === 0n) return [];
+  const tokenIds = await recentTokenIds(client, collection);
+  const details = await Promise.all(tokenIds.map((tokenId) => client.readContract({
+    address: collection.boxAddress, abi: boxAbi, functionName: "boxDetails", args: [tokenId],
+  } as never) as Promise<readonly [bigint, Address, bigint, bigint]>));
+  const candidates: MintCandidate[] = tokenIds.map((tokenId, index) => ({ tokenId, createdAt: details[index][2] }))
+    .sort((left, right) => left.createdAt === right.createdAt ? Number(right.tokenId - left.tokenId) : left.createdAt > right.createdAt ? -1 : 1);
+  const byTimestamp = new Map<string, MintCandidate[]>();
+  for (const candidate of candidates) {
+    const key = candidate.createdAt.toString();
+    byTimestamp.set(key, [...(byTimestamp.get(key) ?? []), candidate]);
+  }
+  const activity: BanmaoBoxActivity[] = [];
+  for (const [timestampKey, group] of byTimestamp) {
+    const timestamp = BigInt(timestampKey);
+    try {
+      const blockNumber = await firstBlockAtTimestamp(client, BigInt(collection.blockNumber), latestBlock, timestamp);
+      const logs = await client.getLogs({
+        address: collection.boxAddress, event: boxCreatedEvent,
+        fromBlock: blockNumber, toBlock: blockNumber + BLOCK_CHUNK - 1n > latestBlock ? latestBlock : blockNumber + BLOCK_CHUNK - 1n,
+        strict: true,
+      });
+      const wanted = new Set(group.map((candidate) => candidate.tokenId.toString()));
+      for (const log of logs) {
+        if (!wanted.has(log.args.tokenId.toString()) || !log.transactionHash || log.blockNumber === null) continue;
+        activity.push({
+          tokenId: log.args.tokenId.toString(), transactionHash: log.transactionHash, blockNumber: log.blockNumber.toString(),
+          createdAt: new Date(Number(timestamp) * 1000).toISOString(), to: getAddress(log.args.recipient),
+        });
+      }
+    } catch (error) {
+      console.warn(`BanmaoBox activity lookup failed for timestamp ${timestampKey}`, error);
+    }
+  }
+  return activity.sort((left, right) => left.createdAt === right.createdAt ? Number(BigInt(right.tokenId) - BigInt(left.tokenId)) : right.createdAt.localeCompare(left.createdAt)).slice(0, MAX_ACTIVITY);
+}
+
 export async function getBanmaoBoxCollection(chainId: SupportedChain, address: Address, refresh = false): Promise<CollectionDetailResponse | null> {
   const data = await snapshot(chainId, refresh);
   const collection = data.collections.find((item) => item.boxAddress.toLowerCase() === address.toLowerCase());
   if (!collection) return null;
-  const client = publicClient(chainId), logs: MintLog[] = [];
-  const collectionBlock = BigInt(collection.blockNumber);
-  const activityFrom = data.latestBlock > INITIAL_SCAN_BLOCKS ? data.latestBlock - INITIAL_SCAN_BLOCKS : collectionBlock;
-  let failedActivityChunks = 0;
-  for (let start = activityFrom > collectionBlock ? activityFrom : collectionBlock; start <= data.latestBlock; start += BLOCK_CHUNK) {
-    const end = start + BLOCK_CHUNK - 1n > data.latestBlock ? data.latestBlock : start + BLOCK_CHUNK - 1n;
-    try {
-      const chunk = await client.getLogs({ address: collection.boxAddress, event: mintEvent, args: { from: zeroAddress }, fromBlock: start, toBlock: end, strict: true });
-      logs.push(...chunk.map((log) => ({ args: { tokenId: log.args.tokenId, to: getAddress(log.args.to) }, transactionHash: log.transactionHash!, blockNumber: log.blockNumber! })));
-      if (logs.length > MAX_ACTIVITY * 2) logs.splice(0, logs.length - MAX_ACTIVITY);
-    } catch { failedActivityChunks += 1; }
-  }
-  if (failedActivityChunks) console.warn(`BanmaoBox activity scan will retry ${failedActivityChunks} RPC chunk(s)`);
-  const recent = logs.slice(-MAX_ACTIVITY).reverse(), blocks = new Map<string, ReturnType<typeof client.getBlock>>();
-  const activity: BanmaoBoxActivity[] = await Promise.all(recent.map(async (log) => {
-    const number = log.blockNumber!, key = number.toString();
-    if (!blocks.has(key)) blocks.set(key, client.getBlock({ blockNumber: number }));
-    const block = await blocks.get(key)!;
-    return { tokenId: log.args.tokenId.toString(), transactionHash: log.transactionHash!, blockNumber: key, createdAt: new Date(Number(block.timestamp) * 1000).toISOString(), to: getAddress(log.args.to) };
-  }));
+  const activity = await recentMintActivity(publicClient(chainId), collection, data.latestBlock);
   return { observedAt: data.observedAt, collection, activity };
 }
