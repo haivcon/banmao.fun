@@ -108,11 +108,16 @@ describe("BanmaoBox verifier durable state and exact renderer provenance", () =>
 
   test("uses conditional monotonic job transitions and a bounded manual terminal", () => {
     const source = fs.readFileSync(path.join(process.cwd(), "lib/banmaobox/verifyNewCollection.ts"), "utf8");
+    expect(source).toContain("BANMAOBOX_VERIFY_MAX_ATTEMPTS, 3");
     expect(source).toContain("banmaobox_verification_jobs.status != 'verified'");
     expect(source).toContain("banmaobox_verification_jobs.status != 'manual-reconciliation'");
     expect(source).toContain("banmaobox_verification_jobs.status=?)");
     expect(source).toContain("attempts=MAX(banmaobox_verification_jobs.attempts, excluded.attempts)");
     expect(source).toContain("RECONCILIATION_DEADLINE_MS");
+    expect(source).toContain("if (!storedJob) await saveJob(job)");
+    expect(source.indexOf("if (!storedJob) await saveJob(job)")).toBeLessThan(
+      source.indexOf("await api.isVerified(validated.boxAddress)"),
+    );
   });
 
   test("concurrent stale writers cannot overwrite the winning or verified state", async () => {

@@ -67,6 +67,15 @@ describe("BanmaoAI floating control geometry", () => {
 });
 
 describe("BanmaoBox transaction UX contract", () => {
+  test("confirmed collection creation cannot fail on optional post-receipt RPC reads", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "app/defi/box/useBox.ts"), "utf8");
+    const creation = source.slice(source.indexOf("const createCollection = useCallback"), source.indexOf("const createMultiTokenBox = useCallback"));
+    const afterReceipt = creation.slice(creation.indexOf("const receipt = await waitForHash"));
+    expect(afterReceipt).toContain("const created = getAddress(event.box)");
+    expect(afterReceipt).not.toContain("await resolveCollection(primaryToken)");
+    expect(afterReceipt).not.toContain("getCode({ address: created })");
+  });
+
   test("every locale explicitly covers transaction, verification and fallback copy", () => {
     const phases = ["idle", "switching-chain", "approving", "creating", "opening", "refreshing-metadata", "transferring", "confirming", "success", "error"];
     const keys = [
@@ -157,6 +166,27 @@ describe("BanmaoBox transaction UX contract", () => {
       await jest.runAllTimersAsync();
       await expect(request.promise).resolves.toMatchObject({ status: "verified", guid: "guid-2" });
       expect(updates).toEqual(["transient-unavailable", "pending", "verified"]);
+    } finally {
+      global.fetch = originalFetch;
+      jest.useRealTimers();
+    }
+  });
+
+  test("a 429 respects Retry-After and continues polling", async () => {
+    jest.useFakeTimers();
+    Object.defineProperty(globalThis, "window", { value: globalThis, configurable: true });
+    const originalFetch = global.fetch;
+    const updates: string[] = [];
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: "Rate limited" }), { status: 429, headers: { "retry-after": "7" } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "verified", guid: "guid-rate-limit" }), { status: 200 }));
+    try {
+      const request = requestBanmaoBoxVerification(TX_HASH, (update) => updates.push(update.status));
+      await jest.advanceTimersByTimeAsync(6_999);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      await jest.advanceTimersByTimeAsync(1);
+      await expect(request.promise).resolves.toMatchObject({ status: "verified", guid: "guid-rate-limit" });
+      expect(updates).toEqual(["transient-unavailable", "verified"]);
     } finally {
       global.fetch = originalFetch;
       jest.useRealTimers();
@@ -284,6 +314,10 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(`${lifecycle}\n${selected}\n${footer}`).not.toMatch(/\.slice\(|ellipsis|shortAddress|truncate/i);
     expect(css).toMatch(/\.box-explorer-value__link[\s\S]*overflow-wrap:\s*anywhere/);
     expect(css).toMatch(/\.box-explorer-value__link[\s\S]*word-break:\s*break-word/);
+    expect(page).toContain('href="https://x.com/banmao_X/status/2090032196602270013?s=20"');
+    expect(page).toContain('className="box-x-post-link"');
+    expect(page).toContain('rel="noopener noreferrer"');
+    expect(css).toMatch(/\.box-x-post-link\s*\{[\s\S]*min-height:\s*44px/);
   });
 
   test("deterministic collection success fixture preserves exact explorer hrefs and full values", () => {

@@ -3065,6 +3065,15 @@ export default function BanmaoBoxPage() {
           )}
         </div>
       </details>
+      <a
+        className="box-x-post-link"
+        href="https://x.com/banmao_X/status/2090032196602270013?s=20"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <span aria-hidden="true">𝕏</span>
+        <span>View the BanmaoBox post on X</span>
+      </a>
 
       {artworkPreviewOpen ? (
         <div className="box-dialog-backdrop box-preview-backdrop box-artwork-viewer-backdrop" role="presentation" onMouseDown={(event) => {

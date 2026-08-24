@@ -9,7 +9,7 @@ import {
   useSwitchChain,
   useWriteContract,
 } from "wagmi";
-import { decodeEventLog, keccak256, parseAbi, parseUnits, type Address, type Hash } from "viem";
+import { decodeEventLog, getAddress, keccak256, parseAbi, parseUnits, type Address, type Hash } from "viem";
 import {
   BANMAO_BOX_ABI,
   BANMAO_BOX_FACTORY_ABI,
@@ -992,14 +992,11 @@ export function useBox(
         if (!sameAddress(event.token, primaryToken)) {
           throw new Error("TokenBoxCreated token does not match the requested token");
         }
-        const created = await resolveCollection(primaryToken);
-        if (!sameAddress(created, event.box)) {
-          throw new Error("Factory did not register the emitted collection");
-        }
-        const code = await publicClient.getCode({ address: created });
-        if (!code || code === "0x") {
-          throw new Error("Collection runtime bytecode is missing");
-        }
+        // A successful Factory receipt with the canonical event is the authoritative
+        // creation result. Do not turn transient post-receipt RPC reads into a false
+        // transaction failure; the server verifier independently checks registry,
+        // constructor state, and runtime before submitting to the Explorer.
+        const created = getAddress(event.box);
         setPhase("success");
         return { address: created, txHash: hash };
       } catch (error) {
@@ -1010,8 +1007,7 @@ export function useBox(
     },
     [address, chainId, deploymentError, factoryAddress, isConnected,
       isDeploymentValidated, publicClient, readAsset, resetTransaction,
-      resolveCollection, selectedChainId, switchChainAsync, waitForHash,
-      writeContractAsync],
+      selectedChainId, switchChainAsync, waitForHash, writeContractAsync],
   );
 
   const createMultiTokenBox = useCallback(

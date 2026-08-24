@@ -69,14 +69,14 @@ export function requestBanmaoBoxVerification(
         });
         if (cancelled) break;
         const result = await response.json().catch(() => null);
-        if (!response.ok && response.status !== 503) {
+        if (!response.ok && response.status !== 429 && response.status !== 503) {
           return emit({
             status: "failed",
             error: typeof result?.error === "string" ? result.error : "Explorer verification request failed",
           });
         }
         const update = emit({
-          status: result?.status ?? (response.status === 503 ? "transient-unavailable" : "failed"),
+          status: result?.status ?? ([429, 503].includes(response.status) ? "transient-unavailable" : "failed"),
           boxAddress: typeof result?.boxAddress === "string" ? result.boxAddress : latest.boxAddress,
           guid: typeof result?.guid === "string" ? result.guid : latest.guid,
           error: typeof result?.error === "string" ? result.error : latest.error,

@@ -1,5 +1,5 @@
 import { getAddress, keccak256, type Address, type Hex } from "viem";
-import release from "../../../../lib/banmaobox/verification-release.json";
+import release from "../../../../lib/banmaobox/verification-releases/39e47f551ed420c27970a6e4b492121ccac445f53eb872899415d33c8f7cf143.json";
 import type { CollectionFactorySource, CollectionVerification } from "./types";
 
 const same = (left: string, right: string) => left.toLowerCase() === right.toLowerCase();

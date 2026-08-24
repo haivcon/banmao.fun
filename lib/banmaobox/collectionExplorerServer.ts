@@ -3,6 +3,7 @@ import "server-only";
 import { createPublicClient, decodeEventLog, getAddress, http, isAddress, parseAbi, parseAbiItem, zeroAddress, type Address, type Hash, type Hex } from "viem";
 import mainnetManifest from "../../deployments/banmaobox-xlayer-mainnet.json";
 import testnetManifest from "../../deployments/banmaobox-xlayer-testnet.json";
+import collectionSeeds from "./collection-seeds.json";
 import { buildCollectionVerification, runtimeMatchesBanmaoBoxRelease } from "../../app/defi/box/explorer/verification";
 import type { BanmaoBoxActivity, BanmaoBoxCollection, CollectionDetailResponse, CollectionExplorerResponse, CollectionSort, FactoryLineageEntry } from "../../app/defi/box/explorer/types";
 import { buildTokenIdentity } from "../../app/defi/box/tokenIdentity";
@@ -106,9 +107,12 @@ async function receiptCreations(client: ExplorerClient, hash: Hash, lineage: Fac
   return creations;
 }
 
-async function manifestCreations(client: ExplorerClient, manifest: Manifest, lineage: FactoryLineageEntry[]) {
-  const hash = manifest.transactions?.createTokenBox;
-  return hash && /^0x[0-9a-fA-F]{64}$/.test(hash) ? receiptCreations(client, hash as Hash, lineage) : [];
+async function manifestCreations(client: ExplorerClient, chainId: SupportedChain, manifest: Manifest, lineage: FactoryLineageEntry[]) {
+  const configured = collectionSeeds[String(chainId) as keyof typeof collectionSeeds] ?? [];
+  const hashes = new Set<string>([manifest.transactions?.createTokenBox ?? "", ...configured]);
+  const valid = [...hashes].filter((hash): hash is Hash => /^0x[0-9a-fA-F]{64}$/.test(hash));
+  const receipts = await Promise.allSettled(valid.map((hash) => receiptCreations(client, hash, lineage)));
+  return uniqueCreations(receipts.flatMap((result) => result.status === "fulfilled" ? result.value : []));
 }
 
 async function verifiedJobCreations(client: ExplorerClient, chainId: SupportedChain, lineage: FactoryLineageEntry[]) {
@@ -216,7 +220,7 @@ async function buildSnapshot(chainId: SupportedChain, previous?: Snapshot): Prom
   const rewindBlock = previous && previous.latestBlock > REORG_WINDOW ? previous.latestBlock - REORG_WINDOW : latestBlock > INITIAL_SCAN_BLOCKS ? latestBlock - INITIAL_SCAN_BLOCKS : firstBlock;
   const scanFrom = rewindBlock > firstBlock ? rewindBlock : firstBlock;
   const [manifestSeeded, verifiedSeeded, scanned] = await Promise.all([
-    previous ? Promise.resolve([]) : manifestCreations(client, manifest, lineage),
+    previous ? Promise.resolve([]) : manifestCreations(client, chainId, manifest, lineage),
     verifiedJobCreations(client, chainId, lineage),
     scanCreations(client, lineage, scanFrom, latestBlock),
   ]);

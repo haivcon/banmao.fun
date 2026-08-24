@@ -1,7 +1,7 @@
 import { createPublicClient, decodeEventLog, encodeAbiParameters, getAddress, http, keccak256, parseAbi, parseAbiItem, type Address, type Hex } from "viem";
 import { db } from "../db";
 import { OkxVerifierAmbiguousError, OkxXLayerVerifierApi } from "./okxVerifierApi";
-import release from "./verification-release.json";
+import release from "./verification-releases/39e47f551ed420c27970a6e4b492121ccac445f53eb872899415d33c8f7cf143.json";
 import manifest from "../../deployments/banmaobox-xlayer-mainnet.json";
 
 const CHAIN_ID = 196;
@@ -11,7 +11,7 @@ const positiveInteger = (value: string | undefined, fallback: number) => {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 };
 const INDEX_DELAY_MS = positiveInteger(process.env.BANMAOBOX_VERIFY_INDEX_DELAY_MS, 60_000);
-const MAX_ATTEMPTS = positiveInteger(process.env.BANMAOBOX_VERIFY_MAX_ATTEMPTS, 1);
+const MAX_ATTEMPTS = positiveInteger(process.env.BANMAOBOX_VERIFY_MAX_ATTEMPTS, 3);
 const RECONCILIATION_DEADLINE_MS = positiveInteger(
   process.env.BANMAOBOX_VERIFY_RECONCILIATION_DEADLINE_MS,
   10 * 60_000,
@@ -214,7 +214,8 @@ export async function verifyNewBanmaoBox(txHash: Hex): Promise<VerificationResul
   assertReleaseGate();
   const normalizedHash = txHash.toLowerCase();
   const validated = await validateTransaction(txHash);
-  let job = await readJob(normalizedHash) ?? {
+  const storedJob = await readJob(normalizedHash);
+  let job = storedJob ?? {
     txHash: normalizedHash,
     boxAddress: validated.boxAddress.toLowerCase(),
     status: "ready",
@@ -222,6 +223,9 @@ export async function verifyNewBanmaoBox(txHash: Hex): Promise<VerificationResul
     updatedAt: 0,
   };
   if (!sameAddress(job.boxAddress, validated.boxAddress)) throw new Error("Stored verification job does not match receipt event");
+  // Persist the validated Factory event before any Explorer call. This durable seed
+  // keeps the collection discoverable even when OKX is unavailable on the first try.
+  if (!storedJob) await saveJob(job);
 
   try {
     if (await api.isVerified(validated.boxAddress)) {
