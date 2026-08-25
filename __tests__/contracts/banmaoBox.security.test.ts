@@ -14,12 +14,20 @@ type Artifact = {
   runtimeBytecode: string;
 };
 
-const LOGO_ANIMATION = '<animate attributeName="baseFrequency" values=".008 .025;.014 .035;.008 .025" dur="7s" repeatCount="indefinite"/>';
+const SPLINE = 'calcMode="spline" keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1" dur="10s" repeatCount="indefinite"';
+const LONG_SPLINE = 'calcMode="spline" keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1" dur="10s" repeatCount="indefinite"';
+const OPACITY_TIMING = 'keyTimes="0;.15;.85;1" dur="10s" repeatCount="indefinite"';
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const MORPH_TIMING = `keyTimes="0;\\.(?:2|22|24|26);\\.(?:74|76|78|8);1" ${escapeRegex(SPLINE)}`;
+const LOGO_TIMING = `keyTimes="0;\\.(?:2|22|24|26);\\.38;\\.42;\\.58;\\.62;\\.(?:74|76|78|8);1" ${escapeRegex(LONG_SPLINE)}`;
+const LOGO_ANIMATION = new RegExp(`<(?:animate attributeName="d" values="[^"]+" ${MORPH_TIMING}|animate attributeName="opacity" values="[^"]+" ${escapeRegex(OPACITY_TIMING)}|animateTransform attributeName="transform" type="(?:translate|rotate|scale)" values="[^"]+" ${LOGO_TIMING})\\/>`, "g");
+const FRAME_ANIMATION = /<(?:animate attributeName="(?:opacity|stroke-dashoffset)" values="[^"]+" dur="(?:4|5|10)s" repeatCount="indefinite"|animateTransform attributeName="transform" type="translate" values="[^"]+" dur="10s" repeatCount="indefinite")\/>/g;
 
 const parseSvg = (svg: string) => {
   expect(svg).toMatch(/^<svg[\s\S]*<\/svg>$/);
-  expect(svg.split(LOGO_ANIMATION)).toHaveLength(2);
-  expect(svg.replace('xmlns="http://www.w3.org/2000/svg"', "").replace(LOGO_ANIMATION, "")).not.toMatch(
+  expect(svg.match(LOGO_ANIMATION)).toHaveLength(20);
+  expect(svg.match(FRAME_ANIMATION)).toHaveLength(5);
+  expect(svg.replace('xmlns="http://www.w3.org/2000/svg"', "").replace(LOGO_ANIMATION, "").replace(FRAME_ANIMATION, "")).not.toMatch(
     /<script|foreignObject|<animate(?:Transform)?\b|\son\w+=|https?:\/\//i,
   );
 };
@@ -253,7 +261,7 @@ function compile(): Record<string, Artifact> {
 }
 
 const artifacts = compile();
-jest.setTimeout(60_000);
+jest.setTimeout(120_000);
 
 async function deploy(name: string, signer: ethers.Signer, args: unknown[] = []) {
   const artifact = artifacts[name];
@@ -911,11 +919,36 @@ describe("BanmaoBox adversarial release security", () => {
     expect(lockedSvg).toContain("ASSET PORTFOLIO / 5");
     expect(lockedSvg).toContain("ASSET LEDGER");
     expect(lockedSvg).toContain('id="shine"');
-    expect(lockedSvg).toContain('<filter id="wave"');
-    expect(lockedSvg).toContain('<feDisplacementMap in="SourceGraphic" in2="n" scale="7"/>');
-    expect(lockedSvg).toContain('filter="url(#wave)"');
-    expect(lockedSvg).toContain(LOGO_ANIMATION);
-    expect(lockedSvg).not.toMatch(/<animateTransform\b/);
+    expect(lockedSvg).not.toMatch(/<(?:filter|feTurbulence|feDisplacementMap)\b/);
+    expect(lockedSvg.match(LOGO_ANIMATION)).toHaveLength(20);
+    expect(lockedSvg.match(FRAME_ANIMATION)).toHaveLength(5);
+    expect(lockedSvg).toContain('values=".25;.9;.25"');
+    expect(lockedSvg).toContain('opacity=".35" stroke-dasharray="6 4"');
+    expect(lockedSvg).toContain('height="90" fill="');
+    expect(lockedSvg).toContain('values="0;.14;0"');
+    expect(lockedSvg).toContain('values="1;.35;1"');
+    expect(lockedSvg.match(/<animate attributeName="d"/g)).toHaveLength(5);
+    expect(lockedSvg.match(/<animate attributeName="opacity"/g)).toHaveLength(4);
+    expect(lockedSvg.match(/<animateTransform\b/g)).toHaveLength(15);
+    expect(lockedSvg.match(/type="rotate"/g)).toHaveLength(4);
+    expect(lockedSvg.match(/type="scale"/g)).toHaveLength(1);
+    expect(lockedSvg.match(/<g transform="translate\((?:256 142|424 142|340 226|256 310|424 310)\)">/g)).toHaveLength(5);
+    expect(lockedSvg.match(/M0 0h20v20h-20z/g)).toHaveLength(15);
+    expect(lockedSvg.match(/M-54 -36h20v20h-20z/g)).toHaveLength(10);
+    expect(lockedSvg).toContain('M512 142h16v80h-16z');
+    expect(lockedSvg).toContain('M532 142h8v80h-8z');
+    expect(lockedSvg).toContain('M512 310h16v80h-16z');
+    expect(lockedSvg).toContain('M532 310h8v80h-8z');
+    expect(lockedSvg).toContain('values="-168 -104;-168 -104;3 2;0 0;0 0;3 2;-168 -104;-168 -104"');
+    expect(lockedSvg).toContain('values="-150;-82;-7;0;0;-7;-82;-150"');
+    expect(lockedSvg.match(new RegExp(LOGO_TIMING, "g"))).toHaveLength(14);
+    expect(lockedSvg.match(new RegExp(MORPH_TIMING, "g"))).toHaveLength(5);
+    expect(lockedSvg.match(new RegExp(escapeRegex(OPACITY_TIMING), "g"))).toHaveLength(1);
+    expect(lockedSvg).not.toContain(' begin="');
+    expect(lockedSvg).toContain('keyTimes="0;.2;.38;.42;.58;.62;.8;1"');
+    expect(lockedSvg).toContain('keyTimes="0;.24;.76;1"');
+    expect(lockedSvg).toContain('values="0;.1;.1;0"');
+    expect(lockedSvg).toContain('values=".94;.94;1.03;1;1;1.03;.94;.94"');
     expect(lockedSvg).not.toContain('values="63;66;63"');
     expect(lockedSvg).not.toContain('url(#metal)');
     expect(lockedSvg).not.toContain('values="0 0;0 -3;0 0"');
@@ -928,6 +961,8 @@ describe("BanmaoBox adversarial release security", () => {
     expect(lockedSvg).toContain(mintingWallet.toLowerCase());
     expect(lockedSvg).not.toContain(`${mintingWallet.toLowerCase().slice(0, 10)}...${mintingWallet.toLowerCase().slice(-8)}`);
     expect(lockedSvg).toContain("NFT TOKEN ID");
+    expect(lockedSvg).not.toMatch(/>(?:CLASSIC|DELUXE|GOLD|LEGENDARY)<\/text>/);
+    expect(lockedSvg).not.toContain('M360 48H490M360 82H490');
     expect(lockedSvg).toContain("#1157920...9639935");
     expect(lockedSvg).toContain('font-size="30" font-weight="700">#1157920...9639935</text>');
     expect(lockedSvg).toContain('font-size="24" font-weight="700"');
@@ -1295,7 +1330,8 @@ describe("BanmaoBox adversarial release security", () => {
     expect(after).toContain("ASSET PORTFOLIO / 1");
     expect(after).toContain("PRIMARY ASSET RELEASED");
     expect(after).toContain(">7</text>");
-    expect(after).toContain(LOGO_ANIMATION);
+    expect(after.match(LOGO_ANIMATION)).toHaveLength(20);
+    expect(after.match(FRAME_ANIMATION)).toHaveLength(5);
     expect(after).toContain("SEC / d18");
     expect(after).not.toContain("PRI / d18");
   });
