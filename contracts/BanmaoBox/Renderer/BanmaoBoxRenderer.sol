@@ -113,7 +113,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         );
         return string(abi.encodePacked(
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">',
-            '<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#17140D"/><stop offset=".48" stop-color="#090A0D"/><stop offset="1" stop-color="#040509"/></linearGradient><linearGradient id="shine"><stop stop-color="#F4EEDC"/><stop offset=".5" stop-color="#F2D98D"/><stop offset="1" stop-color="#F4EEDC"/></linearGradient></defs><style>.brand{font-family:Arial,sans-serif;font-weight:900;letter-spacing:4px}.label{font-family:Arial,sans-serif;font-weight:700;letter-spacing:2px}.mono{font-family:monospace}.gold{fill:#D8B565}.muted{fill:#817967}.white{fill:#F4EEDC}</style>',
+            '<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#17140D"/><stop offset=".48" stop-color="#090A0D"/><stop offset="1" stop-color="#040509"/></linearGradient><linearGradient id="shine"><stop stop-color="#F4EEDC"/><stop offset=".5" stop-color="#F2D98D"/><stop offset="1" stop-color="#F4EEDC"/></linearGradient><linearGradient id="scan" y2="1"><stop stop-color="#D8B565" stop-opacity="0"/><stop offset=".5" stop-color="#FFF4C4"/><stop offset="1" stop-color="#D8B565" stop-opacity="0"/></linearGradient></defs><style>.brand{font-family:Arial,sans-serif;font-weight:900;letter-spacing:4px}.label{font-family:Arial,sans-serif;font-weight:700;letter-spacing:2px}.mono{font-family:monospace}.gold{fill:#D8B565}.muted{fill:#817967}.white{fill:#F4EEDC}</style>',
             '<g transform="scale(0.75)"><rect width="800" height="800" fill="url(#bg)"/>',
             _logo(gold), _frame(gold), hero, details, "</g></svg>"
         ));
@@ -125,9 +125,9 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
             '<g fill="none" stroke="', gold, '">',
             '<rect x="18" y="18" width="764" height="764" opacity=".25"><animate attributeName="opacity" values=".25;.9;.25" ', s, '/></rect>',
             '<path d="M29 29H771V771H29Z"/>',
-            '<path d="M18 88V18H88m624 0h70v70m0 624v70h-70M88 782H18v-70" stroke-width="3"/>',
+            '<path d="M18 88V18H88m624 0h70v70m0 624v70h-70M88 782H18v-70" stroke-width="3" stroke-dasharray="120 580"><animate attributeName="stroke-dashoffset" values="700;0;-700" ', s, '/></path>',
             '<path d="M42 112H758M42 386H758M42 466H758M42 580H758" opacity=".35" stroke-dasharray="6 4"><animate attributeName="stroke-dashoffset" values="0;-20" dur="4s" repeatCount="indefinite"/></path></g>',
-            '<rect x="29" y="29" width="742" height="90" fill="', gold, '" opacity="0"><animate attributeName="opacity" values="0;.14;0" ', s, '/><animateTransform attributeName="transform" type="translate" values="0 0;0 700;0 0" ', s, '/></rect>'
+            '<rect x="29" y="29" width="742" height="90" fill="url(#scan)" opacity="0"><animate attributeName="opacity" values="0;.24;0" ', s, '/><animateTransform attributeName="transform" type="translate" values="0 0;0 700;0 0" ', s, '/></rect>'
         ));
     }
 
@@ -191,7 +191,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
 
     function _header(uint256 tokenId, string memory gold) internal pure returns (string memory) {
         bytes memory title = abi.encodePacked(
-            '<text class="brand" x="50" y="68" font-size="34" fill="url(#shine)">BANMAOBOX<animate attributeName="opacity" values="1;.35;1" dur="5s" repeatCount="indefinite"/></text>',
+            '<text class="brand" x="50" y="68" font-size="34" fill="url(#shine)">BANMAOBOX<animate attributeName="fill-opacity" values=".55;1;.55" dur="5s" repeatCount="indefinite"/></text>',
             '<text class="label muted" x="50" y="96" font-size="13">SEALED TREASURY  /  SEALED</text>'
         );
         return string(abi.encodePacked(

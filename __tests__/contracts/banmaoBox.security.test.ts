@@ -21,12 +21,12 @@ const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$
 const MORPH_TIMING = `keyTimes="0;\\.(?:2|22|24|26);\\.(?:74|76|78|8);1" ${escapeRegex(SPLINE)}`;
 const LOGO_TIMING = `keyTimes="0;\\.(?:2|22|24|26);\\.38;\\.42;\\.58;\\.62;\\.(?:74|76|78|8);1" ${escapeRegex(LONG_SPLINE)}`;
 const LOGO_ANIMATION = new RegExp(`<(?:animate attributeName="d" values="[^"]+" ${MORPH_TIMING}|animate attributeName="opacity" values="[^"]+" ${escapeRegex(OPACITY_TIMING)}|animateTransform attributeName="transform" type="(?:translate|rotate|scale)" values="[^"]+" ${LOGO_TIMING})\\/>`, "g");
-const FRAME_ANIMATION = /<(?:animate attributeName="(?:opacity|stroke-dashoffset)" values="[^"]+" dur="(?:4|5|10)s" repeatCount="indefinite"|animateTransform attributeName="transform" type="translate" values="[^"]+" dur="10s" repeatCount="indefinite")\/>/g;
+const FRAME_ANIMATION = /<(?:animate attributeName="(?:opacity|fill-opacity|stroke-dashoffset)" values="[^"]+" dur="(?:4|5|10)s" repeatCount="indefinite"|animateTransform attributeName="transform" type="translate" values="[^"]+" dur="10s" repeatCount="indefinite")\/>/g;
 
 const parseSvg = (svg: string) => {
   expect(svg).toMatch(/^<svg[\s\S]*<\/svg>$/);
   expect(svg.match(LOGO_ANIMATION)).toHaveLength(20);
-  expect(svg.match(FRAME_ANIMATION)).toHaveLength(5);
+  expect(svg.match(FRAME_ANIMATION)).toHaveLength(6);
   expect(svg.replace('xmlns="http://www.w3.org/2000/svg"', "").replace(LOGO_ANIMATION, "").replace(FRAME_ANIMATION, "")).not.toMatch(
     /<script|foreignObject|<animate(?:Transform)?\b|\son\w+=|https?:\/\//i,
   );
@@ -921,14 +921,18 @@ describe("BanmaoBox adversarial release security", () => {
     expect(lockedSvg).toContain('id="shine"');
     expect(lockedSvg).not.toMatch(/<(?:filter|feTurbulence|feDisplacementMap)\b/);
     expect(lockedSvg.match(LOGO_ANIMATION)).toHaveLength(20);
-    expect(lockedSvg.match(FRAME_ANIMATION)).toHaveLength(5);
+    expect(lockedSvg.match(FRAME_ANIMATION)).toHaveLength(6);
     expect(lockedSvg).toContain('values=".25;.9;.25"');
     expect(lockedSvg).toContain('opacity=".35" stroke-dasharray="6 4"');
-    expect(lockedSvg).toContain('height="90" fill="');
-    expect(lockedSvg).toContain('values="0;.14;0"');
-    expect(lockedSvg).toContain('values="1;.35;1"');
+    expect(lockedSvg).toContain('id="scan"');
+    expect(lockedSvg).toContain('height="90" fill="url(#scan)"');
+    expect(lockedSvg).toContain('values="0;.24;0"');
+    expect(lockedSvg).toContain('attributeName="fill-opacity" values=".55;1;.55"');
+    expect(lockedSvg).toContain('stroke-dasharray="120 580"');
+    expect(lockedSvg).toContain('values="700;0;-700"');
     expect(lockedSvg.match(/<animate attributeName="d"/g)).toHaveLength(5);
-    expect(lockedSvg.match(/<animate attributeName="opacity"/g)).toHaveLength(4);
+    expect(lockedSvg.match(/<animate attributeName="opacity"/g)).toHaveLength(3);
+    expect(lockedSvg.match(/<animate attributeName="fill-opacity"/g)).toHaveLength(1);
     expect(lockedSvg.match(/<animateTransform\b/g)).toHaveLength(15);
     expect(lockedSvg.match(/type="rotate"/g)).toHaveLength(4);
     expect(lockedSvg.match(/type="scale"/g)).toHaveLength(1);
@@ -1331,7 +1335,7 @@ describe("BanmaoBox adversarial release security", () => {
     expect(after).toContain("PRIMARY ASSET RELEASED");
     expect(after).toContain(">7</text>");
     expect(after.match(LOGO_ANIMATION)).toHaveLength(20);
-    expect(after.match(FRAME_ANIMATION)).toHaveLength(5);
+    expect(after.match(FRAME_ANIMATION)).toHaveLength(6);
     expect(after).toContain("SEC / d18");
     expect(after).not.toContain("PRI / d18");
   });
