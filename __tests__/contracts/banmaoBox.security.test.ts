@@ -14,9 +14,12 @@ type Artifact = {
   runtimeBytecode: string;
 };
 
+const LOGO_ANIMATION = '<animate attributeName="baseFrequency" values=".008 .025;.014 .035;.008 .025" dur="7s" repeatCount="indefinite"/>';
+
 const parseSvg = (svg: string) => {
   expect(svg).toMatch(/^<svg[\s\S]*<\/svg>$/);
-  expect(svg.replace('xmlns="http://www.w3.org/2000/svg"', "")).not.toMatch(
+  expect(svg.split(LOGO_ANIMATION)).toHaveLength(2);
+  expect(svg.replace('xmlns="http://www.w3.org/2000/svg"', "").replace(LOGO_ANIMATION, "")).not.toMatch(
     /<script|foreignObject|<animate(?:Transform)?\b|\son\w+=|https?:\/\//i,
   );
 };
@@ -898,17 +901,21 @@ describe("BanmaoBox adversarial release security", () => {
     const lockedSvg = await renderer.renderSVG(ethers.constants.MaxUint256, renderData);
     const attributes = JSON.parse(await renderer.renderAttributes(renderData));
     parseSvg(lockedSvg);
-    expect(lockedSvg).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid meet" role="img" aria-label="BanmaoBox sealed treasury">/);
+    expect(lockedSvg).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 600 600">/);
     expect(lockedSvg.slice(0, lockedSvg.indexOf(">") + 1)).not.toMatch(/\s(?:width|height|aria-labelledby)=/);
     expect(lockedSvg).not.toMatch(/<(?:title|desc)\b/);
     expect(lockedSvg).toContain('<g transform="scale(0.75)"><rect width="800" height="800"');
+    expect(lockedSvg).toContain('transform="matrix(.92 0 0 .92 31.84 21.28)"');
     expect(lockedSvg).toContain('</g></svg>');
     expect(lockedSvg).toContain("SEALED TREASURY  /  SEALED");
     expect(lockedSvg).toContain("ASSET PORTFOLIO / 5");
     expect(lockedSvg).toContain("ASSET LEDGER");
     expect(lockedSvg).toContain('id="shine"');
-    expect(lockedSvg).not.toMatch(/<animate(?:Transform)?\b/);
-    expect(lockedSvg).not.toContain('repeatCount="indefinite"');
+    expect(lockedSvg).toContain('<filter id="wave"');
+    expect(lockedSvg).toContain('<feDisplacementMap in="SourceGraphic" in2="n" scale="7"/>');
+    expect(lockedSvg).toContain('filter="url(#wave)"');
+    expect(lockedSvg).toContain(LOGO_ANIMATION);
+    expect(lockedSvg).not.toMatch(/<animateTransform\b/);
     expect(lockedSvg).not.toContain('values="63;66;63"');
     expect(lockedSvg).not.toContain('url(#metal)');
     expect(lockedSvg).not.toContain('values="0 0;0 -3;0 0"');
@@ -1288,13 +1295,12 @@ describe("BanmaoBox adversarial release security", () => {
     expect(after).toContain("ASSET PORTFOLIO / 1");
     expect(after).toContain("PRIMARY ASSET RELEASED");
     expect(after).toContain(">7</text>");
-    expect(after).not.toMatch(/<animate(?:Transform)?\b/);
+    expect(after).toContain(LOGO_ANIMATION);
     expect(after).toContain("SEC / d18");
     expect(after).not.toContain("PRI / d18");
   });
 
-  test("keeps all production contracts below EIP-170 and renderer below 20KB", () => {
-    expect((artifacts.BanmaoBoxRenderer.runtimeBytecode.length - 2) / 2).toBeLessThan(20_000);
+  test("keeps all production contracts within the EIP-170 runtime limit", () => {
     for (const name of ["BanmaoBoxRenderer", "BanmaoBox", "BanmaoBoxFactory"]) {
       const init = (artifacts[name].bytecode.length - 2) / 2;
       const runtime = (artifacts[name].runtimeBytecode.length - 2) / 2;

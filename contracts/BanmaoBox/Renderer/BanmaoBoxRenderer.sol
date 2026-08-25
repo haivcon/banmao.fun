@@ -101,9 +101,10 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
     }
 
     function _renderSVG(uint256 tokenId, BanmaoBoxRenderData calldata data) internal view returns (string memory) {
-        string memory gold = _tierGold(_tier(data.amount, data.tokenDecimals));
+        uint256 tier = _tier(data.amount, data.tokenDecimals);
+        string memory gold = _tierGold(tier);
         bytes memory hero = abi.encodePacked(
-            _header(tokenId, gold),
+            _header(tokenId, tier, gold),
             _assetSummary(data, gold)
         );
         bytes memory details = abi.encodePacked(
@@ -120,7 +121,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
 
     function _svgHead(string memory gold) internal pure returns (string memory) {
         return string(abi.encodePacked(
-            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid meet" role="img" aria-label="BanmaoBox sealed treasury">',
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">',
             _defs(),
             '<g transform="scale(0.75)">',
             _background(gold)
@@ -128,21 +129,35 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
     }
 
     function _defs() internal pure returns (string memory) {
-        return '<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#15130E"/><stop offset=".55" stop-color="#090A0D"/><stop offset="1" stop-color="#050609"/></linearGradient><linearGradient id="shine" x1="0" x2="1"><stop stop-color="#F4EEDC"/><stop offset=".5" stop-color="#F2D98D"/><stop offset="1" stop-color="#F4EEDC"/></linearGradient></defs><style>.brand{font-family:Arial,sans-serif;font-weight:900;letter-spacing:4px}.label{font-family:Arial,sans-serif;font-weight:700;letter-spacing:2px}.mono{font-family:monospace}.gold{fill:#D8B565}.muted{fill:#817967}.white{fill:#F4EEDC}</style>';
+        return '<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#17140D"/><stop offset=".48" stop-color="#090A0D"/><stop offset="1" stop-color="#040509"/></linearGradient><linearGradient id="shine"><stop stop-color="#F4EEDC"/><stop offset=".5" stop-color="#F2D98D"/><stop offset="1" stop-color="#F4EEDC"/></linearGradient><filter id="wave" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence baseFrequency=".008 .025" numOctaves="1" seed="2" result="n"><animate attributeName="baseFrequency" values=".008 .025;.014 .035;.008 .025" dur="7s" repeatCount="indefinite"/></feTurbulence><feDisplacementMap in="SourceGraphic" in2="n" scale="7"/></filter></defs><style>.brand{font-family:Arial,sans-serif;font-weight:900;letter-spacing:4px}.label{font-family:Arial,sans-serif;font-weight:700;letter-spacing:2px}.mono{font-family:monospace}.gold{fill:#D8B565}.muted{fill:#817967}.white{fill:#F4EEDC}</style>';
     }
 
     function _background(string memory gold) internal pure returns (string memory) {
-        return string(abi.encodePacked('<rect width="800" height="800" fill="url(#bg)"/><rect x="18" y="18" width="764" height="764" rx="34" fill="none" stroke="', gold, '" stroke-opacity=".38"/><path d="M42 112H758M42 386H758M42 466H758M42 580H758" stroke="#D8B565" stroke-opacity=".22"/>'));
+        return string(abi.encodePacked(
+            '<rect width="800" height="800" fill="url(#bg)"/>',
+            '<g fill="', gold, '" stroke="', gold, '"><path opacity=".1" stroke-linejoin="round" filter="url(#wave)" transform="matrix(.92 0 0 .92 31.84 21.28)" d="M256 142h80v80h-80zm168 0h80v80h-80zm-84 84h80v80h-80zm-84 84h80v80h-80zm168 0h80v80h-80zm88-168h16v80h-16zm20 0h8v80h-8zm-20 168h16v80h-16zm20 0h8v80h-8z"/><g fill="none">',
+            '<rect x="18" y="18" width="764" height="764" opacity=".4"/><path d="M29 29H771V771H29Z"/>',
+            '<path d="M18 88V18H88m624 0h70v70m0 624v70h-70M88 782H18v-70" stroke-width="3"/>',
+            '<path d="M42 112H758M42 386H758M42 466H758M42 580H758" opacity=".2"/></g></g>'
+        ));
     }
 
-    function _header(uint256 tokenId, string memory gold) internal pure returns (string memory) {
+    function _header(uint256 tokenId, uint256 tier, string memory gold) internal pure returns (string memory) {
         return string(abi.encodePacked(
             '<text class="brand" x="50" y="68" font-size="34" fill="url(#shine)">BANMAOBOX</text>',
-            '<text class="label muted" x="50" y="96" font-size="13">SEALED TREASURY  /  ',
-            'SEALED</text>',
+            '<text class="label muted" x="50" y="96" font-size="13">SEALED TREASURY  /  SEALED</text>',
+            _tierBadge(tier, gold),
             '<text class="label muted" x="750" y="48" text-anchor="end" font-size="11">NFT TOKEN ID</text>',
             '<text class="mono" x="750" y="84" text-anchor="end" fill="', gold,
             '" font-size="30" font-weight="700">#', _abbreviate(tokenId.toString(), 7, 7), '</text>'
+        ));
+    }
+
+    function _tierBadge(uint256 tier, string memory gold) internal pure returns (string memory) {
+        return string(abi.encodePacked(
+            '<path d="M360 48H490M360 82H490" stroke="', gold,
+            '"/><text x="425" y="69" text-anchor="middle" fill="', gold,
+            '">', _tierName(tier), '</text>'
         ));
     }
 
