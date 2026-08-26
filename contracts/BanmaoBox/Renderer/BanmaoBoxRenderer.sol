@@ -133,22 +133,22 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
 
     function _logo(string memory gold) internal pure returns (string memory) {
         bytes memory upper = abi.encodePacked(
-            _logoCluster(256, 142, '520 -24', '-12 2', '0;.22;.78;1'),
-            _logoCluster(424, 142, '570 -10', '-10 2', '0;.24;.76;1'),
-            _logoBlade('M512 142h16v80h-16zM512 158h16M512 174h16M512 190h16M512 206h16', '610 -18', '-150;-82;-7;0;0;-7;-82;-150'),
-            _logoBlade('M532 142h8v80h-8zM532 150h8M532 158h8M532 166h8M532 174h8M532 182h8M532 190h8M532 198h8M532 206h8M532 214h8', '660 -6', '170;94;9;0;0;9;94;170')
+            _logoCluster(256, 142, '280 -8', '-12 2', '0;.22;.78;1'),
+            _logoCluster(424, 142, '220 -4', '-10 2', '0;.24;.76;1'),
+            _logoBlade('M512 142h16v80h-16zM512 158h16M512 174h16M512 190h16M512 206h16', '180 -8', '-18;-10;-3;0;0;-3;-10;-18'),
+            _logoBlade('M532 142h8v80h-8zM532 150h8M532 158h8M532 166h8M532 174h8M532 182h8M532 190h8M532 198h8M532 206h8M532 214h8', '160 -4', '20;11;3;0;0;3;11;20')
         );
         bytes memory lower = abi.encodePacked(
-            _logoCluster(256, 310, '540 18', '-12 -2', '0;.24;.76;1'),
-            _logoCluster(424, 310, '590 26', '-10 -2', '0;.22;.78;1'),
-            _logoBlade('M512 310h16v80h-16zM512 326h16M512 342h16M512 358h16M512 374h16', '630 12', '150;78;7;0;0;7;78;150'),
-            _logoBlade('M532 310h8v80h-8zM532 318h8M532 326h8M532 334h8M532 342h8M532 350h8M532 358h8M532 366h8M532 374h8M532 382h8', '680 4', '-170;-92;-9;0;0;-9;-92;-170')
+            _logoCluster(256, 310, '270 8', '-12 -2', '0;.24;.76;1'),
+            _logoCluster(424, 310, '210 12', '-10 -2', '0;.22;.78;1'),
+            _logoBlade('M512 310h16v80h-16zM512 326h16M512 342h16M512 358h16M512 374h16', '170 6', '18;9;3;0;0;3;9;18'),
+            _logoBlade('M532 310h8v80h-8zM532 318h8M532 326h8M532 334h8M532 342h8M532 350h8M532 358h8M532 366h8M532 374h8M532 382h8', '150 2', '-20;-11;-3;0;0;-3;-11;-20')
         );
         return string(abi.encodePacked(
             '<g fill="', gold, '" opacity="0" transform="matrix(.92 0 0 .92 31.84 21.28)">',
             '<animate attributeName="opacity" values="0;.9;.9;0" keyTimes="0;.15;.85;1" dur="10s" repeatCount="indefinite"/>',
             '<g transform="translate(400 266)"><g><animateTransform attributeName="transform" type="scale" values=".9;.9;1.04;1;1;1.02;.9;.9" ', _logoTiming(), '/><g transform="translate(-400 -266)">',
-            upper, _logoCluster(340, 226, '620 0', '-14 0', '0;.2;.8;1'),
+            upper, _logoCluster(340, 226, '250 0', '-14 0', '0;.2;.8;1'),
             lower, '</g></g></g></g>'
         ));
     }
@@ -156,7 +156,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
     function _logoCluster(uint256 x, uint256 y, string memory travel, string memory lock, string memory morphTimes) internal pure returns (string memory) {
         string memory grid = 'M0 0h20v20h-20zM20 0h20v20h-20zM40 0h20v20h-20zM60 0h20v20h-20zM0 20h20v20h-20zM20 20h20v20h-20zM40 20h20v20h-20zM60 20h20v20h-20zM0 40h20v20h-20zM20 40h20v20h-20zM40 40h20v20h-20zM60 40h20v20h-20zM0 60h20v20h-20zM20 60h20v20h-20zM40 60h20v20h-20zM60 60h20v20h-20z';
         bytes memory inward = abi.encodePacked(travel, ';', travel, ';', lock, ';0 0');
-        bytes memory outward = abi.encodePacked('0 0;', lock, ';-620 0;-620 0');
+        bytes memory outward = abi.encodePacked('0 0;', lock, ';-160 0;-160 0');
         return string(abi.encodePacked(
             '<g transform="translate(', x.toString(), ' ', y.toString(), ')"><path d="', grid, '">',
             _clusterMorph(grid, morphTimes),
@@ -176,7 +176,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
     function _logoBlade(string memory path, string memory travel, string memory turns) internal pure returns (string memory) {
         string memory t = _logoTiming();
         bytes memory inward = abi.encodePacked(travel, ';', travel, ';3 -2;0 0');
-        bytes memory outward = '0 0;3 -2;-620 0;-620 0';
+        bytes memory outward = '0 0;3 -2;-160 0;-160 0';
         return string(abi.encodePacked(
             '<g transform="translate(400 266)"><g><animateTransform attributeName="transform" type="rotate" values="',
             turns, '" ', t, '/><g transform="translate(-400 -266)"><path d="', path,

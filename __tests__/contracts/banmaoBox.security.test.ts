@@ -943,10 +943,10 @@ describe("BanmaoBox adversarial release security", () => {
     expect(lockedSvg).toContain('M532 142h8v80h-8z');
     expect(lockedSvg).toContain('M512 310h16v80h-16z');
     expect(lockedSvg).toContain('M532 310h8v80h-8z');
-    expect(lockedSvg).toContain('values="520 -24;520 -24;-12 2;0 0;0 0;-12 2;-620 0;-620 0"');
-    expect(lockedSvg).toContain('values="610 -18;610 -18;3 -2;0 0;0 0;3 -2;-620 0;-620 0"');
-    expect(lockedSvg).toContain('values="-150;-82;-7;0;0;-7;-82;-150"');
-    expect(lockedSvg).not.toContain('values="-168 -104;-168 -104;3 2;0 0;0 0;3 2;-168 -104;-168 -104"');
+    expect(lockedSvg).toContain('values="280 -8;280 -8;-12 2;0 0;0 0;-12 2;-160 0;-160 0"');
+    expect(lockedSvg).toContain('values="180 -8;180 -8;3 -2;0 0;0 0;3 -2;-160 0;-160 0"');
+    expect(lockedSvg).toContain('values="-18;-10;-3;0;0;-3;-10;-18"');
+    expect(lockedSvg).not.toMatch(/(?:520 -24|610 -18|-620 0|-150;-82|170;94)/);
     expect(lockedSvg.match(new RegExp(LOGO_TIMING, "g"))).toHaveLength(14);
     expect(lockedSvg.match(new RegExp(MORPH_TIMING, "g"))).toHaveLength(5);
     expect(lockedSvg.match(new RegExp(escapeRegex(OPACITY_TIMING), "g"))).toHaveLength(1);
@@ -955,7 +955,7 @@ describe("BanmaoBox adversarial release security", () => {
     expect(lockedSvg).toContain('keyTimes="0;.24;.76;1"');
     expect(lockedSvg).toContain('values="0;.9;.9;0"');
     expect(lockedSvg).toContain('values=".9;.9;1.04;1;1;1.02;.9;.9"');
-    expect(lockedSvg.match(/;-620 0;-620 0" keyTimes=/g)).toHaveLength(9);
+    expect(lockedSvg.match(/;-160 0;-160 0" keyTimes=/g)).toHaveLength(9);
     expect(lockedSvg).not.toContain('values="63;66;63"');
     expect(lockedSvg).not.toContain('url(#metal)');
     expect(lockedSvg).not.toContain('values="0 0;0 -3;0 0"');
