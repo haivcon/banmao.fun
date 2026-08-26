@@ -113,7 +113,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
         );
         return string(abi.encodePacked(
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">',
-            '<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#17140D"/><stop offset=".48" stop-color="#090A0D"/><stop offset="1" stop-color="#040509"/></linearGradient><linearGradient id="shine"><stop stop-color="#F4EEDC"/><stop offset=".5" stop-color="#F2D98D"/><stop offset="1" stop-color="#F4EEDC"/></linearGradient><linearGradient id="scan" y2="1"><stop stop-color="#D8B565" stop-opacity="0"/><stop offset=".5" stop-color="#FFF4C4"/><stop offset="1" stop-color="#D8B565" stop-opacity="0"/></linearGradient></defs><style>.brand{font-family:Arial,sans-serif;font-weight:900;letter-spacing:4px}.label{font-family:Arial,sans-serif;font-weight:700;letter-spacing:2px}.mono{font-family:monospace}.gold{fill:#D8B565}.muted{fill:#817967}.white{fill:#F4EEDC}</style>',
+            '<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#17140D"/><stop offset=".48" stop-color="#090A0D"/><stop offset="1" stop-color="#040509"/></linearGradient><linearGradient id="shine"><stop stop-color="#F4EEDC"/><stop offset=".5" stop-color="#F2D98D"/><stop offset="1" stop-color="#F4EEDC"/></linearGradient><linearGradient id="scan" y2="1"><stop stop-color="#D8B565" stop-opacity="0"/><stop offset=".5" stop-color="#FFF4C4"/><stop offset="1" stop-color="#D8B565" stop-opacity="0"/></linearGradient><filter id="m"><feDropShadow dx="6" stdDeviation="3" flood-opacity=".3"/></filter></defs><style>.brand{font-family:Arial,sans-serif;font-weight:900;letter-spacing:4px}.label{font-family:Arial,sans-serif;font-weight:700;letter-spacing:2px}.mono{font-family:monospace}.gold{fill:#D8B565}.muted{fill:#817967}.white{fill:#F4EEDC}</style>',
             '<g transform="scale(0.75)"><rect width="800" height="800" fill="url(#bg)"/>',
             _logo(gold), _frame(gold), hero, details, "</g></svg>"
         ));
@@ -133,22 +133,22 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
 
     function _logo(string memory gold) internal pure returns (string memory) {
         bytes memory upper = abi.encodePacked(
-            _logoCluster(256, 142, '280 -8', '-12 2', '0;.22;.78;1'),
-            _logoCluster(424, 142, '220 -4', '-10 2', '0;.24;.76;1'),
-            _logoBlade('M512 142h16v80h-16zM512 158h16M512 174h16M512 190h16M512 206h16', '180 -8', '-18;-10;-3;0;0;-3;-10;-18'),
-            _logoBlade('M532 142h8v80h-8zM532 150h8M532 158h8M532 166h8M532 174h8M532 182h8M532 190h8M532 198h8M532 206h8M532 214h8', '160 -4', '20;11;3;0;0;3;11;20')
+            _logoCluster(256, 142, '30 -8', '-12 2', '0;.22;.78;1'),
+            _logoCluster(424, 142, '18 -4', '-10 2', '0;.24;.76;1'),
+            _logoBlade('M512 142h16v80h-16zM512 158h16M512 174h16M512 190h16M512 206h16', '70 -8', '-18;-10;-3;0;0;-3;-10;-18'),
+            _logoBlade('M532 142h8v80h-8zM532 150h8M532 158h8M532 166h8M532 174h8M532 182h8M532 190h8M532 198h8M532 206h8M532 214h8', '50 -4', '20;11;3;0;0;3;11;20')
         );
         bytes memory lower = abi.encodePacked(
-            _logoCluster(256, 310, '270 8', '-12 -2', '0;.24;.76;1'),
-            _logoCluster(424, 310, '210 12', '-10 -2', '0;.22;.78;1'),
-            _logoBlade('M512 310h16v80h-16zM512 326h16M512 342h16M512 358h16M512 374h16', '170 6', '18;9;3;0;0;3;9;18'),
-            _logoBlade('M532 310h8v80h-8zM532 318h8M532 326h8M532 334h8M532 342h8M532 350h8M532 358h8M532 366h8M532 374h8M532 382h8', '150 2', '-20;-11;-3;0;0;-3;-11;-20')
+            _logoCluster(256, 310, '26 8', '-12 -2', '0;.24;.76;1'),
+            _logoCluster(424, 310, '14 12', '-10 -2', '0;.22;.78;1'),
+            _logoBlade('M512 310h16v80h-16zM512 326h16M512 342h16M512 358h16M512 374h16', '60 6', '18;9;3;0;0;3;9;18'),
+            _logoBlade('M532 310h8v80h-8zM532 318h8M532 326h8M532 334h8M532 342h8M532 350h8M532 358h8M532 366h8M532 374h8M532 382h8', '40 2', '-20;-11;-3;0;0;-3;-11;-20')
         );
         return string(abi.encodePacked(
-            '<g fill="', gold, '" opacity="0" transform="matrix(.92 0 0 .92 31.84 21.28)">',
+            '<g fill="', gold, '" filter="url(#m)" opacity="0" transform="matrix(.92 0 0 .92 31.84 21.28)">',
             '<animate attributeName="opacity" values="0;.9;.9;0" keyTimes="0;.15;.85;1" dur="10s" repeatCount="indefinite"/>',
             '<g transform="translate(400 266)"><g><animateTransform attributeName="transform" type="scale" values=".9;.9;1.04;1;1;1.02;.9;.9" ', _logoTiming(), '/><g transform="translate(-400 -266)">',
-            upper, _logoCluster(340, 226, '250 0', '-14 0', '0;.2;.8;1'),
+            upper, _logoCluster(340, 226, '22 0', '-14 0', '0;.2;.8;1'),
             lower, '</g></g></g></g>'
         ));
     }
@@ -156,7 +156,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
     function _logoCluster(uint256 x, uint256 y, string memory travel, string memory lock, string memory morphTimes) internal pure returns (string memory) {
         string memory grid = 'M0 0h20v20h-20zM20 0h20v20h-20zM40 0h20v20h-20zM60 0h20v20h-20zM0 20h20v20h-20zM20 20h20v20h-20zM40 20h20v20h-20zM60 20h20v20h-20zM0 40h20v20h-20zM20 40h20v20h-20zM40 40h20v20h-20zM60 40h20v20h-20zM0 60h20v20h-20zM20 60h20v20h-20zM40 60h20v20h-20zM60 60h20v20h-20z';
         bytes memory inward = abi.encodePacked(travel, ';', travel, ';', lock, ';0 0');
-        bytes memory outward = abi.encodePacked('0 0;', lock, ';-160 0;-160 0');
+        bytes memory outward = abi.encodePacked('0 0;', lock, ';-18 60;-18 60');
         return string(abi.encodePacked(
             '<g transform="translate(', x.toString(), ' ', y.toString(), ')"><path d="', grid, '">',
             _clusterMorph(grid, morphTimes),
@@ -166,7 +166,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
     }
 
     function _clusterMorph(string memory grid, string memory morphTimes) internal pure returns (string memory) {
-        string memory scatter = 'M-54 -36h20v20h-20zM34 -52h20v20h-20zM92 -18h20v20h-20zM-88 22h20v20h-20zM12 4h20v20h-20zM70 34h20v20h-20zM128 12h20v20h-20zM-46 66h20v20h-20zM40 56h20v20h-20zM104 78h20v20h-20zM-74 112h20v20h-20zM0 98h20v20h-20zM58 126h20v20h-20zM118 116h20v20h-20zM26 154h20v20h-20zM82 168h20v20h-20z';
+        string memory scatter = 'M-210 -90h8v8h-8zM-110 180h28v28h-28zM0 40h54v8h-54zM110 350h14v14h-14zM220 110h58v10h-58zM-170 430h20v20h-20zM-60 260h46v8h-46zM55 -20h24v24h-24zM170 390h10v10h-10zM280 210h34v12h-34zM-200 80h18v18h-18zM-90 450h58v8h-58zM20 300h26v26h-26zM130 140h12v12h-12zM240 410h40v10h-40zM285 430h30v30h-30z';
         return string(abi.encodePacked(
             '<animate attributeName="d" values="', scatter, ';', grid, ';', grid, ';', scatter,
             '" keyTimes="', morphTimes, '" calcMode="spline" keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1" dur="10s" repeatCount="indefinite"/>'
@@ -176,7 +176,7 @@ contract BanmaoBoxRenderer is IBanmaoBoxRenderer {
     function _logoBlade(string memory path, string memory travel, string memory turns) internal pure returns (string memory) {
         string memory t = _logoTiming();
         bytes memory inward = abi.encodePacked(travel, ';', travel, ';3 -2;0 0');
-        bytes memory outward = '0 0;3 -2;-160 0;-160 0';
+        bytes memory outward = '0 0;3 -2;-18 60;-18 60';
         return string(abi.encodePacked(
             '<g transform="translate(400 266)"><g><animateTransform attributeName="transform" type="rotate" values="',
             turns, '" ', t, '/><g transform="translate(-400 -266)"><path d="', path,
