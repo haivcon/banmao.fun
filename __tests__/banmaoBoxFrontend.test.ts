@@ -514,6 +514,9 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(preview).toContain("MINTED BY");
     expect(preview).toContain("ASSET LEDGER");
     expect(preview).toContain("#PENDING");
+    expect(preview).toContain("getAddress(creator)");
+    expect(preview).toContain("getAddress(asset.token as Address)");
+    expect(preview).not.toContain(".toLowerCase()");
     expect(rendererDisplayAmount(123456789n, 6)).toBe("123.45");
     expect(rendererDisplayAmount(1n, 18)).toBe("<0.01");
     expect(rendererDisplayAmount(1000000000000000000000000000000000000n, 18)).toBe("1.0000e18");
