@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { BOX_COPY, BOX_LANGUAGES } from "../app/defi/box/i18n";
+import { BOX_COPY, BOX_LANGUAGES, BOX_TRANSACTION_RESULT_COPY } from "../app/defi/box/i18n";
 import { explorerCopy } from "../app/defi/box/explorer/copy";
 import {
   COLLECTION_LIFECYCLE_FIXTURE,
@@ -98,7 +98,11 @@ describe("BanmaoBox transaction UX contract", () => {
       const copy = BOX_COPY[locale];
       for (const phase of phases) expect(copy.phase[phase]).toBeTruthy();
       for (const key of keys) expect(copy[key]).toBeTruthy();
-      if (locale !== "en") expect(copy.transactionProgressLabel).not.toBe(BOX_COPY.en.transactionProgressLabel);
+      for (const value of Object.values(BOX_TRANSACTION_RESULT_COPY[locale])) expect(value).toBeTruthy();
+      if (locale !== "en") {
+        expect(copy.transactionProgressLabel).not.toBe(BOX_COPY.en.transactionProgressLabel);
+        expect(BOX_TRANSACTION_RESULT_COPY[locale].title).not.toBe(BOX_TRANSACTION_RESULT_COPY.en.title);
+      }
     }
   });
 
@@ -122,6 +126,35 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(page).toContain("copy.transactionProgressLabel");
     expect(page).toContain("copy.dismissNotification");
     expect(page).toContain("showVerificationToast");
+  });
+
+  test("creation result uses receipt token IDs and the exact on-chain NFT artwork", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const hook = fs.readFileSync(path.join(process.cwd(), "app/defi/box/useBox.ts"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
+
+    expect(hook).toContain('eventName: "BoxCreated"');
+    expect(hook).toContain("createdTokenIds(receipt.logs, boxAddress)");
+    expect(hook).not.toContain("totalSupply + 1");
+    expect(page).toContain("const artwork = await inspectBox(tokenId)");
+    expect(page).toContain("isRenderableSvg(artwork.svg)");
+    expect(page).toContain("svgImageDataUri(creationResult.artwork.svg)");
+    expect(page).toContain("boxNftExplorerUrl(explorerBaseUrl");
+    expect(page).not.toContain("box-celebration__art");
+    expect(css).toMatch(/\.box-result__artwork\s*\{[^}]*aspect-ratio:\s*1/);
+    expect(css).toMatch(/\.box-result__artwork > img\s*\{[^}]*object-fit:\s*contain/);
+  });
+
+  test("creation result replaces the duplicate success toast and keeps errors compact", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
+
+    expect(page).toContain('phase === "success" && (');
+    expect(page).toContain('toast.dismiss("banmaobox-transaction")');
+    expect(page).toContain('phase === "error" && (transactionHash || approvalHash)');
+    expect(page).toContain("compactHash((transactionHash ?? approvalHash) as Hash)");
+    expect(css).toMatch(/\.box-toast__compact-tx\s*\{[^}]*grid-template-columns:\s*minmax\(0,1fr\) 30px 30px/);
+    expect(css).toMatch(/\.box-result__actions\s*\{[^}]*grid-template-columns:\s*1\.15fr 1fr/);
   });
 
   test("verification polling follows Retry-After, is bounded, and keeps transient states nonterminal", () => {
@@ -365,15 +398,16 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(registry).not.toMatch(/short\(|slice\(|ellipsis|truncate/i);
   });
 
-  test("success and admin creation details retain full linked copyable values", () => {
+  test("success receipt keeps its full hash available while presenting a compact value", () => {
     const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
     const admin = fs.readFileSync(path.join(process.cwd(), "app/defi/box/admin/page.tsx"), "utf8");
-    const celebrationStart = page.indexOf('{transactionHash ? (', page.indexOf('className="box-celebration__actions"') - 200);
-    const celebration = page.slice(celebrationStart, page.indexOf("</section>", celebrationStart));
+    const resultStart = page.indexOf('className="box-result"');
+    const result = page.slice(resultStart, page.indexOf("</section>", resultStart));
     const created = admin.slice(admin.indexOf("displayedCollection && explorer"));
-    expect(celebration).toContain("ExplorerValueRow");
-    expect(celebration).toContain("value={transactionHash}");
-    expect(celebration).not.toMatch(/slice\(|ellipsis|truncate/i);
+    expect(result).toContain("compactHash(creationResult.hash)");
+    expect(result).toContain("title={creationResult.hash}");
+    expect(result).toContain("copyToClipboard(creationResult.hash");
+    expect(result).toContain("/tx/${creationResult.hash}");
     for (const value of ["displayedCollection.token", "displayedCollection.box", "displayedCollection.txHash", "displayedCollection.factory", "displayedCollection.renderer"]) {
       expect(created).toContain(value);
     }
@@ -659,7 +693,7 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(page).toContain("setCollectionOpen(false)");
     expect(page).toContain("setReviewOpen(false)");
     expect(page).toContain("setTransferEntry(null)");
-    expect(page).toContain("setCelebrationOpen(false)");
+    expect(page).toContain("setCreationResult(null)");
     expect(page.match(/box-collection-controls/g)).toHaveLength(1);
     expect(page).toContain('className="box-collection-list"');
     expect(page).toContain("collectionPickerCopy.searchPlaceholder");
@@ -742,7 +776,8 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(hook).toContain("setApprovalHash(hash)");
     expect(hook).toContain("setTransactionHash(null)");
     expect(page).toContain("copy.approvalConfirmedCreateIncomplete");
-    expect(page).toContain("value={approvalHash}");
+    expect(page).toContain("transactionHash ?? approvalHash");
+    expect(page).toContain("compactHash((transactionHash ?? approvalHash) as Hash)");
   });
 
   test("read refresh failures cannot turn a confirmed write into a failed transaction", () => {

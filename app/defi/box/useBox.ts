@@ -68,6 +68,26 @@ export type BoxReleaseResult = {
   failedAssetCount: number;
 };
 
+function createdTokenIds(
+  logs: readonly { address: Address; data: `0x${string}`; topics?: readonly `0x${string}`[] }[],
+  boxAddress: Address,
+): bigint[] {
+  return logs.flatMap((log) => {
+    if (log.address.toLowerCase() !== boxAddress.toLowerCase() || !log.topics?.length) return [];
+    try {
+      const event = decodeEventLog({
+        abi: BANMAO_BOX_ABI,
+        eventName: "BoxCreated",
+        data: log.data,
+        topics: [...log.topics] as [`0x${string}`, ...`0x${string}`[]],
+      });
+      return event.eventName === "BoxCreated" ? [event.args.tokenId] : [];
+    } catch {
+      return [];
+    }
+  });
+}
+
 function releaseEventCounts(
   logs: readonly { address: Address; data: `0x${string}`; topics?: readonly `0x${string}`[] }[],
   boxAddress: Address,
@@ -817,11 +837,12 @@ export function useBox(
           args: [recipient, amountBaseUnits, lockDurationSec],
         } as never);
         const createHash = await writeContractAsync(createRequest as never);
-        await waitForHash(createHash, client);
+        const receipt = await waitForHash(createHash, client);
+        const tokenIds = createdTokenIds(receipt.logs, boxAddress);
 
         await refetchAll();
         setPhase("success");
-        return createHash;
+        return { hash: createHash, tokenIds };
       } catch (error) {
         setPhase("error");
         setTransactionError(getErrorMessage(error));
@@ -888,10 +909,11 @@ export function useBox(
           args: [recipients, amounts, lockDurationSec],
         } as never);
         const hash = await writeContractAsync(request as never);
-        await waitForHash(hash, client);
+        const receipt = await waitForHash(hash, client);
+        const tokenIds = createdTokenIds(receipt.logs, boxAddress);
         await refetchAll();
         setPhase("success");
-        return hash;
+        return { hash, tokenIds };
       } catch (error) {
         setPhase("error");
         setTransactionError(getErrorMessage(error));
@@ -1067,18 +1089,26 @@ export function useBox(
           args: [recipient, tokens, amounts, lockDurationSec],
         } as never);
         const hash = await writeContractAsync(request as never);
-        await waitForHash(hash, client);
+        const receipt = await waitForHash(hash, client);
+        const tokenIds = createdTokenIds(receipt.logs, boxAddress);
         await refetchAll();
         setPhase("success");
-        return hash;
-      } catch (error) {
+        return { hash, tokenIds };
+      } catch (error: unknown) {
         setPhase("error");
         setTransactionError(getErrorMessage(error));
         throw error;
       }
     },
-    [ensureReady, refetchAll, resetTransaction, tokenAddress, waitForApproval,
-      waitForHash, writeContractAsync],
+    [
+      ensureReady,
+      refetchAll,
+      resetTransaction,
+      tokenAddress,
+      waitForApproval,
+      waitForHash,
+      writeContractAsync,
+    ],
   );
 
   const openBox = useCallback(

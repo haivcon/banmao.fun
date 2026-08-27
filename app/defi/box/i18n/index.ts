@@ -2,6 +2,31 @@ export const BOX_LANGUAGES = ["en", "vi", "zh", "ko", "ru", "id"] as const;
 
 export type BoxLanguage = (typeof BOX_LANGUAGES)[number];
 
+export type BoxTransactionResultCopy = {
+  title: string;
+  description: string;
+  artworkAlt: string;
+  artworkLoading: string;
+  artworkUnavailable: string;
+  retryArtwork: string;
+  network: string;
+  status: string;
+  confirmed: string;
+  tokenId: string;
+  boxesCreated: string;
+  viewBox: string;
+  close: string;
+};
+
+export const BOX_TRANSACTION_RESULT_COPY: Record<BoxLanguage, BoxTransactionResultCopy> = {
+  en: { title: "Your BanmaoBox is ready", description: "The transaction is confirmed on X Layer. This is the artwork generated on-chain for your newly minted NFT.", artworkAlt: "On-chain artwork for the newly created BanmaoBox", artworkLoading: "Loading on-chain NFT artwork…", artworkUnavailable: "The box was created successfully, but its artwork is not available from RPC yet. Your locked assets are unaffected.", retryArtwork: "Retry artwork", network: "Network", status: "Status", confirmed: "Confirmed", tokenId: "Token ID", boxesCreated: "Boxes created", viewBox: "View BanmaoBox", close: "Close" },
+  vi: { title: "BanmaoBox của bạn đã sẵn sàng", description: "Giao dịch đã được xác nhận trên X Layer. Đây là artwork được tạo on-chain cho NFT bạn vừa mint.", artworkAlt: "Artwork on-chain của BanmaoBox vừa tạo", artworkLoading: "Đang tải artwork NFT on-chain…", artworkUnavailable: "Box đã được tạo thành công nhưng RPC chưa trả về artwork. Tài sản đang khóa của bạn không bị ảnh hưởng.", retryArtwork: "Tải lại artwork", network: "Mạng", status: "Trạng thái", confirmed: "Đã xác nhận", tokenId: "Token ID", boxesCreated: "Số box đã tạo", viewBox: "Xem BanmaoBox", close: "Đóng" },
+  zh: { title: "您的 BanmaoBox 已准备就绪", description: "交易已在 X Layer 上确认。这是为您刚铸造的 NFT 生成的链上作品。", artworkAlt: "新创建 BanmaoBox 的链上作品", artworkLoading: "正在加载链上 NFT 作品…", artworkUnavailable: "Box 已成功创建，但 RPC 暂未返回作品。您锁定的资产不受影响。", retryArtwork: "重试加载作品", network: "网络", status: "状态", confirmed: "已确认", tokenId: "Token ID", boxesCreated: "已创建 Box", viewBox: "查看 BanmaoBox", close: "关闭" },
+  ko: { title: "BanmaoBox가 준비되었습니다", description: "거래가 X Layer에서 확인되었습니다. 방금 민팅한 NFT를 위해 온체인에서 생성된 아트워크입니다.", artworkAlt: "새 BanmaoBox의 온체인 아트워크", artworkLoading: "온체인 NFT 아트워크를 불러오는 중…", artworkUnavailable: "Box는 성공적으로 생성되었지만 RPC에서 아직 아트워크를 불러오지 못했습니다. 잠긴 자산에는 영향이 없습니다.", retryArtwork: "아트워크 다시 시도", network: "네트워크", status: "상태", confirmed: "확인됨", tokenId: "Token ID", boxesCreated: "생성된 Box", viewBox: "BanmaoBox 보기", close: "닫기" },
+  ru: { title: "Ваш BanmaoBox готов", description: "Транзакция подтверждена в X Layer. Это ончейн-изображение только что созданного NFT.", artworkAlt: "Ончейн-изображение нового BanmaoBox", artworkLoading: "Загрузка ончейн-изображения NFT…", artworkUnavailable: "Box успешно создан, но RPC пока не вернул изображение. Заблокированные активы не затронуты.", retryArtwork: "Повторить загрузку", network: "Сеть", status: "Статус", confirmed: "Подтверждено", tokenId: "Token ID", boxesCreated: "Создано Box", viewBox: "Открыть BanmaoBox", close: "Закрыть" },
+  id: { title: "BanmaoBox Anda sudah siap", description: "Transaksi telah dikonfirmasi di X Layer. Ini adalah artwork on-chain untuk NFT yang baru Anda mint.", artworkAlt: "Artwork on-chain BanmaoBox yang baru dibuat", artworkLoading: "Memuat artwork NFT on-chain…", artworkUnavailable: "Box berhasil dibuat, tetapi RPC belum menyediakan artwork. Aset terkunci Anda tidak terpengaruh.", retryArtwork: "Coba lagi artwork", network: "Jaringan", status: "Status", confirmed: "Terkonfirmasi", tokenId: "Token ID", boxesCreated: "Box dibuat", viewBox: "Lihat BanmaoBox", close: "Tutup" },
+};
+
 export type BoxDashboardCopy = {
   total: string;
   ready: string;

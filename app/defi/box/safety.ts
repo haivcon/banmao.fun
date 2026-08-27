@@ -48,6 +48,12 @@ export function parseStoredCollection(
   return { token: getAddress(parts[0]), box: getAddress(parts[1]) };
 }
 
+export function isRenderableSvg(svg: string): boolean {
+  const normalized = svg.replace(/^\\uFEFF/, "").trimStart();
+  return /^(?:<\?xml[\s\S]*?\?>\s*)?(?:<!--[\s\S]*?-->\s*)?(?=<svg(?:\s|>))/i.test(normalized);
+}
+
+
 /**
  * Render contract-provided SVG as an isolated image document, never as nodes in
  * the page DOM. This prevents renderer markup from reaching the app's DOM context.

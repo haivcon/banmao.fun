@@ -2,6 +2,7 @@ jest.mock("../app/defi/box/registry", () => ({}));
 
 import {
   isCanonicalBoxCollection,
+  isRenderableSvg,
   normalizeTokenDecimals,
   normalizeTokenSymbol,
   parseStoredCollection,
@@ -57,6 +58,9 @@ describe("BanmaoBox frontend safety helpers", () => {
   });
 
   test("encodes renderer SVG for image rendering instead of live DOM injection", () => {
+    expect(isRenderableSvg('<svg xmlns="http://www.w3.org/2000/svg"></svg>')).toBe(true);
+    expect(isRenderableSvg('<?xml version="1.0"?><svg viewBox="0 0 1 1"></svg>')).toBe(true);
+    expect(isRenderableSvg("not svg")).toBe(false);
     const uri = svgImageDataUri('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
     expect(uri).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
     expect(uri).not.toContain("<script>");

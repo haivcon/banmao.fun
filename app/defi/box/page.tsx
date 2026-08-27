@@ -16,6 +16,7 @@ import {
   Eye,
   ExternalLink,
   Info,
+  ImageOff,
   LoaderCircle,
   LockKeyhole,
   Maximize2,
@@ -66,13 +67,14 @@ import {
 import {
   BOX_COPY,
   BOX_DASHBOARD_COPY,
+  BOX_TRANSACTION_RESULT_COPY,
   getInitialBoxLanguage,
   parameterizeBoxCopy,
   type BoxCopy,
   type BoxLanguage,
 } from "./i18n";
 import { boxNftExplorerUrl } from "./address";
-import { svgImageDataUri } from "./safety";
+import { isRenderableSvg, svgImageDataUri } from "./safety";
 import {
   classifyBanmaoBoxVerification,
   requestBanmaoBoxVerification,
@@ -176,6 +178,12 @@ type BoxSort = "ready" | "newest" | "unlock";
 type BatchRow = { recipient: string; amount: string };
 type DurationField = "days" | "hours" | "minutes" | "seconds";
 type AddressHistoryType = "asset" | "collection";
+type CreationResult = {
+  hash: Hash;
+  tokenIds: bigint[];
+  artwork: InspectedBox | null;
+  artworkLoading: boolean;
+};
 
 function getTier(amount: bigint, decimals: number): string {
   const unit = 10n ** BigInt(decimals);
@@ -183,6 +191,10 @@ function getTier(amount: bigint, decimals: number): string {
   if (amount >= 10_000_000n * unit) return "GOLD";
   if (amount >= 1_000_000n * unit) return "DELUXE";
   return "CLASSIC";
+}
+
+function compactHash(hash: Hash): string {
+  return `${hash.slice(0, 10)}…${hash.slice(-8)}`;
 }
 
 function formatDate(timestamp: bigint, language: BoxLanguage): string {
@@ -564,7 +576,7 @@ export default function BanmaoBoxPage() {
   const [inspectLoading, setInspectLoading] = useState(false);
   const [releaseOutcome, setReleaseOutcome] = useState<string | null>(null);
   const [activeAction, setActiveAction] = useState("Transaction");
-  const [celebrationOpen, setCelebrationOpen] = useState(false);
+  const [creationResult, setCreationResult] = useState<CreationResult | null>(null);
   const [activeTab, setActiveTab] = useState<"create" | "boxes" | "explore">(
     "create",
   );
@@ -622,6 +634,7 @@ export default function BanmaoBoxPage() {
     [baseCopy, tokenIdentity.displaySymbol, tokenIdentity.isCanonicalBanmao],
   );
   const dashboardCopy = BOX_DASHBOARD_COPY[language];
+  const resultCopy = BOX_TRANSACTION_RESULT_COPY[language];
   const recipientActionCopy = RECIPIENT_ACTION_COPY[language];
   const collectionPickerCopy = COLLECTION_PICKER_COPY[language];
   const { timedOut: boxesTimedOut, resetTimeout: resetBoxesTimeout } =
@@ -932,13 +945,24 @@ export default function BanmaoBoxPage() {
     }
   }, [address, phase]);
 
+  const copyToClipboard = useCallback(async (value: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(copy.copied(label), { duration: 1800 });
+    } catch {
+      toast.error(copy.copyFailed);
+    }
+  }, [copy]);
+
   const showTransactionToast = useCallback(() => {
     const toastId = "banmaobox-transaction";
     if (activeAction === "Collection creation" && collectionLifecycleOwnsTransaction(collectionLifecycleRef.current)) {
       toast.dismiss(toastId);
       return;
     }
-    if (phase === "idle") {
+    if (phase === "idle" || (phase === "success" && (
+      activeAction === "BanmaoBox creation" || activeAction === "Batch creation"
+    ))) {
       toast.dismiss(toastId);
       return;
     }
@@ -969,37 +993,20 @@ export default function BanmaoBoxPage() {
         </span>
         <div className="box-toast__content">
           <strong>{detail}</strong>
-          <ol className="box-toast__steps" aria-label={copy.transactionProgressLabel}>
-            {[copy.stepWallet, copy.stepBroadcast, copy.stepConfirmed].map((label, index) => (
-              <li className={index < activeIndex || phase === "success" ? "complete" : index === activeIndex ? "active" : ""} key={label}>
-                <span aria-hidden="true" />{label}
-              </li>
-            ))}
-          </ol>
-          {transactionHash || approvalHash ? (
-            <div className="box-toast__actions">
-              {transactionHash ? (
-                <ExplorerValueRow
-                  label={copy.creatorTransactionLabel}
-                  value={transactionHash}
-                  kind="tx"
-                  explorerBaseUrl={explorerBaseUrl}
-                  copyLabel={copy.copyTransactionHash}
-                  onCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })}
-                  onCopyFailed={() => toast.error(copy.copyFailed)}
-                />
-              ) : null}
-              {approvalHash ? (
-                <ExplorerValueRow
-                  label={copy.approvalTransactionLabel}
-                  value={approvalHash}
-                  kind="tx"
-                  explorerBaseUrl={explorerBaseUrl}
-                  copyLabel={copy.copyTransactionHash}
-                  onCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })}
-                  onCopyFailed={() => toast.error(copy.copyFailed)}
-                />
-              ) : null}
+          {phase !== "error" ? (
+            <ol className="box-toast__steps" aria-label={copy.transactionProgressLabel}>
+              {[copy.stepWallet, copy.stepBroadcast, copy.stepConfirmed].map((label, index) => (
+                <li className={index < activeIndex || phase === "success" ? "complete" : index === activeIndex ? "active" : ""} key={label}>
+                  <span aria-hidden="true" />{label}
+                </li>
+              ))}
+            </ol>
+          ) : null}
+          {phase === "error" && (transactionHash || approvalHash) ? (
+            <div className="box-toast__compact-tx">
+              <code title={transactionHash ?? approvalHash ?? undefined}>{compactHash((transactionHash ?? approvalHash) as Hash)}</code>
+              <button type="button" aria-label={copy.copyTransactionHash} onClick={() => void copyToClipboard((transactionHash ?? approvalHash) as Hash, copy.creatorTransactionLabel)}><Copy aria-hidden="true" /></button>
+              <a href={`${explorerBaseUrl}/tx/${transactionHash ?? approvalHash}`} target="_blank" rel="noreferrer" aria-label={copy.viewTransaction}><ExternalLink aria-hidden="true" /></a>
             </div>
           ) : null}
         </div>
@@ -1024,7 +1031,7 @@ export default function BanmaoBoxPage() {
       return;
     }
     renderToast();
-  }, [activeAction, approvalHash, copy, explorerBaseUrl, phase, releaseOutcome, transactionError, transactionHash]);
+  }, [activeAction, approvalHash, copy, copyToClipboard, explorerBaseUrl, phase, releaseOutcome, transactionError, transactionHash]);
 
   const showVerificationToast = useCallback((
     message: string,
@@ -1215,14 +1222,35 @@ export default function BanmaoBoxPage() {
     showTransactionToast();
   }, [showTransactionToast]);
 
-  const copyToClipboard = async (value: string, label: string) => {
-    try {
-      await navigator.clipboard.writeText(value);
-      toast.success(copy.copied(label), { duration: 1800 });
-    } catch {
-      toast.error(copy.copyFailed);
+  useEffect(() => {
+    if (!creationResult) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") setCreationResult(null);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [creationResult]);
+
+  const loadCreationArtwork = useCallback(async (hash: Hash, tokenIds: bigint[]) => {
+    const tokenId = tokenIds[0];
+    if (tokenId === undefined) {
+      setCreationResult((current) => current?.hash === hash ? { ...current, artworkLoading: false } : current);
+      return;
     }
-  };
+    setCreationResult((current) => current?.hash === hash ? { ...current, artworkLoading: true } : current);
+    try {
+      const artwork = await inspectBox(tokenId);
+      if (!isRenderableSvg(artwork.svg)) throw new Error("Renderer returned invalid SVG");
+      setCreationResult((current) => current?.hash === hash ? { ...current, artwork, artworkLoading: false } : current);
+    } catch {
+      setCreationResult((current) => current?.hash === hash ? { ...current, artwork: null, artworkLoading: false } : current);
+    }
+  }, [inspectBox]);
 
   const pasteAddress = async (onPaste: (value: string) => void) => {
     try {
@@ -1513,31 +1541,32 @@ export default function BanmaoBoxPage() {
       setActiveAction(createMode === "batch" ? "Batch creation" : "BanmaoBox creation");
       const duration = durationSeconds;
       if (duration === null) return;
-      if (createMode === "batch") {
-        await createBoxes(
-          batchRows.map((row) => ({
-            recipient: getAddress(row.recipient),
-            amount: row.amount,
-          })),
-          duration,
-        );
-      } else if (createMode === "basket" && activeTokenAddress) {
-        await createMultiTokenBox(
-          getAddress(recipient),
-          [
-            { token: activeTokenAddress, amount, decimals: tokenDecimals },
-            ...extraAssets.map(({ token, amount: assetAmount, decimals }) => ({
-              token, amount: assetAmount, decimals,
+      const created = createMode === "batch"
+        ? await createBoxes(
+            batchRows.map((row) => ({
+              recipient: getAddress(row.recipient),
+              amount: row.amount,
             })),
-          ],
-          duration,
-        );
-      } else {
-        await createBox(getAddress(recipient), amount, duration);
-      }
+            duration,
+          )
+        : createMode === "basket" && activeTokenAddress
+          ? await createMultiTokenBox(
+              getAddress(recipient),
+              [
+                { token: activeTokenAddress, amount, decimals: tokenDecimals },
+                ...extraAssets.map(({ token, amount: assetAmount, decimals }) => ({
+                  token, amount: assetAmount, decimals,
+                })),
+              ],
+              duration,
+            )
+          : await createBox(getAddress(recipient), amount, duration);
       setReviewOpen(false);
       setCollectionOpen(false);
-      setCelebrationOpen(true);
+      const result = { hash: created.hash, tokenIds: created.tokenIds, artwork: null, artworkLoading: true };
+      setCreationResult(result);
+      toast.dismiss("banmaobox-transaction");
+      void loadCreationArtwork(result.hash, result.tokenIds);
     } catch {
       // The hook exposes a normalized transaction error.
     }
@@ -1920,11 +1949,11 @@ export default function BanmaoBoxPage() {
               closeCollection(false);
               return;
             }
-            if (isBusy && (reviewOpen || transferEntry || celebrationOpen)) return;
+            if (isBusy && (reviewOpen || transferEntry || creationResult)) return;
             setReviewOpen(false);
             setTransferEntry(null);
             setTransferError(null);
-            setCelebrationOpen(false);
+            setCreationResult(null);
             setCollectionOpen(true);
           }}
           aria-expanded={collectionOpen}
@@ -2816,7 +2845,7 @@ export default function BanmaoBoxPage() {
                     onTransfer={(entry) => {
                       setCollectionOpen(false);
                       setReviewOpen(false);
-                      setCelebrationOpen(false);
+                      setCreationResult(null);
                       setTransferEntry(entry);
                     }}
                     onRefreshMetadata={(tokenId) => {
@@ -3146,37 +3175,82 @@ export default function BanmaoBoxPage() {
         </div>
       ) : null}
 
-      {celebrationOpen && phase === "success" ? (
-        <div className="box-dialog-backdrop box-celebration-backdrop" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) setCelebrationOpen(false);
+      {creationResult ? (
+        <div className="box-dialog-backdrop box-result-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setCreationResult(null);
         }}>
-          <section className="box-dialog box-celebration" role="dialog" aria-modal="true" aria-labelledby="box-celebration-title">
-            <button type="button" className="box-dialog__close" onClick={() => setCelebrationOpen(false)} aria-label="Close celebration">
+          <section className="box-result" role="dialog" aria-modal="true" aria-labelledby="box-result-title" aria-describedby="box-result-description">
+            <button type="button" className="box-dialog__close" onClick={() => setCreationResult(null)} aria-label={resultCopy.close}>
               <X />
             </button>
-            <div className="box-celebration__art"><GiftBoxArtwork ready /><Sparkles /></div>
-            <span className="box-eyebrow"><CheckCircle2 /> {copy.confirmedOnChain}</span>
-            <h2 id="box-celebration-title">{copy.celebrationTitle}</h2>
-            <p>{copy.celebrationText}</p>
-            {transactionHash ? (
-              <div className="box-celebration__actions">
-                <ExplorerValueRow
-                  label={copy.creatorTransactionLabel}
-                  value={transactionHash}
-                  kind="tx"
-                  explorerBaseUrl={explorerBaseUrl}
-                  copyLabel={copy.copyTransactionHash}
-                  onCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })}
-                  onCopyFailed={() => toast.error(copy.copyFailed)}
+
+            <div className="box-result__artwork" aria-live="polite">
+              {creationResult.artwork?.svg ? (
+                <Image
+                  src={svgImageDataUri(creationResult.artwork.svg)}
+                  alt={`${resultCopy.artworkAlt} #${creationResult.artwork.tokenId.toString()}`}
+                  width={600}
+                  height={600}
+                  unoptimized
+                  priority
                 />
-                <a className="box-button box-button--primary" href={`${chainConfig.chain.blockExplorers?.default.url}/tx/${transactionHash}`} target="_blank" rel="noreferrer">
-                  {copy.viewTransaction} <ExternalLink />
-                </a>
-                <button className="box-button box-button--secondary" type="button" onClick={() => void copyToClipboard(transactionHash, "Transaction hash")}>
-                  <Copy /> {copy.copyHash}
-                </button>
+              ) : creationResult.artworkLoading ? (
+                <div className="box-result__artwork-state box-result__artwork-state--loading" role="status">
+                  <LoaderCircle className="box-spin" aria-hidden="true" />
+                  <span>{resultCopy.artworkLoading}</span>
+                </div>
+              ) : (
+                <div className="box-result__artwork-state" role="note">
+                  <ImageOff aria-hidden="true" />
+                  <span>{resultCopy.artworkUnavailable}</span>
+                  <button type="button" onClick={() => void loadCreationArtwork(creationResult.hash, creationResult.tokenIds)}>
+                    <RefreshCw aria-hidden="true" /> {resultCopy.retryArtwork}
+                  </button>
+                </div>
+              )}
+              {creationResult.tokenIds[0] !== undefined ? (
+                <span className="box-result__token-badge">NFT #{creationResult.tokenIds[0].toString()}</span>
+              ) : null}
+            </div>
+
+            <div className="box-result__header">
+              <span className="box-result__status-icon" aria-hidden="true"><CheckCircle2 /></span>
+              <div>
+                <span className="box-result__eyebrow">{copy.confirmedOnChain}</span>
+                <h2 id="box-result-title">{resultCopy.title}</h2>
+                <p id="box-result-description">{resultCopy.description}</p>
               </div>
-            ) : null}
+            </div>
+
+            <dl className="box-result__receipt">
+              <div><dt>{resultCopy.network}</dt><dd>{chainConfig.chain.name}</dd></div>
+              <div><dt>{resultCopy.status}</dt><dd className="is-confirmed"><CheckCircle2 aria-hidden="true" /> {resultCopy.confirmed}</dd></div>
+              {creationResult.tokenIds.length > 1 ? (
+                <div><dt>{resultCopy.boxesCreated}</dt><dd>{creationResult.tokenIds.length.toLocaleString(language)}</dd></div>
+              ) : creationResult.tokenIds[0] !== undefined ? (
+                <div><dt>{resultCopy.tokenId}</dt><dd>#{creationResult.tokenIds[0].toString()}</dd></div>
+              ) : null}
+              <div className="box-result__hash-row">
+                <dt>{copy.creatorTransactionLabel}</dt>
+                <dd>
+                  <code title={creationResult.hash}>{compactHash(creationResult.hash)}</code>
+                  <button type="button" aria-label={copy.copyTransactionHash} onClick={() => void copyToClipboard(creationResult.hash, copy.creatorTransactionLabel)}><Copy aria-hidden="true" /></button>
+                  <a href={`${explorerBaseUrl}/tx/${creationResult.hash}`} target="_blank" rel="noreferrer" aria-label={copy.viewTransaction}><ExternalLink aria-hidden="true" /></a>
+                </dd>
+              </div>
+            </dl>
+
+            <div className="box-result__actions">
+              {creationResult.tokenIds[0] !== undefined && boxNftExplorerUrl(explorerBaseUrl, activeBoxAddress ?? chainConfig.boxAddress, creationResult.tokenIds[0]) ? (
+                <a className="box-button box-button--primary" href={boxNftExplorerUrl(explorerBaseUrl, activeBoxAddress ?? chainConfig.boxAddress, creationResult.tokenIds[0])} target="_blank" rel="noopener noreferrer">
+                  {resultCopy.viewBox} <ExternalLink aria-hidden="true" />
+                </a>
+              ) : null}
+              <a className="box-button box-button--secondary" href={`${explorerBaseUrl}/tx/${creationResult.hash}`} target="_blank" rel="noreferrer">
+                {copy.viewTransaction} <ExternalLink aria-hidden="true" />
+              </a>
+            </div>
+            <button type="button" className="box-result__close" onClick={() => setCreationResult(null)}>{resultCopy.close}</button>
           </section>
         </div>
       ) : null}
