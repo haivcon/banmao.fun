@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import { ArrowDownUp, ArrowLeft, ArrowRight, Boxes, Check, ChevronDown, Factory, Layers3, Network, RefreshCw, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowDownUp, ArrowLeft, ArrowRight, Boxes, Check, ChevronDown, ExternalLink, Factory, Layers3, Network, RefreshCw, Search, ShieldCheck, Sparkles } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { formatUnits } from "viem";
 import { BANMAOBOX_TESTNET_UI_ENABLED, XLAYER_CHAIN_ID, XLAYER_TESTNET_CHAIN_ID } from "../../../lib/walletConfig";
@@ -10,6 +11,7 @@ import { BOX_LANGUAGES, getInitialBoxLanguage, type BoxLanguage } from "../i18n"
 import { collectionExplorerCacheKey, readCollectionExplorerCache, writeCollectionExplorerCache } from "./collectionExplorerCache";
 import { explorerCopy } from "./copy";
 import { formatInteger, formatTokenAmount, NUMBER_LOCALES } from "./numberFormat";
+import { MAINNET_RENDERER_CATALOG } from "./rendererCatalog";
 import { TokenLogo } from "./TokenLogo";
 import type { CollectionExplorerResponse, CollectionSort } from "./types";
 import { VerificationBadge } from "./VerificationBadge";
@@ -106,6 +108,7 @@ export function CollectionExplorerClient() {
       </article>)}
     </section>
     {data ? <nav className="bce-pagination" aria-label="Pagination"><button disabled={data.page <= 1} onClick={() => setPage((value) => value - 1)}><ArrowLeft />{copy.previous}</button><span>{copy.page} {data.page} / {data.totalPages}</span><button disabled={data.page >= data.totalPages} onClick={() => setPage((value) => value + 1)}>{copy.next}<ArrowRight /></button></nav> : null}
+    {chainId === XLAYER_CHAIN_ID ? <section className="bce-renderers"><header><Sparkles /><div><h2>{copy.renderers}</h2><p>{copy.renderersHelp}</p></div></header><div className="bce-renderer-grid">{MAINNET_RENDERER_CATALOG.map((renderer, index) => <article className={index === 0 ? "is-current" : ""} key={renderer.address}><div className="bce-renderer-art"><Image src={renderer.artwork} alt={`${renderer.generation} renderer artwork`} width={600} height={600} unoptimized /></div><div className="bce-renderer-copy"><span>{index === 0 ? copy.currentRenderer : copy.historicalRenderer}</span><h3>{renderer.generation}</h3><a className="bce-address" href={`${explorer}/address/${renderer.address}`} target="_blank" rel="noreferrer">{renderer.address}<ExternalLink /></a><dl><div><dt>{copy.introduced}</dt><dd>{renderer.introducedAt}</dd></div><div><dt>{copy.rendererRuntime}</dt><dd>{formatInteger(renderer.runtimeBytes, language)} bytes</dd></div></dl><code title={renderer.runtimeHash}>{renderer.runtimeHash}</code></div></article>)}</div></section> : null}
     {data ? <section className="bce-lineage"><header><Factory /><div><h2>{copy.lineage}</h2><p>{copy.lineageHelp}</p></div></header><div>{data.lineage.map((factory) => <article key={factory.address}><span>{factory.depth === 0 ? copy.currentFactory : copy.predecessor}</span><a href={`${explorer}/address/${factory.address}`} target="_blank" rel="noreferrer">{factory.address}</a><small className="bce-address">{copy.rendererAdmin}: {factory.rendererAdmin}</small></article>)}</div><footer>{copy.observed}: {new Date(data.observedAt).toLocaleString()} · {copy.block} {data.latestBlock}</footer></section> : null}
   </main>;
 }

@@ -1,6 +1,8 @@
 const { buildTargets, compilerVersion, parsePollStatus } = require("../scripts/publish-banmaobox-explorer.cjs");
 
 const manifest = {
+  compilerInputHash: "0xfull-release",
+  rendererRelease: { compilerInputHash: "0xrenderer-release" },
   deployer: "0x92809f2837f708163d375960063C8A3156fCeACb",
   contracts: {
     token: "0x16d91d1615fC55b76d5F92365BD60C069b46eF78",

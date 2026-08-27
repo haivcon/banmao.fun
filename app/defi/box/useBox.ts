@@ -13,6 +13,7 @@ import { decodeEventLog, getAddress, keccak256, parseAbi, parseUnits, type Addre
 import {
   BANMAO_BOX_ABI,
   BANMAO_BOX_FACTORY_ABI,
+  BANMAO_BOX_RENDERER_ABI,
   BANMAO_ERC20_ABI,
   getBoxChainConfig,
   type BasketInput,
@@ -1296,6 +1297,16 @@ export function useBox(
     ],
   );
 
+  const renderPreview = useCallback(async (rendererAddress: Address, renderData: unknown) => {
+    if (!publicClient) throw new Error("Renderer RPC is unavailable");
+    return publicClient.readContract({
+      address: rendererAddress,
+      abi: BANMAO_BOX_RENDERER_ABI,
+      functionName: "renderSVG",
+      args: [0n, renderData],
+    } as never) as Promise<string>;
+  }, [publicClient]);
+
   return {
     address,
     isConnected,
@@ -1328,6 +1339,7 @@ export function useBox(
     retryDeployment,
     totalLocked: (totalLockedQuery.data as bigint | undefined) ?? 0n,
     totalSupply: (totalSupplyQuery.data as bigint | undefined) ?? 0n,
+    renderPreview,
     approveToken,
     createBox,
     createBoxes,

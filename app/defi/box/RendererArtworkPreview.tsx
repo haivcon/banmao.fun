@@ -1,4 +1,9 @@
-import { getAddress, type Address } from "viem";
+"use client";
+
+import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
+import { encodePacked, getAddress, pad, stringToHex, type Address } from "viem";
+import { svgImageDataUri } from "./safety";
 
 export type RendererPreviewAsset = { token: string; amount: bigint; decimals: number; symbol: string };
 
@@ -25,9 +30,38 @@ function rendererDateTime(timestamp: number): string {
   return `${date.getUTCFullYear()}-${part(date.getUTCMonth() + 1)}-${part(date.getUTCDate())} ${part(date.getUTCHours())}:${part(date.getUTCMinutes())} UTC`;
 }
 
-export function RendererArtworkPreview({ assets, creator, createdAt, unlockTime, tier, batchPosition }: {
-  assets: RendererPreviewAsset[]; creator?: Address; createdAt: number; unlockTime: number; tier: string; batchPosition?: string;
+function bytes16(value: string) {
+  return pad(stringToHex(value.slice(0, 16)), { size: 16, dir: "right" });
+}
+
+export function RendererArtworkPreview({ assets, creator, createdAt, unlockTime, tier, batchPosition, rendererAddress, renderPreview }: {
+  assets: RendererPreviewAsset[]; creator?: Address; createdAt: number; unlockTime: number; tier: string; batchPosition?: string; rendererAddress?: Address;
+  renderPreview?: (renderer: Address, data: unknown) => Promise<string>;
 }) {
+  const [svg, setSvg] = useState<string>();
+  const renderData = useMemo(() => {
+    const primary = assets[0];
+    if (!primary || !creator) return undefined;
+    return {
+      token: getAddress(primary.token), creator, amount: primary.amount,
+      timestamps: (BigInt(createdAt) << 64n) | BigInt(unlockTime),
+      tokenDecimals: primary.decimals, assetCount: assets.length,
+      tokenSymbol: bytes16(primary.symbol),
+      renderAssets: encodePacked(
+        assets.flatMap(() => ["address", "uint256", "uint8", "bytes16"] as const),
+        assets.flatMap((asset) => [getAddress(asset.token), asset.amount, asset.decimals, bytes16(asset.symbol)]),
+      ),
+    } as const;
+  }, [assets, createdAt, creator, unlockTime]);
+  useEffect(() => {
+    let current = true;
+    if (!renderPreview || !rendererAddress || !renderData) { setSvg(undefined); return; }
+    void renderPreview(rendererAddress, renderData)
+      .then((value) => { if (current) setSvg(value); })
+      .catch(() => { if (current) setSvg(undefined); });
+    return () => { current = false; };
+  }, [renderData, renderPreview, rendererAddress]);
+  if (svg) return <Image className="box-renderer-preview" src={svgImageDataUri(svg)} width={600} height={600} alt="Live SVG from the active BanmaoBox renderer contract" unoptimized />;
   const gold = tier === "LEGENDARY" ? "#F2D98D" : tier === "GOLD" ? "#E6C66E" : tier === "DELUXE" ? "#D8B565" : "#B8954F";
   const seconds = Math.max(0, unlockTime - createdAt);
   const duration = seconds >= 86_400 ? `${Math.floor(seconds / 86_400)} DAYS` : `${Math.floor(seconds / 60)} MINUTES`;

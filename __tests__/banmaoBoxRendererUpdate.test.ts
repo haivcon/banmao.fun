@@ -2,10 +2,13 @@ const { readFileSync } = require("node:fs");
 
 export {};
 
-describe("retired BanmaoBox renderer-only workflow", () => {
-  test("cannot provide a parallel deployment path", () => {
+describe("BanmaoBox renderer-only workflow", () => {
+  test("deploys and links only the full renderer with resumable validation", () => {
     const source = readFileSync("scripts/deploy-banmaobox-renderer-mainnet.cjs", "utf8");
-    expect(source).toContain("Retired: BanmaoBox supports only full-renderer");
-    expect(source).not.toMatch(/setRenderer\(|metadataRenderer|DEPLOYER_PRIVATE_KEY|sendTransaction/);
+    expect(source).toContain("BANMAOBOX_RENDERER_MAINNET_CONFIRM");
+    expect(source).toContain("assertArtifactRuntime");
+    expect(source).toContain("setDefaultRenderer(rendererAddress)");
+    expect(source).toContain("setRenderer(rendererAddress)");
+    expect(source).not.toMatch(/createTokenBox|new BanmaoBoxFactory|MockBanmao/);
   });
 });

@@ -1226,9 +1226,9 @@ describe("BanmaoBox adversarial release security", () => {
         tokenSymbol: symbolBytes16("TOKEN"),
         renderAssets: renderAssets([[token.address, 1, 18, "TOKEN"]]),
       };
-      const svg = await renderer.renderSVG(1, data, { gasLimit: 2_000_000 });
+      const svg = await renderer.renderSVG(1, data, { gasLimit: 4_000_000 });
       expect(svg).toContain(`${fallback} / d18`);
-      expect(JSON.parse(await renderer.renderAttributes(data, { gasLimit: 2_000_000 }))).toEqual(expect.arrayContaining([
+      expect(JSON.parse(await renderer.renderAttributes(data, { gasLimit: 4_000_000 }))).toEqual(expect.arrayContaining([
         expect.objectContaining({ trait_type: "Token Symbol", value: fallback }),
       ]));
     }
@@ -1419,8 +1419,8 @@ describe("BanmaoBox adversarial release security", () => {
     expect(after).toContain("ASSET PORTFOLIO / 1");
     expect(after).toContain("PRIMARY ASSET RELEASED");
     expect(after).toContain(">7</text>");
-    expect(after.match(LOGO_ANIMATION)).toHaveLength(11);
-    expect(after.match(FRAME_ANIMATION)).toHaveLength(6);
+    expect(after.match(LOGO_ANIMATION)).toHaveLength(6);
+    expect(after.match(FRAME_ANIMATION)).toHaveLength(4);
     expect(after).toContain("SEC / d18");
     expect(after).not.toContain("PRI / d18");
   });

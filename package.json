@@ -26,8 +26,10 @@
     "generate:banmaobox:release": "node scripts/generate-banmaobox-release.cjs",
     "check:generated": "npm run generate:banmaobox && npm run generate:banmaobox:release && git diff --exit-code -- app/defi/box/generated/abis.ts deployments/banmaobox-release-artifacts.json lib/banmaobox/verification-release.json && node -e \"const fs=require('fs'),r=require('./deployments/banmaobox-release-artifacts.json'),p='deployments/banmaobox-releases/'+r.compilerInputHash.slice(2)+'.json';if(!fs.existsSync(p)||fs.readFileSync(p,'utf8')!==JSON.stringify(r,null,2)+'\\n')throw new Error('Missing or mismatched immutable BanmaoBox release: '+p)\"",
     "deploy:banmaobox:mainnet": "node scripts/deploy-banmaobox-mainnet.cjs",
+    "deploy:banmaobox:renderer:mainnet": "node scripts/deploy-banmaobox-renderer-mainnet.cjs",
     "deploy:banmaobox:testnet": "node scripts/deploy-banmaobox-testnet.cjs",
     "verify:banmaobox:mainnet": "node scripts/verify-banmaobox-mainnet.cjs",
+    "verify:banmaobox:renderer:mainnet": "node -e \"require('./scripts/publish-banmaobox-explorer.cjs').publishExplorerVerification({rendererOnly:true}).catch(e=>{console.error(e.message);process.exit(1)})\"",
     "publish:banmaobox:explorer": "node scripts/publish-banmaobox-explorer.cjs",
     "check": "npm run check:generated && npm run typecheck && npm run lint && npm test -- --runInBand"
   },

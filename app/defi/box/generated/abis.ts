@@ -1957,22 +1957,6 @@ export const BANMAO_BOX_RENDERER_ABI = [
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "value",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "length",
-        "type": "uint256"
-      }
-    ],
-    "name": "StringsInsufficientHexLength",
-    "type": "error"
-  },
-  {
-    "inputs": [
-      {
         "internalType": "uint8",
         "name": "decimals",
         "type": "uint8"

@@ -555,6 +555,16 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(mark).toContain("A time-locked cat box surrounded by token symbols");
   });
 
+  test("publishes the current and historical renderer catalog in Collection Explorer", () => {
+    const explorer = fs.readFileSync(path.join(process.cwd(), "app/defi/box/explorer/CollectionExplorerClient.tsx"), "utf8");
+    const catalog = fs.readFileSync(path.join(process.cwd(), "app/defi/box/explorer/rendererCatalog.ts"), "utf8");
+    expect(explorer).toContain("MAINNET_RENDERER_CATALOG.map");
+    expect(explorer).toContain("copy.currentRenderer");
+    expect(catalog).toContain("0x5d424134B0A4bAF0893BB29a75B7901D35C0aD13");
+    expect(catalog.match(/address: \"0x/g)).toHaveLength(7);
+    expect(catalog).toContain("/defi/banmaobox-renderer-current.svg");
+  });
+
   test("exposes the Collection Explorer from the BanmaoBox header on desktop and mobile", () => {
     const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
     const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");

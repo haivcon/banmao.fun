@@ -590,6 +590,7 @@ export default function BanmaoBoxPage() {
     isDeploymentValidated,
     totalLocked,
     totalSupply,
+    renderPreview,
     approveToken,
     createBox,
     createBoxes,
@@ -2587,6 +2588,8 @@ export default function BanmaoBoxPage() {
                   unlockTime={previewUnlockTime}
                   tier={previewTier}
                   batchPosition={createMode === "batch" ? `1 / ${previewBoxCount}` : undefined}
+                  rendererAddress={chainConfig.boxRendererAddress}
+                  renderPreview={renderPreview}
                 />
               </button>
               <div className="box-nft-preview__badges" aria-label={`${previewModeLabel}, ${previewTier}`}>
@@ -3097,6 +3100,8 @@ export default function BanmaoBoxPage() {
                 unlockTime={previewUnlockTime}
                 tier={previewTier}
                 batchPosition={createMode === "batch" ? `1 / ${previewBoxCount}` : undefined}
+                rendererAddress={chainConfig.boxRendererAddress}
+                renderPreview={renderPreview}
               />
             </div>
             <div className="box-artwork-viewer__footer">

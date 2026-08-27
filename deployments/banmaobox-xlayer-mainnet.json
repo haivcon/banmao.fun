@@ -15,17 +15,18 @@
   "contracts": {
     "token": "0x16d91d1615fC55b76d5F92365BD60C069b46eF78",
     "factoryRenderer": "0xE19c875dBfa80171819E443e46Fc7839a9290769",
-    "defaultRenderer": "0x479365c028A1FA633b16BBef95e8691D4f37B21F",
-    "boxRenderer": "0x479365c028A1FA633b16BBef95e8691D4f37B21F",
+    "defaultRenderer": "0x5d424134B0A4bAF0893BB29a75B7901D35C0aD13",
+    "boxRenderer": "0x5d424134B0A4bAF0893BB29a75B7901D35C0aD13",
     "factory": "0x01E03F6eb085f4934A3A7946545b00341B95d9E9",
     "previousFactory": "0x0000000000000000000000000000000000000000",
     "box": "0xE8247C96787119A8F7E8F8C81F58BeC5BEFC999f"
   },
   "transactions": {
-    "renderer": "0x246558f6c8815e9f165de9d0795e0080d6c56aa5d8098ce577feaa3be922909b",
-    "setRenderer": "0x93d9de7c37cfb520bcaf5c8fae9a0a8d4f97e6db7456ca185d607e4a0b04ebb0",
+    "renderer": "0x5a5045752a1f469ec452b72aa0a9e8373c51ea1482a077765673eee10c227080",
+    "setRenderer": "0xf53176305600ff88fc3e6bfc8216460057e8fdb7ffa30c2643ff56a1e1fe7b2f",
     "factory": "0xe3ba33a560016adf67fbd405d45876f6f65a5e34ed4fa5fb689bdc49f69c3eea",
-    "createTokenBox": "0x83bcee776b4c3c4d991d320b93c8a418cc2afe1ff3ed98078eb971308ab3b661"
+    "createTokenBox": "0x83bcee776b4c3c4d991d320b93c8a418cc2afe1ff3ed98078eb971308ab3b661",
+    "setDefaultRenderer": "0x137ba0d10988c60f45b9472e0e4e9f2463445bda8d1c0138f9fcd8210f38c103"
   },
   "tokenMetadata": {
     "symbol": "banmao",
@@ -42,14 +43,14 @@
       "normalizedKeccak256": "0xc8a762b855958d1d0c0c91159bdd9178ef2e88157f188f02fd7293af8112f6af"
     },
     "defaultRenderer": {
-      "bytes": 19214,
-      "keccak256": "0xd69507283765b914480cf8aa8a8f37f4bbd351b0620ede3b0bbd5e3ca390f703",
-      "normalizedKeccak256": "0xd69507283765b914480cf8aa8a8f37f4bbd351b0620ede3b0bbd5e3ca390f703"
+      "bytes": 24084,
+      "keccak256": "0x218dd8a9b1404e8624ab53f60354b45385673554f050c1de63f0d604f0e9509e",
+      "normalizedKeccak256": "0x218dd8a9b1404e8624ab53f60354b45385673554f050c1de63f0d604f0e9509e"
     },
     "boxRenderer": {
-      "bytes": 19214,
-      "keccak256": "0xd69507283765b914480cf8aa8a8f37f4bbd351b0620ede3b0bbd5e3ca390f703",
-      "normalizedKeccak256": "0xd69507283765b914480cf8aa8a8f37f4bbd351b0620ede3b0bbd5e3ca390f703"
+      "bytes": 24084,
+      "keccak256": "0x218dd8a9b1404e8624ab53f60354b45385673554f050c1de63f0d604f0e9509e",
+      "normalizedKeccak256": "0x218dd8a9b1404e8624ab53f60354b45385673554f050c1de63f0d604f0e9509e"
     },
     "factory": {
       "bytes": 22056,
@@ -66,5 +67,10 @@
     "maxAssetsPerBox": 5,
     "maxBatchSize": 20,
     "maxLockDuration": 3153600000
+  },
+  "updatedAt": "2026-08-27T09:50:25.201Z",
+  "rendererRelease": {
+    "compiler": "0.8.30+commit.73712a01.Emscripten.clang",
+    "compilerInputHash": "0xbab1bdf95aba877a2f31c125ef37abcea16c6909473cf84765c1e29bbb04ce01"
   }
 }

@@ -122,10 +122,16 @@ async function publishExplorerVerification(options = {}) {
   loadEnvironment();
   const manifest = options.manifest || JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, "deployments/banmaobox-xlayer-mainnet.json"), "utf8"));
   const release = options.release || JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, "lib/banmaobox/verification-release.json"), "utf8"));
-  if (manifest.compilerInputHash !== release.compilerInputHash) throw new Error("Manifest and verification release compiler input hashes differ");
+  const expectedReleaseHash = options.rendererOnly
+    ? manifest.rendererRelease?.compilerInputHash
+    : manifest.compilerInputHash;
+  if (expectedReleaseHash !== release.compilerInputHash) throw new Error("Manifest and verification release compiler input hashes differ");
   const timeoutMs = Number(process.env.BANMAOBOX_PUBLISH_TIMEOUT_MS || 300000);
   const intervalMs = Number(process.env.BANMAOBOX_PUBLISH_POLL_MS || 15000);
-  for (const target of buildTargets(manifest, release)) {
+  const targets = options.rendererOnly
+    ? buildTargets({ ...manifest, contracts: { ...manifest.contracts, factoryRenderer: manifest.contracts.boxRenderer } }, release).slice(0, 1)
+    : buildTargets(manifest, release);
+  for (const target of targets) {
     console.log(`${target.key}: checking Explorer status ${targetSummary(target)}`);
     if (await isVerified(target.contractAddress)) {
       console.log(`${target.key}: already verified (${target.contractAddress})`);
@@ -147,7 +153,7 @@ async function publishExplorerVerification(options = {}) {
     }
     console.log(`${target.key}: verified`);
   }
-  console.log("All BanmaoBox contracts are verified on X Layer Explorer.");
+  console.log(options.rendererOnly ? "BanmaoBox renderer is verified on X Layer Explorer." : "All BanmaoBox contracts are verified on X Layer Explorer.");
 }
 module.exports = { buildTargets, compilerVersion, encodeConstructorArguments, parsePollStatus, publishExplorerVerification };
 if (require.main === module) publishExplorerVerification().catch((error) => { console.error(error.message); process.exitCode = 1; });

@@ -14,6 +14,7 @@ const en = {
   registry: "Factory registry", canonical: "Canonical for token", runtime: "Reviewed runtime", rendererAdmin: "Renderer admin", renderer: "Active renderer", factory: "Source Factory",
   pass: "Pass", fail: "Fail", transaction: "Creation transaction", openExplorer: "Open in explorer", recipient: "Recipient", tokenId: "Token ID",
   verifySource: "Verify source on OKX Explorer", verifyingSource: "Verifying source code…", sourceVerified: "Source code verified on OKX Explorer", verifyQueued: "Verification submitted. OKX Explorer is processing it.", verifyUnavailable: "Verification is temporarily unavailable. Please retry.", verifyFailed: "Source verification failed. Check the creation transaction or retry later.",
+  renderers: "Renderer contracts", renderersHelp: "See the active SVG renderer and every historical renderer used by the canonical BanmaoBox collection. Historical thumbnails are representative archive artwork.", currentRenderer: "Current renderer", historicalRenderer: "Historical renderer", rendererRuntime: "Runtime", introduced: "Introduced",
 };
 export type ExplorerCopy = typeof en;
 const overrides: Partial<Record<BoxLanguage, Partial<ExplorerCopy>>> = {
