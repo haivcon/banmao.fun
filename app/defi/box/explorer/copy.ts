@@ -1,4 +1,5 @@
 import { getInitialBoxLanguage, type BoxLanguage } from "../i18n";
+import { EXPLORER_TRANSLATION_SUPPLEMENTS } from "./translations";
 
 const en = {
   back: "Back to BanmaoBox", eyebrow: "ON-CHAIN COLLECTION REGISTRY", title: "Collection Explorer",
@@ -14,7 +15,10 @@ const en = {
   registry: "Factory registry", canonical: "Canonical for token", runtime: "Reviewed runtime", rendererAdmin: "Renderer admin", renderer: "Active renderer", factory: "Source Factory",
   pass: "Pass", fail: "Fail", transaction: "Creation transaction", openExplorer: "Open in explorer", recipient: "Recipient", tokenId: "Token ID",
   verifySource: "Verify source on OKX Explorer", verifyingSource: "Verifying source code…", sourceVerified: "Source code verified on OKX Explorer", verifyQueued: "Verification submitted. OKX Explorer is processing it.", verifyUnavailable: "Verification is temporarily unavailable. Please retry.", verifyFailed: "Source verification failed. Check the creation transaction or retry later.",
-  renderers: "Renderer contracts", renderersHelp: "See the active SVG renderer and every historical renderer used by the canonical BanmaoBox collection. Historical thumbnails are representative archive artwork.", currentRenderer: "Current renderer", historicalRenderer: "Historical renderer", rendererRuntime: "Runtime", introduced: "Introduced",
+  renderers: "Renderer contracts", renderersHelp: "See live artwork rendered by the active and historical contracts used by the canonical BanmaoBox collection.", rendererSafetyNote: "Changing the renderer only changes the NFT's generated image, metadata and display attributes. The asset addresses and exact amounts remain recorded and locked in the BanmaoBox contract; ownership, unlock time and withdrawal rights are unchanged. Renderers receive read-only data and have no custody authority.", currentRenderer: "Current renderer", historicalRenderer: "Historical renderer", rendererRuntime: "Runtime", introduced: "Introduced",
+  rendererArtwork: "contract-rendered NFT artwork", bytes: "bytes", pagination: "Collection pages",
+  genCurrent: "SVG motion + linked ledger", genTreasury: "Sealed Treasury", genFactory: "Factory provenance renderer", genV4: "Vault renderer v4", genV3: "Vault renderer v3", genV2: "Vault renderer v2", genOriginal: "Original on-chain renderer",
+  checkRegistry: "Registered by Factory", checkCanonical: "Canonical collection for token", checkUnderlying: "Underlying token matches creation event", checkAdmin: "Renderer admin matches Factory", checkRuntime: "Runtime matches reviewed release",
 };
 export type ExplorerCopy = typeof en;
 const overrides: Partial<Record<BoxLanguage, Partial<ExplorerCopy>>> = {
@@ -24,7 +28,12 @@ const overrides: Partial<Record<BoxLanguage, Partial<ExplorerCopy>>> = {
   ru: { title: "Обозреватель коллекций", back: "Назад к BanmaoBox", collections: "Коллекции", nfts: "Активные NFT", verified: "Проверено", search: "Поиск по имени, токену, коллекции или создателю", refresh: "Обновить индекс", details: "Открыть коллекцию", verification: "Отчёт проверки" },
   id: { title: "Penjelajah Koleksi", back: "Kembali ke BanmaoBox", collections: "Koleksi", nfts: "NFT aktif", verified: "Terverifikasi", search: "Cari nama, token, koleksi, atau pembuat", refresh: "Segarkan indeks", details: "Lihat koleksi", verification: "Laporan verifikasi" },
 };
+export function verificationCheckLabel(copy: ExplorerCopy, id: string, fallback: string): string {
+  const keys = { registry: "checkRegistry", canonical: "checkCanonical", underlying: "checkUnderlying", admin: "checkAdmin", runtime: "checkRuntime" } as const;
+  return id in keys ? copy[keys[id as keyof typeof keys]] : fallback;
+}
+
 export function explorerCopy(language?: BoxLanguage): ExplorerCopy {
   const locale = language ?? getInitialBoxLanguage();
-  return { ...en, ...overrides[locale] };
+  return { ...en, ...overrides[locale], ...EXPLORER_TRANSLATION_SUPPLEMENTS[locale] };
 }

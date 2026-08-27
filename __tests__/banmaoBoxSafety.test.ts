@@ -60,6 +60,9 @@ describe("BanmaoBox frontend safety helpers", () => {
     const uri = svgImageDataUri('<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
     expect(uri).toMatch(/^data:image\/svg\+xml;charset=utf-8,/);
     expect(uri).not.toContain("<script>");
+    const legacy = decodeURIComponent(svgImageDataUri('\uFEFF<?xml version="1.0"?>\n<!-- legacy renderer -->\n<svg viewBox="0 0 800 800"><rect width="800" height="800"/></svg>'));
+    expect(legacy).toContain('<svg viewBox="0 0 800 800">');
+    expect(legacy).not.toContain("Artwork unavailable");
     const fallback = decodeURIComponent(svgImageDataUri("not svg"));
     expect(fallback).toContain("Artwork unavailable");
     expect(fallback).toContain('width="600" height="600" viewBox="0 0 600 600"');

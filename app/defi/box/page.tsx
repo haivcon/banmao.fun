@@ -158,10 +158,17 @@ const RECIPIENT_ACTION_COPY: Record<BoxLanguage, {
   id: { clear: "Hapus semua", paste: "Tempel alamat", pasted: "Alamat ditempel", pasteFailed: "Tidak dapat membaca clipboard", livePreview: "Pratinjau NFT langsung", pendingToken: "Token ID setelah mint", previewBadge: "Pratinjau", enlarge: "Perbesar pratinjau NFT", closePreview: "Tutup pratinjau NFT", previewNote: "Token ID dan waktu akhir ditentukan saat mint.", network: "Jaringan" },
 };
 
-const COLLECTION_PICKER_COPY = {
-  en: { title: "Indexed collections", hint: "Choose a verified Factory collection or search by token name, symbol, or address.", searchPlaceholder: "Search collections", loading: "Loading indexed collections…", loadError: "Indexed collections are temporarily unavailable. You can still enter an address below.", empty: "No matching collections.", active: "Active", select: "Use collection" },
-  vi: { title: "Bộ sưu tập đã lập chỉ mục", hint: "Chọn bộ sưu tập đã xác minh qua Factory hoặc tìm theo tên, ký hiệu và địa chỉ token.", searchPlaceholder: "Tìm bộ sưu tập", loading: "Đang tải các bộ sưu tập…", loadError: "Tạm thời chưa tải được danh sách. Bạn vẫn có thể nhập địa chỉ bên dưới.", empty: "Không có bộ sưu tập phù hợp.", active: "Đang dùng", select: "Chọn bộ sưu tập" },
-} as const;
+const COLLECTION_PICKER_COPY: Record<BoxLanguage, {
+  title: string; hint: string; searchPlaceholder: string; loading: string; loadError: string;
+  empty: string; active: string; select: string; invalidAddress: string; missingCollection: string;
+}> = {
+  en: { title: "Indexed collections", hint: "Choose a verified Factory collection or search by token name, symbol, or address.", searchPlaceholder: "Search collections", loading: "Loading indexed collections…", loadError: "Indexed collections are temporarily unavailable. You can still enter an address below.", empty: "No matching collections.", active: "Active", select: "Use collection", invalidAddress: "Enter a valid primary ERC-20 address.", missingCollection: "No collection exists for this token on the canonical Factory." },
+  vi: { title: "Bộ sưu tập đã lập chỉ mục", hint: "Chọn bộ sưu tập đã xác minh qua Factory hoặc tìm theo tên, ký hiệu và địa chỉ token.", searchPlaceholder: "Tìm bộ sưu tập", loading: "Đang tải các bộ sưu tập…", loadError: "Tạm thời chưa tải được danh sách. Bạn vẫn có thể nhập địa chỉ bên dưới.", empty: "Không có bộ sưu tập phù hợp.", active: "Đang dùng", select: "Chọn bộ sưu tập", invalidAddress: "Nhập địa chỉ ERC-20 chính hợp lệ.", missingCollection: "Token này chưa có bộ sưu tập trên Factory chính thức." },
+  zh: { title: "已索引合集", hint: "选择已验证的 Factory 合集，或按代币名称、符号或地址搜索。", searchPlaceholder: "搜索合集", loading: "正在加载已索引合集…", loadError: "已索引合集暂时不可用。你仍可在下方输入地址。", empty: "没有匹配的合集。", active: "当前使用", select: "使用合集", invalidAddress: "请输入有效的主 ERC-20 地址。", missingCollection: "该代币在规范 Factory 中尚无合集。" },
+  ko: { title: "인덱싱된 컬렉션", hint: "검증된 Factory 컬렉션을 선택하거나 토큰 이름, 심볼 또는 주소로 검색하세요.", searchPlaceholder: "컬렉션 검색", loading: "인덱싱된 컬렉션을 불러오는 중…", loadError: "컬렉션 목록을 일시적으로 사용할 수 없습니다. 아래에 주소를 직접 입력할 수 있습니다.", empty: "일치하는 컬렉션이 없습니다.", active: "사용 중", select: "컬렉션 사용", invalidAddress: "유효한 기본 ERC-20 주소를 입력하세요.", missingCollection: "이 토큰은 공식 Factory에 컬렉션이 없습니다." },
+  ru: { title: "Проиндексированные коллекции", hint: "Выберите проверенную коллекцию Factory или найдите её по имени, символу или адресу токена.", searchPlaceholder: "Поиск коллекций", loading: "Загрузка коллекций…", loadError: "Список коллекций временно недоступен. Адрес можно ввести ниже.", empty: "Подходящих коллекций нет.", active: "Активна", select: "Использовать", invalidAddress: "Введите корректный адрес основного ERC-20.", missingCollection: "Для этого токена нет коллекции в канонической Factory." },
+  id: { title: "Koleksi terindeks", hint: "Pilih koleksi Factory terverifikasi atau cari berdasarkan nama, simbol, atau alamat token.", searchPlaceholder: "Cari koleksi", loading: "Memuat koleksi terindeks…", loadError: "Daftar koleksi sementara tidak tersedia. Anda tetap dapat memasukkan alamat di bawah.", empty: "Tidak ada koleksi yang cocok.", active: "Aktif", select: "Gunakan koleksi", invalidAddress: "Masukkan alamat ERC-20 utama yang valid.", missingCollection: "Belum ada koleksi untuk token ini di Factory kanonis." },
+};
 
 type CreateMode = "single" | "batch" | "basket";
 type BoxFilter = "all" | "ready" | "locked";
@@ -616,7 +623,7 @@ export default function BanmaoBoxPage() {
   );
   const dashboardCopy = BOX_DASHBOARD_COPY[language];
   const recipientActionCopy = RECIPIENT_ACTION_COPY[language];
-  const collectionPickerCopy = COLLECTION_PICKER_COPY[language === "vi" ? "vi" : "en"];
+  const collectionPickerCopy = COLLECTION_PICKER_COPY[language];
   const { timedOut: boxesTimedOut, resetTimeout: resetBoxesTimeout } =
     useBoundedLoading(boxesLoading);
   const retryBoxes = useCallback(() => {
@@ -1280,7 +1287,7 @@ export default function BanmaoBoxPage() {
     setCollectionError(null);
     setCollectionToken(requestedToken);
     if (!isAddress(requestedToken)) {
-      setCollectionError("Enter a valid primary ERC-20 address.");
+      setCollectionError(collectionPickerCopy.invalidAddress);
       return;
     }
 
@@ -1292,7 +1299,7 @@ export default function BanmaoBoxPage() {
       let box = await resolveCollection(token);
       if (box === "0x0000000000000000000000000000000000000000") {
         if (!createIfMissing) {
-          throw new Error("No collection exists for this token on the canonical Factory.");
+          throw new Error(collectionPickerCopy.missingCollection);
         }
         setActiveAction("Collection creation");
         const baseDetails = initialCollectionLifecycle(token, {
@@ -1724,7 +1731,7 @@ export default function BanmaoBoxPage() {
       return 0n;
     }
   })();
-  const previewAssets: RendererPreviewAsset[] = [
+  const previewAssets = useMemo<RendererPreviewAsset[]>(() => [
     {
       token: activeTokenAddress ?? chainConfig.tokenAddress ?? "0x0000000000000000000000000000000000000000",
       amount: previewPrimaryAmount,
@@ -1736,8 +1743,8 @@ export default function BanmaoBoxPage() {
       try { assetAmount = asset.amount ? parseUnits(asset.amount, asset.decimals) : 0n; } catch { /* Keep invalid draft amounts at zero. */ }
       return { token: asset.token, amount: assetAmount, decimals: asset.decimals, symbol: asset.symbol };
     }) : []),
-  ];
-  const previewCreatedAt = Math.floor(now / 1000);
+  ], [activeTokenAddress, chainConfig.tokenAddress, createMode, extraAssets, previewPrimaryAmount, tokenDecimals, tokenSymbol]);
+  const [previewCreatedAt] = useState(() => Math.floor(Date.now() / 1000));
   const previewUnlockTime = previewCreatedAt + Number(durationSeconds ?? 0n);
   const previewTier = getTier(previewPrimaryAmount, tokenDecimals);
   const visibleCollections = indexedCollections

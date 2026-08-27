@@ -2,10 +2,12 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { encodePacked, getAddress, pad, stringToHex, type Address } from "viem";
+import { encodePacked, getAddress, pad, toBytes, toHex, type Address } from "viem";
 import { svgImageDataUri } from "./safety";
 
 export type RendererPreviewAsset = { token: string; amount: bigint; decimals: number; symbol: string };
+
+const PREVIEW_CREATOR = "0x0000000000000000000000000000000000000000" as Address;
 
 export function rendererDisplayAmount(amount: bigint, decimals: number): string {
   const unit = 10n ** BigInt(decimals);
@@ -30,8 +32,8 @@ function rendererDateTime(timestamp: number): string {
   return `${date.getUTCFullYear()}-${part(date.getUTCMonth() + 1)}-${part(date.getUTCDate())} ${part(date.getUTCHours())}:${part(date.getUTCMinutes())} UTC`;
 }
 
-function bytes16(value: string) {
-  return pad(stringToHex(value.slice(0, 16)), { size: 16, dir: "right" });
+export function rendererBytes16(value: string) {
+  return pad(toHex(toBytes(value).slice(0, 16)), { size: 16, dir: "right" });
 }
 
 export function RendererArtworkPreview({ assets, creator, createdAt, unlockTime, tier, batchPosition, rendererAddress, renderPreview }: {
@@ -41,15 +43,15 @@ export function RendererArtworkPreview({ assets, creator, createdAt, unlockTime,
   const [svg, setSvg] = useState<string>();
   const renderData = useMemo(() => {
     const primary = assets[0];
-    if (!primary || !creator) return undefined;
+    if (!primary) return undefined;
     return {
-      token: getAddress(primary.token), creator, amount: primary.amount,
+      token: getAddress(primary.token), creator: creator ?? PREVIEW_CREATOR, amount: primary.amount,
       timestamps: (BigInt(createdAt) << 64n) | BigInt(unlockTime),
       tokenDecimals: primary.decimals, assetCount: assets.length,
-      tokenSymbol: bytes16(primary.symbol),
+      tokenSymbol: rendererBytes16(primary.symbol),
       renderAssets: encodePacked(
         assets.flatMap(() => ["address", "uint256", "uint8", "bytes16"] as const),
-        assets.flatMap((asset) => [getAddress(asset.token), asset.amount, asset.decimals, bytes16(asset.symbol)]),
+        assets.flatMap((asset) => [getAddress(asset.token), asset.amount, asset.decimals, rendererBytes16(asset.symbol)]),
       ),
     } as const;
   }, [assets, createdAt, creator, unlockTime]);

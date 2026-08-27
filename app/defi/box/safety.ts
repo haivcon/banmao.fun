@@ -53,8 +53,10 @@ export function parseStoredCollection(
  * the page DOM. This prevents renderer markup from reaching the app's DOM context.
  */
 export function svgImageDataUri(svg: string): string {
-  const artwork = /^\s*<svg(?:\s|>)/i.test(svg)
-    ? svg
+  const normalized = svg.replace(/^\uFEFF/, "").trimStart();
+  const legacyPrefix = /^(?:<\?xml[\s\S]*?\?>\s*)?(?:<!--[\s\S]*?-->\s*)?(?=<svg(?:\s|>))/i;
+  const artwork = legacyPrefix.test(normalized)
+    ? normalized.replace(legacyPrefix, "")
     : '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600"><rect width="600" height="600" fill="#0b0d12"/><text x="300" y="307" fill="#ffd85a" font-family="sans-serif" font-size="18" text-anchor="middle">Artwork unavailable</text></svg>';
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(artwork)}`;
 }

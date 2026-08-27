@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { BOX_COPY, BOX_LANGUAGES } from "../app/defi/box/i18n";
+import { explorerCopy } from "../app/defi/box/explorer/copy";
 import {
   COLLECTION_LIFECYCLE_FIXTURE,
   getCollectionLifecycleFixture,
@@ -23,7 +24,7 @@ import {
   classifyBanmaoBoxVerification,
   requestBanmaoBoxVerification,
 } from "../app/defi/box/requestVerification";
-import { rendererDisplayAmount } from "../app/defi/box/RendererArtworkPreview";
+import { rendererBytes16, rendererDisplayAmount } from "../app/defi/box/RendererArtworkPreview";
 import {
   clearPendingVerification,
   loadPendingVerification,
@@ -430,6 +431,10 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(page).toContain('box-create-progress box-create-progress--${phase}');
     expect(page).toContain('className="box-create-progress__steps"');
     expect(page).toContain("<RendererArtworkPreview");
+    expect(page).toContain("rendererAddress={chainConfig.boxRendererAddress}");
+    expect(page).toContain("renderPreview={renderPreview}");
+    expect(page).toContain("useMemo<RendererPreviewAsset[]>");
+    expect(page).toContain("useState(() => Math.floor(Date.now() / 1000))");
     expect(page).toContain('className="box-nft-preview__badges"');
     expect(page).toContain('className="box-live-summary__essentials"');
     expect(page).toContain("data-create-step={createStep}");
@@ -468,8 +473,15 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(css).toContain("prefers-reduced-motion: reduce");
   });
 
+  test("packs renderer symbols by UTF-8 byte length like Solidity bytes16", () => {
+    expect(rendererBytes16("BANMAO")).toBe("0x42414e4d414f00000000000000000000");
+    expect(rendererBytes16("Việt Nam 中文 한국")).toBe("0x5669e1bb8774204e616d20e4b8ade696");
+  });
+
   test("creation wizard supports recipient clipboard actions, expanded locks and a collectible preview", () => {
     const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const preview = fs.readFileSync(path.join(process.cwd(), "app/defi/box/RendererArtworkPreview.tsx"), "utf8");
+    const hook = fs.readFileSync(path.join(process.cwd(), "app/defi/box/useBox.ts"), "utf8");
     const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
 
     expect(page).toContain("navigator.clipboard.readText()");
@@ -485,6 +497,9 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(page).toContain("[1, 3, 7, 14, 30, 60, 90, 180, 365, 730]");
     expect(page).toContain('className="box-nft-preview__frame"');
     expect(page).toContain("<RendererArtworkPreview");
+    expect(preview).toContain("creator: creator ?? PREVIEW_CREATOR");
+    expect(preview).not.toContain("if (!primary || !creator)");
+    expect(hook).toContain("gas: 4_000_000n");
     expect(page).toContain('batchPosition={createMode === "batch" ? `1 / ${previewBoxCount}` : undefined}');
     expect(page).toContain('className="box-nft-preview__badges"');
     expect(page).toContain("artworkPreviewOpen");
@@ -558,11 +573,42 @@ describe("BanmaoBox transaction UX contract", () => {
   test("publishes the current and historical renderer catalog in Collection Explorer", () => {
     const explorer = fs.readFileSync(path.join(process.cwd(), "app/defi/box/explorer/CollectionExplorerClient.tsx"), "utf8");
     const catalog = fs.readFileSync(path.join(process.cwd(), "app/defi/box/explorer/rendererCatalog.ts"), "utf8");
+    const artwork = fs.readFileSync(path.join(process.cwd(), "app/defi/box/explorer/RendererCatalogArtwork.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/explorer/explorer.css"), "utf8");
     expect(explorer).toContain("MAINNET_RENDERER_CATALOG.map");
+    expect(explorer).toContain("<RendererCatalogArtwork");
     expect(explorer).toContain("copy.currentRenderer");
+    expect(explorer).toContain('className="bce-renderer-safety"');
+    expect(explorer).toContain("copy.rendererSafetyNote");
     expect(catalog).toContain("0x5d424134B0A4bAF0893BB29a75B7901D35C0aD13");
     expect(catalog.match(/address: \"0x/g)).toHaveLength(7);
     expect(catalog).toContain("/defi/banmaobox-renderer-current.svg");
+    expect(catalog).toContain('schema: "compact"');
+    expect(catalog).toContain('schema: "legacy"');
+    expect(artwork).toContain("CURRENT_RENDERER_ABI");
+    expect(artwork).toContain("COMPACT_RENDERER_ABI");
+    expect(artwork).toContain("LEGACY_RENDERER_ABI");
+    expect(artwork).toContain('functionName: "renderSVG"');
+    expect(artwork).toContain("svgImageDataUri(svg)");
+    expect(css).toMatch(/\.bce-renderer-art\s*\{[^}]*height:\s*clamp\(220px,22vw,320px\)/);
+    expect(css).toMatch(/\.bce-renderer-art img\s*\{[^}]*max-width:\s*296px[^}]*object-fit:\s*contain/);
+    expect(css).not.toMatch(/\.bce-renderer-grid article\.is-current\s*\{[^}]*grid-column:\s*span 2/);
+  });
+
+  test("localizes every Collection Explorer renderer label in all supported languages", () => {
+    const english = explorerCopy("en");
+    const rendererKeys = ["renderers", "renderersHelp", "rendererSafetyNote", "currentRenderer", "historicalRenderer", "rendererArtwork", "bytes", "pagination", "genCurrent", "genTreasury", "genFactory", "genV4", "genV3", "genV2", "genOriginal", "checkRegistry", "checkCanonical", "checkUnderlying", "checkAdmin", "checkRuntime"] as const;
+    for (const language of BOX_LANGUAGES) {
+      const copy = explorerCopy(language);
+      expect(Object.keys(copy)).toEqual(Object.keys(english));
+      for (const key of rendererKeys) expect(copy[key]).toBeTruthy();
+      if (language !== "en") {
+        expect(copy.renderersHelp).not.toBe(english.renderersHelp);
+        expect(copy.rendererSafetyNote).not.toBe(english.rendererSafetyNote);
+        expect(copy.currentRenderer).not.toBe(english.currentRenderer);
+        expect(copy.genCurrent).not.toBe(english.genCurrent);
+      }
+    }
   });
 
   test("exposes the Collection Explorer from the BanmaoBox header on desktop and mobile", () => {
@@ -704,7 +750,10 @@ describe("BanmaoBox transaction UX contract", () => {
     const refetch = hook.slice(hook.indexOf("const refetchAll"), hook.indexOf("const retryBoxes"));
 
     expect(refetch).toContain("Promise.allSettled");
+    expect(refetch).toContain("loadBoxDetails(refreshedBoxCount)");
+    expect(refetch).toContain("ownedBoxCountQuery.refetch()");
     expect(refetch).not.toContain("Promise.all([");
+    expect(hook.match(/await refetchAll\(\);\s*setPhase\("success"\);/g)).toHaveLength(7);
   });
 });
 
@@ -776,7 +825,8 @@ describe("BanmaoBox portfolio dashboard", () => {
     expect(css).toMatch(/@media \(max-width:\s*820px\)[\s\S]*\.box-preview-dialog\s*\{[^}]*max-height:\s*calc\(100dvh\s*-\s*var\(--defi-shell-header-height,\s*60px\)\s*-\s*24px\)/);
     expect(css).toMatch(/\.box-image-preview__canvas\s*\{[^}]*overflow:\s*auto/);
     expect(css).toMatch(/\.box-image-preview__image\s*\{[^}]*object-fit:\s*contain/);
-    expect(css).toMatch(/\.box-item__svg\s*\{[\s\S]*object-fit:\s*contain/);
+    expect(css).toMatch(/\.box-item__svg\s*\{[\s\S]*max-width:\s*100%[\s\S]*max-height:\s*100%[\s\S]*object-fit:\s*contain/);
+    expect(css).toMatch(/\.box-artwork-trigger\s*\{[\s\S]*overflow:\s*hidden/);
   });
 
   test("restricts the Operations link and dashboard to matching immutable on-chain admins", () => {

@@ -494,14 +494,14 @@ export function useBox(
     [boxAddress, publicClient],
   );
 
-  const loadBoxDetails = useCallback(async () => {
+  const loadBoxDetails = useCallback(async (boxCount = ownedBoxCount) => {
     const generation = ++boxLoadGeneration.current;
     if (
       !boxAddress ||
       !publicClient ||
       !address ||
       !isDiscoveryValidated ||
-      ownedBoxCount === 0n
+      boxCount === 0n
     ) {
       setBoxes([]);
       setBoxesError(null);
@@ -513,7 +513,7 @@ export function useBox(
     setBoxesError(null);
     try {
       const pageSize = 100n;
-      const pageCount = Number((ownedBoxCount + pageSize - 1n) / pageSize);
+      const pageCount = Number((boxCount + pageSize - 1n) / pageSize);
       const pages = await Promise.all(
         Array.from(
           { length: pageCount },
@@ -714,16 +714,22 @@ export function useBox(
   );
 
   const refetchAll = useCallback(async () => {
+    const countResult = await Promise.resolve(ownedBoxCountQuery.refetch()).catch(() => null);
+    const refreshedBoxCount = typeof countResult?.data === "bigint"
+      ? countResult.data
+      : ownedBoxCount;
     await Promise.allSettled([
       balanceQuery.refetch(),
       allowanceQuery.refetch(),
-      ownedBoxCountQuery.refetch(),
       totalLockedQuery.refetch(),
       totalSupplyQuery.refetch(),
+      loadBoxDetails(refreshedBoxCount),
     ]);
   }, [
     allowanceQuery,
     balanceQuery,
+    loadBoxDetails,
+    ownedBoxCount,
     ownedBoxCountQuery,
     totalLockedQuery,
     totalSupplyQuery,
@@ -813,8 +819,8 @@ export function useBox(
         const createHash = await writeContractAsync(createRequest as never);
         await waitForHash(createHash, client);
 
-        setPhase("success");
         await refetchAll();
+        setPhase("success");
         return createHash;
       } catch (error) {
         setPhase("error");
@@ -883,8 +889,8 @@ export function useBox(
         } as never);
         const hash = await writeContractAsync(request as never);
         await waitForHash(hash, client);
-        setPhase("success");
         await refetchAll();
+        setPhase("success");
         return hash;
       } catch (error) {
         setPhase("error");
@@ -1008,7 +1014,8 @@ export function useBox(
     },
     [address, chainId, deploymentError, factoryAddress, isConnected,
       isDeploymentValidated, publicClient, readAsset, resetTransaction,
-      selectedChainId, switchChainAsync, waitForHash, writeContractAsync],
+      resolveCollection, selectedChainId, switchChainAsync, waitForHash,
+      writeContractAsync],
   );
 
   const createMultiTokenBox = useCallback(
@@ -1061,8 +1068,8 @@ export function useBox(
         } as never);
         const hash = await writeContractAsync(request as never);
         await waitForHash(hash, client);
-        setPhase("success");
         await refetchAll();
+        setPhase("success");
         return hash;
       } catch (error) {
         setPhase("error");
@@ -1104,8 +1111,8 @@ export function useBox(
             remainingAssetCount = 0n;
           }
         }
-        setPhase("success");
         await refetchAll();
+        setPhase("success");
         return { hash, remainingAssetCount, ...counts } satisfies BoxReleaseResult;
       } catch (error) {
         setPhase("error");
@@ -1154,8 +1161,8 @@ export function useBox(
         } catch {
           // One release event does not prove the Box is empty; preserve unknown state.
         }
-        setPhase("success");
         await refetchAll();
+        setPhase("success");
         return { hash, remainingAssetCount, ...counts } satisfies BoxReleaseResult;
       } catch (error) {
         setPhase("error");
@@ -1252,6 +1259,7 @@ export function useBox(
         } as never);
         const hash = await writeContractAsync(request as never);
         await waitForHash(hash, client);
+        await refetchAll();
         setPhase("success");
         return hash;
       } catch (error) {
@@ -1260,7 +1268,7 @@ export function useBox(
         throw error;
       }
     },
-    [ensureReady, resetTransaction, waitForHash, writeContractAsync],
+    [ensureReady, refetchAll, resetTransaction, waitForHash, writeContractAsync],
   );
 
   const transferBox = useCallback(
@@ -1279,8 +1287,8 @@ export function useBox(
         } as never);
         const hash = await writeContractAsync(request as never);
         await waitForHash(hash, client);
-        setPhase("success");
         await refetchAll();
+        setPhase("success");
         return hash;
       } catch (error) {
         setPhase("error");
@@ -1304,6 +1312,7 @@ export function useBox(
       abi: BANMAO_BOX_RENDERER_ABI,
       functionName: "renderSVG",
       args: [0n, renderData],
+      gas: 4_000_000n,
     } as never) as Promise<string>;
   }, [publicClient]);
 

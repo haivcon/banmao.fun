@@ -240,7 +240,16 @@ async function buildSnapshot(chainId: SupportedChain, previous?: Snapshot): Prom
 async function snapshot(chainId: SupportedChain, refresh = false) {
   const existing = cache.get(chainId);
   if (!refresh && existing && existing.expiresAt > Date.now()) return existing.value;
-  const value = existing ? existing.value.then((previous) => buildSnapshot(chainId, previous)) : buildSnapshot(chainId);
+  const value = existing
+    ? existing.value.then(async (previous) => {
+        try {
+          return await buildSnapshot(chainId, previous);
+        } catch (error) {
+          console.warn("BanmaoBox snapshot refresh failed; serving stale data", chainId, error);
+          return previous;
+        }
+      })
+    : buildSnapshot(chainId);
   cache.set(chainId, { expiresAt: Date.now() + CACHE_TTL_MS, value });
   value.catch(() => cache.delete(chainId));
   return value;
