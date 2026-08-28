@@ -583,6 +583,7 @@ export function useBox(
               abi: BANMAO_BOX_ABI,
               functionName: "renderSVG",
               args: [tokenId],
+              gas: 4_000_000n,
             } as never) as Promise<string>,
           ),
         ),
@@ -1266,6 +1267,7 @@ export function useBox(
           abi: BANMAO_BOX_ABI,
           functionName: "renderSVG",
           args: [tokenId],
+          gas: 4_000_000n,
         } as never).then((svg) => typeof svg === "string" ? svg : undefined).catch(() => undefined),
       ]);
       const primaryAsset = assets.find(

@@ -634,11 +634,15 @@ describe("BanmaoBox transaction UX contract", () => {
 
   test("explore inspector shows complete NFT details, full addresses and zoomable artwork", () => {
     const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const hook = fs.readFileSync(path.join(process.cwd(), "app/defi/box/useBox.ts"), "utf8");
     const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
     const inspector = page.slice(page.indexOf('<section className="box-tab-panel box-inspector"'), page.indexOf('<section className="box-how">'));
 
     expect(inspector).toContain('className="box-artwork-trigger box-inspector__artwork-trigger"');
     expect(inspector).toContain("onClick={() => openEntryPreview(inspectedBox)}");
+    expect(inspector).toContain("inspectedBox.svg && isRenderableSvg(inspectedBox.svg)");
+    expect(inspector).toContain('className="box-inspector__artwork-unavailable"');
+    expect(inspector).toContain("void loadInspectedBox(inspectedBox.tokenId)");
     expect(inspector).toContain("value={inspectedBox.owner}");
     expect(inspector).toContain("disabled={!canReleaseInspectedBox}");
     expect(inspector).toContain("tokenExplorerUrlForBase(explorerBaseUrl, asset.token)");
@@ -648,6 +652,8 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(inspector).not.toContain("asset.token.slice(0, 8)");
     expect(css).toMatch(/\.box-inspector__addresses \.box-explorer-value__link\s*\{[^}]*overflow-wrap:\s*anywhere[^}]*white-space:\s*normal/);
     expect(css).toMatch(/\.box-inspector-asset__address code\s*\{[^}]*overflow-wrap:\s*anywhere[^}]*white-space:\s*normal/);
+    expect(css).toMatch(/\.box-inspector__visual\s*\{[^}]*aspect-ratio:\s*1/);
+    expect(css).toMatch(/\.box-inspector__artwork-unavailable\s*\{[^}]*aspect-ratio:\s*1/);
     expect(page).toContain("const requestId = ++inspectRequestRef.current");
     expect(page).toContain("if (requestId !== inspectRequestRef.current) return");
     expect(page).toContain("setInspectedBox(null);");
@@ -656,6 +662,7 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(page).toContain("setInspectError(null);");
     expect(page).toContain("previewReturnFocusRef.current?.focus()");
     expect(page).toContain("previewDialogRef.current");
+    expect(hook).toMatch(/functionName: "renderSVG",\s*args: \[tokenId\],\s*gas: 4_000_000n/);
   });
 
   test("pre-mint artwork mirrors the on-chain sealed treasury renderer", () => {

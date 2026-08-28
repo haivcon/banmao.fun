@@ -1759,19 +1759,14 @@ export default function BanmaoBoxPage() {
     }
   };
 
-  const handleInspect = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!/^\d+$/.test(inspectId)) {
-      setInspectError(copy.inspectPlaceholder);
-      return;
-    }
+  const loadInspectedBox = async (tokenId: bigint) => {
     const requestId = ++inspectRequestRef.current;
     setInspectLoading(true);
     setInspectError(null);
     setInspectedBox(null);
     setPreviewEntry(null);
     try {
-      const result = await inspectBox(BigInt(inspectId));
+      const result = await inspectBox(tokenId);
       if (requestId !== inspectRequestRef.current) return;
       setInspectedBox(result);
     } catch {
@@ -1780,6 +1775,15 @@ export default function BanmaoBoxPage() {
     } finally {
       if (requestId === inspectRequestRef.current) setInspectLoading(false);
     }
+  };
+
+  const handleInspect = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!/^\d+$/.test(inspectId)) {
+      setInspectError(copy.inspectPlaceholder);
+      return;
+    }
+    void loadInspectedBox(BigInt(inspectId));
   };
 
   const handleTransfer = async (event: FormEvent<HTMLFormElement>) => {
@@ -3064,22 +3068,32 @@ export default function BanmaoBoxPage() {
           {inspectedBox ? (
             <>
               <div className="box-inspector__visual">
-                <button
-                  type="button"
-                  className="box-artwork-trigger box-inspector__artwork-trigger"
-                  onClick={() => openEntryPreview(inspectedBox)}
-                  aria-label={`${BOX_DASHBOARD_COPY[language].previewImage}: ${copy.boxNumber} #${inspectedBox.tokenId.toString()}`}
-                >
-                  <Image
-                    className="box-svg"
-                    src={svgImageDataUri(inspectedBox.svg)}
-                    alt={`On-chain artwork for ${copy.boxNumber} #${inspectedBox.tokenId.toString()}`}
-                    width={600}
-                    height={600}
-                    unoptimized
-                  />
-                  <span className="box-artwork-trigger__hint" aria-hidden="true"><Maximize2 /></span>
-                </button>
+                {inspectedBox.svg && isRenderableSvg(inspectedBox.svg) ? (
+                  <button
+                    type="button"
+                    className="box-artwork-trigger box-inspector__artwork-trigger"
+                    onClick={() => openEntryPreview(inspectedBox)}
+                    aria-label={`${BOX_DASHBOARD_COPY[language].previewImage}: ${copy.boxNumber} #${inspectedBox.tokenId.toString()}`}
+                  >
+                    <Image
+                      className="box-svg"
+                      src={svgImageDataUri(inspectedBox.svg)}
+                      alt={`On-chain artwork for ${copy.boxNumber} #${inspectedBox.tokenId.toString()}`}
+                      width={600}
+                      height={600}
+                      unoptimized
+                    />
+                    <span className="box-artwork-trigger__hint" aria-hidden="true"><Maximize2 /></span>
+                  </button>
+                ) : (
+                  <div className="box-inspector__artwork-unavailable" role="status">
+                    <ImageOff aria-hidden="true" />
+                    <span>{resultCopy.artworkUnavailable}</span>
+                    <button type="button" onClick={() => void loadInspectedBox(inspectedBox.tokenId)}>
+                      <RefreshCw aria-hidden="true" /> {resultCopy.retryArtwork}
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="box-inspector__facts">
                 <div className="box-inspector__heading">
