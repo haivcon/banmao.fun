@@ -758,8 +758,11 @@ describe("BanmaoBox transaction UX contract", () => {
   test("centers the mobile collection manager above navigation without changing desktop inline layout", () => {
     const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
     const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
-    const mobile = css.slice(css.indexOf("@media (max-width: 820px)", css.indexOf(".box-collection-layer")));
+    const collectionSheetMedia = "@media (max-width: 820px) and (hover: none) and (pointer: coarse)";
+    const mobile = css.slice(css.indexOf(collectionSheetMedia));
 
+    expect(page).toContain('"(max-width: 820px) and (hover: none) and (pointer: coarse)"');
+    expect(css).toContain(collectionSheetMedia);
     expect(page).toContain('className="box-collection-layer is-open"');
     expect(page).toContain('role={isCollectionSheet ? "dialog" : undefined}');
     expect(page).toContain("aria-modal={isCollectionSheet ? true : undefined}");
@@ -790,7 +793,7 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(mobile).toMatch(/padding-bottom:\s*calc\([^;]*env\(safe-area-inset-bottom\)/);
     expect(mobile).not.toMatch(/\.box-collection-layer\s*\{[^}]*align-items:\s*flex-end/);
     expect(mobile).toMatch(/\.box-collection-controls input\s*\{[\s\S]*font-size:\s*16px/);
-    expect(mobile).toMatch(/\.box-collection-controls button[\s\S]*min-height:\s*44px/);
+    expect(mobile).toMatch(/\.box-collection-controls > button[\s\S]*min-height:\s*44px/);
     expect(mobile).toMatch(/body:has\(\.box-collection-layer\.is-open\) \.banmao-ai-launcher[\s\S]*display:\s*none/);
     expect(mobile).toMatch(/\.box-page--collection-sheet-open \.box-submit[\s\S]*visibility:\s*hidden/);
   });

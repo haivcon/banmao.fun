@@ -813,7 +813,9 @@ export default function BanmaoBoxPage() {
   }, []);
 
   useEffect(() => {
-    const media = window.matchMedia("(max-width: 820px)");
+    const media = window.matchMedia(
+      "(max-width: 820px) and (hover: none) and (pointer: coarse)",
+    );
     const update = () => setIsCollectionSheet(media.matches);
     update();
     media.addEventListener("change", update);
