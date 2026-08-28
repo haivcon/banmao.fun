@@ -534,6 +534,33 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(css).toMatch(/box-ready-ripple[^}]*3/);
   });
 
+  test("keeps explicit creation success and failure outcomes after the result modal closes", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
+
+    expect(page).toContain('isCreateTransaction && phase === "success"');
+    expect(page).toContain('isCreateTransaction && phase === "error"');
+    expect(page).toContain('className="box-create-outcome box-create-outcome--success"');
+    expect(page).toContain('className="box-create-outcome box-create-outcome--error"');
+    expect(page).toContain("transactionHash ? resultCopy.failureSubmitted : resultCopy.failureNotSubmitted");
+    expect(page).toContain("onClick={viewCreatedBoxes}");
+    expect(page).toContain("onClick={resetCreateForm}");
+    expect(page).toContain("onClick={retryCreation}");
+    expect(page).toContain("onClick={editCreationDetails}");
+    expect(page).toContain('if (event.target === event.currentTarget) setCreationResult(null)');
+    expect(page).toContain("resetTransaction();");
+    expect(page).toContain("setCreateStep(1);");
+    expect(page).not.toMatch(/if \(phase === \"success\"\) \{[\s\S]{0,300}setAmount\(\"\"\)/);
+    expect(page).toContain('setAmount("");');
+    expect(page).toMatch(/await transferBox\([\s\S]{0,180}setTransferEntry\(null\);[\s\S]{0,80}setTransferRecipient\(\"\"\);/);
+    expect(page).toMatch(/const handleNetworkChange[\s\S]{0,240}isBusy[\s\S]{0,160}resetTransaction\(\);/);
+    expect(page).toMatch(/onClick=\{\(\) => void handleNetworkChange\(XLAYER_CHAIN_ID\)\}[\s\S]{0,80}disabled=\{isBusy\}/);
+    expect(page).toMatch(/const selectCollection[\s\S]{0,120}resetTransaction\(\);[\s\S]{0,80}setCreationResult\(null\);/);
+    expect(page).toContain("disabled={!isConnected || !isDeployed || !isDeploymentValidated || isBusy}");
+    expect(css).toContain(".box-create-outcome--error");
+    expect(css).toContain(".box-create-outcome__actions");
+  });
+
   test("centers the lower information area and provides accessible interaction motion", () => {
     const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
 

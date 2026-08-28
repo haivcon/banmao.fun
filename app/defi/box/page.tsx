@@ -623,6 +623,7 @@ export default function BanmaoBoxPage() {
     refreshMetadata,
     inspectBox,
     refetchAll,
+    resetTransaction,
     phase,
     transactionHash,
     approvalHash,
@@ -936,19 +937,6 @@ export default function BanmaoBoxPage() {
       ));
     }
   }, [address]);
-
-  useEffect(() => {
-    if (phase === "success") {
-      setAmount("");
-      setBatchRows([
-        { recipient: address ?? "", amount: "" },
-        { recipient: address ?? "", amount: "" },
-      ]);
-      setExtraAssets([]);
-      setTransferEntry(null);
-      setTransferRecipient("");
-    }
-  }, [address, phase]);
 
   const copyToClipboard = useCallback(async (value: string, label: string) => {
     try {
@@ -1270,6 +1258,8 @@ export default function BanmaoBoxPage() {
   };
 
   const selectCollection = (token: Address, box: Address) => {
+    resetTransaction();
+    setCreationResult(null);
     setActiveTokenAddress(token);
     setActiveBoxAddress(box);
     setCollectionToken(token);
@@ -1288,8 +1278,11 @@ export default function BanmaoBoxPage() {
   const handleNetworkChange = async (nextChainId: BoxChainId) => {
     if (
       nextChainId === selectedChainId ||
+      isBusy ||
       (nextChainId === XLAYER_TESTNET_CHAIN_ID && !BANMAOBOX_TESTNET_UI_ENABLED)
     ) return;
+    resetTransaction();
+    setCreationResult(null);
     setNetworkError(null);
     setSelectedChainId(nextChainId);
     setActiveTokenAddress(undefined);
@@ -1515,6 +1508,45 @@ export default function BanmaoBoxPage() {
     return null;
   };
 
+  const resetCreateForm = useCallback(() => {
+    resetTransaction();
+    setCreationResult(null);
+    setAmount("");
+    setRecipient("");
+    setBatchRows([{ recipient: "", amount: "" }, { recipient: "", amount: "" }]);
+    setExtraAssets([]);
+    setNewAssetToken("");
+    setSelectedDays(30);
+    setCustomDuration({ days: "", hours: "", minutes: "", seconds: "" });
+    setFormError(null);
+    setReviewOpen(false);
+    setLockAcknowledged(false);
+    setCreateStep(1);
+  }, [resetTransaction]);
+
+  const viewCreatedBoxes = useCallback(() => {
+    setCreationResult(null);
+    setBoxFilter("all");
+    setBoxSort("ready");
+    setBoxSearch("");
+    setBoxPage(0);
+    setActiveTab("boxes");
+    void refetchAll();
+  }, [refetchAll]);
+
+  const retryCreation = useCallback(() => {
+    resetTransaction();
+    setFormError(null);
+    setReviewOpen(false);
+  }, [resetTransaction]);
+
+  const editCreationDetails = useCallback(() => {
+    resetTransaction();
+    setFormError(null);
+    setReviewOpen(false);
+    setCreateStep(1);
+  }, [resetTransaction]);
+
   const handleApproveToken = async () => {
     const validationError = validateCreate();
     setFormError(validationError);
@@ -1700,6 +1732,8 @@ export default function BanmaoBoxPage() {
         transferEntry.tokenId,
         normalizedTransferRecipient,
       );
+      setTransferEntry(null);
+      setTransferRecipient("");
     } catch {
       // The hook exposes a normalized transaction error.
     }
@@ -1818,6 +1852,7 @@ export default function BanmaoBoxPage() {
               type="button"
               className={selectedChainId === XLAYER_CHAIN_ID ? "active" : ""}
               onClick={() => void handleNetworkChange(XLAYER_CHAIN_ID)}
+              disabled={isBusy}
             >
               Mainnet
             </button>
@@ -1826,6 +1861,7 @@ export default function BanmaoBoxPage() {
                 type="button"
                 className={selectedChainId === XLAYER_TESTNET_CHAIN_ID ? "active" : ""}
                 onClick={() => void handleNetworkChange(XLAYER_TESTNET_CHAIN_ID)}
+                disabled={isBusy}
               >
                 Testnet
               </button>
@@ -2550,85 +2586,84 @@ export default function BanmaoBoxPage() {
               </div>
             ) : null}
 
-            {isCreateTransaction ? (
-              <section
-                className={`box-create-progress box-create-progress--${phase}`}
-                aria-label={copy.transactionProgressLabel}
-                aria-live="polite"
-              >
-                <div className="box-create-progress__heading">
-                  <span className="box-create-progress__icon" aria-hidden="true">
-                    {phase === "success" ? <CheckCircle2 /> : phase === "error" ? <X /> : <LoaderCircle className="box-spin" />}
-                  </span>
-                  <span>
-                    <small>{copy.transactionProgressLabel}</small>
-                    <strong>{transactionMessage}</strong>
-                  </span>
-                </div>
-                <ol className="box-create-progress__steps">
-                  {createProgressSteps.map((step, index) => {
-                    const state = phase === "error" && index === createProgressIndex
-                      ? "error"
-                      : index < createProgressIndex || phase === "success"
-                        ? "complete"
-                        : index === createProgressIndex
-                          ? "active"
-                          : "pending";
-                    return (
-                      <li className={state} key={step.id}>
-                        <span aria-hidden="true">{state === "complete" ? <CheckCircle2 /> : index + 1}</span>
-                        <small>{step.label}</small>
-                      </li>
-                    );
-                  })}
-                </ol>
-                {transactionHash || approvalHash ? (
-                  <div className="box-create-progress__links">
-                    {approvalHash ? (
-                      <a href={`${explorerBaseUrl}/tx/${approvalHash}`} target="_blank" rel="noreferrer">
-                        {copy.approvalTransactionLabel} <ExternalLink />
-                      </a>
+            {isCreateTransaction && phase === "success" ? (
+              <section className="box-create-outcome box-create-outcome--success" role="status" aria-live="polite">
+                <span className="box-create-outcome__icon" aria-hidden="true"><CheckCircle2 /></span>
+                <h3>{resultCopy.title}</h3>
+                <p>{resultCopy.successSummary}</p>
+                {creationResult ? (
+                  <div className="box-create-outcome__meta">
+                    {creationResult.tokenIds.length > 1 ? (
+                      <span>{resultCopy.boxesCreated}: <strong>{creationResult.tokenIds.length.toLocaleString(language)}</strong></span>
+                    ) : creationResult.tokenIds[0] !== undefined ? (
+                      <span>{resultCopy.tokenId}: <strong>#{creationResult.tokenIds[0].toString()}</strong></span>
                     ) : null}
-                    {transactionHash ? (
-                      <a href={`${explorerBaseUrl}/tx/${transactionHash}`} target="_blank" rel="noreferrer">
-                        {copy.viewTransaction} <ExternalLink />
-                      </a>
-                    ) : null}
+                    <span>{resultCopy.status}: <strong>{resultCopy.confirmed}</strong></span>
                   </div>
                 ) : null}
+                <div className="box-create-outcome__actions">
+                  <button type="button" className="box-button box-button--primary" onClick={viewCreatedBoxes}>
+                    <Eye aria-hidden="true" /> {resultCopy.viewBox}
+                  </button>
+                  <button type="button" className="box-button box-button--secondary" onClick={resetCreateForm}>
+                    <Gift aria-hidden="true" /> {resultCopy.createAnother}
+                  </button>
+                  {creationResult?.hash || transactionHash ? (
+                    <a className="box-button box-button--secondary" href={`${explorerBaseUrl}/tx/${creationResult?.hash ?? transactionHash}`} target="_blank" rel="noreferrer">
+                      {copy.viewTransaction} <ExternalLink aria-hidden="true" />
+                    </a>
+                  ) : null}
+                </div>
               </section>
-            ) : null}
-
-            {needsApproval ? (
-              <button
-                type="button"
-                className="box-submit box-submit--approve"
-                onClick={() => void handleApproveToken()}
-                disabled={!isConnected || !isDeployed || !isDeploymentValidated || isBusy}
-                aria-describedby={createDisabledReason ? "box-create-disabled-reason" : undefined}
-              >
-                {isBusy ? <LoaderCircle className="box-spin" /> : <ShieldCheck />}
-                {copy.approveToken}
-                {!isBusy ? <ArrowRight /> : null}
-              </button>
+            ) : isCreateTransaction && phase === "error" ? (
+              <section className="box-create-outcome box-create-outcome--error" role="alert">
+                <span className="box-create-outcome__icon" aria-hidden="true"><X /></span>
+                <h3>{resultCopy.failureTitle}</h3>
+                <p>{transactionError || copy.transactionError}</p>
+                <p>{transactionHash ? resultCopy.failureSubmitted : resultCopy.failureNotSubmitted}</p>
+                <div className="box-create-outcome__actions">
+                  <button type="button" className="box-button box-button--primary" onClick={retryCreation}>
+                    <RefreshCw aria-hidden="true" /> {resultCopy.retryCreation}
+                  </button>
+                  <button type="button" className="box-button box-button--secondary" onClick={editCreationDetails}>
+                    <ArrowLeft aria-hidden="true" /> {resultCopy.editDetails}
+                  </button>
+                  {transactionHash ? (
+                    <a className="box-button box-button--secondary" href={`${explorerBaseUrl}/tx/${transactionHash}`} target="_blank" rel="noreferrer">
+                      {copy.viewTransaction} <ExternalLink aria-hidden="true" />
+                    </a>
+                  ) : null}
+                </div>
+              </section>
             ) : (
-              <button
-                type="submit"
-                className="box-submit"
-                disabled={!isConnected || !isDeployed || !isDeploymentValidated || isBusy}
-                aria-describedby={createDisabledReason ? "box-create-disabled-reason" : undefined}
-              >
-                {isBusy ? <LoaderCircle className="box-spin" /> : <Gift />}
-                {isConnected ? copy.createButton : copy.connectToCreate}
-                {!isBusy ? <ArrowRight /> : null}
-              </button>
+              <>
+                {isCreateTransaction ? (
+                  <section className={`box-create-progress box-create-progress--${phase}`} aria-label={copy.transactionProgressLabel} aria-live="polite">
+                    <div className="box-create-progress__heading">
+                      <span className="box-create-progress__icon" aria-hidden="true"><LoaderCircle className="box-spin" /></span>
+                      <span><small>{copy.transactionProgressLabel}</small><strong>{transactionMessage}</strong></span>
+                    </div>
+                    <ol className="box-create-progress__steps">
+                      {createProgressSteps.map((step, index) => {
+                        const state = index < createProgressIndex ? "complete" : index === createProgressIndex ? "active" : "pending";
+                        return <li className={state} key={step.id}><span aria-hidden="true">{state === "complete" ? <CheckCircle2 /> : index + 1}</span><small>{step.label}</small></li>;
+                      })}
+                    </ol>
+                  </section>
+                ) : null}
+                {needsApproval ? (
+                  <button type="button" className="box-submit box-submit--approve" onClick={() => void handleApproveToken()} disabled={!isConnected || !isDeployed || !isDeploymentValidated || isBusy} aria-describedby={createDisabledReason ? "box-create-disabled-reason" : undefined}>
+                    {isBusy ? <LoaderCircle className="box-spin" /> : <ShieldCheck />}{copy.approveToken}{!isBusy ? <ArrowRight /> : null}
+                  </button>
+                ) : (
+                  <button type="submit" className="box-submit" disabled={!isConnected || !isDeployed || !isDeploymentValidated || isBusy} aria-describedby={createDisabledReason ? "box-create-disabled-reason" : undefined}>
+                    {isBusy ? <LoaderCircle className="box-spin" /> : <Gift />}{isConnected ? copy.createButton : copy.connectToCreate}{!isBusy ? <ArrowRight /> : null}
+                  </button>
+                )}
+                {createDisabledReason ? <p className="box-submit-reason" id="box-create-disabled-reason" role="status">{createDisabledReason}</p> : null}
+                <div className="box-wizard-actions box-wizard-actions--final"><button type="button" className="box-button box-button--secondary" onClick={() => setCreateStep(3)} disabled={isBusy}><ArrowLeft /> {copy.previous}</button></div>
+              </>
             )}
-            {createDisabledReason ? (
-              <p className="box-submit-reason" id="box-create-disabled-reason" role="status">
-                {createDisabledReason}
-              </p>
-            ) : null}
-            <div className="box-wizard-actions box-wizard-actions--final"><button type="button" className="box-button box-button--secondary" onClick={() => setCreateStep(3)} disabled={isBusy}><ArrowLeft /> {copy.previous}</button></div>
             </div>
           </form>
           </article>
@@ -3266,11 +3301,12 @@ export default function BanmaoBoxPage() {
             </dl>
 
             <div className="box-result__actions">
-              {creationResult.tokenIds[0] !== undefined && boxNftExplorerUrl(explorerBaseUrl, activeBoxAddress ?? chainConfig.boxAddress, creationResult.tokenIds[0]) ? (
-                <a className="box-button box-button--primary" href={boxNftExplorerUrl(explorerBaseUrl, activeBoxAddress ?? chainConfig.boxAddress, creationResult.tokenIds[0])} target="_blank" rel="noopener noreferrer">
-                  {resultCopy.viewBox} <ExternalLink aria-hidden="true" />
-                </a>
-              ) : null}
+              <button type="button" className="box-button box-button--primary" onClick={viewCreatedBoxes}>
+                {resultCopy.viewBox} <Eye aria-hidden="true" />
+              </button>
+              <button type="button" className="box-button box-button--secondary" onClick={resetCreateForm}>
+                {resultCopy.createAnother} <Gift aria-hidden="true" />
+              </button>
               <a className="box-button box-button--secondary" href={`${explorerBaseUrl}/tx/${creationResult.hash}`} target="_blank" rel="noreferrer">
                 {copy.viewTransaction} <ExternalLink aria-hidden="true" />
               </a>
