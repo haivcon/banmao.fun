@@ -452,7 +452,6 @@ function BoxCard({
                 asset.symbol,
                 isPrimary ? tokenSymbol : undefined,
                 asset.token,
-                copy.genericToken,
               );
               return (
                 <div className={`box-asset ${ready ? "box-asset--ready" : ""}`.trim()} key={asset.token}>
@@ -632,7 +631,7 @@ export default function BanmaoBoxPage() {
     approvalHash,
     transactionError,
     isBusy,
-  } = useBox(selectedChainId, activeBoxAddress, activeTokenAddress, baseCopy.genericToken, collectionResolving);
+  } = useBox(selectedChainId, activeBoxAddress, activeTokenAddress, collectionResolving);
   const copy = useMemo(
     () => parameterizeBoxCopy(baseCopy, tokenIdentity.displaySymbol, tokenIdentity.isCanonicalBanmao),
     [baseCopy, tokenIdentity.displaySymbol, tokenIdentity.isCanonicalBanmao],
@@ -1689,7 +1688,7 @@ export default function BanmaoBoxPage() {
       setExtraAssets((current) => [...current, {
         ...metadata,
         decimals: metadata.decimals ?? 18,
-        symbol: metadata.symbol ?? copy.genericToken,
+        symbol: metadata.symbol ?? resolveStoredAssetSymbol(undefined, undefined, token),
         amount: "",
       }]);
       setNewAssetToken("");
@@ -3132,7 +3131,6 @@ export default function BanmaoBoxPage() {
                         asset.symbol,
                         isPrimary ? tokenSymbol : undefined,
                         asset.token,
-                        copy.genericToken,
                       );
                       return (
                         <article className={`box-inspector-asset ${inspectedBoxReady ? "box-inspector-asset--ready" : ""}`.trim()} key={`${asset.token}-${index}`}>

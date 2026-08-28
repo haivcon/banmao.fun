@@ -60,8 +60,12 @@ export function normalizeLiveTokenName(value: unknown): SafeTokenText | null {
   return normalizeLiveTokenSymbol(value);
 }
 
-export function tokenSymbolFallback(address: Address, genericToken: string): string {
-  return `${genericToken} ${address.slice(0, 8)}…${address.slice(-5)}`;
+export function isGenericTokenSymbol(value: unknown): boolean {
+  return typeof value !== "string" || value.trim() === "" || value.trim().toUpperCase() === "TOKEN";
+}
+
+export function tokenSymbolFallback(address: Address): string {
+  return `ERC-20 ${address.slice(0, 8)}…${address.slice(-5)}`;
 }
 
 export type TokenIdentity = {
@@ -84,15 +88,19 @@ export function buildTokenIdentity(
     storedSymbol?: unknown;
     decimals?: unknown;
   },
-  genericToken: string,
 ): TokenIdentity {
   const live = normalizeLiveTokenSymbol(input.liveSymbol);
   const stored = normalizeLiveTokenSymbol(input.storedSymbol);
-  // Older Box snapshots used the literal TOKEN when token metadata could not be
-  // decoded. It is not authoritative; a live ERC-20 symbol of TOKEN still is.
-  const selected = live ?? (stored?.full.trim().toUpperCase() === "TOKEN" ? null : stored);
-  const fallback = tokenSymbolFallback(input.address, genericToken);
-  const name = normalizeLiveTokenName(input.liveName)?.full ?? selected?.full ?? fallback;
+  // BanmaoBox uses TOKEN as a legacy sentinel when metadata cannot be safely
+  // snapshotted. Never expose that sentinel as an asset identity.
+  const selected = !isGenericTokenSymbol(live?.full)
+    ? live
+    : !isGenericTokenSymbol(stored?.full)
+      ? stored
+      : null;
+  const fallback = tokenSymbolFallback(input.address);
+  const liveName = normalizeLiveTokenName(input.liveName);
+  const name = !isGenericTokenSymbol(liveName?.full) ? liveName!.full : selected?.full ?? fallback;
   const decimals = Number(input.decimals);
   return {
     address: input.address,

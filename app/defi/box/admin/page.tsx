@@ -268,7 +268,7 @@ export default function BoxOperationsPage() {
               abi: BANMAO_ERC20_ABI,
               functionName: "symbol",
             } as never)
-            .catch(() => "TOKEN"),
+            .catch(() => undefined),
         ]);
       const totalLocked = isRegistered
         ? ((await client.readContract({
@@ -285,7 +285,7 @@ export default function BoxOperationsPage() {
         isRegistered,
         totalLocked,
         decimals: Number(decimalsResult),
-        symbol: resolveStoredAssetSymbol("TOKEN", symbolResult, token, "TOKEN"),
+        symbol: resolveStoredAssetSymbol(undefined, symbolResult, token),
       });
     } catch {
       setMessage("Unable to query the Factory registry or Box accounting.");

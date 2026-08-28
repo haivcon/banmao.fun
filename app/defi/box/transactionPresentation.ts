@@ -1,5 +1,5 @@
 import type { Address } from "viem";
-import { normalizeLiveTokenSymbol, tokenSymbolFallback } from "./tokenIdentity";
+import { isGenericTokenSymbol, normalizeLiveTokenSymbol, tokenSymbolFallback } from "./tokenIdentity";
 
 export type TransactionErrorKind =
   | "disconnected"
@@ -51,8 +51,8 @@ export function safeLiveTokenSymbol(value: unknown): string | undefined {
   return normalizeLiveTokenSymbol(value)?.full;
 }
 
-export function symbolFallback(token: Address | string, genericToken: string): string {
-  return tokenSymbolFallback(token as Address, genericToken);
+export function symbolFallback(token: Address | string): string {
+  return tokenSymbolFallback(token as Address);
 }
 
 export function transactionProgressIndex(phase: string, hasHash: boolean): 0 | 1 | 2 {
@@ -60,18 +60,15 @@ export function transactionProgressIndex(phase: string, hasHash: boolean): 0 | 1
   return hasHash ? 1 : 0;
 }
 
-export function isGenericStoredSymbol(value: unknown): boolean {
-  return typeof value !== "string" || value.trim() === "" || value.trim().toUpperCase() === "TOKEN";
-}
+export const isGenericStoredSymbol = isGenericTokenSymbol;
 
 export function resolveStoredAssetSymbol(
   storedSymbol: unknown,
   liveSymbol: unknown,
   token: Address | string,
-  genericToken: string,
 ): string {
   const stored = normalizeLiveTokenSymbol(storedSymbol);
   if (!isGenericStoredSymbol(storedSymbol) && stored) return stored.full;
   const live = safeLiveTokenSymbol(liveSymbol);
-  return !isGenericStoredSymbol(live) ? live! : symbolFallback(token, genericToken);
+  return !isGenericStoredSymbol(live) ? live! : symbolFallback(token);
 }

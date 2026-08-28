@@ -25,7 +25,7 @@ export function normalizeTokenDecimals(value: unknown, fallback = 18): number {
     : fallback;
 }
 
-export function normalizeTokenSymbol(value: unknown, fallback = "TOKEN"): string {
+export function normalizeTokenSymbol(value: unknown, fallback = "ERC-20"): string {
   return typeof value === "string" && /^[A-Za-z0-9 ._-]{1,16}$/.test(value)
     ? value
     : fallback;

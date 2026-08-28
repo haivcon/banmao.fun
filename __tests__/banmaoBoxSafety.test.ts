@@ -43,8 +43,8 @@ describe("BanmaoBox frontend safety helpers", () => {
     expect(normalizeTokenDecimals(70)).toBe(18);
     expect(normalizeTokenDecimals(1.5)).toBe(18);
     expect(normalizeTokenSymbol("USDT")).toBe("USDT");
-    expect(normalizeTokenSymbol("<img onerror=alert(1)>")).toBe("TOKEN");
-    expect(normalizeTokenSymbol(null)).toBe("TOKEN");
+    expect(normalizeTokenSymbol("<img onerror=alert(1)>")).toBe("ERC-20");
+    expect(normalizeTokenSymbol(null)).toBe("ERC-20");
   });
 
   test("accepts only an exact non-zero token and box storage pair", () => {

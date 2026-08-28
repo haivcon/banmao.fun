@@ -198,7 +198,7 @@ async function hydrateCollection(client: ExplorerClient, chainId: SupportedChain
       liveSymbol: liveMetadata.symbol,
       storedSymbol: symbol,
       decimals: liveMetadata.decimals ?? decimals,
-    }, "TOKEN");
+    });
     return {
       chainId, tokenAddress: creation.token, boxAddress: creation.box, creator: creation.creator,
       factoryAddress: creation.factory.address, factoryDepth: creation.factory.depth, transactionHash: creation.transactionHash,

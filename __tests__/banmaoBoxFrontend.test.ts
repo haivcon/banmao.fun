@@ -141,7 +141,7 @@ describe("BanmaoBox transaction UX contract", () => {
     const keys = [
       "transactionProgressLabel", "dismissNotification", "copyTransactionHash",
       "connectWalletError", "wrongNetworkError", "transactionFailed",
-      "approvalConfirmedCreateIncomplete", "approvalTransactionLabel", "genericToken",
+      "approvalConfirmedCreateIncomplete", "approvalTransactionLabel",
       "collectionVerificationRequest", "collectionVerificationPending",
       "collectionVerificationSuccess", "collectionVerificationFailure",
       "collectionLifecycleLabel", "collectionWalletRequest", "collectionSubmitted",
@@ -943,10 +943,10 @@ describe("BanmaoBox Renderer-consistent token symbols", () => {
   );
 
   test("preserves a non-generic snapshot and resolves NFT #5-equivalent TOKEN", () => {
-    expect(resolveStoredAssetSymbol("BANMAO", "USD₮0", token, "TOKEN")).toBe("BANMAO");
-    expect(resolveStoredAssetSymbol("TOKEN", "USD₮0", token, "TOKEN")).toBe("USD₮0");
-    expect(resolveStoredAssetSymbol("", "USD₮0", token, "TOKEN")).toBe("USD₮0");
-    expect(resolveStoredAssetSymbol("TOKEN", "TOKEN", token, "Token")).toBe("Token 0x779Ded…13736");
+    expect(resolveStoredAssetSymbol("BANMAO", "USD₮0", token)).toBe("BANMAO");
+    expect(resolveStoredAssetSymbol("TOKEN", "USD₮0", token)).toBe("USD₮0");
+    expect(resolveStoredAssetSymbol("", "USD₮0", token)).toBe("USD₮0");
+    expect(resolveStoredAssetSymbol("TOKEN", "TOKEN", token)).toBe("ERC-20 0x779Ded…13736");
   });
 
   test("rejects controls and bidi while preserving long safe metadata for compact display", () => {
@@ -954,8 +954,8 @@ describe("BanmaoBox Renderer-consistent token symbols", () => {
     expect(safeLiveTokenSymbol("BAD\u202eTXT")).toBeUndefined();
     expect(safeLiveTokenSymbol("BAD\ud800")).toBeUndefined();
     expect(safeLiveTokenSymbol("X".repeat(65))).toBe("X".repeat(65));
-    expect(resolveStoredAssetSymbol("TOKEN", undefined, token, "Token")).toBe(symbolFallback(token, "Token"));
-    expect(resolveStoredAssetSymbol("TOKEN", "BAD\u0001", token, "代币")).toBe("代币 0x779Ded…13736");
+    expect(resolveStoredAssetSymbol("TOKEN", undefined, token)).toBe(symbolFallback(token));
+    expect(resolveStoredAssetSymbol("TOKEN", "BAD\u0001", token)).toBe("ERC-20 0x779Ded…13736");
   });
 
   test("source uses one resolver for stored Box assets", () => {

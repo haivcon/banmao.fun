@@ -113,7 +113,6 @@ export function useBox(
   selectedChainId: BoxChainId,
   selectedBoxAddress?: Address,
   selectedTokenAddress?: Address,
-  genericToken = "TOKEN",
   suspended = false,
 ) {
   const { address, isConnected } = useAccount();
@@ -212,7 +211,7 @@ export function useBox(
     liveSymbol: liveTokenSymbolQuery.data,
     storedSymbol: tokenSymbolQuery.data,
     decimals: liveTokenDecimalsQuery.data ?? tokenDecimalsQuery.data,
-  }, genericToken);
+  });
   const tokenDecimals = tokenIdentity.decimals;
   const tokenSymbol = tokenIdentity.symbol;
   const maxLockDuration =
@@ -494,11 +493,11 @@ export function useBox(
           ? normalizeTokenDecimals(decimalsResult.value)
           : undefined,
         symbol: symbolResult.status === "fulfilled"
-          ? resolveStoredAssetSymbol(undefined, symbolResult.value, assetToken, genericToken)
+          ? resolveStoredAssetSymbol(undefined, symbolResult.value, assetToken)
           : undefined,
       };
     },
-    [genericToken, publicClient],
+    [publicClient],
   );
 
   const readBoxAssets = useCallback(
@@ -662,7 +661,7 @@ export function useBox(
             return {
               ...asset,
               decimals: asset.decimals ?? fallback?.decimals,
-              symbol: resolveStoredAssetSymbol(asset.symbol, fallback?.symbol, asset.token, genericToken),
+              symbol: resolveStoredAssetSymbol(asset.symbol, fallback?.symbol, asset.token),
             };
           }),
         };
@@ -689,7 +688,6 @@ export function useBox(
     readAssetDisplayMetadata,
     readBoxAssets,
     tokenAddress,
-    genericToken,
   ]);
 
   useEffect(() => {
@@ -1280,7 +1278,7 @@ export function useBox(
           return {
             ...asset,
             decimals: asset.decimals ?? fallback.decimals,
-            symbol: resolveStoredAssetSymbol(asset.symbol, fallback.symbol, asset.token, genericToken),
+            symbol: resolveStoredAssetSymbol(asset.symbol, fallback.symbol, asset.token),
           };
         }),
       );
@@ -1327,7 +1325,6 @@ export function useBox(
       readAssetDisplayMetadata,
       readBoxAssets,
       tokenAddress,
-      genericToken,
     ],
   );
 

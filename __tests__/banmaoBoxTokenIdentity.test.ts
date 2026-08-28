@@ -45,7 +45,7 @@ describe("BanmaoBox token identity", () => {
   });
 
   test("builds one custom identity from live then stored metadata with unique fallback", () => {
-    expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical, liveSymbol: "中文", liveName: "Custom" }, "TOKEN")).toMatchObject({
+    expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical, liveSymbol: "中文", liveName: "Custom" })).toMatchObject({
       address: custom,
       collectionAddress: collection,
       symbol: "中文",
@@ -53,10 +53,11 @@ describe("BanmaoBox token identity", () => {
       name: "Custom",
       isCanonicalBanmao: false,
     });
-    expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical, liveSymbol: "\u202e", storedSymbol: "USD₮0" }, "TOKEN").symbol).toBe("USD₮0");
-    expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical, liveSymbol: "TOKEN", storedSymbol: "OLD" }, "TOKEN").symbol).toBe("TOKEN");
-    expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical, storedSymbol: "TOKEN" }, "TOKEN").displaySymbol).toMatch(/^TOKEN 0x876698…89667$/);
-    expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical }, "TOKEN").displaySymbol).toMatch(/^TOKEN 0x876698…89667$/);
+    expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical, liveSymbol: "\u202e", storedSymbol: "USD₮0" }).symbol).toBe("USD₮0");
+    expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical, liveSymbol: "TOKEN", storedSymbol: "OLD" }).symbol).toBe("OLD");
+    expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical, liveName: "TOKEN", liveSymbol: "TOKEN" }).name).toBe("ERC-20 0x876698…89667");
+    expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical, storedSymbol: "TOKEN" }).displaySymbol).toBe("ERC-20 0x876698…89667");
+    expect(buildTokenIdentity({ address: custom, collectionAddress: collection, canonicalAddress: canonical }).displaySymbol).toBe("ERC-20 0x876698…89667");
   });
 
   test("keeps product messaging ERC-20 neutral while parameterizing transaction copy", () => {
