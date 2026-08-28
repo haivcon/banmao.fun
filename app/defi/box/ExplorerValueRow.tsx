@@ -2,6 +2,7 @@
 
 import { Copy, ExternalLink } from "lucide-react";
 import type { Address, Hash } from "viem";
+import { formatEvmAddress } from "./address";
 
 type ExplorerValueRowProps = {
   label: string;
@@ -27,6 +28,7 @@ export function ExplorerValueRow({
   className = "",
 }: ExplorerValueRowProps) {
   const href = explicitHref ?? `${explorerBaseUrl.replace(/\/+$/, "")}/${kind}/${value}`;
+  const displayValue = kind === "address" ? formatEvmAddress(value) : value;
   const copyValue = async () => {
     try {
       await navigator.clipboard.writeText(value);
@@ -44,8 +46,10 @@ export function ExplorerValueRow({
         href={href}
         target="_blank"
         rel="noreferrer"
+        title={value}
+        aria-label={`${label}: ${value}`}
       >
-        {value}
+        <span>{displayValue}</span>
         <ExternalLink aria-hidden="true" />
       </a>
       <button type="button" aria-label={copyLabel} onClick={() => void copyValue()}>

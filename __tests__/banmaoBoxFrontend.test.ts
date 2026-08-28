@@ -25,7 +25,8 @@ import {
   requestBanmaoBoxVerification,
 } from "../app/defi/box/requestVerification";
 import { rendererBytes16, rendererDisplayAmount } from "../app/defi/box/RendererArtworkPreview";
-import { normalizeEvmWalletInput, parseEvmWalletAddress } from "../app/defi/box/address";
+import { formatEvmAddress, normalizeEvmWalletInput, parseEvmWalletAddress } from "../app/defi/box/address";
+import { isBoxReady } from "../app/defi/box/boxStatus";
 import { reconcileOwnedBoxReadIndexes } from "../app/defi/box/boxReadState";
 import {
   clearPendingVerification,
@@ -76,6 +77,12 @@ describe("BanmaoBox recipient address compatibility", () => {
     expect(normalizeEvmWalletInput(`XKO${hexAddress}`)).toBe(`0x${hexAddress}`);
     expect(normalizeEvmWalletInput(`xko${hexAddress}`)).toBe(`0x${hexAddress}`);
     expect(parseEvmWalletAddress(`XKO${hexAddress}`)?.toLowerCase()).toBe(`0x${hexAddress}`);
+  });
+
+  test("shortens only visible EVM addresses", () => {
+    const address = `0x${hexAddress}`;
+    expect(formatEvmAddress(address)).toBe("0x123456…45678");
+    expect(formatEvmAddress("not-an-address")).toBe("not-an-address");
   });
 
   test("normalizes arbitrary XKO payload casing before applying EVM checksum", () => {
@@ -380,7 +387,7 @@ describe("BanmaoBox transaction UX contract", () => {
     }
   });
 
-  test("collection lifecycle uses reusable full explorer rows without unsafe shortening", () => {
+  test("collection lifecycle shortens visible addresses without changing full values", () => {
     const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
     const component = fs.readFileSync(path.join(process.cwd(), "app/defi/box/ExplorerValueRow.tsx"), "utf8");
     const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
@@ -392,14 +399,13 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(component).toContain("target=\"_blank\"");
     expect(component).toContain("rel=\"noreferrer\"");
     expect(component).toContain("navigator.clipboard.writeText(value)");
-    expect(component).toContain("{value}");
-    expect(component).not.toMatch(/slice\(|ellipsis|shortAddress|truncate/i);
+    expect(component).toContain('kind === "address" ? formatEvmAddress(value) : value');
+    expect(component).toContain("title={value}");
+    expect(component).toContain('aria-label={`${label}: ${value}`}');
     expect(lifecycle).toContain("ExplorerValueRow");
     expect(selected).toContain("ExplorerValueRow");
     expect(footer).toContain("ExplorerValueRow");
-    expect(`${lifecycle}\n${selected}\n${footer}`).not.toMatch(/\.slice\(|ellipsis|shortAddress|truncate/i);
-    expect(css).toMatch(/\.box-explorer-value__link[\s\S]*overflow-wrap:\s*anywhere/);
-    expect(css).toMatch(/\.box-explorer-value__link[\s\S]*word-break:\s*break-word/);
+    expect(css).toMatch(/\.box-explorer-value__link\s*\{[^}]*overflow:\s*hidden[^}]*white-space:\s*nowrap/);
     expect(page).toContain('href="https://x.com/banmao_X/status/2090032196602270013?s=20"');
     expect(page).toContain('className="box-x-post-link"');
     expect(page).toContain('rel="noopener noreferrer"');
@@ -632,7 +638,7 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(css).toContain(".box-renderer-preview");
   });
 
-  test("explore inspector shows complete NFT details, full addresses and zoomable artwork", () => {
+  test("explore inspector shows complete NFT details, compact addresses and zoomable artwork", () => {
     const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
     const hook = fs.readFileSync(path.join(process.cwd(), "app/defi/box/useBox.ts"), "utf8");
     const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
@@ -647,11 +653,12 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(inspector).toContain("disabled={!canReleaseInspectedBox}");
     expect(inspector).toContain("tokenExplorerUrlForBase(explorerBaseUrl, asset.token)");
     expect(inspector).toContain("value={inspectedBox.creator}");
-    expect(inspector).toContain("<code>{asset.token}</code>");
-    expect(inspector).not.toContain("inspectedBox.owner.slice");
-    expect(inspector).not.toContain("asset.token.slice(0, 8)");
-    expect(css).toMatch(/\.box-inspector__addresses \.box-explorer-value__link\s*\{[^}]*overflow-wrap:\s*anywhere[^}]*white-space:\s*normal/);
-    expect(css).toMatch(/\.box-inspector-asset__address code\s*\{[^}]*overflow-wrap:\s*anywhere[^}]*white-space:\s*normal/);
+    expect(inspector).toContain("<code>{formatEvmAddress(asset.token)}</code>");
+    expect(inspector).toContain("title={asset.token}");
+    expect(inspector).toContain("inspectedBoxReady ? copy.ready : copy.locked");
+    expect(inspector).toContain("box-inspector-asset--ready");
+    expect(css).toMatch(/\.box-inspector__addresses \.box-explorer-value__link\s*\{[^}]*overflow:\s*hidden[^}]*white-space:\s*nowrap/);
+    expect(css).toMatch(/\.box-inspector-asset__address code\s*\{[^}]*overflow:\s*hidden[^}]*white-space:\s*nowrap/);
     expect(css).toMatch(/\.box-inspector__visual\s*\{[^}]*aspect-ratio:\s*1/);
     expect(css).toMatch(/\.box-inspector__artwork-unavailable\s*\{[^}]*aspect-ratio:\s*1/);
     expect(page).toContain("const requestId = ++inspectRequestRef.current");
@@ -939,6 +946,7 @@ describe("BanmaoBox Renderer-consistent token symbols", () => {
     expect(resolveStoredAssetSymbol("BANMAO", "USD₮0", token, "TOKEN")).toBe("BANMAO");
     expect(resolveStoredAssetSymbol("TOKEN", "USD₮0", token, "TOKEN")).toBe("USD₮0");
     expect(resolveStoredAssetSymbol("", "USD₮0", token, "TOKEN")).toBe("USD₮0");
+    expect(resolveStoredAssetSymbol("TOKEN", "TOKEN", token, "Token")).toBe("Token 0x779Ded…13736");
   });
 
   test("rejects controls and bidi while preserving long safe metadata for compact display", () => {
@@ -958,11 +966,19 @@ describe("BanmaoBox Renderer-consistent token symbols", () => {
     expect(hook).not.toContain("symbol: asset.symbol ?? fallback?.symbol");
     expect(hook).not.toContain("symbol: asset.symbol ?? fallback.symbol");
     expect(hook.match(/resolveStoredAssetSymbol\(asset\.symbol/g)).toHaveLength(2);
+    expect(hook).toContain("resolveStoredAssetSymbol(undefined, symbolResult.value");
+    expect(hook).not.toContain("normalizeTokenSymbol(symbolResult.value)");
   });
 });
 
 
 describe("BanmaoBox portfolio dashboard", () => {
+  test("treats an elapsed unlock timestamp as ready between RPC refreshes", () => {
+    expect(isBoxReady({ canOpen: false, unlockTime: 99n }, 100_000)).toBe(true);
+    expect(isBoxReady({ canOpen: false, unlockTime: 101n }, 100_000)).toBe(false);
+    expect(isBoxReady({ canOpen: true, unlockTime: 101n }, 100_000)).toBe(true);
+  });
+
   test("provides localized portfolio controls for every supported locale", () => {
     const { BOX_DASHBOARD_COPY } = require("../app/defi/box/i18n") as typeof import("../app/defi/box/i18n");
     for (const locale of BOX_LANGUAGES) {

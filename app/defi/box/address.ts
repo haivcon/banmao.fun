@@ -19,6 +19,13 @@ export function parseEvmWalletAddress(value: string): Address | undefined {
   return getAddress(normalized);
 }
 
+/** Shortens an EVM address for display without changing its functional value. */
+export function formatEvmAddress(value: Address | string): string {
+  return /^0x[a-fA-F0-9]{40}$/.test(value)
+    ? `${value.slice(0, 8)}…${value.slice(-5)}`
+    : value;
+}
+
 export function validDeploymentAddress(
   value: string | null | undefined,
 ): Address | undefined {

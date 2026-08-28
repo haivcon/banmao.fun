@@ -73,7 +73,8 @@ import {
   type BoxCopy,
   type BoxLanguage,
 } from "./i18n";
-import { boxNftExplorerUrl, parseEvmWalletAddress } from "./address";
+import { boxNftExplorerUrl, formatEvmAddress, parseEvmWalletAddress } from "./address";
+import { isBoxReady } from "./boxStatus";
 import { isRenderableSvg, svgImageDataUri } from "./safety";
 import {
   classifyBanmaoBoxVerification,
@@ -319,8 +320,7 @@ function BoxCard({
   primaryToken?: Address;
   tokenSymbol: string;
 }) {
-  const ready =
-    entry.canOpen || Number(entry.unlockTime) <= Math.floor(now / 1000);
+  const ready = isBoxReady(entry, now);
 
   return (
     <article className={`box-item ${ready ? "box-item--ready" : ""}`}>
@@ -455,15 +455,15 @@ function BoxCard({
                 copy.genericToken,
               );
               return (
-                <div className="box-asset" key={asset.token}>
+                <div className={`box-asset ${ready ? "box-asset--ready" : ""}`.trim()} key={asset.token}>
                   <div>
                     <strong>
                       <TokenAmount value={asset.amount} decimals={assetDecimals} symbol={assetSymbol} language={language} compact />
                     </strong>
                     <span className="box-asset__metadata">
                       <span>{BOX_DASHBOARD_COPY[language].decimals}: {assetDecimals}</span>
-                      <a className="box-asset__explorer" href={`${explorerBaseUrl.replace(/\/+$/, "")}/token/${asset.token}`} target="_blank" rel="noopener noreferrer" title={BOX_DASHBOARD_COPY[language].viewAsset} aria-label={`${BOX_DASHBOARD_COPY[language].viewAsset}: ${assetSymbol}`}>
-                        <code>{asset.token}</code><ExternalLink aria-hidden="true" />
+                      <a className="box-asset__explorer" href={`${explorerBaseUrl.replace(/\/+$/, "")}/token/${asset.token}`} target="_blank" rel="noopener noreferrer" title={asset.token} aria-label={`${BOX_DASHBOARD_COPY[language].viewAsset}: ${assetSymbol}, ${asset.token}`}>
+                        <code>{formatEvmAddress(asset.token)}</code><ExternalLink aria-hidden="true" />
                       </a>
                       <button className="box-asset__copy" type="button" onClick={() => void onCopyAddress(asset.token)} aria-label={`${copy.copyAddress}: ${asset.token}`} title={copy.copyAddress}>
                         <Copy aria-hidden="true" />
@@ -638,9 +638,10 @@ export default function BanmaoBoxPage() {
     [baseCopy, tokenIdentity.displaySymbol, tokenIdentity.isCanonicalBanmao],
   );
   const dashboardCopy = BOX_DASHBOARD_COPY[language];
+  const inspectedBoxReady = Boolean(inspectedBox && isBoxReady(inspectedBox, now));
   const canReleaseInspectedBox = Boolean(
     address &&
-    inspectedBox?.canOpen &&
+    inspectedBoxReady &&
     inspectedBox.authorized &&
     inspectedBox.authorizedFor?.toLowerCase() === address.toLowerCase() &&
     isConnected &&
@@ -676,10 +677,7 @@ export default function BanmaoBoxPage() {
     isConnected && parsedAmount > 0n && allowance < parsedAmount;
 
   const boxPortfolio = useMemo(() => {
-    const timestamp = Math.floor(now / 1000);
-    const ready = boxes.filter(
-      (entry) => entry.canOpen || Number(entry.unlockTime) <= timestamp,
-    ).length;
+    const ready = boxes.filter((entry) => isBoxReady(entry, now)).length;
     return {
       total: boxes.length,
       ready,
@@ -688,19 +686,18 @@ export default function BanmaoBoxPage() {
     };
   }, [boxes, now]);
   const filteredBoxes = useMemo(() => {
-    const timestamp = Math.floor(now / 1000);
     const query = boxSearch.trim().replace(/^#/, "");
     return boxes
       .filter((entry) => {
-        const ready = entry.canOpen || Number(entry.unlockTime) <= timestamp;
+        const ready = isBoxReady(entry, now);
         const matchesStatus = boxFilter === "all" || (boxFilter === "ready" ? ready : !ready);
         return matchesStatus && (!query || entry.tokenId.toString().includes(query));
       })
       .sort((a, b) => {
         if (boxSort === "newest") return Number(b.createdAt - a.createdAt);
         if (boxSort === "unlock") return Number(a.unlockTime - b.unlockTime);
-        const aReady = a.canOpen || Number(a.unlockTime) <= timestamp;
-        const bReady = b.canOpen || Number(b.unlockTime) <= timestamp;
+        const aReady = isBoxReady(a, now);
+        const bReady = isBoxReady(b, now);
         return Number(bReady) - Number(aReady) || Number(a.unlockTime - b.unlockTime);
       });
   }, [boxFilter, boxSearch, boxSort, boxes, now]);
@@ -1980,7 +1977,7 @@ export default function BanmaoBoxPage() {
           <div className="box-identity-chip" title={activeTokenAddress}>
             <ShieldCheck aria-hidden="true" />
             <span><small>{copy.primaryAsset}</small><bdi aria-label={tokenIdentity.displaySymbol}>{tokenIdentity.displaySymbol}</bdi></span>
-            <code>{activeTokenAddress ?? copy.checking}</code>
+            <code>{activeTokenAddress ? formatEvmAddress(activeTokenAddress) : copy.checking}</code>
           </div>
 
           <div className="box-metrics">
@@ -3110,7 +3107,7 @@ export default function BanmaoBoxPage() {
                   <dl className="box-nft-facts">
                     <div><dt>{BOX_DASHBOARD_COPY[language].tokenId}</dt><dd>#{inspectedBox.tokenId.toString()}</dd></div>
                     <div><dt>{BOX_DASHBOARD_COPY[language].tier}</dt><dd>{getTier(inspectedBox.amount, tokenDecimals)}</dd></div>
-                    <div><dt>{BOX_DASHBOARD_COPY[language].status}</dt><dd className={inspectedBox.canOpen ? "box-ready-text" : ""}>{inspectedBox.canOpen ? copy.ready : copy.locked}</dd></div>
+                    <div><dt>{BOX_DASHBOARD_COPY[language].status}</dt><dd className={inspectedBoxReady ? "box-ready-text" : ""}>{inspectedBoxReady ? copy.ready : copy.locked}</dd></div>
                     <div><dt>{BOX_DASHBOARD_COPY[language].assetCount}</dt><dd>{inspectedBox.assets.length.toLocaleString(language)}</dd></div>
                     <div><dt>{copy.createdAt}</dt><dd>{formatDate(inspectedBox.createdAt, language)}</dd></div>
                     <div><dt>{copy.unlocksAt}</dt><dd>{formatDate(inspectedBox.unlockTime, language)}</dd></div>
@@ -3138,15 +3135,15 @@ export default function BanmaoBoxPage() {
                         copy.genericToken,
                       );
                       return (
-                        <article className="box-inspector-asset" key={`${asset.token}-${index}`}>
+                        <article className={`box-inspector-asset ${inspectedBoxReady ? "box-inspector-asset--ready" : ""}`.trim()} key={`${asset.token}-${index}`}>
                           <div className="box-inspector-asset__amount">
                             <strong>{assetDecimals === undefined ? asset.amount.toString() : formatExactTokenAmount(asset.amount, assetDecimals, language)} {assetSymbol}</strong>
                             {isPrimary ? <span>{copy.primaryAsset}</span> : null}
                           </div>
                           <dl><div><dt>{BOX_DASHBOARD_COPY[language].decimals}</dt><dd>{assetDecimals ?? "—"}</dd></div></dl>
                           <div className="box-inspector-asset__address">
-                            <a href={tokenExplorerUrlForBase(explorerBaseUrl, asset.token)} target="_blank" rel="noopener noreferrer" title={BOX_DASHBOARD_COPY[language].viewAsset}>
-                              <code>{asset.token}</code><ExternalLink aria-hidden="true" />
+                            <a href={tokenExplorerUrlForBase(explorerBaseUrl, asset.token)} target="_blank" rel="noopener noreferrer" title={asset.token} aria-label={`${BOX_DASHBOARD_COPY[language].viewAsset}: ${assetSymbol}, ${asset.token}`}>
+                              <code>{formatEvmAddress(asset.token)}</code><ExternalLink aria-hidden="true" />
                             </a>
                             <button type="button" onClick={() => void copyToClipboard(asset.token, copy.copyAddress)} aria-label={`${copy.copyAddress}: ${asset.token}`} title={copy.copyAddress}><Copy aria-hidden="true" /></button>
                           </div>

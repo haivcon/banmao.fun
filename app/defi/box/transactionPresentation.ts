@@ -72,5 +72,6 @@ export function resolveStoredAssetSymbol(
 ): string {
   const stored = normalizeLiveTokenSymbol(storedSymbol);
   if (!isGenericStoredSymbol(storedSymbol) && stored) return stored.full;
-  return safeLiveTokenSymbol(liveSymbol) ?? symbolFallback(token, genericToken);
+  const live = safeLiveTokenSymbol(liveSymbol);
+  return !isGenericStoredSymbol(live) ? live! : symbolFallback(token, genericToken);
 }

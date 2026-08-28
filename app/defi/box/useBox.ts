@@ -26,7 +26,6 @@ import {
 import {
   isCanonicalBoxCollection,
   normalizeTokenDecimals,
-  normalizeTokenSymbol,
   sameAddress,
 } from "./safety";
 import { resolveStoredAssetSymbol } from "./transactionPresentation";
@@ -495,11 +494,11 @@ export function useBox(
           ? normalizeTokenDecimals(decimalsResult.value)
           : undefined,
         symbol: symbolResult.status === "fulfilled"
-          ? normalizeTokenSymbol(symbolResult.value)
+          ? resolveStoredAssetSymbol(undefined, symbolResult.value, assetToken, genericToken)
           : undefined,
       };
     },
-    [publicClient],
+    [genericToken, publicClient],
   );
 
   const readBoxAssets = useCallback(
