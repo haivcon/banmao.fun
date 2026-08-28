@@ -45,7 +45,8 @@ export type BoxEntry = BoxInfo & {
 
 export type InspectedBox = BoxEntry & {
   owner: `0x${string}`;
-  svg: string;
+  authorized: boolean;
+  authorizedFor?: `0x${string}`;
 };
 
 export const MAX_LOCK_DURATION_SECONDS = 3_153_600_000n;

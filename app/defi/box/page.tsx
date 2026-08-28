@@ -114,7 +114,7 @@ import {
   normalizeTokenAmountInput,
   tokenBalancePercentage,
 } from "./amountFormat";
-import { tokenExplorerUrl } from "./tokenIdentity";
+import { tokenExplorerUrlForBase } from "./tokenIdentity";
 import { RendererArtworkPreview, type RendererPreviewAsset } from "./RendererArtworkPreview";
 import { BanmaoBoxProductMark } from "./BanmaoBoxProductMark";
 import { useRendererAdminAccess } from "./rendererAdminAccess";
@@ -568,8 +568,11 @@ export default function BanmaoBoxPage() {
   const [artworkPreviewOpen, setArtworkPreviewOpen] = useState(false);
   const [metadataRefreshTokenId, setMetadataRefreshTokenId] = useState<bigint | null>(null);
   const previewCloseRef = useRef<HTMLButtonElement | null>(null);
+  const previewDialogRef = useRef<HTMLElement | null>(null);
+  const previewReturnFocusRef = useRef<HTMLElement | null>(null);
   const artworkPreviewTriggerRef = useRef<HTMLButtonElement | null>(null);
   const artworkPreviewCloseRef = useRef<HTMLButtonElement | null>(null);
+  const inspectRequestRef = useRef(0);
   const [inspectId, setInspectId] = useState("");
   const [inspectedBox, setInspectedBox] = useState<InspectedBox | null>(null);
   const [inspectError, setInspectError] = useState<string | null>(null);
@@ -635,6 +638,15 @@ export default function BanmaoBoxPage() {
     [baseCopy, tokenIdentity.displaySymbol, tokenIdentity.isCanonicalBanmao],
   );
   const dashboardCopy = BOX_DASHBOARD_COPY[language];
+  const canReleaseInspectedBox = Boolean(
+    address &&
+    inspectedBox?.canOpen &&
+    inspectedBox.authorized &&
+    inspectedBox.authorizedFor?.toLowerCase() === address.toLowerCase() &&
+    isConnected &&
+    isCorrectChain &&
+    !isBusy,
+  );
   const resultCopy = BOX_TRANSACTION_RESULT_COPY[language];
   const recipientActionCopy = RECIPIENT_ACTION_COPY[language];
   const collectionPickerCopy = COLLECTION_PICKER_COPY[language];
@@ -822,18 +834,56 @@ export default function BanmaoBoxPage() {
     return () => media.removeEventListener("change", update);
   }, []);
 
+  const openEntryPreview = useCallback((entry: BoxEntry) => {
+    previewReturnFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    setPreviewEntry(entry);
+  }, []);
+
   useEffect(() => {
     if (!previewEntry) return;
     const previousOverflow = document.body.style.overflow;
+    const background = Array.from(
+      document.querySelectorAll<HTMLElement>(".box-page > :not(.box-image-preview-backdrop)"),
+    );
+    const previousInert = background.map((element) => element.inert);
     document.body.style.overflow = "hidden";
+    background.forEach((element) => { element.inert = true; });
     window.requestAnimationFrame(() => previewCloseRef.current?.focus());
-    const closeOnEscape = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") setPreviewEntry(null);
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setPreviewEntry(null);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const dialog = previewDialogRef.current;
+      if (!dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
+        'a[href], button:not(:disabled), [tabindex]:not([tabindex="-1"])',
+      )).filter((element) => element.offsetParent !== null);
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
-    document.addEventListener("keydown", closeOnEscape);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", closeOnEscape);
+      background.forEach((element, index) => { element.inert = previousInert[index]; });
+      document.removeEventListener("keydown", handleKeyDown);
+      window.requestAnimationFrame(() => previewReturnFocusRef.current?.focus());
     };
   }, [previewEntry]);
 
@@ -1260,8 +1310,12 @@ export default function BanmaoBoxPage() {
   };
 
   const selectCollection = (token: Address, box: Address) => {
+    inspectRequestRef.current += 1;
     resetTransaction();
     setCreationResult(null);
+    setPreviewEntry(null);
+    setInspectLoading(false);
+    setInspectError(null);
     setActiveTokenAddress(token);
     setActiveBoxAddress(box);
     setCollectionToken(token);
@@ -1283,8 +1337,13 @@ export default function BanmaoBoxPage() {
       isBusy ||
       (nextChainId === XLAYER_TESTNET_CHAIN_ID && !BANMAOBOX_TESTNET_UI_ENABLED)
     ) return;
+    inspectRequestRef.current += 1;
     resetTransaction();
     setCreationResult(null);
+    setInspectedBox(null);
+    setPreviewEntry(null);
+    setInspectLoading(false);
+    setInspectError(null);
     setNetworkError(null);
     setSelectedChainId(nextChainId);
     setActiveTokenAddress(undefined);
@@ -1630,7 +1689,12 @@ export default function BanmaoBoxPage() {
     try {
       const metadata = await readAsset(token);
       rememberAddress("asset", token);
-      setExtraAssets((current) => [...current, { ...metadata, amount: "" }]);
+      setExtraAssets((current) => [...current, {
+        ...metadata,
+        decimals: metadata.decimals ?? 18,
+        symbol: metadata.symbol ?? copy.genericToken,
+        amount: "",
+      }]);
       setNewAssetToken("");
     } catch (error) {
       setFormError(error instanceof Error ? error.message.split("\n")[0] : "Unable to read token");
@@ -1701,15 +1765,20 @@ export default function BanmaoBoxPage() {
       setInspectError(copy.inspectPlaceholder);
       return;
     }
+    const requestId = ++inspectRequestRef.current;
     setInspectLoading(true);
     setInspectError(null);
     setInspectedBox(null);
+    setPreviewEntry(null);
     try {
-      setInspectedBox(await inspectBox(BigInt(inspectId)));
+      const result = await inspectBox(BigInt(inspectId));
+      if (requestId !== inspectRequestRef.current) return;
+      setInspectedBox(result);
     } catch {
+      if (requestId !== inspectRequestRef.current) return;
       setInspectError("Box does not exist or the RPC request failed.");
     } finally {
-      setInspectLoading(false);
+      if (requestId === inspectRequestRef.current) setInspectLoading(false);
     }
   };
 
@@ -2916,7 +2985,7 @@ export default function BanmaoBoxPage() {
                       setTransferEntry(null);
                       setMetadataRefreshTokenId(tokenId);
                     }}
-                    onPreview={setPreviewEntry}
+                    onPreview={openEntryPreview}
                     onCopyAddress={(value) => copyToClipboard(value, copy.tokenAddressLabel)}
                     onAddressCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })}
                     onCopyFailed={() => toast.error(copy.copyFailed)}
@@ -2994,79 +3063,97 @@ export default function BanmaoBoxPage() {
         <div className="box-inspector__result">
           {inspectedBox ? (
             <>
-              <Image
-                className="box-svg"
-                src={svgImageDataUri(inspectedBox.svg)}
-                alt={`On-chain artwork for ${copy.boxNumber} #${inspectedBox.tokenId.toString()}`}
-                width={600}
-                height={600}
-                unoptimized
-              />
-              <div className="box-inspector__facts">
-                <strong>
-                  {copy.boxNumber} #{inspectedBox.tokenId.toString()}
-                </strong>
-                <TokenAmount value={inspectedBox.amount} decimals={tokenDecimals} symbol={tokenSymbol} language={language} compact />
-                <dl>
-                  <div>
-                    <dt>{copy.owner}</dt>
-                    <dd title={inspectedBox.owner}>
-                      {inspectedBox.owner.slice(0, 8)}…
-                      {inspectedBox.owner.slice(-6)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>{copy.createdAt}</dt>
-                    <dd>{formatDate(inspectedBox.createdAt, language)}</dd>
-                  </div>
-                  <div>
-                    <dt>{copy.unlocksAt}</dt>
-                    <dd>{formatDate(inspectedBox.unlockTime, language)}</dd>
-                  </div>
-                </dl>
-                <div className="box-inspector-assets">
-                  {inspectedBox.assets.map((asset, index) => {
-                    const isPrimary = activeTokenAddress?.toLowerCase() === asset.token.toLowerCase();
-                    const assetDecimals = asset.decimals ?? (isPrimary ? tokenDecimals : 18);
-                    const assetSymbol = resolveStoredAssetSymbol(
-                      asset.symbol,
-                      isPrimary ? tokenSymbol : undefined,
-                      asset.token,
-                      copy.genericToken,
-                    );
-                    return <button
-                      type="button"
-                      key={asset.token}
-                      title={
-                        inspectedBox.canOpen
-                          ? `Release asset ${index + 1} separately. Asset indexes reload after every release.`
-                          : asset.token
-                      }
-                      disabled={!inspectedBox.canOpen || isBusy}
-                      onClick={() =>
-                        void handleOpenAsset(inspectedBox.tokenId, index, asset)
-                      }
-                    >
-                      <span>
-                        {formatExactTokenAmount(asset.amount, assetDecimals, language)}{" "}
-                        {assetSymbol}
-                        {isPrimary ? ` · ${copy.primaryAsset}` : ""}{" "}
-                        · {asset.token.slice(0, 8)}…{asset.token.slice(-6)}
-                      </span>
-                      {inspectedBox.canOpen ? <PackageOpen aria-label="Release this asset" /> : <LockKeyhole aria-label="Locked" />}
-                    </button>;
-                  })}
-                </div>
-                <a
-                  href={boxNftExplorerUrl(
-                    chainConfig.chain.blockExplorers.default.url,
-                    activeBoxAddress ?? chainConfig.boxAddress,
-                    inspectedBox.tokenId,
-                  )}
-                  target="_blank"
-                  rel="noreferrer"
+              <div className="box-inspector__visual">
+                <button
+                  type="button"
+                  className="box-artwork-trigger box-inspector__artwork-trigger"
+                  onClick={() => openEntryPreview(inspectedBox)}
+                  aria-label={`${BOX_DASHBOARD_COPY[language].previewImage}: ${copy.boxNumber} #${inspectedBox.tokenId.toString()}`}
                 >
-                  Explorer <ExternalLink />
+                  <Image
+                    className="box-svg"
+                    src={svgImageDataUri(inspectedBox.svg)}
+                    alt={`On-chain artwork for ${copy.boxNumber} #${inspectedBox.tokenId.toString()}`}
+                    width={600}
+                    height={600}
+                    unoptimized
+                  />
+                  <span className="box-artwork-trigger__hint" aria-hidden="true"><Maximize2 /></span>
+                </button>
+              </div>
+              <div className="box-inspector__facts">
+                <div className="box-inspector__heading">
+                  <div>
+                    <strong>{copy.boxNumber} #{inspectedBox.tokenId.toString()}</strong>
+                    <em className={`box-tier box-tier--${getTier(inspectedBox.amount, tokenDecimals).toLowerCase()}`}>
+                      {getTier(inspectedBox.amount, tokenDecimals)}
+                    </em>
+                  </div>
+                  <TokenAmount value={inspectedBox.amount} decimals={tokenDecimals} symbol={tokenSymbol} language={language} compact />
+                </div>
+                <section className="box-inspector__details" aria-label={BOX_DASHBOARD_COPY[language].nftDetails}>
+                  <strong>{BOX_DASHBOARD_COPY[language].nftDetails}</strong>
+                  <dl className="box-nft-facts">
+                    <div><dt>{BOX_DASHBOARD_COPY[language].tokenId}</dt><dd>#{inspectedBox.tokenId.toString()}</dd></div>
+                    <div><dt>{BOX_DASHBOARD_COPY[language].tier}</dt><dd>{getTier(inspectedBox.amount, tokenDecimals)}</dd></div>
+                    <div><dt>{BOX_DASHBOARD_COPY[language].status}</dt><dd className={inspectedBox.canOpen ? "box-ready-text" : ""}>{inspectedBox.canOpen ? copy.ready : copy.locked}</dd></div>
+                    <div><dt>{BOX_DASHBOARD_COPY[language].assetCount}</dt><dd>{inspectedBox.assets.length.toLocaleString(language)}</dd></div>
+                    <div><dt>{copy.createdAt}</dt><dd>{formatDate(inspectedBox.createdAt, language)}</dd></div>
+                    <div><dt>{copy.unlocksAt}</dt><dd>{formatDate(inspectedBox.unlockTime, language)}</dd></div>
+                    <div><dt>{BOX_DASHBOARD_COPY[language].lockDuration}</dt><dd>{formatDuration(inspectedBox.unlockTime - inspectedBox.createdAt, language, copy)}</dd></div>
+                  </dl>
+                  <div className="box-inspector__addresses">
+                    <ExplorerValueRow label={copy.owner} value={inspectedBox.owner} kind="address" explorerBaseUrl={explorerBaseUrl} copyLabel={copy.copyAddress} onCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })} onCopyFailed={() => toast.error(copy.copyFailed)} />
+                    <ExplorerValueRow label={BOX_DASHBOARD_COPY[language].creator} value={inspectedBox.creator} kind="address" explorerBaseUrl={explorerBaseUrl} copyLabel={copy.copyAddress} onCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })} onCopyFailed={() => toast.error(copy.copyFailed)} />
+                    <ExplorerValueRow label={BOX_DASHBOARD_COPY[language].collection} value={activeBoxAddress ?? chainConfig.boxAddress} kind="address" explorerBaseUrl={explorerBaseUrl} copyLabel={copy.copyCollectionAddress} onCopied={(label) => toast.success(copy.copied(label), { duration: 1800 })} onCopyFailed={() => toast.error(copy.copyFailed)} />
+                  </div>
+                </section>
+                <section className="box-inspector__assets" aria-label={copy.basketAssets}>
+                  <div className="box-assets__heading">
+                    <strong>{copy.basketAssets}</strong>
+                    <small>{copy.releaseHint}</small>
+                  </div>
+                  <div className="box-inspector-assets">
+                    {inspectedBox.assets.map((asset, index) => {
+                      const isPrimary = activeTokenAddress?.toLowerCase() === asset.token.toLowerCase();
+                      const assetDecimals = asset.decimals ?? (isPrimary ? tokenDecimals : undefined);
+                      const assetSymbol = resolveStoredAssetSymbol(
+                        asset.symbol,
+                        isPrimary ? tokenSymbol : undefined,
+                        asset.token,
+                        copy.genericToken,
+                      );
+                      return (
+                        <article className="box-inspector-asset" key={`${asset.token}-${index}`}>
+                          <div className="box-inspector-asset__amount">
+                            <strong>{assetDecimals === undefined ? asset.amount.toString() : formatExactTokenAmount(asset.amount, assetDecimals, language)} {assetSymbol}</strong>
+                            {isPrimary ? <span>{copy.primaryAsset}</span> : null}
+                          </div>
+                          <dl><div><dt>{BOX_DASHBOARD_COPY[language].decimals}</dt><dd>{assetDecimals ?? "—"}</dd></div></dl>
+                          <div className="box-inspector-asset__address">
+                            <a href={tokenExplorerUrlForBase(explorerBaseUrl, asset.token)} target="_blank" rel="noopener noreferrer" title={BOX_DASHBOARD_COPY[language].viewAsset}>
+                              <code>{asset.token}</code><ExternalLink aria-hidden="true" />
+                            </a>
+                            <button type="button" onClick={() => void copyToClipboard(asset.token, copy.copyAddress)} aria-label={`${copy.copyAddress}: ${asset.token}`} title={copy.copyAddress}><Copy aria-hidden="true" /></button>
+                          </div>
+                          <button
+                            type="button"
+                            className="box-inspector-asset__release"
+                            disabled={!canReleaseInspectedBox}
+                            onClick={() => void handleOpenAsset(inspectedBox.tokenId, index, asset)}
+                            title={canReleaseInspectedBox ? copy.releaseHint : copy.locked}
+                          >
+                            {canReleaseInspectedBox ? <PackageOpen aria-hidden="true" /> : <LockKeyhole aria-hidden="true" />}
+                            {canReleaseInspectedBox ? copy.releaseAsset : copy.locked}
+                          </button>
+                        </article>
+                      );
+                    })}
+                    {inspectedBox.assets.length === 0 ? <small>{copy.noAssets}</small> : null}
+                  </div>
+                </section>
+                <a className="box-inspector__explorer" href={boxNftExplorerUrl(explorerBaseUrl, activeBoxAddress ?? chainConfig.boxAddress, inspectedBox.tokenId)} target="_blank" rel="noreferrer">
+                  {copy.viewExplorer} <ExternalLink />
                 </a>
               </div>
             </>
@@ -3139,7 +3226,7 @@ export default function BanmaoBoxPage() {
               label={copy.tokenAddressLabel}
               value={(activeTokenAddress ?? chainConfig.tokenAddress) as Address}
               kind="address"
-              href={tokenExplorerUrl((activeTokenAddress ?? chainConfig.tokenAddress) as Address)}
+              href={tokenExplorerUrlForBase(explorerBaseUrl, (activeTokenAddress ?? chainConfig.tokenAddress) as Address)}
               explorerBaseUrl={explorerBaseUrl}
               copyLabel={copy.copyTokenAddress}
               onCopied={(copiedLabel) => toast.success(copy.copied(copiedLabel), { duration: 1800 })}
@@ -3217,7 +3304,7 @@ export default function BanmaoBoxPage() {
         <div className="box-dialog-backdrop box-preview-backdrop box-image-preview-backdrop" role="presentation" onMouseDown={(event) => {
           if (event.target === event.currentTarget) setPreviewEntry(null);
         }}>
-          <section className="box-preview-dialog box-image-preview" role="dialog" aria-modal="true" aria-labelledby="box-image-preview-title">
+          <section ref={previewDialogRef} className="box-preview-dialog box-image-preview" role="dialog" aria-modal="true" aria-labelledby="box-image-preview-title" tabIndex={-1}>
             <header>
               <div>
                 <span>{BOX_DASHBOARD_COPY[language].previewImage}</span>

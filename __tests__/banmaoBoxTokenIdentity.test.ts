@@ -4,6 +4,7 @@ import {
   buildTokenIdentity,
   normalizeLiveTokenSymbol,
   tokenExplorerUrl,
+  tokenExplorerUrlForBase,
 } from "../app/defi/box/tokenIdentity";
 
 const canonical = getAddress("0x16d91d1615fc55b76d5f92365bd60c069b46ef78");
@@ -79,8 +80,11 @@ describe("BanmaoBox token identity", () => {
     }
   });
 
-  test("generates the exact canonical OKX token URL", () => {
+  test("generates canonical and network-aware OKX token URLs", () => {
     expect(tokenExplorerUrl(canonical)).toBe("https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78?address=0x16d91d1615fC55b76d5F92365BD60C069b46eF78");
     expect(tokenExplorerUrl(custom)).toContain(`/token/${custom.toLowerCase()}?address=${custom}`);
+    expect(tokenExplorerUrlForBase("https://www.okx.com/web3/explorer/xlayer-test/", custom)).toBe(
+      `https://www.okx.com/web3/explorer/xlayer-test/token/${custom.toLowerCase()}?address=${custom}`,
+    );
   });
 });

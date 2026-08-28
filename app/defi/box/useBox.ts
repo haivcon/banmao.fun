@@ -476,8 +476,8 @@ export function useBox(
   const ownedBoxCount = (ownedBoxCountQuery.data as bigint | undefined) ?? 0n;
 
   const readAssetDisplayMetadata = useCallback(
-    async (assetToken: Address) => {
-      if (!publicClient) return { decimals: 18, symbol: "TOKEN" };
+    async (assetToken: Address): Promise<{ decimals?: number; symbol?: string }> => {
+      if (!publicClient) return {};
       const [decimalsResult, symbolResult] = await Promise.allSettled([
         publicClient.readContract({
           address: assetToken,
@@ -491,12 +491,12 @@ export function useBox(
         } as never) as Promise<string>,
       ]);
       return {
-        decimals: normalizeTokenDecimals(
-          decimalsResult.status === "fulfilled" ? decimalsResult.value : undefined,
-        ),
-        symbol: normalizeTokenSymbol(
-          symbolResult.status === "fulfilled" ? symbolResult.value : undefined,
-        ),
+        decimals: decimalsResult.status === "fulfilled"
+          ? normalizeTokenDecimals(decimalsResult.value)
+          : undefined,
+        symbol: symbolResult.status === "fulfilled"
+          ? normalizeTokenSymbol(symbolResult.value)
+          : undefined,
       };
     },
     [publicClient],
@@ -1241,7 +1241,7 @@ export function useBox(
           deploymentError ?? "BanmaoBox deployment is unavailable",
         );
       }
-      const [details, owner, canOpenValue, svg, assets] = await Promise.all([
+      const [details, owner, canOpenValue, assets, svgResult] = await Promise.all([
         publicClient.readContract({
           address: boxAddress,
           abi: BANMAO_BOX_ABI,
@@ -1260,20 +1260,22 @@ export function useBox(
           functionName: "canOpen",
           args: [tokenId],
         } as never) as Promise<boolean>,
+        readBoxAssets(tokenId),
         publicClient.readContract({
           address: boxAddress,
           abi: BANMAO_BOX_ABI,
           functionName: "renderSVG",
           args: [tokenId],
-        } as never) as Promise<string>,
-        readBoxAssets(tokenId),
+        } as never).then((svg) => typeof svg === "string" ? svg : undefined).catch(() => undefined),
       ]);
       const primaryAsset = assets.find(
         (asset) => asset.token.toLowerCase() === tokenAddress.toLowerCase(),
       );
       const hydratedAssets = await Promise.all(
         assets.map(async (asset) => {
-          const fallback = await readAssetDisplayMetadata(asset.token);
+          const fallback = await readAssetDisplayMetadata(asset.token).catch(
+            (): { decimals?: number; symbol?: string } => ({}),
+          );
           return {
             ...asset,
             decimals: asset.decimals ?? fallback.decimals,
@@ -1281,6 +1283,26 @@ export function useBox(
           };
         }),
       );
+      let authorized = Boolean(address && sameAddress(owner, address));
+      if (address && !authorized) {
+        const [approvedResult, operatorResult] = await Promise.allSettled([
+          publicClient.readContract({
+            address: boxAddress,
+            abi: BANMAO_BOX_ABI,
+            functionName: "getApproved",
+            args: [tokenId],
+          } as never) as Promise<Address>,
+          publicClient.readContract({
+            address: boxAddress,
+            abi: BANMAO_BOX_ABI,
+            functionName: "isApprovedForAll",
+            args: [owner, address],
+          } as never) as Promise<boolean>,
+        ]);
+        authorized =
+          (approvedResult.status === "fulfilled" && sameAddress(approvedResult.value, address)) ||
+          (operatorResult.status === "fulfilled" && operatorResult.value);
+      }
       return {
         tokenId,
         amount: primaryAsset?.amount ?? 0n,
@@ -1289,11 +1311,14 @@ export function useBox(
         unlockTime: details[3],
         canOpen: canOpenValue,
         owner,
-        svg,
+        authorized,
+        ...(address ? { authorizedFor: address } : {}),
+        svg: svgResult,
         assets: hydratedAssets,
       };
     },
     [
+      address,
       boxAddress,
       deploymentError,
       isDeploymentValidated,

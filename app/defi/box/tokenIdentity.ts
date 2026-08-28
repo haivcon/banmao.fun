@@ -106,6 +106,10 @@ export function buildTokenIdentity(
 }
 
 export function tokenExplorerUrl(address: Address): string {
+  return tokenExplorerUrlForBase("https://web3.okx.com/explorer/x-layer/evm", address);
+}
+
+export function tokenExplorerUrlForBase(explorerBaseUrl: string, address: Address): string {
   const checksum = getAddress(address);
-  return `https://web3.okx.com/explorer/x-layer/evm/token/${checksum.toLowerCase()}?address=${checksum}`;
+  return `${explorerBaseUrl.replace(/\/+$/, "")}/token/${checksum.toLowerCase()}?address=${checksum}`;
 }

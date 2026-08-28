@@ -632,6 +632,32 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(css).toContain(".box-renderer-preview");
   });
 
+  test("explore inspector shows complete NFT details, full addresses and zoomable artwork", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "app/defi/box/box.css"), "utf8");
+    const inspector = page.slice(page.indexOf('<section className="box-tab-panel box-inspector"'), page.indexOf('<section className="box-how">'));
+
+    expect(inspector).toContain('className="box-artwork-trigger box-inspector__artwork-trigger"');
+    expect(inspector).toContain("onClick={() => openEntryPreview(inspectedBox)}");
+    expect(inspector).toContain("value={inspectedBox.owner}");
+    expect(inspector).toContain("disabled={!canReleaseInspectedBox}");
+    expect(inspector).toContain("tokenExplorerUrlForBase(explorerBaseUrl, asset.token)");
+    expect(inspector).toContain("value={inspectedBox.creator}");
+    expect(inspector).toContain("<code>{asset.token}</code>");
+    expect(inspector).not.toContain("inspectedBox.owner.slice");
+    expect(inspector).not.toContain("asset.token.slice(0, 8)");
+    expect(css).toMatch(/\.box-inspector__addresses \.box-explorer-value__link\s*\{[^}]*overflow-wrap:\s*anywhere[^}]*white-space:\s*normal/);
+    expect(css).toMatch(/\.box-inspector-asset__address code\s*\{[^}]*overflow-wrap:\s*anywhere[^}]*white-space:\s*normal/);
+    expect(page).toContain("const requestId = ++inspectRequestRef.current");
+    expect(page).toContain("if (requestId !== inspectRequestRef.current) return");
+    expect(page).toContain("setInspectedBox(null);");
+    expect(page).toContain("setPreviewEntry(null);");
+    expect(page).toContain("setInspectLoading(false);");
+    expect(page).toContain("setInspectError(null);");
+    expect(page).toContain("previewReturnFocusRef.current?.focus()");
+    expect(page).toContain("previewDialogRef.current");
+  });
+
   test("pre-mint artwork mirrors the on-chain sealed treasury renderer", () => {
     const preview = fs.readFileSync(path.join(process.cwd(), "app/defi/box/RendererArtworkPreview.tsx"), "utf8");
     expect(preview).toContain('viewBox="0 0 600 600"');
