@@ -888,6 +888,11 @@
 .box-token-warning strong { color: #fde68a; }
 .box-token-warning--direct { grid-template-columns: auto 1fr; align-items: start; border: 1px solid rgba(251, 191, 36, .22); border-radius: 12px; background: rgba(251, 191, 36, .06); padding: 11px 13px; }
 .box-token-warning--direct svg { width: 17px; height: 17px; margin-top: 2px; }
+.box-prerequisite-note { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 10px; border: 1px solid rgba(251,191,36,.25); border-radius: 13px; background: rgba(251,191,36,.065); color: #f8d87a; padding: 12px 13px; font-size: 12px; line-height: 1.55; }
+.box-prerequisite-note svg { width: 18px; height: 18px; margin-top: 1px; }
+.box-prerequisite-note strong { display: block; margin-bottom: 2px; color: #fde68a; }
+.box-prerequisite-note--wallet { border-color: rgba(125,211,252,.24); background: rgba(56,189,248,.06); color: #bae6fd; }
+.box-prerequisite-note--wallet svg, .box-prerequisite-note--wallet strong { color: #7dd3fc; }
 .box-inspector-assets button {
   display: flex;
   width: 100%;

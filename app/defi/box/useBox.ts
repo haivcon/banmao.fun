@@ -32,6 +32,7 @@ import {
 import { resolveStoredAssetSymbol } from "./transactionPresentation";
 import { buildTokenIdentity } from "./tokenIdentity";
 import { validateBanmaoBoxDeployment } from "./deploymentValidation";
+import { reconcileOwnedBoxReadIndexes } from "./boxReadState";
 
 const ERC20_NAME_ABI = parseAbi(["function name() view returns (string)"]);
 
@@ -532,21 +533,27 @@ export function useBox(
     setBoxesLoading(true);
     setBoxesError(null);
     try {
-      const pageSize = 100n;
-      const pageCount = Number((boxCount + pageSize - 1n) / pageSize);
-      const pages = await Promise.all(
-        Array.from(
-          { length: pageCount },
-          (_, page) =>
-            publicClient.readContract({
-              address: boxAddress,
-              abi: BANMAO_BOX_ABI,
-              functionName: "getBoxesByOwner",
-              args: [address, BigInt(page) * pageSize, pageSize],
-            } as never) as Promise<readonly bigint[]>,
-        ),
-      );
-      const tokenIds = pages.flat() as bigint[];
+      const readOwnedTokenIds = async (count: bigint) => {
+        const pageSize = 100n;
+        const pageCount = Number((count + pageSize - 1n) / pageSize);
+        const pages = await Promise.all(
+          Array.from(
+            { length: pageCount },
+            (_, page) =>
+              publicClient.readContract({
+                address: boxAddress,
+                abi: BANMAO_BOX_ABI,
+                functionName: "getBoxesByOwner",
+                args: [address, BigInt(page) * pageSize, pageSize],
+              } as never) as Promise<readonly bigint[]>,
+          ),
+        );
+        // Enumerable owner indexes can shift while pages are in flight. Avoid
+        // rendering or reading the same token twice if adjacent snapshots race.
+        return [...new Set(pages.flat().map((tokenId) => tokenId.toString()))]
+          .map((tokenId) => BigInt(tokenId));
+      };
+      const tokenIds = await readOwnedTokenIds(boxCount);
       const contracts = tokenIds.flatMap((tokenId) => [
         {
           address: boxAddress,
@@ -580,19 +587,41 @@ export function useBox(
           ),
         ),
       ]);
-      const requiredResult = (index: number) => {
-        const value = results[index];
-        if (value?.status !== "success") {
-          throw new Error("Unable to load BanmaoBox details");
-        }
-        return value.result;
-      };
-      const assetsByTokenId = await Promise.all(tokenIds.map(readBoxAssets));
+      const assetResults = await Promise.allSettled(tokenIds.map(readBoxAssets));
+      const requiredReadStates = tokenIds.map((_, index) => ({
+        detailsLoaded: results[index * 2]?.status === "success",
+        canOpenLoaded: results[index * 2 + 1]?.status === "success",
+        assetsLoaded: assetResults[index]?.status === "fulfilled",
+      }));
+      const hasRequiredReadFailure = requiredReadStates.some(
+        (state) => !state.detailsLoaded || !state.canOpenLoaded || !state.assetsLoaded,
+      );
+      // A fully opened box is burned between ownership enumeration and detail
+      // reads. Confirm a suspected stale ID against a fresh ownership snapshot;
+      // otherwise preserve RPC failures as visible loading errors.
+      let refreshedOwnedTokenIds: bigint[] | undefined;
+      if (hasRequiredReadFailure) {
+        const refreshedCount = await publicClient.readContract({
+          address: boxAddress,
+          abi: BANMAO_BOX_ABI,
+          functionName: "balanceOf",
+          args: [address],
+        } as never) as bigint;
+        refreshedOwnedTokenIds = await readOwnedTokenIds(refreshedCount);
+      }
+      const liveIndexes = reconcileOwnedBoxReadIndexes(
+        tokenIds,
+        requiredReadStates,
+        refreshedOwnedTokenIds,
+      );
       const uniqueAssetTokens = [
         ...new Set(
-          assetsByTokenId.flatMap((assets) =>
-            assets.map((asset) => asset.token.toLowerCase()),
-          ),
+          liveIndexes.flatMap((index) => {
+            const assetResult = assetResults[index];
+            return assetResult.status === "fulfilled"
+              ? assetResult.value.map((asset) => asset.token.toLowerCase())
+              : [];
+          }),
         ),
       ];
       const metadataEntries = await Promise.all(
@@ -602,14 +631,17 @@ export function useBox(
         ] as const),
       );
       const metadataByToken = new Map(metadataEntries);
-      const entries = tokenIds.map((tokenId, index): BoxEntry => {
-        const details = requiredResult(index * 2) as readonly [
+      const entries = liveIndexes.map((index): BoxEntry => {
+        const tokenId = tokenIds[index];
+        const details = results[index * 2].result as readonly [
           bigint,
           Address,
           bigint,
           bigint,
         ];
-        const assets = assetsByTokenId[index];
+        const assetsResult = assetResults[index];
+        const assets = assetsResult.status === "fulfilled" ? assetsResult.value : [];
+        const canOpenResult = results[index * 2 + 1];
         const svgResult = svgResults[index];
         const primaryAsset = assets.find(
           (asset) => asset.token.toLowerCase() === tokenAddress.toLowerCase(),
@@ -620,7 +652,7 @@ export function useBox(
           creator: details[1],
           createdAt: details[2],
           unlockTime: details[3],
-          canOpen: Boolean(requiredResult(index * 2 + 1)),
+          canOpen: Boolean(canOpenResult.result),
           svg:
             svgResult?.status === "fulfilled" && typeof svgResult.value === "string"
               ? svgResult.value
@@ -756,9 +788,8 @@ export function useBox(
   ]);
 
   const retryBoxes = useCallback(() => {
-    void loadBoxDetails();
     void refetchAll();
-  }, [loadBoxDetails, refetchAll]);
+  }, [refetchAll]);
 
   const approveToken = useCallback(
     async (amountBaseUnits: bigint) => {

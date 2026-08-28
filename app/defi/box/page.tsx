@@ -73,7 +73,7 @@ import {
   type BoxCopy,
   type BoxLanguage,
 } from "./i18n";
-import { boxNftExplorerUrl } from "./address";
+import { boxNftExplorerUrl, parseEvmWalletAddress } from "./address";
 import { isRenderableSvg, svgImageDataUri } from "./safety";
 import {
   classifyBanmaoBoxVerification,
@@ -929,7 +929,12 @@ export default function BanmaoBoxPage() {
   useEffect(() => {
     const previousAddress = previousWalletAddressRef.current;
     previousWalletAddressRef.current = address;
-    if (address && address !== previousAddress) setRecipient(address);
+    if (address && address !== previousAddress) {
+      setRecipient(address);
+      setBatchRows((current) => current.map((row) =>
+        row.recipient ? row : { ...row, recipient: address },
+      ));
+    }
   }, [address]);
 
   useEffect(() => {
@@ -1462,7 +1467,7 @@ export default function BanmaoBoxPage() {
       }
       for (let index = 0; index < batchRows.length; index += 1) {
         const row = batchRows[index];
-        if (!isAddress(row.recipient)) return `Row ${index + 1}: ${copy.invalidRecipient}`;
+        if (!parseEvmWalletAddress(row.recipient)) return `Row ${index + 1}: ${copy.invalidRecipient}`;
         try {
           if (!/^\d+(\.\d+)?$/.test(row.amount) || parseUnits(row.amount, tokenDecimals) <= 0n) {
             return `Row ${index + 1}: ${copy.invalidAmount}`;
@@ -1481,7 +1486,7 @@ export default function BanmaoBoxPage() {
       } catch {
         return copy.invalidAmount;
       }
-      if (!isAddress(recipient)) return copy.invalidRecipient;
+      if (!parseEvmWalletAddress(recipient)) return copy.invalidRecipient;
     }
 
     if (createMode === "basket") {
@@ -1544,14 +1549,14 @@ export default function BanmaoBoxPage() {
       const created = createMode === "batch"
         ? await createBoxes(
             batchRows.map((row) => ({
-              recipient: getAddress(row.recipient),
+              recipient: parseEvmWalletAddress(row.recipient) as Address,
               amount: row.amount,
             })),
             duration,
           )
         : createMode === "basket" && activeTokenAddress
           ? await createMultiTokenBox(
-              getAddress(recipient),
+              parseEvmWalletAddress(recipient) as Address,
               [
                 { token: activeTokenAddress, amount, decimals: tokenDecimals },
                 ...extraAssets.map(({ token, amount: assetAmount, decimals }) => ({
@@ -1560,7 +1565,7 @@ export default function BanmaoBoxPage() {
               ],
               duration,
             )
-          : await createBox(getAddress(recipient), amount, duration);
+          : await createBox(parseEvmWalletAddress(recipient) as Address, amount, duration);
       setReviewOpen(false);
       setCollectionOpen(false);
       const result = { hash: created.hash, tokenIds: created.tokenIds, artwork: null, artworkLoading: true };
@@ -1678,12 +1683,13 @@ export default function BanmaoBoxPage() {
     event.preventDefault();
     setTransferError(null);
 
-    if (!transferEntry || !isAddress(transferRecipient)) {
+    const normalizedTransferRecipient = parseEvmWalletAddress(transferRecipient);
+    if (!transferEntry || !normalizedTransferRecipient) {
       setTransferError(copy.invalidRecipient);
       return;
     }
 
-    if (address && getAddress(transferRecipient) === getAddress(address)) {
+    if (address && normalizedTransferRecipient === getAddress(address)) {
       setTransferError(copy.sameRecipient);
       return;
     }
@@ -1692,7 +1698,7 @@ export default function BanmaoBoxPage() {
       setActiveAction(`Box #${transferEntry.tokenId.toString()} transfer`);
       await transferBox(
         transferEntry.tokenId,
-        getAddress(transferRecipient) as Address,
+        normalizedTransferRecipient,
       );
     } catch {
       // The hook exposes a normalized transaction error.
@@ -2179,7 +2185,14 @@ export default function BanmaoBoxPage() {
               <button type="button" className={createMode === "single" ? "active" : ""} onClick={() => setCreateMode("single")} disabled={isBusy}>
                 {copy.modeSingle}
               </button>
-              <button type="button" className={createMode === "batch" ? "active" : ""} onClick={() => setCreateMode("batch")} disabled={isBusy}>
+              <button type="button" className={createMode === "batch" ? "active" : ""} onClick={() => {
+                setCreateMode("batch");
+                if (address) {
+                  setBatchRows((current) => current.map((row) =>
+                    row.recipient ? row : { ...row, recipient: address },
+                  ));
+                }
+              }} disabled={isBusy}>
                 {copy.modeBatch}
               </button>
               <button type="button" className={createMode === "basket" ? "active" : ""} onClick={() => setCreateMode("basket")} disabled={isBusy}>
@@ -2339,7 +2352,7 @@ export default function BanmaoBoxPage() {
                       <input
                         value={row.recipient}
                         onChange={(event) => setBatchRows((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, recipient: event.target.value.trim() } : item))}
-                        placeholder="Recipient 0x…"
+                        placeholder={copy.recipientPlaceholder}
                         aria-label={`Recipient ${index + 1}`}
                         spellCheck={false}
                         disabled={isBusy}
@@ -2503,6 +2516,18 @@ export default function BanmaoBoxPage() {
               </p>
             ) : null}
 
+            {!isConnected ? (
+              <div className="box-prerequisite-note box-prerequisite-note--wallet" role="status">
+                <Wallet aria-hidden="true" />
+                <span><strong>{copy.connectToCreate}</strong>{copy.walletConnectionNotice}</span>
+              </div>
+            ) : needsApproval ? (
+              <div className="box-prerequisite-note" role="status">
+                <ShieldAlert aria-hidden="true" />
+                <span><strong>{copy.approvalNeeded}</strong>{copy.approvalRequiredNotice}</span>
+              </div>
+            ) : null}
+
             {isConnected && parsedAmount > 0n ? (
               <div
                 className={`box-approval-status ${
@@ -2579,7 +2604,7 @@ export default function BanmaoBoxPage() {
                 type="button"
                 className="box-submit box-submit--approve"
                 onClick={() => void handleApproveToken()}
-                disabled={!isDeployed || !isDeploymentValidated || isBusy}
+                disabled={!isConnected || !isDeployed || !isDeploymentValidated || isBusy}
                 aria-describedby={createDisabledReason ? "box-create-disabled-reason" : undefined}
               >
                 {isBusy ? <LoaderCircle className="box-spin" /> : <ShieldCheck />}
@@ -2801,7 +2826,7 @@ export default function BanmaoBoxPage() {
           ) : boxesError ? (
             <div className="box-empty box-empty--error">
               <X />
-              <strong>{copy.transactionError}</strong>
+              <strong>{copy.boxLoadError}</strong>
               <small>{boxesError}</small>
               <button type="button" onClick={() => void refetchAll()}>
                 {copy.retry}

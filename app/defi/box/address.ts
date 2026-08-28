@@ -1,6 +1,23 @@
-import type { Address } from "viem";
+import { getAddress, isAddress, type Address } from "viem";
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+const OKX_EVM_PREFIX_PATTERN = /^XKO([a-fA-F0-9]{40})$/i;
+
+/** Converts OKX's XKO-prefixed EVM display format into a standard EVM address. */
+export function normalizeEvmWalletInput(value: string): string {
+  const input = value.trim();
+  const okxMatch = OKX_EVM_PREFIX_PATTERN.exec(input);
+  // XKO is a display format rather than an EIP-55 checksum. Lowercase its
+  // payload so arbitrary display casing can be converted to a checksum below.
+  return okxMatch ? `0x${okxMatch[1].toLowerCase()}` : input;
+}
+
+/** Parses a nonzero recipient in either standard 0x or OKX's XKO form. */
+export function parseEvmWalletAddress(value: string): Address | undefined {
+  const normalized = normalizeEvmWalletInput(value);
+  if (!isAddress(normalized) || normalized.toLowerCase() === ZERO_ADDRESS) return undefined;
+  return getAddress(normalized);
+}
 
 export function validDeploymentAddress(
   value: string | null | undefined,

@@ -81,6 +81,9 @@ export type BoxCopy = {
   recipient: string;
   recipientPlaceholder: string;
   recipientHint: string;
+  walletConnectionNotice: string;
+  approvalRequiredNotice: string;
+  boxLoadError: string;
   duration: string;
   customDays: string;
   customDaysPlaceholder: string;
@@ -314,9 +317,12 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     balance: "Balance",
     useMax: "Max",
     recipient: "Initial recipient",
-    recipientPlaceholder: "0x…",
+    recipientPlaceholder: "0x… or XKO…",
     recipientHint:
-      "Use your wallet to keep it, or enter another wallet to gift it now.",
+      "Enter a standard 0x EVM address or the OKX-compatible XKO form. Use your wallet to keep it, or another wallet to gift it.",
+    walletConnectionNotice: "Connect your wallet to enter recipients, check balances and create a BanmaoBox.",
+    approvalRequiredNotice: "Approval is required before creation. Approve the displayed token amount so the BanmaoBox contract can lock it.",
+    boxLoadError: "Your BanmaoBoxes could not be refreshed.",
     duration: "Lock duration",
     customDays: "Custom",
     customDaysPlaceholder: "Number of days",
@@ -547,8 +553,11 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     balance: "Số dư",
     useMax: "Tối đa",
     recipient: "Người nhận ban đầu",
-    recipientPlaceholder: "0x…",
-    recipientHint: "Dùng ví của bạn để giữ hoặc nhập ví khác để tặng ngay.",
+    recipientPlaceholder: "0x… hoặc XKO…",
+    recipientHint: "Nhập địa chỉ EVM chuẩn dạng 0x hoặc dạng XKO tương thích OKX. Dùng ví của bạn để giữ hoặc nhập ví khác để tặng.",
+    walletConnectionNotice: "Hãy kết nối ví để nhập người nhận, kiểm tra số dư và tạo BanmaoBox.",
+    approvalRequiredNotice: "Cần phê duyệt trước khi tạo. Hãy approve số token hiển thị để hợp đồng BanmaoBox có thể khóa token.",
+    boxLoadError: "Không thể làm mới danh sách BanmaoBox của bạn.",
     duration: "Thời gian khóa",
     customDays: "Tùy chỉnh",
     customDaysPlaceholder: "Số ngày",
@@ -779,8 +788,11 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     balance: "余额",
     useMax: "最大",
     recipient: "初始接收者",
-    recipientPlaceholder: "0x…",
-    recipientHint: "填入自己的钱包保留，或填入其他钱包立即赠送。",
+    recipientPlaceholder: "0x… 或 XKO…",
+    recipientHint: "请输入标准 0x EVM 地址或兼容 OKX 的 XKO 格式。填写自己的钱包可保留，填写其他钱包可赠送。",
+    walletConnectionNotice: "请连接钱包，以填写接收者、检查余额并创建 BanmaoBox。",
+    approvalRequiredNotice: "创建前需要授权。请授权显示的代币数量，以便 BanmaoBox 合约锁定代币。",
+    boxLoadError: "无法刷新您的 BanmaoBox 列表。",
     duration: "锁定时间",
     customDays: "自定义",
     customDaysPlaceholder: "天数",
@@ -1006,9 +1018,12 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     balance: "잔액",
     useMax: "최대",
     recipient: "최초 수령인",
-    recipientPlaceholder: "0x…",
+    recipientPlaceholder: "0x… 또는 XKO…",
     recipientHint:
-      "보관하려면 내 지갑, 바로 선물하려면 다른 지갑을 입력하세요.",
+      "표준 0x EVM 주소 또는 OKX 호환 XKO 형식을 입력하세요. 보관하려면 내 지갑, 선물하려면 다른 지갑을 사용하세요.",
+    walletConnectionNotice: "수령인을 입력하고 잔액을 확인하여 BanmaoBox를 만들려면 지갑을 연결하세요.",
+    approvalRequiredNotice: "생성 전에 승인이 필요합니다. BanmaoBox 컨트랙트가 토큰을 잠글 수 있도록 표시된 수량을 승인하세요.",
+    boxLoadError: "BanmaoBox 목록을 새로고침할 수 없습니다.",
     duration: "잠금 기간",
     customDays: "사용자 지정",
     customDaysPlaceholder: "일수",
@@ -1237,8 +1252,11 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     balance: "Баланс",
     useMax: "Макс.",
     recipient: "Первый получатель",
-    recipientPlaceholder: "0x…",
-    recipientHint: "Укажите свой кошелёк или адрес получателя подарка.",
+    recipientPlaceholder: "0x… или XKO…",
+    recipientHint: "Введите стандартный EVM-адрес 0x или совместимый с OKX формат XKO. Используйте свой кошелёк либо адрес получателя подарка.",
+    walletConnectionNotice: "Подключите кошелёк, чтобы указать получателей, проверить баланс и создать BanmaoBox.",
+    approvalRequiredNotice: "Перед созданием требуется одобрение. Разрешите указанную сумму токенов, чтобы контракт BanmaoBox мог её заблокировать.",
+    boxLoadError: "Не удалось обновить список ваших BanmaoBox.",
     duration: "Срок блокировки",
     customDays: "Свой срок",
     customDaysPlaceholder: "Количество дней",
@@ -1468,9 +1486,12 @@ export const BOX_COPY: Record<BoxLanguage, BoxCopy> = {
     balance: "Saldo",
     useMax: "Maks",
     recipient: "Penerima awal",
-    recipientPlaceholder: "0x…",
+    recipientPlaceholder: "0x… atau XKO…",
     recipientHint:
-      "Gunakan dompet Anda atau masukkan dompet lain untuk langsung memberi hadiah.",
+      "Masukkan alamat EVM standar 0x atau format XKO yang kompatibel dengan OKX. Gunakan dompet Anda untuk menyimpan atau dompet lain untuk hadiah.",
+    walletConnectionNotice: "Hubungkan dompet untuk mengisi penerima, memeriksa saldo, dan membuat BanmaoBox.",
+    approvalRequiredNotice: "Persetujuan diperlukan sebelum membuat box. Setujui jumlah token yang ditampilkan agar kontrak BanmaoBox dapat menguncinya.",
+    boxLoadError: "Daftar BanmaoBox Anda tidak dapat dimuat ulang.",
     duration: "Durasi kunci",
     customDays: "Kustom",
     customDaysPlaceholder: "Jumlah hari",

@@ -25,6 +25,8 @@ import {
   requestBanmaoBoxVerification,
 } from "../app/defi/box/requestVerification";
 import { rendererBytes16, rendererDisplayAmount } from "../app/defi/box/RendererArtworkPreview";
+import { normalizeEvmWalletInput, parseEvmWalletAddress } from "../app/defi/box/address";
+import { reconcileOwnedBoxReadIndexes } from "../app/defi/box/boxReadState";
 import {
   clearPendingVerification,
   loadPendingVerification,
@@ -64,6 +66,56 @@ describe("BanmaoAI floating control geometry", () => {
   test("launcher reads the DeFi bottom-navigation reservation from the body scope", () => {
     const launcher = fs.readFileSync(path.join(process.cwd(), "app/components/ai/AIChatLauncher.tsx"), "utf8");
     expect(launcher).toContain("getComputedStyle(document.body)");
+  });
+});
+
+describe("BanmaoBox recipient address compatibility", () => {
+  const hexAddress = "1234567890abcdef1234567890abcdef12345678";
+
+  test("normalizes case-insensitive OKX XKO addresses for EVM contract calls", () => {
+    expect(normalizeEvmWalletInput(`XKO${hexAddress}`)).toBe(`0x${hexAddress}`);
+    expect(normalizeEvmWalletInput(`xko${hexAddress}`)).toBe(`0x${hexAddress}`);
+    expect(parseEvmWalletAddress(`XKO${hexAddress}`)?.toLowerCase()).toBe(`0x${hexAddress}`);
+  });
+
+  test("normalizes arbitrary XKO payload casing before applying EVM checksum", () => {
+    const mixedCase = "1234567890aBcDeF1234567890AbCdEf12345678";
+    expect(normalizeEvmWalletInput(`XKO${mixedCase}`)).toBe(`0x${mixedCase.toLowerCase()}`);
+    expect(parseEvmWalletAddress(`XKO${mixedCase}`)?.toLowerCase()).toBe(`0x${mixedCase.toLowerCase()}`);
+  });
+
+  test("preserves standard addresses and rejects malformed or zero recipients", () => {
+    expect(normalizeEvmWalletInput(`  0x${hexAddress}  `)).toBe(`0x${hexAddress}`);
+    expect(parseEvmWalletAddress(`XKO${hexAddress.slice(1)}`)).toBeUndefined();
+    expect(parseEvmWalletAddress(`XKO${hexAddress}ff`)).toBeUndefined();
+    expect(parseEvmWalletAddress(`XKO${"0".repeat(40)}`)).toBeUndefined();
+    expect(parseEvmWalletAddress(`0x${"0".repeat(40)}`)).toBeUndefined();
+  });
+});
+
+describe("BanmaoBox owned-box read reconciliation", () => {
+  const complete = { detailsLoaded: true, assetsLoaded: true, canOpenLoaded: true };
+  const failed = { detailsLoaded: false, assetsLoaded: false, canOpenLoaded: false };
+
+  test("drops only a failed token that disappeared from a refreshed owner snapshot", () => {
+    expect(reconcileOwnedBoxReadIndexes([1n, 2n], [complete, failed], [1n])).toEqual([0]);
+  });
+
+  test("preserves RPC and canOpen failures as load errors for still-owned boxes", () => {
+    expect(() => reconcileOwnedBoxReadIndexes([1n], [failed], [1n])).toThrow(
+      "Unable to load BanmaoBox details",
+    );
+    expect(() => reconcileOwnedBoxReadIndexes(
+      [1n],
+      [{ ...complete, canOpenLoaded: false }],
+      [1n],
+    )).toThrow("Unable to load BanmaoBox details");
+  });
+
+  test("cannot classify a failed read as stale without a refreshed owner snapshot", () => {
+    expect(() => reconcileOwnedBoxReadIndexes([1n], [failed])).toThrow(
+      "Unable to load BanmaoBox details",
+    );
   });
 });
 
@@ -778,6 +830,26 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(page).toContain("copy.approvalConfirmedCreateIncomplete");
     expect(page).toContain("transactionHash ?? approvalHash");
     expect(page).toContain("compactHash((transactionHash ?? approvalHash) as Hash)");
+  });
+
+  test("recipient, prerequisite and stale-box handling remain explicit", () => {
+    const hook = fs.readFileSync(path.join(process.cwd(), "app/defi/box/useBox.ts"), "utf8");
+    const page = fs.readFileSync(path.join(process.cwd(), "app/defi/box/page.tsx"), "utf8");
+
+    expect(page).toContain("parseEvmWalletAddress(row.recipient)");
+    expect(page).toContain("row.recipient ? row : { ...row, recipient: address }");
+    expect(page).toContain("copy.walletConnectionNotice");
+    expect(page).toContain("copy.approvalRequiredNotice");
+    expect(page).toContain("copy.boxLoadError");
+    expect(hook).toContain("Promise.allSettled(tokenIds.map(readBoxAssets))");
+    expect(hook).toContain("reconcileOwnedBoxReadIndexes(");
+    expect(hook).toContain("refreshedOwnedTokenIds = await readOwnedTokenIds(refreshedCount)");
+    for (const language of BOX_LANGUAGES) {
+      expect(BOX_COPY[language].recipientPlaceholder).toContain("XKO");
+      expect(BOX_COPY[language].walletConnectionNotice).toBeTruthy();
+      expect(BOX_COPY[language].approvalRequiredNotice).toBeTruthy();
+      expect(BOX_COPY[language].boxLoadError).toBeTruthy();
+    }
   });
 
   test("read refresh failures cannot turn a confirmed write into a failed transaction", () => {
