@@ -32,8 +32,14 @@ function rendererDateTime(timestamp: number): string {
   return `${date.getUTCFullYear()}-${part(date.getUTCMonth() + 1)}-${part(date.getUTCDate())} ${part(date.getUTCHours())}:${part(date.getUTCMinutes())} UTC`;
 }
 
+const RENDERER_SYMBOL_SENTINEL = "TOKEN";
+const RENDERER_SNAPSHOT_SYMBOL = /^[A-Za-z0-9 ._-]{1,16}$/;
+
 export function rendererBytes16(value: string) {
-  return pad(toHex(toBytes(value).slice(0, 16)), { size: 16, dir: "right" });
+  const snapshot = RENDERER_SNAPSHOT_SYMBOL.test(value) && value.trim()
+    ? value
+    : RENDERER_SYMBOL_SENTINEL;
+  return pad(toHex(toBytes(snapshot)), { size: 16, dir: "right" });
 }
 
 export function RendererArtworkPreview({ assets, creator, createdAt, unlockTime, tier, batchPosition, rendererAddress, renderPreview }: {

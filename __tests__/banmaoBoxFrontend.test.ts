@@ -592,9 +592,15 @@ describe("BanmaoBox transaction UX contract", () => {
     expect(css).toContain("prefers-reduced-motion: reduce");
   });
 
-  test("packs renderer symbols by UTF-8 byte length like Solidity bytes16", () => {
+  test("packs safe renderer snapshots and sends unsupported symbols through live resolution", () => {
+    const sentinel = "0x544f4b454e0000000000000000000000";
     expect(rendererBytes16("BANMAO")).toBe("0x42414e4d414f00000000000000000000");
-    expect(rendererBytes16("Việt Nam 中文 한국")).toBe("0x5669e1bb8774204e616d20e4b8ade696");
+    expect(rendererBytes16("1234567890123456")).toBe("0x31323334353637383930313233343536");
+    expect(rendererBytes16("USD₮0")).toBe(sentinel);
+    expect(rendererBytes16("Việt Nam 中文 한국")).toBe(sentinel);
+    expect(rendererBytes16("ERC-20 0x876698…89667")).toBe(sentinel);
+    expect(rendererBytes16("12345678901234567")).toBe(sentinel);
+    expect(rendererBytes16("   ")).toBe(sentinel);
   });
 
   test("creation wizard supports recipient clipboard actions, expanded locks and a collectible preview", () => {
