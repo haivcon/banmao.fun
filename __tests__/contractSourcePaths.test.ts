@@ -23,6 +23,12 @@ const targetContracts = [
   "contracts/BanmaoBox/Factory/BanmaoBoxFactory.sol",
   "contracts/BanmaoBox/Renderer/BanmaoBoxRenderer.sol",
   "contracts/BanmaoBox/Mock/MockBanmao.sol",
+  "contracts/BanmaoKing/IBanmaoKingRenderer.sol",
+  "contracts/BanmaoKing/Lib/BanmaoKingAccessoryLib.sol",
+  "contracts/BanmaoKing/Lib/BanmaoKingBodyLib.sol",
+  "contracts/BanmaoKing/Lib/BanmaoKingExpressionLib.sol",
+  "contracts/BanmaoKing/NFT/BanmaoKingNFT.sol",
+  "contracts/BanmaoKing/Renderer/BanmaoKingRenderer.sol",
   "contracts/Launchpad/Core/BanmaoLaunchpad.sol",
   "contracts/Launchpad/Hook/LaunchpadHook.sol",
   "contracts/Launchpad/Hook/ILaunchpadHook.sol",
@@ -99,7 +105,7 @@ describe("contract source directory and BanmaoBox provenance", () => {
     const standardInput = JSON.stringify(input);
     const crypto = require("node:crypto");
     expect(`0x${crypto.createHash("sha256").update(standardInput).digest("hex")}`).toBe(
-      "0x22aad5bfec33af537e970ff3f2cca2f43d7ebfe63d1c537712d9ecb8728ebc8d",
+      release.compilerInputHash,
     );
 
     const output = JSON.parse(solc.compile(standardInput));
