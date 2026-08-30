@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ConnectButton } from "../../components/wallet/WalletConnection";
 import { BANMAO_KING_DEPLOYMENT, banmaoKingMintReady } from "./deployment";
+import { bodySvg, expressionSvg } from "./artwork";
 import {
   ACCESSORY_TRAITS,
   BACKGROUND_TRAITS,
@@ -17,7 +18,7 @@ import "./banmaoking.css";
 const INITIAL_TRAITS: BanmaoKingTraitSelection = {
   body: 0,
   expression: 0,
-  accessory: 1,
+  accessory: 0,
   background: 3,
 };
 type Language = "vi" | "en";
@@ -104,85 +105,7 @@ function BackgroundLayer({ id }: { id: number }) {
 }
 
 function ExpressionLayer({ id }: { id: number }) {
-  const closed = id === 4 || id === 11;
-  const eyes =
-    id === 2 ? (
-      <>
-        <path
-          d="M209 216q15-14 29 0"
-          fill="none"
-          stroke="#4a2a1b"
-          strokeWidth="7"
-          strokeLinecap="round"
-        />
-        <ellipse cx="289" cy="211" rx="15" ry="18" fill="#322218" />
-      </>
-    ) : id === 3 ? (
-      <text x="256" y="225" textAnchor="middle" fontSize="48">
-        ♥ ♥
-      </text>
-    ) : id === 10 ? (
-      <text x="256" y="224" textAnchor="middle" fontSize="46">
-        ★ ★
-      </text>
-    ) : closed ? (
-      <path
-        d="M204 214q17 14 34 0M273 214q17 14 34 0"
-        fill="none"
-        stroke="#4a2a1b"
-        strokeWidth="7"
-        strokeLinecap="round"
-      />
-    ) : (
-      <>
-        <ellipse cx="222" cy="211" rx="16" ry="19" fill="#322218" />
-        <ellipse cx="290" cy="211" rx="16" ry="19" fill="#322218" />
-        <circle cx="216" cy="204" r="6" fill="white" />
-        <circle cx="284" cy="204" r="6" fill="white" />
-      </>
-    );
-  const mouth =
-    id === 5 ? (
-      <ellipse cx="256" cy="263" rx="12" ry="16" fill="#7e302d" />
-    ) : closed ? (
-      <path
-        d="M241 258q15 8 30 0"
-        fill="none"
-        stroke="#713d24"
-        strokeWidth="4"
-      />
-    ) : id === 6 ? (
-      <path
-        d="M237 269q19-20 38 0"
-        fill="none"
-        stroke="#713d24"
-        strokeWidth="5"
-      />
-    ) : (
-      <path
-        d={
-          id === 1
-            ? "M229 250q27 36 55 0-4 37-28 38-23-2-27-38z"
-            : "M233 251q23 22 47 0-4 27-24 28-20-1-23-28z"
-        }
-        fill={id === 1 ? "#7e302d" : "white"}
-        stroke="#713d24"
-        strokeWidth="3"
-      />
-    );
-  return (
-    <g>
-      {eyes}
-      <path d="M256 226l-10 9 11 8 11-8z" fill="#d95c56" />
-      {mouth}
-      {id === 7 && (
-        <path
-          d="M208 225q-6 13 4 17 10-5 3-18M297 225q6 13-4 17-10-5-3-18"
-          fill="#71d9ff"
-        />
-      )}
-    </g>
-  );
+  return <g dangerouslySetInnerHTML={{ __html: expressionSvg(id) }} />;
 }
 
 function AccessoryLayer({ id }: { id: number }) {
@@ -295,6 +218,10 @@ function AccessoryLayer({ id }: { id: number }) {
   );
 }
 
+function BananaCatBody({ color, shade }: { color: string; shade: string }) {
+  return <g dangerouslySetInnerHTML={{ __html: bodySvg(color, shade) }} />;
+}
+
 function KingArtwork({ traits }: { traits: BanmaoKingTraitSelection }) {
   const body = BODY_TRAITS[traits.body];
   const label = `Banmao King: ${body.name}, ${EXPRESSION_TRAITS[traits.expression]}, ${ACCESSORY_TRAITS[traits.accessory]}, ${BACKGROUND_TRAITS[traits.background].name}`;
@@ -312,59 +239,11 @@ function KingArtwork({ traits }: { traits: BanmaoKingTraitSelection }) {
       </defs>
       <BackgroundLayer id={traits.background} />
       <g filter="url(#king-shadow)">
-        <ellipse
-          cx="256"
-          cy="467"
-          rx="126"
-          ry="20"
-          fill="#15111f"
-          opacity=".18"
-        />
-        <path
-          d="M351 314c54 5 84 43 59 71-18 20-52 7-45-15 4-13 20-13 24-4-2-17-18-25-40-24"
-          fill="none"
-          stroke="#c9782f"
-          strokeWidth="19"
-          strokeLinecap="round"
-        />
-        <path
-          d="M182 389c-5 36-4 62 2 72 8 12 42 12 48-1 5-11 2-42-3-68M284 393c-3 35-1 62 6 69 9 10 42 8 47-5 4-11-4-43-10-68"
-          fill="#d98b3c"
-          stroke="#713d24"
-          strokeWidth="5"
-        />
-        <path
-          d="M171 264c-33 25-55 74-43 90 14 19 39-12 55-50M339 262c35 15 60 54 52 73-10 23-40-4-57-36"
-          fill="#d98b3c"
-          stroke="#713d24"
-          strokeWidth="6"
-          strokeLinecap="round"
-        />
-        <path
-          d="M256 51c80 18 127 107 114 218-9 79-45 162-105 179-62 17-111-16-120-96-10-89 20-138 40-187 14-35 37-57 51-72l-7-38z"
-          fill={body.color}
-          stroke="#5b4620"
-          strokeWidth="7"
-        />
-        <path
-          d="M256 51c49 17 86 91 81 192-4 85-25 157-72 205 60-17 96-100 105-179 13-111-34-200-114-218z"
-          fill={body.shade}
-          opacity=".42"
-        />
-        <path
-          d="M229 55l-6-28q21-14 43-6l7 30z"
-          fill="#75421f"
-          stroke="#4b2b19"
-          strokeWidth="6"
-        />
-        <path
-          d="M196 165c-33 26-33 101 12 128 33 20 99 16 126-18 27-35 11-96-30-114-31-14-82-14-108 4z"
-          fill="#df9046"
-          stroke="#713d24"
-          strokeWidth="7"
-        />
-        <ExpressionLayer id={traits.expression} />
-        <AccessoryLayer id={traits.accessory} />
+        <BananaCatBody color={body.color} shade={body.shade} />
+        <g transform="rotate(5 256 235)">
+          <ExpressionLayer id={traits.expression} />
+          <AccessoryLayer id={traits.accessory} />
+        </g>
       </g>
       <text
         x="486"

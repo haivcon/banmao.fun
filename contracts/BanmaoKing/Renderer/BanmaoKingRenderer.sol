@@ -56,7 +56,8 @@ contract BanmaoKingRenderer is IBanmaoKingRenderer {
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Banmao King #',
             tokenId.toString(), '"><defs><filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="7" stdDeviation="6" flood-opacity=".2"/></filter></defs>',
             _background(traits_.background), '<g filter="url(#s)">', bodyLib.render(traits_.body),
-            expressionLib.render(traits_.expression), accessoryLib.render(traits_.accessory),
+            '<g transform="rotate(5 256 235)">', expressionLib.render(traits_.expression),
+            accessoryLib.render(traits_.accessory), '</g>',
             '</g><text x="486" y="490" text-anchor="end" fill="white" opacity=".55" font-family="sans-serif" font-size="13">BANMAO KING</text></svg>'
         );
     }

@@ -1,3 +1,17 @@
+/* landing.css intentionally locks the 3D landing page to one viewport.
+   Re-enable document scrolling only while this isolated preview is mounted. */
+html:has(.king-page),
+body:has(.king-page) {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100% !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
 .king-page {
   --king-gold: #f2c85b;
   --king-jade: #58d6b2;
@@ -16,7 +30,8 @@
     ),
     #090b0d;
   font-family: var(--font-sans);
-  overflow: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
 }
 .king-shell {
   width: min(1480px, calc(100% - 48px));
@@ -165,6 +180,28 @@
   display: block;
   width: 100%;
   height: 100%;
+}
+.king-face-line,
+.king-brow-line,
+.king-mouth-line,
+.king-whisker-line {
+  fill: none;
+  stroke: #5d3828;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.king-face-line {
+  stroke-width: 7px;
+}
+.king-brow-line {
+  stroke-width: 7px;
+}
+.king-mouth-line {
+  stroke-width: 4px;
+}
+.king-whisker-line {
+  stroke-width: 2.5px;
+  opacity: 0.62;
 }
 .king-art-glint {
   position: absolute;
