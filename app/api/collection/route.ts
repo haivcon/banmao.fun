@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { collectionSearchExpression } from "../../../lib/collection/search-expression";
 
 /**
  * GET /api/collection
@@ -64,11 +65,6 @@ const SUMMARY_TTL_MS = 10 * 60 * 1000;
 
 type ProviderSummary = { total: number; totalOriginalBytes: number; folders: string[] };
 const summaryCache = new Map<string, { expiresAt: number; value: Promise<ProviderSummary> }>();
-
-export function collectionSearchExpression(folder: string): string {
-    const renderableResources = "resource_type:image OR resource_type:video";
-    return folder ? `(${renderableResources}) AND folder:${folder}*` : renderableResources;
-}
 
 async function getProviderSummary({ expression, searchUrl, authHeader }: {
     expression: string;
