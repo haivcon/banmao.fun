@@ -1,10 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
+
+const motionQuery = "(prefers-reduced-motion: reduce)";
+function subscribeMotion(callback: () => void) {
+  const media = window.matchMedia(motionQuery);
+  media.addEventListener("change", callback);
+  return () => media.removeEventListener("change", callback);
+}
+const reducedMotionSnapshot = () => window.matchMedia(motionQuery).matches;
+const serverReducedMotionSnapshot = () => true;
 import { ConnectButton } from "../../components/wallet/WalletConnection";
 import { BANMAO_KING_DEPLOYMENT, banmaoKingMintReady } from "./deployment";
-import { bodySvg, expressionSvg } from "./artwork";
+import {
+  ACTION_NAMES,
+  actionIndex,
+  actionShadowSvg,
+  actionTransform,
+  bodySvg,
+  expressionSvg,
+} from "./artwork";
 import {
   ACCESSORY_TRAITS,
   BACKGROUND_TRAITS,
@@ -13,249 +29,109 @@ import {
   TOTAL_COMBINATIONS,
   type BanmaoKingTraitSelection,
 } from "./traits";
+import { animatedExpressionSvg } from "./motion";
+import { tokenBadgeSvg } from "./badge";
 import "./banmaoking.css";
+import { ACCESSORY_SVGS, BACKGROUND_SVGS, accessoryRearSvg } from "./scene";
 
 const INITIAL_TRAITS: BanmaoKingTraitSelection = {
   body: 0,
   expression: 0,
   accessory: 0,
-  background: 3,
+  background: 0,
 };
 type Language = "vi" | "en";
 type TraitKey = keyof BanmaoKingTraitSelection;
 
 function BackgroundLayer({ id }: { id: number }) {
-  const bg = BACKGROUND_TRAITS[id];
-  if (id === 1)
-    return (
-      <>
-        <rect width="512" height="512" fill={bg.color} />
-        <path
-          d="M0 80h512M0 160h512M0 240h512M0 320h512M0 400h512"
-          stroke={bg.accent}
-          opacity=".18"
-          strokeWidth="20"
-        />
-      </>
-    );
-  if (id === 2)
-    return (
-      <>
-        <rect width="512" height="512" fill={bg.color} />
-        <circle cx="64" cy="64" r="14" fill={bg.accent} opacity=".4" />
-        <circle cx="448" cy="135" r="24" fill={bg.accent} opacity=".3" />
-      </>
-    );
-  if (id === 3)
-    return (
-      <>
-        <rect width="512" height="512" fill={bg.color} />
-        <path d="M0 512 512 0v512z" fill={bg.accent} />
-        <circle cx="75" cy="84" r="8" fill="#fff2a8" />
-      </>
-    );
-  if (id === 4)
-    return (
-      <>
-        <rect width="512" height="512" fill={bg.color} />
-        <path d="M256 0v512M0 256h512" stroke={bg.accent} opacity=".2" />
-        <circle cx="84" cy="80" r="3" fill="white" />
-      </>
-    );
-  if (id === 5)
-    return (
-      <>
-        <rect width="512" height="512" fill={bg.color} />
-        <path
-          d="M0 0l512 512M512 0 0 512"
-          stroke={bg.accent}
-          opacity=".2"
-          strokeWidth="60"
-        />
-      </>
-    );
-  if (id === 6)
-    return (
-      <>
-        <rect width="512" height="512" fill={bg.color} />
-        <circle
-          cx="256"
-          cy="256"
-          r="220"
-          fill="none"
-          stroke={bg.accent}
-          opacity=".24"
-          strokeWidth="35"
-        />
-      </>
-    );
-  if (id === 7)
-    return (
-      <>
-        <rect width="512" height="512" fill={bg.color} />
-        <path d="M0 390q128-90 256 0t256 0v122H0z" fill={bg.accent} />
-      </>
-    );
-  return (
-    <>
-      <rect width="512" height="512" fill={bg.color} />
-      <circle cx="92" cy="91" r="90" fill={bg.accent} opacity=".32" />
-    </>
-  );
+  return <g dangerouslySetInnerHTML={{ __html: BACKGROUND_SVGS[id] }} />;
 }
 
-function ExpressionLayer({ id }: { id: number }) {
-  return <g dangerouslySetInnerHTML={{ __html: expressionSvg(id) }} />;
+function ExpressionLayer({ id, animated }: { id: number; animated: boolean }) {
+  return (
+    <g dangerouslySetInnerHTML={{ __html: animated ? animatedExpressionSvg(id) : expressionSvg(id) }} />
+  );
 }
 
 function AccessoryLayer({ id }: { id: number }) {
-  if (id === 0) return null;
-  if (id === 1)
-    return (
-      <path
-        d="M190 116l12-39 29 25 25-37 25 37 30-25 11 42z"
-        fill="#ffd84e"
-        stroke="#7d4d16"
-        strokeWidth="6"
-      />
-    );
-  if (id === 3)
-    return (
-      <g fill="none" stroke="#5b3825" strokeWidth="6">
-        <circle cx="220" cy="212" r="25" />
-        <circle cx="292" cy="212" r="25" />
-        <path d="M245 210h22" />
-      </g>
-    );
-  if (id === 4)
-    return (
-      <path
-        d="M194 197h53v27h-13v13h-21v-13h-19zM265 197h53v27h-19v13h-21v-13h-13z"
-        fill="#1c2033"
-        stroke="#070912"
-        strokeWidth="5"
-      />
-    );
-  if (id === 5)
-    return (
-      <>
-        <path
-          d="M205 151l48-105 54 107z"
-          fill="#ff6d8d"
-          stroke="#713d24"
-          strokeWidth="6"
-        />
-        <circle cx="253" cy="43" r="13" fill="#57d6d0" />
-      </>
-    );
-  if (id === 6)
-    return (
-      <>
-        <path
-          d="M196 302q60 66 120-1"
-          fill="none"
-          stroke="#f6c944"
-          strokeWidth="12"
-          strokeDasharray="12 5"
-        />
-        <circle cx="256" cy="345" r="18" fill="#f6c944" />
-      </>
-    );
-  if (id === 8)
-    return (
-      <>
-        <path
-          d="M187 218q-3-69 69-72 72 3 69 72"
-          fill="none"
-          stroke="#33384f"
-          strokeWidth="13"
-        />
-        <rect x="174" y="207" width="29" height="58" rx="12" fill="#56c9ff" />
-        <rect x="309" y="207" width="29" height="58" rx="12" fill="#56c9ff" />
-      </>
-    );
-  if (id === 9)
-    return (
-      <path
-        d="M182 150q73-23 148 0l-42-47 7-60-48 42-45-25 18 58z"
-        fill="#694aa8"
-        stroke="#35255d"
-        strokeWidth="7"
-      />
-    );
-  if (id === 10)
-    return (
-      <ellipse
-        cx="256"
-        cy="91"
-        rx="75"
-        ry="18"
-        fill="none"
-        stroke="#ffe56d"
-        strokeWidth="10"
-      />
-    );
-  if (id === 11)
-    return (
-      <path
-        d="M174 283q-31 75-4 126l45-62zM338 283q31 75 4 126l-45-62z"
-        fill="#d84960"
-        stroke="#702535"
-        strokeWidth="6"
-      />
-    );
+  return <g dangerouslySetInnerHTML={{ __html: ACCESSORY_SVGS[id] }} />;
+}
+
+function BananaCatBody({
+  color,
+  shade,
+  tokenId,
+}: {
+  color: string;
+  shade: string;
+  tokenId: number;
+}) {
   return (
-    <path
-      d={
-        id === 2
-          ? "M185 292q-38-24-40 12 4 35 44 8l17 11 15-29-19 4zM327 292q38-24 40 12-4 35-44 8l-17 11-15-29 19 4z"
-          : "M327 338q43-32 57 11-35 26-57-11z"
-      }
-      fill={id === 2 ? "#ed4d4d" : "#5bcf69"}
-      stroke="#713d24"
-      strokeWidth="5"
-    />
+    <g dangerouslySetInnerHTML={{ __html: bodySvg(color, shade, tokenId) }} />
   );
 }
 
-function BananaCatBody({ color, shade }: { color: string; shade: string }) {
-  return <g dangerouslySetInnerHTML={{ __html: bodySvg(color, shade) }} />;
-}
-
-function KingArtwork({ traits }: { traits: BanmaoKingTraitSelection }) {
+function KingArtwork({
+  traits,
+  tokenId,
+  animated,
+}: {
+  traits: BanmaoKingTraitSelection;
+  tokenId: number;
+  animated: boolean;
+}) {
   const body = BODY_TRAITS[traits.body];
-  const label = `Banmao King: ${body.name}, ${EXPRESSION_TRAITS[traits.expression]}, ${ACCESSORY_TRAITS[traits.accessory]}, ${BACKGROUND_TRAITS[traits.background].name}`;
+  const label = `Banmao King: ${body.name}, ${EXPRESSION_TRAITS[traits.expression]}, ${ACCESSORY_TRAITS[traits.accessory]}, ${BACKGROUND_TRAITS[traits.background].name}, ${ACTION_NAMES[actionIndex(tokenId)]}`;
   return (
     <svg
       className="king-art"
+      data-animated={animated}
+      data-expression={traits.expression}
+      data-accessory={traits.accessory}
       viewBox="0 0 512 512"
       role="img"
       aria-label={label}
     >
-      <defs>
-        <filter id="king-shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="7" stdDeviation="6" floodOpacity=".2" />
-        </filter>
-      </defs>
       <BackgroundLayer id={traits.background} />
-      <g filter="url(#king-shadow)">
-        <BananaCatBody color={body.color} shade={body.shade} />
-        <g transform="rotate(5 256 235)">
-          <ExpressionLayer id={traits.expression} />
-          <AccessoryLayer id={traits.accessory} />
+      <g className="king-particles" aria-hidden="true" fill={BACKGROUND_TRAITS[traits.background].accent}>
+          <circle cx="66" cy="180" r="3" />
+          <circle cx="442" cy="260" r="4" />
+          <circle cx="82" cy="376" r="2.5" />
+          <path d="M415 160v12m-6-6h12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          <circle cx="110" cy="100" r="3" />
+      </g>
+      <g className="king-ground-motion" dangerouslySetInnerHTML={{ __html: actionShadowSvg(tokenId) }} />
+      {traits.background !== 0 && (
+        <defs>
+          <filter id="king-shadow" x="-20%" y="-20%" width="140%" height="150%">
+            <feDropShadow
+              dx="0"
+              dy="8"
+              stdDeviation="6"
+              floodColor="#12100d"
+              floodOpacity="0.28"
+            />
+          </filter>
+        </defs>
+      )}
+      <g filter={traits.background === 0 ? undefined : "url(#king-shadow)"}>
+        <g
+          transform={actionTransform(tokenId)}
+          data-action={ACTION_NAMES[actionIndex(tokenId)]}
+        >
+          <g className="king-character-motion">
+            <g dangerouslySetInnerHTML={{ __html: accessoryRearSvg(traits.accessory) }} />
+            <BananaCatBody
+              color={body.color}
+              shade={body.shade}
+              tokenId={tokenId}
+            />
+            <ExpressionLayer id={traits.expression} animated={animated} />
+            <AccessoryLayer id={traits.accessory} />
+          </g>
         </g>
       </g>
-      <text
-        x="486"
-        y="490"
-        textAnchor="end"
-        fill="white"
-        opacity=".55"
-        fontFamily="sans-serif"
-        fontSize="13"
-      >
-        BANMAO KING
-      </text>
+      <g dangerouslySetInnerHTML={{ __html: tokenBadgeSvg(tokenId, traits.background) }} />
     </svg>
   );
 }
@@ -311,6 +187,10 @@ export default function BanmaoKingClient() {
   const [language, setLanguage] = useState<Language>("vi");
   const [traits, setTraits] =
     useState<BanmaoKingTraitSelection>(INITIAL_TRAITS);
+  const [previewTokenId, setPreviewTokenId] = useState(0);
+  const reducedMotion = useSyncExternalStore(subscribeMotion, reducedMotionSnapshot, serverReducedMotionSnapshot);
+  const [motionOverride, setMotionOverride] = useState<boolean | null>(null);
+  const animated = motionOverride ?? !reducedMotion;
   const isVi = language === "vi";
   const fingerprint = useMemo(
     () =>
@@ -322,16 +202,18 @@ export default function BanmaoKingClient() {
   );
   const selectTrait = (key: TraitKey, value: number) =>
     setTraits((current) => ({ ...current, [key]: value }));
-  const randomize = () =>
+  const randomize = () => {
     setTraits({
       body: Math.floor(Math.random() * BODY_TRAITS.length),
       expression: Math.floor(Math.random() * EXPRESSION_TRAITS.length),
       accessory: Math.floor(Math.random() * ACCESSORY_TRAITS.length),
       background: Math.floor(Math.random() * BACKGROUND_TRAITS.length),
     });
+    setPreviewTokenId((current) => current + 1);
+  };
 
   return (
-    <main className="king-page">
+    <main className="king-page" data-motion-override={motionOverride === true}>
       <div className="king-shell">
         <header className="king-header">
           <Link
@@ -385,15 +267,16 @@ export default function BanmaoKingClient() {
             </div>
             <div className="king-preview-card">
               <div className="king-art-frame">
-                <KingArtwork traits={traits} />
-                <span className="king-art-glint" aria-hidden="true" />
+                <KingArtwork traits={traits} tokenId={previewTokenId} animated={animated} />
+                {/* Keep the artwork free of UI-only overlays: the NFT owns its effects. */}
               </div>
               <div className="king-preview-meta">
                 <div>
                   <strong>Banmao King</strong>
                   <br />
                   <span>
-                    {isVi ? "Bản phối thử" : "Composition preview"} · 0x
+                    {isVi ? "Bản phối thử" : "Composition preview"} #
+                    {previewTokenId} · 0x
                     {fingerprint}
                   </span>
                 </div>
@@ -423,7 +306,7 @@ export default function BanmaoKingClient() {
           >
             <div className="king-panel-head">
               <div>
-                <h2>{isVi ? "Xưởng Hoàng Gia" : "Royal Atelier"}</h2>
+                <h2>{isVi ? "Khám phá hình mẫu" : "Explore example looks"}</h2>
                 <p>
                   {isVi
                     ? "Phối thử các lớp trước khi bộ sưu tập triển khai."
@@ -431,6 +314,15 @@ export default function BanmaoKingClient() {
                 </p>
               </div>
               <div className="king-panel-tools">
+                <button
+                  className="king-motion-toggle"
+                  type="button"
+                  aria-pressed={animated}
+                  aria-describedby="king-motion-note"
+                  onClick={() => setMotionOverride(!animated)}
+                >
+                  {isVi ? "Chuyển động" : "Animation"}: {animated ? (isVi ? "Bật" : "On") : (isVi ? "Tắt" : "Off")}
+                </button>
                 <button
                   className="king-random"
                   type="button"
@@ -441,14 +333,33 @@ export default function BanmaoKingClient() {
                 <button
                   className="king-reset"
                   type="button"
-                  onClick={() => setTraits(INITIAL_TRAITS)}
+                  onClick={() => {
+                    setTraits(INITIAL_TRAITS);
+                    setPreviewTokenId(0);
+                  }}
                   aria-label={isVi ? "Đặt lại trait" : "Reset traits"}
                 >
                   ↺
                 </button>
               </div>
             </div>
-            <div className="king-selectors">
+            <p id="king-motion-note" className="king-motion-note">
+              {reducedMotion && motionOverride === null
+                ? (isVi
+                  ? "Đang tắt theo chế độ Giảm chuyển động của thiết bị. Bấm Chuyển động để bật xem thử; Ngẫu nhiên chỉ đổi trait và pose."
+                  : "Off because your device prefers reduced motion. Press Animation to preview motion; Randomize only changes traits and pose.")
+                : (isVi
+                  ? "Nút Chuyển động điều khiển bản xem trước; Ngẫu nhiên chỉ đổi trait và pose. SVG on-chain vẫn tôn trọng Giảm chuyển động của trình xem."
+                  : "Animation controls the preview; Randomize only changes traits and pose. On-chain SVG still respects the viewer's reduced-motion preference.")}
+            </p>
+            <p id="king-preview-only-note" className="king-motion-note">
+              <strong>{isVi ? "CHỈ XEM TRƯỚC — KHÔNG CHỌN ĐỂ MINT" : "PREVIEW ONLY — NOT A MINT SELECTION"}</strong>
+              <br />
+              {isVi
+                ? "Các nút chọn và Ngẫu nhiên chỉ giúp khám phá hình dáng NFT có thể có; không đặt giữ hay quyết định NFT nhận được. Contract tự cấp một tổ hợp chưa từng mint trong bộ sưu tập. Seed công khai nên kết quả có thể tính trước, không phải ngẫu nhiên chống thao túng."
+                : "Selectors and Randomize only explore possible NFT appearances; they do not reserve or determine your minted NFT. The contract assigns a combination never previously minted in this collection. The public seed makes results predictable, not manipulation-resistant randomness."}
+            </p>
+            <div className="king-selectors" aria-describedby="king-preview-only-note">
               <TraitSelector
                 label={isVi ? "Thân" : "Body"}
                 traitKey="body"

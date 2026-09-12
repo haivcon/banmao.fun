@@ -41,6 +41,10 @@ contract BanmaoKingNFT is ERC721, ERC2981, IERC4906, ReentrancyGuard {
     uint256 public immutable maxSupply;
     bytes32 public immutable collectionSeed;
 
+    // Each four-layer combination can be issued only once in this collection.
+    uint256 public constant TOTAL_COMBINATIONS = 8 * 12 * 12 * 8;
+    // Sparse Fisher-Yates pool; zero means the slot still contains its own index.
+    mapping(uint256 slot => uint256 valuePlusOne) private _traitPool;
     uint256 public totalSupply;
     mapping(address paymentToken => uint256 price) public mintPrice;
     mapping(address paymentToken => bool accepted) public isPaymentToken;
@@ -58,7 +62,7 @@ contract BanmaoKingNFT is ERC721, ERC2981, IERC4906, ReentrancyGuard {
         bytes32 collectionSeed_
     ) ERC721("Banmao King", "BMKING") {
         if (treasury_ == address(0) || royaltyReceiver_ == address(0)) revert ZeroAddress();
-        if (maxSupply_ == 0) revert InvalidSupply();
+        if (maxSupply_ == 0 || maxSupply_ > TOTAL_COMBINATIONS) revert InvalidSupply();
         if (!renderer_.supportsInterface(type(IBanmaoKingRenderer).interfaceId)) revert InvalidRenderer(renderer_);
         if (nativePrice_ == 0 || paymentTokens_.length != paymentPrices_.length) {
             revert InvalidPaymentConfiguration();
@@ -131,12 +135,27 @@ contract BanmaoKingNFT is ERC721, ERC2981, IERC4906, ReentrancyGuard {
         return interfaceId == 0x49064906 || super.supportsInterface(interfaceId);
     }
 
-    function _deriveTraits(uint256 tokenId) private view returns (uint32) {
-        bytes32 digest = keccak256(abi.encodePacked(collectionSeed, tokenId));
-        return uint32(uint8(digest[0]) % 8)
-            | (uint32(uint8(digest[1]) % 12) << 8)
-            | (uint32(uint8(digest[2]) % 12) << 16)
-            | (uint32(uint8(digest[3]) % 8) << 24);
+    function _deriveTraits(uint256 tokenId) private returns (uint32) {
+        // Draw without replacement in O(1), including the final mint. Public,
+        // deterministic entropy: this prevents duplicates, not trait sniping.
+        uint256 remaining = TOTAL_COMBINATIONS - totalSupply;
+        uint256 slot = uint256(keccak256(abi.encodePacked(collectionSeed, tokenId))) % remaining;
+        uint256 stored = _traitPool[slot];
+        uint256 combination = stored == 0 ? slot : stored - 1;
+        uint256 last = remaining - 1;
+        if (slot != last) {
+            uint256 lastStored = _traitPool[last];
+            _traitPool[slot] = lastStored == 0 ? last + 1 : lastStored;
+        }
+        delete _traitPool[last];
+
+        uint32 packed = uint32(combination % 8);
+        combination /= 8;
+        packed |= uint32(combination % 12) << 8;
+        combination /= 12;
+        packed |= uint32(combination % 12) << 16;
+        combination /= 12;
+        return packed | (uint32(combination) << 24);
     }
 
     function _unpackTraits(uint32 packed) private pure returns (BanmaoKingTraits memory) {

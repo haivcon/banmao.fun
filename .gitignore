@@ -1,3 +1,4 @@
+
 # Dependencies and package-manager state
 /node_modules/
 yarn.lock
@@ -39,6 +40,9 @@ pnpm-lock.yaml
 /contracts/**/cache/
 /contracts/**/broadcast/
 /contracts/**/lib/
+# BanmaoKing/Lib contains first-party Solidity artwork, not vendored dependencies.
+!/contracts/BanmaoKing/Lib/
+!/contracts/BanmaoKing/Lib/*.sol
 
 # Test caches, coverage, reports, and local-only test material
 /.jest-cache/
@@ -92,7 +96,15 @@ ehthumbs.db
 
 # Local-only scripts. Keep the audited BanmaoBox release tooling versioned.
 /scripts/*
+!/scripts/generate-king-anatomy.cjs
+!/scripts/audit-king-motion.cjs
+!/scripts/generate-king-motion.cjs
 !/scripts/banmaobox-runtime.cjs
+!/scripts/banmaoking-release.cjs
+!/scripts/deploy-banmaoking.cjs
+!/scripts/verify-banmaoking.cjs
+!/scripts/banmaoking-tooling.test.cjs
+!/scripts/BANMAOKING-DEPLOYMENT.md
 !/scripts/deploy-banmaobox-testnet.cjs
 !/scripts/generate-banmaobox-release.cjs
 /deployments/*

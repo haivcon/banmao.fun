@@ -11,7 +11,7 @@ struct BanmaoKingTraits {
 }
 
 interface IBanmaoKingBodyLib is IERC165 {
-    function render(uint8 traitId) external pure returns (string memory);
+    function render(uint8 traitId, uint256 tokenId) external pure returns (string memory);
     function traitName(uint8 traitId) external pure returns (string memory);
 }
 
@@ -21,6 +21,7 @@ interface IBanmaoKingExpressionLib is IERC165 {
 }
 
 interface IBanmaoKingAccessoryLib is IERC165 {
+    function renderRear(uint8 traitId) external pure returns (string memory);
     function render(uint8 traitId) external pure returns (string memory);
     function traitName(uint8 traitId) external pure returns (string memory);
 }
@@ -28,5 +29,5 @@ interface IBanmaoKingAccessoryLib is IERC165 {
 interface IBanmaoKingRenderer is IERC165 {
     function tokenURI(uint256 tokenId, BanmaoKingTraits calldata traits) external view returns (string memory);
     function renderSVG(uint256 tokenId, BanmaoKingTraits calldata traits) external view returns (string memory);
-    function renderAttributes(BanmaoKingTraits calldata traits) external view returns (string memory);
+    function renderAttributes(uint256 tokenId, BanmaoKingTraits calldata traits) external view returns (string memory);
 }
