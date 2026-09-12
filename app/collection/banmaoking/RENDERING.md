@@ -65,6 +65,17 @@ Both data contracts must satisfy EIP-170 (24,576 runtime bytes). Renderer initco
 including constructor arguments, must satisfy EIP-3860 (49,152 bytes).
 Never disable these limits in tests to accommodate new artwork.
 
+## Body lighting polish
+
+The face opening uses a self-contained radial gradient and a neutral dark rim
+with a lower reflected highlight. Both rim paths remain behind the cat and ears.
+The wider, low-opacity white shell highlight avoids yellow tint on alternate
+body colors. These details need neither CSS animation nor SVG filters.
+Mirror body edits in `artwork.ts` and `BanmaoKingBodyLib.sol`; update the body
+artifact hash only for intentional artwork revisions. Thumbnail tests render
+mixed traits at both 64 and 128 pixels. Existing immutable deployments do not
+change when these source files are edited.
+
 ## Validation
 
 - Run the four `banmaoKing` frontend/motion/polish/rig Jest suites.

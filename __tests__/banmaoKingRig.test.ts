@@ -57,7 +57,7 @@ describe("Banmao King compact rig", () => {
     const solidity = read("contracts/BanmaoKing/Lib/BanmaoKingBodyLib.sol");
     expect(solidity).toContain('_bananaShell(shade), _faceRim(), _cat()');
     expect(solidity).toContain(body.match(/<g id="face-rim">.*?<\/g>/)![0]);
-    const withoutRim = body.replace(/<path[^>]*stroke="#d8a91c"[^>]*\/>/, "");
+    const withoutRim = body.replace(/<g id="face-rim">.*?<\/g>/, "");
     expect(withoutRim).not.toBe(body);
     const raster = async (content: string) => sharp(Buffer.from(
       `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512">${content}</svg>`,

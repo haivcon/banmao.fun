@@ -65,6 +65,23 @@ describe("Banmao King polished SVG catalogue", () => {
     });
   });
 
+  test("keeps recessed opening and neutral rim lighting static and mirrored", () => {
+    const solidity = read("contracts/BanmaoKing/Lib/BanmaoKingBodyLib.sol");
+    for (const body of BODY_TRAITS) {
+      const svg = bodySvg(body.color, body.shade);
+      const gradient = svg.match(/<radialGradient id="bk-opening".*?<\/radialGradient>/)?.[0];
+      const rim = svg.match(/<g id="face-rim">.*?<\/g>/)?.[0];
+      expect(gradient).toBeTruthy();
+      expect(rim).toBeTruthy();
+      expect(solidity).toContain(gradient);
+      expect(solidity).toContain(rim);
+      expect(svg).toContain('fill="url(#bk-opening)"');
+      expect(rim).toContain('class="king-rim-light"');
+      expect(svg.indexOf('id="face-rim"')).toBeLessThan(svg.indexOf('id="cat"'));
+      expect(rim).not.toMatch(/animate|filter|style=/);
+    }
+  });
+
   test("gives all twelve expressions distinct static artwork", () => {
     const expressions = Array.from({ length: 12 }, (_, id) => expressionSvg(id));
     expect(new Set(expressions).size).toBe(12);
@@ -77,8 +94,10 @@ describe("Banmao King polished SVG catalogue", () => {
     const body = BODY_TRAITS[id % 8];
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">${BACKGROUND_SVGS[id % 8]}${bodySvg(body.color, body.shade, id % 6)}${expressionSvg(id)}${ACCESSORY_SVGS[id]}</svg>`;
     expect(svg.replace('xmlns="http://www.w3.org/2000/svg"', "")).not.toMatch(/<script|foreignObject|https?:\/\/|undefined|NaN/);
-    const { info } = await sharp(Buffer.from(svg)).resize(128, 128).png().toBuffer({ resolveWithObject: true });
-    expect(info.width).toBe(128);
-    expect(info.height).toBe(128);
+    for (const size of [64, 128]) {
+      const { info } = await sharp(Buffer.from(svg)).resize(size, size).png().toBuffer({ resolveWithObject: true });
+      expect(info.width).toBe(size);
+      expect(info.height).toBe(size);
+    }
   });
 });

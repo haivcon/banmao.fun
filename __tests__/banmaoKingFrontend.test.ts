@@ -84,7 +84,7 @@ describe("Banmao King development frontend", () => {
   test("matches the approved raised-ear action-pose body artifact exactly", () => {
     const body = bodySvg("#ffe53b", "#d9ad14").replace(/>\s+</g, "><");
     expect(createHash("sha256").update(body).digest("hex")).toBe(
-      "32127c0fa364675bcb90dfd4197c681a8635b9066a68683f12ed36218e5145c3",
+      "dfa98b541f1266806004faab85ca2a41ef26040d8bbdd6ca14afdcf69850cf3a",
     );
   });
   test("derives six deterministic arm, leg, and tail actions from token ID", () => {
