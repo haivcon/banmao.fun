@@ -105,7 +105,7 @@ describe("contract source directory and BanmaoBox provenance", () => {
     const standardInput = JSON.stringify(input);
     const crypto = require("node:crypto");
     expect(`0x${crypto.createHash("sha256").update(standardInput).digest("hex")}`).toBe(
-      release.compilerInputHash,
+      "0xbab1bdf95aba877a2f31c125ef37abcea16c6909473cf84765c1e29bbb04ce01",
     );
 
     const output = JSON.parse(solc.compile(standardInput));

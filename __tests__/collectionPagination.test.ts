@@ -7,7 +7,7 @@ import {
     shouldLoadCollectionPrefix,
 } from "../app/collection/collectionPagination";
 import { appendCollectionBatch, sortCollectionItems } from "../app/collection/collectionOrdering";
-import { collectionSearchExpression } from "../app/api/collection/route";
+import { collectionSearchExpression } from "../lib/collection/search-expression";
 
 type Item = { publicId: string; src: string; name: string; bytes: number; createdAt?: string };
 type Page = { images: Item[]; total: number; nextCursor: string | null };
