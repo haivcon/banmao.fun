@@ -24,8 +24,10 @@ function validateConfig(config) {
   if (!Array.isArray(config.payments)) throw new Error("payments must be an explicit array");
   const payments = config.payments.map((item) => ({ token: address(item.token), price: price(item.price) }));
   if (new Set(payments.map((item) => item.token)).size !== payments.length) throw new Error("Duplicate payment tokens");
+  const nativePrice = config.nativePrice === "0" ? "0" : price(config.nativePrice);
+  if (nativePrice === "0" && payments.length === 0) throw new Error("At least one payment token is required when native minting is disabled");
   return { chainId: config.chainId, treasury: address(config.treasury), maxSupply: config.maxSupply,
-    nativePrice: price(config.nativePrice), payments, royaltyReceiver: address(config.royaltyReceiver),
+    nativePrice, payments, royaltyReceiver: address(config.royaltyReceiver),
     royaltyBps: config.royaltyBps, collectionSeed: config.collectionSeed };
 }
 function write(file, value) {
@@ -34,15 +36,17 @@ function write(file, value) {
   fs.renameSync(temporary, file);
 }
 async function main() {
+  require("./publish-banmaobox-explorer.cjs").loadEnvironment();
   const args = process.argv.slice(2);
-  if (!args[0] || !args[1]) throw new Error("Usage: node scripts/deploy-banmaoking.cjs CONFIG.json OUTPUT_DIRECTORY [--broadcast]");
-  if (args.slice(2).some((arg) => arg !== "--broadcast")) throw new Error("Unknown option");
+  if (!args[0] || !args[1]) throw new Error("Usage: node scripts/deploy-banmaoking.cjs CONFIG.json OUTPUT_DIRECTORY [--broadcast] [--skip-explorer]");
+  if (args.slice(2).some((arg) => !["--broadcast", "--skip-explorer"].includes(arg))) throw new Error("Unknown option");
   const config = validateConfig(JSON.parse(fs.readFileSync(path.resolve(args[0]), "utf8")));
   const release = compile();
   console.log(JSON.stringify(config, null, 2));
   if (!args.includes("--broadcast")) { console.log("Configuration/compile check only; no RPC or transactions."); return; }
   if (process.env.BANMAOKING_DEPLOY_CONFIRM !== `DEPLOY_BANMAOKING_${config.chainId}`) throw new Error("Missing matching BANMAOKING_DEPLOY_CONFIRM");
   if (!process.env.BANMAOKING_RPC_URL) throw new Error("BANMAOKING_RPC_URL is required");
+  if (!args.includes("--skip-explorer")) require("./publish-banmaoking-explorer.cjs").preflight(config.chainId);
   const provider = new ethers.providers.JsonRpcProvider(process.env.BANMAOKING_RPC_URL);
   if ((await provider.getNetwork()).chainId !== config.chainId) throw new Error("RPC chain mismatch");
   const signer = new ethers.Wallet(process.env.DEPLOYER_PRIVATE_KEY, provider);
@@ -83,7 +87,13 @@ async function main() {
   await deploy("BanmaoKingNFT", [renderer, config.treasury, config.maxSupply, config.nativePrice,
     config.payments.map((item) => item.token), config.payments.map((item) => item.price),
     config.royaltyReceiver, config.royaltyBps, config.collectionSeed]);
-  console.log(`Deployment saved at ${directory}. Run verify-banmaoking.cjs before enabling any frontend.`);
+  console.log(`Deployment saved at ${directory}. Starting runtime and explorer verification.`);
+  try {
+    await require("./verify-banmaoking.cjs").verifyDeployment(directory, { skipExplorer: args.includes("--skip-explorer") });
+  } catch (error) {
+    console.error(`Contracts are already deployed. Do NOT redeploy. Retry: node scripts/verify-banmaoking.cjs "${directory}"${args.includes("--skip-explorer") ? " --skip-explorer" : ""}`);
+    throw error;
+  }
 }
 if (require.main === module) main().catch((error) => { console.error(error.reason || error.message); process.exitCode = 1; });
 module.exports = { validateConfig };

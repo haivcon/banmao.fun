@@ -64,7 +64,7 @@ contract BanmaoKingNFT is ERC721, ERC2981, IERC4906, ReentrancyGuard {
         if (treasury_ == address(0) || royaltyReceiver_ == address(0)) revert ZeroAddress();
         if (maxSupply_ == 0 || maxSupply_ > TOTAL_COMBINATIONS) revert InvalidSupply();
         if (!renderer_.supportsInterface(type(IBanmaoKingRenderer).interfaceId)) revert InvalidRenderer(renderer_);
-        if (nativePrice_ == 0 || paymentTokens_.length != paymentPrices_.length) {
+        if (paymentTokens_.length != paymentPrices_.length || (nativePrice_ == 0 && paymentTokens_.length == 0)) {
             revert InvalidPaymentConfiguration();
         }
 
@@ -72,7 +72,8 @@ contract BanmaoKingNFT is ERC721, ERC2981, IERC4906, ReentrancyGuard {
         treasury = treasury_;
         maxSupply = maxSupply_;
         collectionSeed = collectionSeed_;
-        isPaymentToken[address(0)] = true;
+        // Zero disables native minting; it never enables free minting.
+        isPaymentToken[address(0)] = nativePrice_ > 0;
         mintPrice[address(0)] = nativePrice_;
 
         for (uint256 i; i < paymentTokens_.length; ++i) {
@@ -114,6 +115,14 @@ contract BanmaoKingNFT is ERC721, ERC2981, IERC4906, ReentrancyGuard {
 
         _safeMint(to, tokenId);
         emit KingMinted(msg.sender, to, tokenId, paymentToken, price, packed);
+    }
+
+    /// @notice Emits an ERC-4906 refresh signal for an existing token.
+    /// @dev Permissionless; changes no metadata, ownership or funds.
+    ///      Marketplaces may use the event to retry a cached metadata fetch.
+    function refreshMetadata(uint256 tokenId) external {
+        _requireOwned(tokenId);
+        emit MetadataUpdate(tokenId);
     }
 
     function traits(uint256 tokenId) public view returns (BanmaoKingTraits memory) {

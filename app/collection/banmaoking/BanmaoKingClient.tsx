@@ -11,8 +11,9 @@ function subscribeMotion(callback: () => void) {
 }
 const reducedMotionSnapshot = () => window.matchMedia(motionQuery).matches;
 const serverReducedMotionSnapshot = () => true;
+import KingMint from "./KingMint";
 import { ConnectButton } from "../../components/wallet/WalletConnection";
-import { BANMAO_KING_DEPLOYMENT, banmaoKingMintReady } from "./deployment";
+import { BANMAO_KING_DEPLOYMENT } from "./deployment";
 import {
   ACTION_NAMES,
   actionIndex,
@@ -309,8 +310,8 @@ export default function BanmaoKingClient() {
                 <h2>{isVi ? "Khám phá hình mẫu" : "Explore example looks"}</h2>
                 <p>
                   {isVi
-                    ? "Phối thử các lớp trước khi bộ sưu tập triển khai."
-                    : "Preview the layers before collection deployment."}
+                    ? "Khám phá các lớp của bộ sưu tập đã triển khai."
+                    : "Explore the layers of the deployed collection."}
                 </p>
               </div>
               <div className="king-panel-tools">
@@ -391,44 +392,17 @@ export default function BanmaoKingClient() {
                 onSelect={selectTrait}
               />
             </div>
-            <div className="king-mint-box">
-              <div className="king-mint-title">
-                <span>{isVi ? "Trạng thái đúc" : "Mint status"}</span>
-                <span className="king-preview-badge">
-                  {BANMAO_KING_DEPLOYMENT.status}
-                </span>
-              </div>
-              <p>
-                {isVi
-                  ? "Chưa có manifest triển khai được phê duyệt. Kết nối ví chỉ để xem trạng thái; không có giao dịch nào được tạo."
-                  : "No approved deployment manifest exists. Wallet connection is display-only; no transaction can be created."}
-              </p>
-              <div className="king-wallet-row">
-                <ConnectButton
-                  accountStatus="address"
-                  chainStatus="none"
-                  showBalance={false}
-                  label={isVi ? "Kết nối ví" : "Connect wallet"}
-                />
-                <button
-                  className="king-mint-disabled"
-                  type="button"
-                  disabled={!banmaoKingMintReady()}
-                >
-                  {isVi ? "Mint chưa mở" : "Mint unavailable"}
-                </button>
-              </div>
-            </div>
+            <KingMint isVi={isVi} />
           </aside>
         </div>
         <footer className="king-footer">
           <span>
-            NON-PRODUCTION PREVIEW · CHAIN ID {BANMAO_KING_DEPLOYMENT.chainId}
+            X LAYER MAINNET · CHAIN ID {BANMAO_KING_DEPLOYMENT.chainId}
           </span>
           <span>
             {isVi
-              ? "Không địa chỉ contract · Không giao dịch"
-              : "No contract address · No transactions"}{" "}
+              ? "Mint bằng BANMAO · X Layer"
+              : "Mint with BANMAO · X Layer"}{" "}
             ·{" "}
             <Link href="/collection">
               {isVi ? "Về bộ sưu tập" : "Back to collection"}

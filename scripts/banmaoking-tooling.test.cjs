@@ -8,3 +8,9 @@ for (const [field, values] of Object.entries({ chainId: [1, "196"], maxSupply: [
   test(`rejects invalid ${field}`, () => values.forEach((value) => assert.throws(() => validateConfig({ ...valid, [field]: value }))));
 }
 test("rejects duplicate payment addresses", () => assert.throws(() => validateConfig({ ...valid, payments: [{ token: valid.treasury, price: "1" }, { token: valid.treasury, price: "2" }] })));
+test("accepts ERC20-only minting but not zero ERC20 prices", () => {
+  const config = { ...valid, nativePrice: "0", royaltyBps: 200, payments: [{ token: valid.treasury, price: "6666000000000000000000" }] };
+  assert.deepEqual(validateConfig(config), config);
+  assert.throws(() => validateConfig({ ...config, payments: [{ token: valid.treasury, price: "0" }] }));
+  assert.throws(() => validateConfig({ ...config, nativePrice: "00" }));
+});

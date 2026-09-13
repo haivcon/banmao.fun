@@ -35,7 +35,7 @@ describe("Banmao King development frontend", () => {
     expect(client).toContain("PREVIEW ONLY — NOT A MINT SELECTION");
     expect(client).toContain('aria-describedby="king-preview-only-note"');
     expect(client).toContain("public seed makes results predictable");
-    expect(banmaoKingMintReady()).toBe(false);
+    expect(banmaoKingMintReady()).toBe(true);
   });
   test("paints synchronized wizard rear/body/front layers without duplicate IDs", () => {
     const rear = accessoryRearSvg(9);
@@ -314,14 +314,19 @@ describe("Banmao King development frontend", () => {
     }
   });
 
-  test("fails closed until a reviewed deployment manifest exists", () => {
-    expect(BANMAO_KING_DEPLOYMENT).toEqual({
-      status: "preview",
+  test("shows the confirmed mainnet deployment and enables the separate mint panel", () => {
+    expect(BANMAO_KING_DEPLOYMENT).toMatchObject({
+      status: "verified",
       chainId: 196,
-      contractAddress: null,
+      contractAddress: "0xEcA5897DE2944ADa9b1048ECFBB8391261422957",
+      paymentToken: "0x16d91d1615fC55b76d5F92365BD60C069b46eF78",
+      mintPrice: "6666000000000000000000",
+      nativeMintEnabled: false,
+      royaltyBps: 200,
     });
-    expect(BANMAO_KING_MINT_ENABLED).toBe(false);
-    expect(banmaoKingMintReady()).toBe(false);
+    expect(BANMAO_KING_DEPLOYMENT.explorerUrl).toContain(BANMAO_KING_DEPLOYMENT.contractAddress);
+    expect(BANMAO_KING_MINT_ENABLED).toBe(true);
+    expect(banmaoKingMintReady()).toBe(true);
     const client = read("app/collection/banmaoking/BanmaoKingClient.tsx");
     expect(client).not.toMatch(
       /useWriteContract|writeContract|parseEther|parseUnits/,

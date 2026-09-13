@@ -250,6 +250,29 @@ describe("BanmaoKing immutable on-chain release", () => {
     await expect(uniqueKing.mint(ownerAddress, ethers.constants.AddressZero, { value: 1 })).rejects.toThrow();
   }, 900_000);
 
+  test("ERC20-only minting rejects OKB and other tokens and reports two percent royalties", async () => {
+    const price = ethers.utils.parseUnits("6666", 18);
+    const args = [renderer.address, treasury, 3, 0, [token.address], [price], treasury, 200, ethers.constants.HashZero];
+    const onlyToken = await deploy("BanmaoKingNFT", owner, args);
+    expect(await onlyToken.isPaymentToken(ethers.constants.AddressZero)).toBe(false);
+    for (const value of [0, 1, nativePrice]) {
+      await expect(onlyToken.mint(ownerAddress, ethers.constants.AddressZero, { value })).rejects.toThrow();
+    }
+    await expect(onlyToken.mint(ownerAddress, feeToken.address)).rejects.toThrow();
+    await expect(onlyToken.mint(ownerAddress, token.address)).rejects.toThrow();
+    await token.approve(onlyToken.address, price);
+    await expect(onlyToken.mint(ownerAddress, token.address, { value: 1 })).rejects.toThrow();
+    expect(await onlyToken.totalSupply()).toEqual(ethers.constants.Zero);
+    const before = await token.balanceOf(treasury);
+    await (await onlyToken.mint(ownerAddress, token.address)).wait();
+    expect(await onlyToken.ownerOf(1)).toBe(ownerAddress);
+    expect((await token.balanceOf(treasury)).sub(before)).toEqual(price);
+    const royalty = await onlyToken.royaltyInfo(1, 10000);
+    expect(royalty[0]).toBe(treasury);
+    expect(royalty[1]).toEqual(ethers.BigNumber.from(200));
+    await expect(deploy("BanmaoKingNFT", owner, [renderer.address, treasury, 3, 0, [], [], treasury, 200, ethers.constants.HashZero])).rejects.toThrow();
+  });
+
   test("mints sequentially for exact native payment, forwards value, and enforces supply", async () => {
     const before = await provider.getBalance(treasury);
     await king.mint(ownerAddress, ethers.constants.AddressZero, {
@@ -400,7 +423,14 @@ describe("BanmaoKing immutable on-chain release", () => {
     const css = readFileSync(join(process.cwd(), "app/collection/banmaoking/banmaoking.css"), "utf8");
     const start = css.indexOf(".king-particles {");
     const end = css.indexOf("@media (prefers-reduced-motion: reduce)", start);
-    expect(style).toContain(css.slice(start, end).replace(/\/\*[\s\S]*?\*\//g, "").trim().replace(/\s+/g, " ").replace(/\s*([{}:;,])\s*/g, "$1"));
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    // Match the generator without stripping whitespace BEFORE pseudo-class colons.
+    // In selectors such as `.parent :nth-child(2)`, that space is a descendant combinator.
+    const sharedMotion = css.slice(start, end).replace(/\/\*[\s\S]*?\*\//g, "").trim()
+      .replace(/\s+/g, " ").replace(/\s*([{};,])\s*/g, "$1").replace(/:\s+/g, ":");
+    expect(style).toContain(sharedMotion);
+    expect(style).toContain(".king-particles > :nth-child(2){");
     expect(style).toContain("animation: none !important");
     expect(svg).toContain('<g class="king-character-motion">');
     expect(svg).not.toMatch(/<script|<foreignObject|<image|@import|onload=/i);
@@ -476,6 +506,55 @@ describe("BanmaoKing immutable on-chain release", () => {
     await expect(
       renderer.renderSVG(1, { ...base, background: 8 }),
     ).rejects.toThrow();
+  });
+
+  test("allows anyone to refresh metadata repeatedly without changing token state or funds", async () => {
+    await (await king.mint(ownerAddress, ethers.constants.AddressZero, { value: nativePrice })).wait();
+    const before = {
+      uri: await king.tokenURI(1),
+      traits: await king.traits(1),
+      supply: await king.totalSupply(),
+      renderer: await king.renderer(),
+      treasuryBalance: await provider.getBalance(treasury),
+      contractBalance: await provider.getBalance(king.address),
+    };
+    const unrelated = provider.getSigner(2);
+    expect(await king.getApproved(1)).toBe(ethers.constants.AddressZero);
+    expect(await king.isApprovedForAll(ownerAddress, await unrelated.getAddress())).toBe(false);
+
+    for (const caller of [owner, unrelated, unrelated]) {
+      const receipt = await (await king.connect(caller).refreshMetadata(1)).wait();
+      expect(receipt.logs).toHaveLength(1);
+      const log = receipt.logs[0];
+      expect(log.address).toBe(king.address);
+      expect(log.topics).toEqual([ethers.utils.id("MetadataUpdate(uint256)")]);
+      const event = king.interface.parseLog(log);
+      expect(event.name).toBe("MetadataUpdate");
+      expect(event.args[0]).toEqual(ethers.BigNumber.from(1));
+    }
+
+    expect(await king.tokenURI(1)).toBe(before.uri);
+    expect(await king.traits(1)).toEqual(before.traits);
+    expect(await king.totalSupply()).toEqual(before.supply);
+    expect(await king.renderer()).toBe(before.renderer);
+    expect(await king.ownerOf(1)).toBe(ownerAddress);
+    expect(await king.getApproved(1)).toBe(ethers.constants.AddressZero);
+    expect(await provider.getBalance(treasury)).toEqual(before.treasuryBalance);
+    expect(await provider.getBalance(king.address)).toEqual(before.contractBalance);
+  });
+
+  test("rejects metadata refresh for nonexistent tokens and rejects attached native value", async () => {
+    for (const tokenId of [0, 1, ethers.constants.MaxUint256]) {
+      await expect(king.refreshMetadata(tokenId)).rejects.toThrow();
+    }
+    await (await king.mint(ownerAddress, ethers.constants.AddressZero, { value: nativePrice })).wait();
+    await expect(king.refreshMetadata(2)).rejects.toThrow();
+    await expect(owner.sendTransaction({
+      to: king.address,
+      data: king.interface.encodeFunctionData("refreshMetadata", [1]),
+      value: 1,
+    })).rejects.toThrow();
+    expect(await king.totalSupply()).toEqual(ethers.BigNumber.from(1));
   });
 
   test("supports ERC721, metadata, ERC2981, ERC4906 and fixed royalties", async () => {

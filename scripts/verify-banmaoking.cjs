@@ -4,9 +4,10 @@ const path = require("node:path");
 const solc = require("solc");
 const { ethers } = require("ethers");
 const { assertArtifactRuntime } = require("./banmaobox-runtime.cjs");
-async function main() {
-  if (!process.argv[2] || !process.env.BANMAOKING_RPC_URL) throw new Error("Provide deployment directory and BANMAOKING_RPC_URL (read-only)");
-  const directory = path.resolve(process.argv[2]);
+async function verifyDeployment(directory, { skipExplorer = false } = {}) {
+  require("./publish-banmaobox-explorer.cjs").loadEnvironment();
+  if (!directory || !process.env.BANMAOKING_RPC_URL) throw new Error("Provide deployment directory and BANMAOKING_RPC_URL");
+  directory = path.resolve(directory);
   const release = JSON.parse(fs.readFileSync(path.join(directory, "release.json"), "utf8"));
   const manifest = JSON.parse(fs.readFileSync(path.join(directory, "manifest.json"), "utf8"));
   const hash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(JSON.stringify(release.input)));
@@ -38,20 +39,35 @@ async function main() {
   for (const [method, expected] of Object.entries({ renderer: renderer.address, treasury: config.treasury, maxSupply: config.maxSupply, collectionSeed: config.collectionSeed })) same(await king[method](), expected, method);
   for (const [method, name] of Object.entries({ bodyLib: "BanmaoKingBodyLib", expressionLib: "BanmaoKingExpressionLib", accessoryLib: "BanmaoKingAccessoryLib" })) same(await renderer[method](), contracts[name].address, method);
   for (const item of [{ token: ethers.constants.AddressZero, price: config.nativePrice }, ...config.payments]) {
-    same(await king.isPaymentToken(item.token), true, "accepted payment");
+    same(await king.isPaymentToken(item.token), item.token !== ethers.constants.AddressZero || config.nativePrice !== "0", "accepted payment");
     same(await king.mintPrice(item.token), item.price, "mint price");
   }
   const royalty = await king.royaltyInfo(1, 10000);
   same(royalty[0], config.royaltyReceiver, "royalty receiver");
   same(royalty[1], config.royaltyBps, "royalty bps");
+  const motionAddresses = {};
   for (let index = 0; index < 2; index++) {
     const name = `BanmaoKingMotionPart${index}`;
     const artifact = output.contracts[release.artifacts[name].source][name];
-    assertArtifactRuntime(await provider.getCode(await renderer[`motionPart${index}`]()), artifact, name);
+    motionAddresses[name] = await renderer[`motionPart${index}`]();
+    assertArtifactRuntime(await provider.getCode(motionAddresses[name]), artifact, name);
   }
   const uri = await renderer.tokenURI(1, [0, 0, 0, 0]);
   const metadata = JSON.parse(Buffer.from(uri.split(",")[1], "base64").toString());
   if (metadata.name !== "Banmao King #1" || !metadata.image.startsWith("data:image/svg+xml;base64,")) throw new Error("Metadata smoke check failed");
-  console.log("Read-only verification passed. Explorer publication remains a separate step using release.input and recorded constructor arguments.");
+  console.log("Read-only runtime/configuration verification passed.");
+  if (!skipExplorer) {
+    const publisher = require("./publish-banmaoking-explorer.cjs");
+    publisher.preflight(manifest.chainId);
+    // Publish ABIs from the archived input recompiled above, not mutable working sources.
+    const artifacts = Object.fromEntries(Object.entries(release.artifacts).map(([name, item]) => [name, { source: item.source, ...output.contracts[item.source][name] }]));
+    await publisher.publish({ directory, manifest, release: { ...release, artifacts }, motionAddresses });
+  } else console.log("Explorer publication explicitly skipped; source verification is not claimed.");
 }
+async function main() {
+  const [directory, ...flags] = process.argv.slice(2);
+  if (flags.some((flag) => flag !== "--skip-explorer")) throw new Error("Unknown option");
+  await verifyDeployment(directory, { skipExplorer: flags.includes("--skip-explorer") });
+}
+module.exports = { verifyDeployment };
 if (require.main === module) main().catch((error) => { console.error(error.reason || error.message); process.exitCode = 1; });

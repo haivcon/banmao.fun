@@ -104,6 +104,8 @@ ehthumbs.db
 !/scripts/deploy-banmaoking.cjs
 !/scripts/verify-banmaoking.cjs
 !/scripts/banmaoking-tooling.test.cjs
+!/scripts/publish-banmaoking-explorer.cjs
+!/scripts/banmaoking-explorer.test.cjs
 !/scripts/BANMAOKING-DEPLOYMENT.md
 !/scripts/deploy-banmaobox-testnet.cjs
 !/scripts/generate-banmaobox-release.cjs

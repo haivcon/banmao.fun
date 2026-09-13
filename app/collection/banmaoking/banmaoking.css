@@ -980,3 +980,14 @@ a:focus-visible {
   .king-page[data-motion-override="true"] .king-art[data-animated="true"] #accessory .king-halo-star { animation: kingRoyalGlow 3.6s ease-in-out infinite !important; }
   .king-page[data-motion-override="true"] .king-art[data-animated="true"] #accessory .king-cape-wing { animation: kingCapeFlow 4.6s ease-in-out infinite !important; }
 }
+
+/* Transaction panel: large touch targets and readable contract details. */
+.king-mint-box h2 { font-size: 1.1rem; margin: 0; }
+.king-mint-box button { min-height: 48px; padding: 12px 16px; border-radius: 12px; border: 1px solid #d7b765; background: #ebca7b; color: #14120c; font: inherit; font-weight: 700; cursor: pointer; }
+.king-mint-box button:disabled { opacity: .5; cursor: not-allowed; }
+.king-mint-box button:focus-visible, .king-mint-box summary:focus-visible, .king-mint-box a:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+.king-mint-box a, .king-mint-box p { overflow-wrap: anywhere; }
+.king-mint-box details { margin-top: 20px; padding-top: 16px; border-top: 1px solid #ffffff26; }
+.king-mint-box summary { cursor: pointer; min-height: 44px; }
+.king-mint-box img { display: block; margin: 16px auto; border-radius: 16px; }
+.king-mint-box [role="status"]:empty { display: none; }
