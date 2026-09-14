@@ -94,21 +94,8 @@ ehthumbs.db
 /1/
 /api_docs/
 
-# Local-only scripts. Keep the audited BanmaoBox release tooling versioned.
-/scripts/*
-!/scripts/generate-king-anatomy.cjs
-!/scripts/audit-king-motion.cjs
-!/scripts/generate-king-motion.cjs
-!/scripts/banmaobox-runtime.cjs
-!/scripts/banmaoking-release.cjs
-!/scripts/deploy-banmaoking.cjs
-!/scripts/verify-banmaoking.cjs
-!/scripts/banmaoking-tooling.test.cjs
-!/scripts/publish-banmaoking-explorer.cjs
-!/scripts/banmaoking-explorer.test.cjs
-!/scripts/BANMAOKING-DEPLOYMENT.md
-!/scripts/deploy-banmaobox-testnet.cjs
-!/scripts/generate-banmaobox-release.cjs
+# Deployment and maintenance scripts are not published.
+/scripts/
 /deployments/*
 !/deployments/banmaobox-releases/
 /deployments/banmaobox-releases/*
