@@ -155,5 +155,5 @@ async function publishExplorerVerification(options = {}) {
   }
   console.log(options.rendererOnly ? "BanmaoBox renderer is verified on X Layer Explorer." : "All BanmaoBox contracts are verified on X Layer Explorer.");
 }
-module.exports = { buildTargets, compilerVersion, encodeConstructorArguments, parsePollStatus, publishExplorerVerification };
+module.exports = { buildTargets, compilerVersion, encodeConstructorArguments, parsePollStatus, publishExplorerVerification, loadEnvironment, credentials, isVerified, submit, poll };
 if (require.main === module) publishExplorerVerification().catch((error) => { console.error(error.message); process.exitCode = 1; });

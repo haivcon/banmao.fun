@@ -5,7 +5,7 @@ import { loadAIConfig } from "../../../../../lib/ai/server/config";
 import { verifySessionToken } from "../../../../../lib/ai/server/auth/session";
 import { simulateAction, simulatePreparedAction } from "../../../../../lib/ai/server/transactions";
 import { BANMAO_TOKEN_ADDRESS, ERC20_ABI, STAKING_ABI } from "../../../../../app/defi/staking/contracts";
-import { draftStore } from "../prepare/route";
+import { draftStore } from "../../../../../lib/ai/server/transaction-draft-store";
 
 export const runtime = "nodejs";
 const schema = z.object({
