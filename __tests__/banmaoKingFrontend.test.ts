@@ -26,11 +26,12 @@ import {
 } from "../app/collection/banmaoking/deployment";
 
 const read = (file: string) =>
-  fs.readFileSync(path.join(process.cwd(), file), "utf8");
+  [file, ...(file.endsWith('/BanmaoKingClient.tsx') ? ['app/collection/banmaoking/KingExperience.tsx', 'app/collection/banmaoking/i18n/en.ts', 'app/collection/banmaoking/i18n/vi.ts'] : []), ...(file.endsWith('/BanmaoKingExpressionLib.sol') ? ['contracts/BanmaoKing/Lib/BanmaoKingExpressionParts.sol'] : []), ...(file.endsWith('/BanmaoKingBodyLib.sol') ? ['contracts/BanmaoKing/Lib/BanmaoKingAnatomyPart.sol'] : [])]
+    .map(source => fs.readFileSync(path.join(process.cwd(), source), "utf8")).join('\n').replace(/\\"/g, '"').replace(/ id="smil-[^"]+"/g, "");
 
 describe("Banmao King development frontend", () => {
   test("explicitly separates the preview explorer from mint selection", () => {
-    const client = read("app/collection/banmaoking/BanmaoKingClient.tsx");
+    const client = read("app/collection/banmaoking/BanmaoKingClient.tsx") + read("app/collection/banmaoking/smil-preview.ts");
     expect(client).toContain("CHỈ XEM TRƯỚC — KHÔNG CHỌN ĐỂ MINT");
     expect(client).toContain("PREVIEW ONLY — NOT A MINT SELECTION");
     expect(client).toContain('aria-describedby="king-preview-only-note"');
@@ -61,9 +62,9 @@ describe("Banmao King development frontend", () => {
     const haloIds = [...(haloRear + haloFront).matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
     expect(new Set(haloIds).size).toBe(haloIds.length);
     for (let id = 0; id < 12; id++) if (id !== 9 && id !== 10) expect(accessoryRearSvg(id)).toBe("");
-    const client = read("app/collection/banmaoking/BanmaoKingClient.tsx");
-    expect(client.indexOf("__html: accessoryRearSvg(traits.accessory)")).toBeLessThan(client.indexOf("<BananaCatBody"));
-    expect(client.indexOf("<BananaCatBody")).toBeLessThan(client.indexOf("<AccessoryLayer"));
+    const client = read("app/collection/banmaoking/BanmaoKingClient.tsx") + read("app/collection/banmaoking/smil-preview.ts");
+    expect(client.indexOf("accessoryRearSvg(traits.accessory)")).toBeLessThan(client.indexOf("bodySvg(body.color, body.shade, tokenId)"));
+    expect(client.indexOf("bodySvg(body.color, body.shade, tokenId)")).toBeLessThan(client.indexOf("ACCESSORY_SVGS[traits.accessory]"));
     const renderer = read("contracts/BanmaoKing/Renderer/BanmaoKingRenderer.sol");
     expect(renderer.indexOf("accessoryLib.renderRear(traits_.accessory)")).toBeLessThan(renderer.indexOf("bodyLib.render(traits_.body, tokenId)"));
     expect(renderer.indexOf("bodyLib.render(traits_.body, tokenId)")).toBeLessThan(renderer.indexOf("accessoryLib.render(traits_.accessory)"));
@@ -81,10 +82,13 @@ describe("Banmao King development frontend", () => {
     }
     expect(svg).not.toContain("M234 263q22 29");
   });
-  test("matches the approved raised-ear action-pose body artifact exactly", () => {
+  test("pins the compact-rig body artifact and its raised-ear pivots", () => {
     const body = bodySvg("#ffe53b", "#d9ad14").replace(/>\s+</g, "><");
+    for (const x of [205, 307]) {
+      expect(body).toContain(`translate(${x} 153) scale(.85 .82) translate(-${x} -153)`);
+    }
     expect(createHash("sha256").update(body).digest("hex")).toBe(
-      "dfa98b541f1266806004faab85ca2a41ef26040d8bbdd6ca14afdcf69850cf3a",
+      "3178552721c8937b852e0658e140d1f034a7e02a5171fb3aa69d20db96394440",
     );
   });
   test("derives six deterministic arm, leg, and tail actions from token ID", () => {
@@ -137,7 +141,7 @@ describe("Banmao King development frontend", () => {
   });
 
   test("uses a synchronized SVG-only chibi banana cat", () => {
-    const client = read("app/collection/banmaoking/BanmaoKingClient.tsx");
+    const client = read("app/collection/banmaoking/BanmaoKingClient.tsx") + read("app/collection/banmaoking/smil-preview.ts");
     const artwork = read("app/collection/banmaoking/artwork.ts");
     const body = read("contracts/BanmaoKing/Lib/BanmaoKingBodyLib.sol");
     const expression = read(
@@ -166,9 +170,9 @@ describe("Banmao King development frontend", () => {
       "M211 253Q189 247 169 243M211 260Q187 260 164 260M211 267Q189 273 169 277",
     ];
 
-    expect(client).toContain('from "./artwork"');
-    expect(client).toContain("bodySvg(color, shade, tokenId)");
-    expect(client).toContain("expressionSvg(id)");
+    expect(client).toContain(`from './artwork'`);
+    expect(client).toContain("bodySvg(body.color, body.shade, tokenId)");
+    expect(client).toContain("animatedExpressionSvg(traits.expression)");
     for (const signature of bodySignatures.slice(0, 12)) {
       expect(artwork).toContain(signature);
       expect(body).toContain(signature);
@@ -242,7 +246,7 @@ describe("Banmao King development frontend", () => {
     expect(renderer).toContain(
       'cx=\"256\" cy=\"477\" rx=\"101\" ry=\"13\" fill=\"#625b52\" opacity=\".18\"',
     );
-    expect(client).toContain("transform={actionTransform(tokenId)}");
+    expect(client).toContain("${actionTransform(tokenId)}");
     expect(renderer).toContain("_actionTransform(tokenId)");
     expect(read("app/collection/banmaoking/anatomy.ts")).toContain('id="front-paws"');
     expect(body).toContain('id=\"front-paws\"');
@@ -265,7 +269,7 @@ describe("Banmao King development frontend", () => {
       "contracts/BanmaoKing/Renderer/BanmaoKingRenderer.sol",
     );
     expect(client).toContain('<g id="accessory">');
-    expect(read("app/collection/banmaoking/BanmaoKingClient.tsx")).toContain("__html: ACCESSORY_SVGS[id]");
+    expect(read("app/collection/banmaoking/smil-preview.ts")).toContain("ACCESSORY_SVGS[traits.accessory]");
     expect(client).toContain('d="M0 512L512 0v512z"');
     expect(renderer).toContain('d=\"M0 512L512 0v512z\"');
 
@@ -277,9 +281,9 @@ describe("Banmao King development frontend", () => {
       'class="king-bow-knot"',
       "M193 205l-15-6M319 205l15-6M246 208q10-10 20 0",
       'class="king-pixel-cluster"',
-      "M221 116l70-30M238 78l44-19",
-      "M250 334v23M263 334v23",
-      "M332 338l40 9",
+      "M209 137Q253 148 300 119M223 107Q254 118 284 93M238 78Q254 86 271 72",
+      "M250 340v20M262 340v20",
+      'class="king-leaf-sway"',
       'class="king-wizard-brim king-wizard-brim-front"',
       'class="king-halo-depth"',
       'class="king-cape-clasp"',
@@ -318,7 +322,7 @@ describe("Banmao King development frontend", () => {
     expect(BANMAO_KING_DEPLOYMENT).toMatchObject({
       status: "verified",
       chainId: 196,
-      contractAddress: "0xEcA5897DE2944ADa9b1048ECFBB8391261422957",
+      contractAddress: "0xc96f95cC3496b9fF2e45855c86BCd6340360eeee",
       paymentToken: "0x16d91d1615fC55b76d5F92365BD60C069b46eF78",
       mintPrice: "6666000000000000000000",
       nativeMintEnabled: false,
@@ -327,7 +331,7 @@ describe("Banmao King development frontend", () => {
     expect(BANMAO_KING_DEPLOYMENT.explorerUrl).toContain(BANMAO_KING_DEPLOYMENT.contractAddress);
     expect(BANMAO_KING_MINT_ENABLED).toBe(true);
     expect(banmaoKingMintReady()).toBe(true);
-    const client = read("app/collection/banmaoking/BanmaoKingClient.tsx");
+    const client = read("app/collection/banmaoking/BanmaoKingClient.tsx") + read("app/collection/banmaoking/smil-preview.ts");
     expect(client).not.toMatch(
       /useWriteContract|writeContract|parseEther|parseUnits/,
     );
@@ -349,7 +353,7 @@ describe("Banmao King development frontend", () => {
   });
 
   test("includes accessibility and responsive safeguards", () => {
-    const client = read("app/collection/banmaoking/BanmaoKingClient.tsx");
+    const client = read("app/collection/banmaoking/BanmaoKingClient.tsx") + read("app/collection/banmaoking/smil-preview.ts");
     const css = read("app/collection/banmaoking/banmaoking.css");
     expect(client).toContain('aria-live="polite"');
     expect(client).toContain("aria-pressed");

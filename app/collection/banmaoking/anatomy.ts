@@ -14,10 +14,20 @@ const feet = [[0, 0], [0, 0], [-17, 17], [-5, 5], [3, -3], [-14, 0]] as const;
 const tailAngles = [0, 8, -12, 3, -7, 14];
 const poseIndex = (id: number) => ((id % 6) + 6) % 6;
 
-function arm(side: string, x: number, y: number, raised: boolean) {
+// Identical absolute-time SMIL on the front overlay preserves paint order AND attachment.
+function gesture(side: string, pose: number) {
+  const anchor = side === 'left' ? 174 : 338;
+  const amplitudes = [[-7, 7], [5, -20], [14, -14], [-14, 14], [-6, 6], [-18, 6]];
+  const angle = amplitudes[pose][side === 'left' ? 0 : 1];
+  const duration = [7.2, 5.6, 2.4, 6.8, 8, 6.2][pose];
+  const values = [0, 0, -angle * .2, angle, angle, 0, 0].map(a => `${a} ${anchor} 305`).join(';');
+  return `<animateTransform attributeName="transform" type="rotate" additive="sum" values="${values}" keyTimes="0;.3;.38;.53;.65;.82;1" calcMode="spline" keySplines=".4 0 .6 1;.4 0 .6 1;.2 0 .2 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1" dur="${duration}s" repeatCount="indefinite"/>`;
+}
+
+function arm(side: string, x: number, y: number, raised: boolean, pose: number) {
   const left = side === 'left';
   const shoulder = left ? 174 : 338;
-  return `<g class="king-arm-${side}"><path d="M${shoulder - 10} 302Q${x - 22} ${y - 30} ${x - 15} ${y + 3}Q${x} ${y + 24} ${x + 15} ${y + 3}Q${x + 22} ${y - 27} ${shoulder + 10} 310Z" ${fur}/>${raised ? '' : `<g transform="translate(${x} ${y})">${paw(false)}</g>`}</g>`;
+  return `<g class="king-arm-${side}">${gesture(side, pose)}<path d="M${shoulder - 10} 302Q${x - 22} ${y - 30} ${x - 15} ${y + 3}Q${x} ${y + 24} ${x + 15} ${y + 3}Q${x + 22} ${y - 27} ${shoulder + 10} 310Z" ${fur}/>${raised ? '' : `<g transform="translate(${x} ${y})">${paw(false)}</g>`}</g>`;
 }
 
 function leg(side: string, shift: number, tiptoe: boolean) {
@@ -25,17 +35,32 @@ function leg(side: string, shift: number, tiptoe: boolean) {
   return `<g class="king-leg-${side}"><g transform="translate(${x} 0)"><path class="king-hind-paw" d="M-14 419Q-18 443 ${shift - 17} 459C${shift - 32} 463 ${shift - 34} 480 ${shift - 23} 487Q${shift - 16} 493 ${shift - 9} 490Q${shift} 495 ${shift + 9} 490Q${shift + 23} 494 ${shift + 27} 483C${shift + 32} 469 ${shift + 22} 458 ${shift + 13} 455L14 419Z" ${fur}/><path d="M${shift - 12} 479q-3 6 0 10M${shift} 480v11M${shift + 12} 479q3 6 0 10" ${line}/><path d="M${shift - 18} 470q16-10 34-2" fill="none" stroke="#ffe1b2" stroke-width="4" stroke-linecap="round"/>${tiptoe ? `<ellipse cx="${shift}" cy="473" rx="8" ry="5" fill="#df8b8d"/>` : ''}</g></g>`;
 }
 
+function tailFlex(svg: string) {
+  const peaks = [
+    'M316 371C346 365 363 392 388 391C416 394 442 369 440 343C439 326 429 315 419 319C410 323 414 334 418 342C425 359 403 376 387 372C363 370 344 350 316 358Z',
+    'M346 365l-3 7M368 376l-3 6M392 378v8M420 366l5 4M429 346l6-1',
+    'M418 328q3-7 7-1',
+  ];
+  let index=0;
+  return svg.replace(/<path\b[^>]+\/>/g, tag => {
+    const d=tag.match(/d="([^"]+)"/)![1];
+    const name=['silhouette','stripes','highlight'][index];
+    return tag.slice(0,-2)+` data-tail-flex="${name}" style="--king-d:path('${d}')"><animate attributeName="d" values="${d};${d};${peaks[index++]};${d};${d}" keyTimes="0;.42;.6;.8;1" calcMode="spline" keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1" dur="9s" repeatCount="indefinite"/></path>`;
+  });
+}
+
 export function actionPoseSvg(tokenId: number) {
   const pose = poseIndex(tokenId);
   const [lx, ly, rx, ry] = hands[pose];
   const tail = `<g class="king-tail-position" transform="translate(0 10)"><g class="king-tail"><g transform="rotate(${tailAngles[pose]} 318 383)"><path class="king-tail-silhouette" d="M316 371C346 365 363 392 388 394C416 397 437 377 435 351C434 334 424 323 414 327C405 331 409 342 413 350C420 367 403 379 387 375C363 370 344 350 316 358Z" ${fur}/><path class="king-tail-stripes" d="M346 365l-3 7M368 377l-3 6M392 381v8M415 374l5 4M424 354l6-1" fill="none" stroke="#a95d31" stroke-width="3" stroke-linecap="round"/><path d="M413 336q3-7 7-1" fill="none" stroke="#ffe1b2" stroke-width="5" stroke-linecap="round"/></g></g></g>`;
-  return `<g id="action-pose" data-pose="${pose}">${tail}${arm('left', lx, ly, [2, 3, 5].includes(pose))}${arm('right', rx, ry, [1, 3].includes(pose))}${leg('left', feet[pose][0], pose === 4)}${leg('right', feet[pose][1], pose === 4)}</g>`;
+  const march = (side: string, svg: string) => pose !== 2 ? svg.replace(`<g class="king-leg-${side}">`, `<g class="king-leg-${side}"><animateTransform attributeName="transform" type="rotate" additive="sum" values="0 ${side === 'left' ? 190 : 322} 459;${side === 'left' ? -4 : 4} ${side === 'left' ? 190 : 322} 459;0 ${side === 'left' ? 190 : 322} 459" begin="${side === 'left' ? '0' : '-2'}s" dur="6s" repeatCount="indefinite"/>`) : svg.replace(`<g class="king-leg-${side}">`, `<g class="king-leg-${side}"><animateTransform data-march="${side}" attributeName="transform" type="translate" additive="sum" values="0 0;0 0;${side === 'left' ? '-4 -9' : '4 -9'};0 0;0 0" keyTimes="0;.1;.25;.4;1" calcMode="spline" keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1" begin="${side === 'left' ? '0' : '-1.2'}s" dur="2.4s" repeatCount="indefinite"/>`);
+  return `<g id="action-pose" data-pose="${pose}">${tailFlex(tail)}${arm('left', lx, ly, [2, 3, 5].includes(pose), pose)}${arm('right', rx, ry, [1, 3].includes(pose), pose)}${march('left', leg('left', feet[pose][0], pose === 4))}${march('right', leg('right', feet[pose][1], pose === 4))}</g>`;
 }
 
 export function frontPawsSvg(tokenId: number) {
   const pose = poseIndex(tokenId);
   const [lx, ly, rx, ry] = hands[pose];
-  const left = [2, 3, 5].includes(pose) ? `<g transform="translate(${lx} ${ly})">${paw(pose !== 2)}</g>` : '';
-  const right = [1, 3].includes(pose) ? `<g transform="translate(${rx} ${ry})">${paw(true)}</g>` : '';
+  const left = [2, 3, 5].includes(pose) ? `<g class="king-hand-left">${gesture('left', pose)}<g transform="translate(${lx} ${ly})">${paw(pose !== 2)}</g></g>` : '';
+  const right = [1, 3].includes(pose) ? `<g class="king-hand-right">${gesture('right', pose)}<g transform="translate(${rx} ${ry})">${paw(true)}</g></g>` : '';
   return left || right ? `<g id="front-paws">${left}${right}</g>` : '';
 }

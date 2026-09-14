@@ -7,7 +7,7 @@ describe('King pixel identity badge', () => {
     expect(badge).toBe(tokenBadgeSvg(id));
     expect(badge.match(/<rect /g)).toHaveLength(75);
     expect(badge).toContain(`<title>Token #${id}</title>`);
-    expect(badge).not.toMatch(/NaN|undefined|<script|<animate/);
+    expect(badge).not.toMatch(/NaN|undefined|<script/);
     const glyphs = [10, ...String(id).split('').map(Number)];
     const expected = glyphs.reduce((sum, glyph) => sum + [...BADGE_GLYPHS[glyph]].filter(x => x === '1').length, 0);
     expect(badge.match(/opacity="1" style/g)).toHaveLength(expected);

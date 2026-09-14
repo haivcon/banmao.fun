@@ -1,6 +1,10 @@
 // Mirrored by BanmaoKingBadgeLib; 75 cells keep animation work bounded.
 export const BADGE_GLYPHS = ['111101101101111', '010110010010111', '111001111100111', '111001111001111', '101101111001001', '111100111001111', '111100111101111', '111001010010010', '111101111101111', '111101111001111', '101111101111101'] as const;
 
+function badgeAnimate(attribute: string, base: number, logo: number): string {
+  return `<animate attributeName="${attribute}" values="${base};${base};${logo};${logo};${base};${base}" keyTimes="0;.3;.42;.64;.88;1" dur="8s" repeatCount="indefinite"/>`;
+}
+
 export function tokenBadgeSvg(tokenId: number | bigint, background = 0): string {
   const id = BigInt(tokenId);
   if (id < BigInt(0) || id > (BigInt(1) << BigInt(256)) - BigInt(1)) throw new RangeError('Invalid token ID');
@@ -25,7 +29,7 @@ export function tokenBadgeSvg(tokenId: number | bigint, background = 0): string 
     const clusterY = [14, 14, 44, 74, 74][glyph] + Math.floor(cell % 9 / 3) * 10;
     const sx = 384 + Number((id % BigInt(97) + BigInt(i * 17)) % BigInt(111));
     const sy = 14 + (i * 13 + Number(id % BigInt(31))) % 43;
-    cells += `<rect x="${x}" y="${y}" width="${width}" height="4" opacity="${visible}" style="--tx:${clusterX - x}px;--ty:${clusterY - y}px;--sx:${sx - x}px;--sy:${sy - y}px;--lit:${visible};--cell-width:${width}px;--logo-lit:${cell < 9 ? 1 : 0}"/>`;
+    cells += `<rect x="${x}" y="${y}" width="${width}" height="4" opacity="${visible}" style="--tx:${clusterX - x}px;--ty:${clusterY - y}px;--sx:${sx - x}px;--sy:${sy - y}px;--lit:${visible};--cell-width:${width}px;--logo-lit:${cell < 9 ? 1 : 0}"><animateTransform attributeName="transform" type="translate" values="0 0;0 0;${sx - x} ${sy - y};${clusterX - x} ${clusterY - y};${clusterX - x} ${clusterY - y};${sx - x} ${sy - y};0 0;0 0" keyTimes="0;.2;.3;.42;.64;.76;.88;1" dur="8s" repeatCount="indefinite" additive="sum"/>${badgeAnimate('opacity', visible, cell < 9 ? 1 : 0)}${badgeAnimate('width', width, 9)}${badgeAnimate('height', 4, 9)}</rect>`;
   }
   return `${opening}<title>Token #${text}</title><g class="king-token-cells">${cells}</g></g>`;
 }

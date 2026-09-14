@@ -4,7 +4,7 @@ import sharp from "sharp";
 import { actionPoseSvg, bodySvg } from "../app/collection/banmaoking/artwork";
 import { animatedExpressionSvg } from "../app/collection/banmaoking/motion";
 
-const read = (p: string) => readFileSync(join(process.cwd(), p), "utf8");
+const read = (p: string) => (readFileSync(join(process.cwd(), p), "utf8") + (p.endsWith('/BanmaoKingBodyLib.sol') ? readFileSync(join(process.cwd(), 'contracts/BanmaoKing/Lib/BanmaoKingAnatomyPart.sol'), 'utf8') : '')).replace(/\\"/g, '"').replace(/ id="smil-[^"]+"/g, "");
 
 describe("Banmao King compact rig", () => {
   test.each([0, 1, 2, 3, 4, 5])("preserves all moving silhouettes and markings for pose %i", (pose) => {
@@ -14,14 +14,16 @@ describe("Banmao King compact rig", () => {
       expect(svg).toContain(`class="king-${part}"`);
     }
     const solidity = read("contracts/BanmaoKing/Lib/BanmaoKingBodyLib.sol");
-    for (const tag of svg.match(/<[^>]+>/g) || []) expect(solidity).toContain(tag);
+    // Body stores neutral geometry; renderer motion data supplies the timelines.
+    const neutral = svg.replace(/<animate(?:Transform)?[^>]*\/>/g, '');
+    for (const tag of neutral.match(/<[^>]+>/g) || []) expect(solidity).toContain(tag);
     expect((svg.match(/<g\b/g) || []).length).toBe((svg.match(/<\/g>/g) || []).length);
   });
 
   test.each([0, 1, 2, 3, 4, 5])("keeps thin tail stripes inside the silhouette for pose %i", async (pose) => {
     const svg = actionPoseSvg(pose);
-    const silhouette = svg.match(/<path class="king-tail-silhouette"[^>]+\/>/)![0];
-    const stripes = svg.match(/<path class="king-tail-stripes"[^>]+\/>/)![0];
+    const silhouette = svg.match(/<path\b[^>]*class="king-tail-silhouette"[^>]+>/)![0].replace(/>$/, '/>');
+    const stripes = svg.match(/<path\b[^>]*class="king-tail-stripes"[^>]+>/)![0].replace(/>$/, '/>');
     const rotation = svg.match(/<g transform="(rotate\([^"]+\))">/)![1];
     expect(stripes).toContain('stroke-width="3"');
     const raster = (content: string) => sharp(Buffer.from(
@@ -76,7 +78,7 @@ describe("Banmao King compact rig", () => {
 
   test.each([6, 7])("does not blink brows or tears for expression %i", (id) => {
     const svg = animatedExpressionSvg(id);
-    const eyes = svg.match(/<g class="king-eyes-blink">(.*?)<\/g>/)?.[1];
+    const eyes = svg.match(/<g class="king-eyes-open">(.*?)<\/g>/)?.[1];
     expect(eyes).toBeTruthy();
     expect(eyes).not.toContain("king-tears");
     expect(eyes).not.toContain("M198 191");

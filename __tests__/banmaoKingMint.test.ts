@@ -36,8 +36,9 @@ describe("King post-mint metadata refresh", () => {
   });
   test("keeps the original animated SVG rather than rasterizing the minted image", () => {
     const mint = readFileSync(join(process.cwd(), "app/collection/banmaoking/KingMint.tsx"), "utf8");
-    expect(mint).toContain("src={metadata.image}");
-    expect(mint).toContain("auto={autoRefresh && !busy}");
+    expect(mint).toContain("src={displayImage}");
+    expect(mint).toContain("href={metadata.image}");
+    expect(mint).not.toMatch(/KingMetadataRefresh|autoRefresh|functionName: "refreshMetadata"/);
     expect(mint).toContain("download={`BanmaoKing-${tokenId}.svg`}");
   });
 });

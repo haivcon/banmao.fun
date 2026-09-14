@@ -163,13 +163,21 @@ function compile(): Record<string, Artifact> {
 }
 
 const artifacts = compile();
-jest.setTimeout(300_000);
+// Full on-chain SVG calls are intentionally expensive; allow the JS Ganache fallback on Windows.
+jest.setTimeout(600_000);
 
 async function deploy(
   name: string,
   signer: ethers.Signer,
   args: unknown[] = [],
 ) {
+  if (args.length === 0 && name === "BanmaoKingBodyLib") {
+    args = [(await deploy("BanmaoKingAnatomyPart", signer)).address];
+  }
+  if (args.length === 0 && name === "BanmaoKingExpressionLib") {
+    args = [];
+    for (let i = 0; i < 3; i++) args.push((await deploy(`BanmaoKingExpressionPart${i}`, signer)).address);
+  }
   const artifact = artifacts[name];
   const contract = await new ethers.ContractFactory(
     artifact.abi,
@@ -250,6 +258,35 @@ describe("BanmaoKing immutable on-chain release", () => {
     await expect(uniqueKing.mint(ownerAddress, ethers.constants.AddressZero, { value: 1 })).rejects.toThrow();
   }, 900_000);
 
+  test("dead-address payments preserve repeated wallet minting and the new symbol", async () => {
+    const config = JSON.parse(readFileSync(join(process.cwd(), "deployments/banmaoking-mainnet-config.json"), "utf8"));
+    const dead = "0x000000000000000000000000000000000000dEaD";
+    const price = ethers.utils.parseUnits("6666", 18);
+    expect(config.treasury).toBe(dead);
+    expect(config.royaltyReceiver).toBe(dead);
+    expect(config.royaltyBps).toBe(200);
+    expect(config.nativePrice).toBe("0");
+    expect(config.payments[0].price).toBe(price.toString());
+    const burnKing = await deploy("BanmaoKingNFT", owner, [
+      renderer.address, config.treasury, config.maxSupply, config.nativePrice,
+      [token.address], [price], config.royaltyReceiver, config.royaltyBps, config.collectionSeed,
+    ]);
+    expect(await burnKing.symbol()).toBe("banmaoKING");
+    const before = await token.balanceOf(dead);
+    await (await token.approve(burnKing.address, price.mul(2))).wait();
+    await (await burnKing.mint(ownerAddress, token.address)).wait();
+    await (await burnKing.mint(ownerAddress, token.address)).wait();
+    expect(await burnKing.ownerOf(1)).toBe(ownerAddress);
+    expect(await burnKing.ownerOf(2)).toBe(ownerAddress);
+    expect(await burnKing.balanceOf(ownerAddress)).toEqual(ethers.BigNumber.from(2));
+    expect((await token.balanceOf(dead)).sub(before)).toEqual(price.mul(2));
+    expect(await token.balanceOf(burnKing.address)).toEqual(ethers.constants.Zero);
+    expect(await burnKing.traits(1)).not.toEqual(await burnKing.traits(2));
+    const royalty = await burnKing.royaltyInfo(1, 10000);
+    expect(royalty[0]).toBe(dead);
+    expect(royalty[1]).toEqual(ethers.BigNumber.from(200));
+  });
+
   test("ERC20-only minting rejects OKB and other tokens and reports two percent royalties", async () => {
     const price = ethers.utils.parseUnits("6666", 18);
     const args = [renderer.address, treasury, 3, 0, [token.address], [price], treasury, 200, ethers.constants.HashZero];
@@ -324,6 +361,28 @@ describe("BanmaoKing immutable on-chain release", () => {
     expect(await king.totalSupply()).toEqual(ethers.BigNumber.from(1));
   });
 
+  test("emits one ERC4906 metadata update in each mint transaction", async () => {
+    for (const tokenId of [1, 2]) {
+      const receipt = await (await king.mint(ownerAddress, ethers.constants.AddressZero, {
+        value: nativePrice,
+      })).wait();
+      const events = receipt.logs.filter((log: ethers.providers.Log) =>
+        log.address.toLowerCase() === king.address.toLowerCase(),
+      ).map((log: ethers.providers.Log) => king.interface.parseLog(log));
+      expect(events.map((event: ethers.utils.LogDescription) => event.name)).toEqual([
+        "Transfer", "KingMinted", "MetadataUpdate",
+      ]);
+      const updates = receipt.logs.filter((log: ethers.providers.Log) =>
+        log.address.toLowerCase() === king.address.toLowerCase() &&
+        log.topics[0] === ethers.utils.id("MetadataUpdate(uint256)"),
+      );
+      expect(updates).toHaveLength(1);
+      expect(updates[0].topics).toHaveLength(1);
+      expect(king.interface.parseLog(updates[0]).args[0]).toEqual(ethers.BigNumber.from(tokenId));
+      expect(await king.ownerOf(tokenId)).toBe(ownerAddress);
+    }
+  });
+
   test("keeps traits immutable across transfers and emits complete data URIs", async () => {
     await king.mint(ownerAddress, ethers.constants.AddressZero, {
       value: nativePrice,
@@ -365,7 +424,7 @@ describe("BanmaoKing immutable on-chain release", () => {
   });
 
   test("matches complete frontend layers and immutable motion chunks across mixed scenes", async () => {
-    const normalize = (svg: string) => svg.replace(/>\s+</g, "><");
+    const normalize = (svg: string) => staticGeometry(svg).replace(/>\s+</g, "><");
     for (let id = 0; id < 12; id++) {
       const traits = { body: id % 8, expression: id, accessory: id, background: id % 8 };
       const svg = normalize(await renderer.renderSVG(id, traits));
@@ -374,34 +433,34 @@ describe("BanmaoKing immutable on-chain release", () => {
       expect(svg).toContain(`<g class="king-character-motion">${character}</g>`);
       expect(svg).toContain(BACKGROUND_SVGS[traits.background]);
       expect(svg).toContain(actionShadowSvg(id));
-      expect(svg).toContain(tokenBadgeSvg(id, traits.background));
+      expect(svg).toContain(staticGeometry(tokenBadgeSvg(id, traits.background)));
       expect(svg).toContain(`transform="${actionTransform(id)}"`);
       const part0 = new ethers.Contract(await renderer.motionPart0(), artifacts.BanmaoKingMotionPart0.abi, provider);
       const part1 = new ethers.Contract(await renderer.motionPart1(), artifacts.BanmaoKingMotionPart1.abi, provider);
-      expect(svg).toContain((await part0.content()) + (await part1.content()));
+      expect(await renderer.renderSVG(id, traits)).toContain((await part0.contentFor(id)) + (await part1.contentFor(id)));
     }
     expect((artifacts.BanmaoKingRenderer.bytecode.length - 2) / 2 + 96).toBeLessThanOrEqual(49_152);
   });
 
   test("matches pixel badges at digit boundaries and uint256 fallback", async () => {
     for (const id of [42, 999, 9216, 10000, ethers.constants.MaxUint256.toString()]) {
-      const svg = await renderer.renderSVG(id, { body: 0, expression: 0, accessory: 0, background: 4 });
-      expect(svg).toContain(tokenBadgeSvg(BigInt(id), 4));
+      const svg = staticGeometry(await renderer.renderSVG(id, { body: 0, expression: 0, accessory: 0, background: 4 }));
+      expect(svg).toContain(staticGeometry(tokenBadgeSvg(BigInt(id), 4)));
     }
   });
 
   test("renders six deterministic on-chain action poses from token ID", async () => {
     const base = { body: 0, expression: 0, accessory: 0, background: 0 };
     for (let tokenId = 0; tokenId < 6; tokenId += 1) {
-      const svg = (await renderer.renderSVG(tokenId, base)).replace(
+      const svg = staticGeometry(await renderer.renderSVG(tokenId, base)).replace(
         />\s+</g,
         "><",
       );
-      const expectedBody = bodySvg(
+      const expectedBody = staticGeometry(bodySvg(
         BODY_TRAITS[0].color,
         BODY_TRAITS[0].shade,
         tokenId,
-      ).replace(/>\s+</g, "><");
+      )).replace(/>\s+</g, "><");
       expect(svg).toContain(expectedBody);
       expect(svg).toContain(`data-pose="${tokenId}"`);
       await expect(sharp(Buffer.from(svg)).metadata()).resolves.toMatchObject({
@@ -418,21 +477,11 @@ describe("BanmaoKing immutable on-chain release", () => {
     const metadata = JSON.parse(Buffer.from(uri.split(",")[1], "base64").toString());
     const svg = Buffer.from(metadata.image.split(",")[1], "base64").toString();
     expect(svg).toBe(await king.renderSVG(1));
-    const style = svg.match(/<style>([\s\S]*?)<\/style>/)?.[1];
-    expect(style).toBeTruthy();
-    const css = readFileSync(join(process.cwd(), "app/collection/banmaoking/banmaoking.css"), "utf8");
-    const start = css.indexOf(".king-particles {");
-    const end = css.indexOf("@media (prefers-reduced-motion: reduce)", start);
-    expect(start).toBeGreaterThanOrEqual(0);
-    expect(end).toBeGreaterThan(start);
-    // Match the generator without stripping whitespace BEFORE pseudo-class colons.
-    // In selectors such as `.parent :nth-child(2)`, that space is a descendant combinator.
-    const sharedMotion = css.slice(start, end).replace(/\/\*[\s\S]*?\*\//g, "").trim()
-      .replace(/\s+/g, " ").replace(/\s*([{};,])\s*/g, "$1").replace(/:\s+/g, ":");
-    expect(style).toContain(sharedMotion);
-    expect(style).toContain(".king-particles > :nth-child(2){");
-    expect(style).toContain("animation: none !important");
-    expect(svg).toContain('<g class="king-character-motion">');
+    expect(svg).toContain('<animateTransform');
+    expect(svg).toContain('<animate ');
+    expect(svg).toContain('href="#smil-king-tail"');
+    expect(svg).not.toMatch(/@keyframes|animation:/);
+    expect(svg).toContain('additive="sum"');
     expect(svg).not.toMatch(/<script|<foreignObject|<image|@import|onload=/i);
     const png = await sharp(Buffer.from(svg)).png().toBuffer();
     expect(png.length).toBeGreaterThan(1000);
@@ -446,8 +495,8 @@ describe("BanmaoKing immutable on-chain release", () => {
     for (let body = 0; body < 8; body += 1) {
       const svg = await renderer.renderSVG(1, { ...base, body });
       const palette = BODY_TRAITS[body];
-      const normalizedSvg = svg.replace(/>\s+</g, "><");
-      const normalizedBody = bodySvg(palette.color, palette.shade, 1).replace(
+      const normalizedSvg = staticGeometry(svg).replace(/>\s+</g, "><");
+      const normalizedBody = staticGeometry(bodySvg(palette.color, palette.shade, 1)).replace(
         />\s+</g,
         "><",
       );
@@ -483,7 +532,7 @@ describe("BanmaoKing immutable on-chain release", () => {
     }
     for (let expression = 0; expression < 12; expression += 1) {
       const svg = await renderer.renderSVG(1, { ...base, expression });
-      expect(svg).toContain(animatedExpressionSvg(expression));
+      expect(staticGeometry(svg)).toContain(staticGeometry(animatedExpressionSvg(expression)));
       expect(svg).toContain(`data-expression="${expression}"`);
     }
     for (let accessory = 0; accessory < 12; accessory += 1) {
@@ -632,3 +681,10 @@ describe("BanmaoKing immutable on-chain release", () => {
     expect(source).not.toMatch(/\b(Ownable|AccessControl|Pausable)\b/);
   });
 });
+
+// Only motion markup is normalized; artwork and base transforms remain exact.
+function staticGeometry(svg: string): string {
+  return svg.replace(/ id="smil-[^"]+"/g, "")
+    .replace(/<animate(?:Transform)?\b[^>]*\/>/g, "")
+    .replace(/><\/rect>/g, "/>");
+}

@@ -32,7 +32,23 @@ library BanmaoKingBadgeLib {
         uint256[5] memory cy = [uint256(14),14,44,74,74];
         start = string.concat(start, '" style="--tx:', _delta(cx[glyph] + cell % 3 * 10, x), 'px;--ty:', _delta(cy[glyph] + cell % 9 / 3 * 10, y));
         }
-        return string.concat(start, 'px;--sx:', _delta(384 + (id % 97 + i * 17) % 111, x), 'px;--sy:', _delta(14 + (i * 13 + id % 31) % 43, y), 'px;--lit:', lit, ';--cell-width:', bar ? '6' : glyph == 0 ? '3' : '4', 'px;--logo-lit:', cell < 9 ? '1' : '0', '"/>');
+        start = string.concat(start, 'px;--sx:', _delta(384 + (id % 97 + i * 17) % 111, x), 'px;--sy:', _delta(14 + (i * 13 + id % 31) % 43, y), 'px;--lit:', lit, ';--cell-width:', bar ? '6' : glyph == 0 ? '3' : '4', 'px;--logo-lit:', cell < 9 ? '1' : '0', '">');
+        return string.concat(start, _motion(id, i, x, y, lit, bar ? '6' : glyph == 0 ? '3' : '4'), '</rect>');
+    }
+    function _motion(uint256 id, uint256 i, uint256 x, uint256 y, string memory lit, string memory width) private pure returns (string memory) {
+        string memory motion;
+        {
+        uint256[5] memory cx = [uint256(386),446,416,386,446];
+        uint256[5] memory cy = [uint256(14),14,44,74,74];
+        string memory logo = string.concat(_delta(cx[i / 15] + i % 15 % 3 * 10, x), ' ', _delta(cy[i / 15] + i % 15 % 9 / 3 * 10, y));
+        string memory scatter = string.concat(_delta(384 + (id % 97 + i * 17) % 111, x), ' ', _delta(14 + (i * 13 + id % 31) % 43, y));
+        motion = string.concat('<animateTransform attributeName="transform" type="translate" values="0 0;0 0;', scatter, ';', logo, ';', logo, ';', scatter, ';0 0;0 0" keyTimes="0;.2;.3;.42;.64;.76;.88;1" dur="8s" repeatCount="indefinite" additive="sum"/>');
+        }
+        motion = string.concat(motion, _animate('opacity', lit, i % 15 < 9 ? '1' : '0'));
+        return string.concat(motion, _animate('width', width, '9'), _animate('height', '4', '9'));
+    }
+    function _animate(string memory attribute, string memory base, string memory logo) private pure returns(string memory) {
+        return string.concat('<animate attributeName="', attribute, '" values="', base, ';', base, ';', logo, ';', logo, ';', base, ';', base, '" keyTimes="0;.3;.42;.64;.88;1" dur="8s" repeatCount="indefinite"/>');
     }
     function _delta(uint256 a, uint256 b) private pure returns (string memory) {
         return a >= b ? (a - b).toString() : string.concat('-', (b - a).toString());

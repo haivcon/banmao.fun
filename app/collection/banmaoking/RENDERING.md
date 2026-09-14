@@ -1,3 +1,149 @@
+## Accessories 06–08: clipped hat and grouped ornament motion
+
+Canonical revised geometry lives in `accessory-polish.ts`, imported by `scene.ts`;
+`generate-king-smil.cjs` mirrors these three branches into the accessory contract.
+Party stripes are 4.5 units, clipped to the cone, with its 3.5-unit outline drawn
+last. The hat rocks +/-2 degrees; the nested pom moves 3 units; two confetti groups
+have different paths/phases. The chain has two-tone shading and link separators,
+a fixed connector and a grouped pendant rotating +/-6 degrees about (256,330).
+The leaf has thinner veins and rotates -7 to +9 degrees about (323,337), outside
+its authored scale transform so veins/highlight stay attached. Independent leaf
+path morphing and chain deformation are intentionally not included in this pass.
+New groups have class-based reduced-motion transform resets for scoped previews.
+
+Latest compilation: renderer runtime 18,142 bytes, initcode 48,396 + 96 constructor
+bytes = 48,492 (660 bytes below EIP-3860). Accessory runtime 16,995; MotionPart0
+17,804; MotionPart1 11,533. Optional SMIL omits default evenly spaced keyTimes and
+zero begin values to conserve space without changing timelines. No deployment.
+Browser visual playback/collision QA remains outstanding for these revised shapes.
+
+
+## Accessory effects revision
+
+Each selected accessory now receives authored SMIL rather than a generic rotation:
+ruby/knot/moon color breathing; glasses glints translate; pixel lights chase with
+1.8-second staggered pulses; confetti drifts 9/20 units; chain highlights travel
+5/-3; leaf breeze travels 14/-9; headphone wave stroke width pulses 2–5; magic
+rises 12 units; halo aura radius expands 81–91 with opposing star drift and a
+2.8-second sweep. Bow/wizard rotations peak at 11.2 degrees, cape at +/-14,
+with continuous spline easing over 2.6 seconds. Geometry remains unchanged.
+This animates accessory effects, not the entire chain, leaf or crown silhouette.
+
+Validated: 50 Jest SMIL tests, 11 Node tests, Solidity compilation. Renderer
+initcode is now 48,023 bytes + 96 constructor bytes = 48,119 (limit 49,152).
+MotionPart0 runtime is 17,431 bytes (limit 24,576). Browser visual QA and public
+deployment were not performed for this revision. Source edits do not update
+immutable deployed artwork. Numeric results below describe older revisions.
+
+
+## Motion upgrade (current workspace)
+
+Secondary ear/tail/whisker motion now uses expression periods and nonstationary
+intermediate poses. Limb amplitudes are stronger; every standing pose has foot
+rotation, while March retains translation. Preview and renderer substitute the
+same expression period into limb and tail SMIL. Front hands retain arm timing.
+Mouth/rest-eye morphs have two peaks; Teary includes moving tears. Every background
+has floating particles. Optional details move, pixel pulses are staggered, and
+bow/wizard/cape rotations are stronger. Fixed gems remain attached.
+
+This is not the complete bespoke choreography proposed in discussion: pupil
+tracking, double blinks, per-expression limb geometry, full accessory physics,
+and individually animated background stripes/rays remain unimplemented.
+No public deployment was changed. Renderer motion pose/tail methods now accept
+an expression argument; regenerate dependent artifacts before deployment.
+
+Validation: 50 SMIL Jest checks and 9 Node checks passed. Compiler runtime sizes
+remain below 24,576 bytes; renderer initcode is 44,472 bytes before its 96-byte
+constructor arguments. Full typecheck and local EVM validation timed out in the
+30-second tool window; browser playback has not yet been visually verified.
+
+
+## Phase 1: stronger existing motion
+
+The shared character breathing peak is now -3.5 SVG units (previously -1.5).
+Tail rotation peaks at 5 degrees; ears at -8/+7 degrees; whiskers at -3.5/+3.
+Wizard tip rotation is 4 degrees and cape panels rotate +/-6 degrees. Existing
+pivots, periods, static geometry, pose gestures and reduced-motion rules remain.
+Happy Smile and Silly mouth curves have stronger peaks; ellipse mouth radii
+increase by 5 units (large) or 2 (small). No new animation elements are added.
+Expression-specific limb choreography and new background effects are not part
+of this phase. Source changes do not update immutable public deployments.
+
+The ExpressionLib size warning below is historical: the current workspace has
+three ExpressionPart contracts. Compile the regenerated artifacts to measure
+actual byte budgets; changing numeric literals does not guarantee equal bytes.
+
+
+## Breathing and blush SMIL update
+
+The character wrapper now translates from 0 to -1.5 SVG units and back with
+expression-dependent periods (2–8 seconds), without replacing pose transforms.
+Happy Smile, Joy and Love Eyes retain their authored blush geometry and pulse
+opacity from .3 to .44 and back over 5.2 seconds. Both cheeks share the same
+phase. Other expressions do not receive blush. Static previews strip SMIL;
+class-based reduced-motion rules reset these two new effects even with scoped IDs.
+
+Regenerate with `node scripts/generate-king-smil.cjs`. The generator interns the
+complete blush pair to avoid extra Solidity concatenation overhead. Current
+ExpressionLib runtime is 24,548 bytes: only 28 bytes below EIP-170. Compile and
+check byte budgets before adding any further face effects. No public deployment
+has been changed; immutable deployed artwork is not updated by source edits.
+
+
+## Current SMIL source (supersedes legacy CSS notes below)
+
+Artwork motion is generated from `scripts/king-smil.cjs` into the two immutable
+MotionPart contracts and `smil.ts`. `smil-preview.ts` uses the same motion data,
+scopes SVG IDs per preview, and removes animation elements when playback is off.
+The NFT emits accessory/background SMIL only for the selected traits; every
+local reference must resolve within its standalone SVG. Pixel tiles and halo
+stars have distinct target IDs.
+
+The 8-second badge cycle starts with readable digits, scatters, holds the
+45-tile five-cluster X, scatters again, and reassembles the digits. Base SVG
+attributes are the static fallback. A small CSS media rule (not CSS animation)
+overrides animated transforms/opacity/size for prefers-reduced-motion. The
+preview defaults to that preference and permits an explicit playback override.
+No script is embedded in NFT SVGs. Pose transforms remain outside moving groups.
+
+Canonical face geometry/timelines live in `motion.ts`, and six pose/tail
+timelines in `anatomy.ts`. Eyes switch between actual open/closed shapes;
+Wink, symbolic eyes and rest eyes retain their distinct semantics. Mouth and
+tail paths morph with matching command topology. Front hands reuse their arm
+timeline; only March lifts feet. Generators extract pose/tail timelines into
+MotionPart1 to keep the body catalogue within EIP-170. Assign SVG target IDs
+before escaping/interning Solidity literals; emit limb targets only where an
+extracted timeline needs them. Do not relax EIP-170/EIP-3860 limits.
+
+Validation commands:
+- `node scripts/generate-king-anatomy.cjs && node scripts/generate-king-smil.cjs`
+- `node --test scripts/king-smil.test.cjs scripts/banmaoking-tooling.test.cjs scripts/banmaoking-explorer.test.cjs`
+- `npx jest --testPathPatterns=banmaoKing --runInBand`
+- `node --test scripts/king-smil.test.cjs scripts/king-smil-overhaul.test.cjs`
+- `node scripts/king-smil-overhaul-validation.cjs` (local EVM; persists all 12 × 6 SVGs and exact tokenURI roundtrips under `test-results/king-smil/overhaul`)
+- `python scripts/king-smil-overhaul-xml.py` (independent XML, ID/reference, timeline, hash and roundtrip read-back)
+- `node scripts/king-smil-validation.cjs` (local EVM; writes ignored browser fixtures)
+- `node scripts/audit-king-motion.cjs` (Chrome CDP; normal/reduced-motion assertions)
+
+Chrome checks rendered on-chain SVGs for XML validity, actual tail transforms,
+X-logo phase, static digits and reduced-motion behavior. This does not certify
+Firefox/Safari, marketplace sanitizers, or thumbnail animation. Representative
+validation covers all trait values and six poses, not all Cartesian combinations.
+The separate security suite exhausts all 9,216 mint allocations.
+
+RPC budget is a release gate: the 75-cell SMIL badge substantially increases
+SVG/metadata generation cost. A measured representative 9216 view consumed about
+21.4M renderSVG gas / 40.8M tokenURI gas before the additional eye-blink element.
+Use the latest validation log for current values; provider call-gas/response caps
+must be tested before deployment. No public deployment or address was changed.
+
+---
+## Historical CSS design notes (not current SMIL behavior)
+
+
+> Working-source update: the on-chain renderer now uses SMIL via local fragment IDs and two immutable motion data contracts. The CSS parity descriptions below document the legacy frontend/release, not exact motion parity with the new source. Geometry is retained; timing is re-authored, the badge currently scatters and reassembles without the X-logo phase, and standalone SMIL does not yet honor reduced-motion. No deployment address has changed. Run `node scripts/generate-king-motion.cjs` to regenerate SMIL, and `node --test scripts/king-smil.test.cjs` for generator checks.
+
+
 # Banmao King rendering parity
 
 ## Pixel token identity

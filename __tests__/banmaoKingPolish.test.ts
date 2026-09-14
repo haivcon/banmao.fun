@@ -5,7 +5,7 @@ import { ACCESSORY_SVGS, BACKGROUND_SVGS } from "../app/collection/banmaoking/sc
 import { bodySvg, expressionSvg } from "../app/collection/banmaoking/artwork";
 import { BODY_TRAITS } from "../app/collection/banmaoking/traits";
 
-const read = (file: string) => readFileSync(join(process.cwd(), file), "utf8");
+const read = (file: string) => readFileSync(join(process.cwd(), file), "utf8").replace(/\\"/g, '"').replace(/ id="smil-[^"]+"/g, "");
 
 describe("Banmao King polished SVG catalogue", () => {
   test("mirrors every complete accessory and background SVG, not just path signatures", () => {
@@ -42,9 +42,9 @@ describe("Banmao King polished SVG catalogue", () => {
     expect(ACCESSORY_SVGS[1]).toContain('M214 125q42-13 84 0l-4 17q-38-10-76 0z');
     expect(ACCESSORY_SVGS[2].match(/class="king-bow-knot"/g)).toHaveLength(1);
     expect(ACCESSORY_SVGS[2]).toContain('x="246" y="291" width="20"');
-    const css = read("app/collection/banmaoking/banmaoking.css");
-    expect(css).toContain('[data-accessory="2"] .king-bow-tails');
-    expect(css).not.toContain('[data-accessory="2"] #accessory');
+    const smil = read("contracts/BanmaoKing/Lib/BanmaoKingMotionLib.sol");
+    expect(smil).toContain('href="#smil-king-bow-tails"');
+    expect(smil).not.toContain('href="#accessory"');
   });
 
   test("fits oval scholar lenses and symmetric five-square pixel highlights", () => {
