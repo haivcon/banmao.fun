@@ -1,3 +1,6 @@
+> Maintenance note: deployment, artwork-generation, and browser-audit scripts have been removed from this repository. Commands referencing `scripts/` below are historical release notes, not runnable checkout instructions. The committed artwork remains unchanged; contract security tests remain available under `__tests__/contracts/`.
+
+
 ## Accessories 06–08: clipped hat and grouped ornament motion
 
 Canonical revised geometry lives in `accessory-polish.ts`, imported by `scene.ts`;

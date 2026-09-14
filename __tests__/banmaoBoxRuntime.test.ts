@@ -4,7 +4,7 @@ const {
   assertArtifactRuntime,
   normalizeRuntime,
   runtimeFingerprint,
-} = require("../scripts/banmaobox-runtime.cjs");
+} = require("./helpers/banmaoBoxArtifacts.cjs");
 
 function artifact(runtime: string, references: Array<{ start: number; length: number }> = []) {
   return {

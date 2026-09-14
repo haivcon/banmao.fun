@@ -6,7 +6,7 @@ import { ethers } from "ethers";
 import solc from "solc";
 import sharp from "sharp";
 
-const { collectBanmaoBoxSources } = require("../../scripts/banmaobox-runtime.cjs");
+const { collectBanmaoBoxSources } = require("../helpers/banmaoBoxArtifacts.cjs");
 
 type Artifact = {
   abi: ethers.ContractInterface;

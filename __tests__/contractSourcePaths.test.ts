@@ -7,7 +7,7 @@ const {
   BANMAOBOX_RELEASE_SOURCE_NAMES,
   artifactFingerprint,
   createBanmaoBoxCompilerInput,
-} = require("../scripts/banmaobox-runtime.cjs");
+} = require("./helpers/banmaoBoxArtifacts.cjs");
 
 const targetContracts = [
   "contracts/BanmaoAirdrop/BanmaoAirdrop.sol",
@@ -25,6 +25,10 @@ const targetContracts = [
   "contracts/BanmaoBox/Mock/MockBanmao.sol",
   "contracts/BanmaoKing/IBanmaoKingRenderer.sol",
   "contracts/BanmaoKing/Lib/BanmaoKingAccessoryLib.sol",
+  "contracts/BanmaoKing/Lib/BanmaoKingAnatomyPart.sol",
+  "contracts/BanmaoKing/Lib/BanmaoKingBadgeLib.sol",
+  "contracts/BanmaoKing/Lib/BanmaoKingExpressionParts.sol",
+  "contracts/BanmaoKing/Lib/BanmaoKingMotionLib.sol",
   "contracts/BanmaoKing/Lib/BanmaoKingBodyLib.sol",
   "contracts/BanmaoKing/Lib/BanmaoKingExpressionLib.sol",
   "contracts/BanmaoKing/NFT/BanmaoKingNFT.sol",
