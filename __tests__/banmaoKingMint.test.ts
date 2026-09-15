@@ -11,7 +11,7 @@ describe("King receipt lifecycle regression", () => {
     expect(receiptHandler).toContain("setPending(false);");
     expect(receiptHandler.indexOf("setPending(false);")).toBeLessThan(receiptHandler.indexOf('if (receipt.status === "reverted")'));
     expect(receiptHandler).toContain('functionName: "allowance", args: [address!, kingAddress]');
-    expect(receiptHandler).toContain("if (active) setState({ supply, balance, allowance });");
+    expect(receiptHandler).toContain("if (active) setState({ supply, max, balance, allowance });");
   });
   test("releases direct receipt waiter but not an unknown pending transaction in finally", () => {
     const waiter = source.slice(source.indexOf("const receipt = await client.waitForTransactionReceipt"));

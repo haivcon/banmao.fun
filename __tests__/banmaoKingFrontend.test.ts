@@ -88,7 +88,7 @@ describe("Banmao King development frontend", () => {
       expect(body).toContain(`translate(${x} 153) scale(.85 .82) translate(-${x} -153)`);
     }
     expect(createHash("sha256").update(body).digest("hex")).toBe(
-      "3178552721c8937b852e0658e140d1f034a7e02a5171fb3aa69d20db96394440",
+      "9ea1125a3064661e6ae0dd0ce78654b6ab83faa87d0f0afda352b7203cb77509",
     );
   });
   test("derives six deterministic arm, leg, and tail actions from token ID", () => {
@@ -108,12 +108,21 @@ describe("Banmao King development frontend", () => {
   test("mirrors the immutable Solidity trait catalogue", () => {
     const solidityNames = (file: string, functionStart: string) => {
       const catalogue = read(file).split(functionStart)[1].split("revert")[0];
-      return [...catalogue.matchAll(/return "([^"]+)";/g)].map(
-        (match) => match[1],
-      );
+      const names = [...catalogue.matchAll(/return "([^"]+)";/g)].map(match => match[1]);
+      // Facades delegate extended names to separate contracts.
+      if (file.endsWith('ExpressionLib.sol') || file.endsWith('AccessoryLib.sol')) {
+        const extension = read(file.replace('Lib.sol', 'Expansion.sol')).split('function traitName')[1];
+        names.push(...[...extension.matchAll(/return "([^"]+)";/g)].map(match => match[1]));
+      }
+      if (functionStart === 'function _backgroundName') {
+        const extension = read('contracts/BanmaoKing/Lib/BanmaoKingBackgroundExpansion.sol').split('function traitName')[1];
+        names.push(...[...extension.matchAll(/return "([^"]+)";/g)].map(match => match[1]));
+      }
+      return names;
     };
 
-    expect(BODY_TRAITS.map(({ name }) => name)).toEqual(
+    // The final King entry is preview-only; preserve every historical contract ID.
+    expect(BODY_TRAITS.slice(0, -1).map(({ name }) => name)).toEqual(
       solidityNames(
         "contracts/BanmaoKing/Lib/BanmaoKingBodyLib.sol",
         "function traitName",
@@ -125,19 +134,19 @@ describe("Banmao King development frontend", () => {
         "function traitName",
       ),
     );
-    expect(ACCESSORY_TRAITS).toEqual(
+    expect(ACCESSORY_TRAITS.slice(0, -1)).toEqual(
       solidityNames(
         "contracts/BanmaoKing/Lib/BanmaoKingAccessoryLib.sol",
         "function traitName",
       ),
     );
-    expect(BACKGROUND_TRAITS.map(({ name }) => name)).toEqual(
+    expect(BACKGROUND_TRAITS.slice(0, -1).map(({ name }) => name)).toEqual(
       solidityNames(
         "contracts/BanmaoKing/Renderer/BanmaoKingRenderer.sol",
         "function _backgroundName",
       ),
     );
-    expect(TOTAL_COMBINATIONS).toBe(9216);
+    expect(TOTAL_COMBINATIONS).toBe(127449);
   });
 
   test("uses a synchronized SVG-only chibi banana cat", () => {
@@ -177,8 +186,9 @@ describe("Banmao King development frontend", () => {
       expect(artwork).toContain(signature);
       expect(body).toContain(signature);
     }
+    const faceDesign = read("app/collection/banmaoking/expression-design.ts");
     for (const signature of bodySignatures.slice(12)) {
-      expect(artwork).toContain(signature);
+      expect(artwork + faceDesign).toContain(signature);
       expect(expression).toContain(signature);
     }
     for (const source of [artwork, body]) {

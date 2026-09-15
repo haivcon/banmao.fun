@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
+import {BanmaoKingRoyalLib} from "./BanmaoKingRoyalLib.sol";
+import {BanmaoKingBodyEffects, BanmaoKingCyborgBody} from "./BanmaoKingBodyEffects.sol";
 
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {IBanmaoKingBodyLib} from "../IBanmaoKingRenderer.sol";
@@ -10,6 +12,8 @@ contract BanmaoKingBodyLib is IBanmaoKingBodyLib {
     error InvalidBody(uint8 traitId);
     error InvalidPart(address part);
     BanmaoKingAnatomyPart public immutable anatomyPart;
+    BanmaoKingBodyEffects public immutable effects = new BanmaoKingBodyEffects();
+    BanmaoKingCyborgBody public immutable cyborg = new BanmaoKingCyborgBody();
     constructor(address part) {
         if (part.code.length == 0) revert InvalidPart(part);
         anatomyPart = BanmaoKingAnatomyPart(part);
@@ -27,13 +31,23 @@ contract BanmaoKingBodyLib is IBanmaoKingBodyLib {
         if (traitId == 4) return "Blue Banana";
         if (traitId == 5) return "Royal Purple";
         if (traitId == 6) return "Pink Banana";
-        if (traitId == 7) return "Mono Banana";
+        if (traitId == 7) return "Cyborg Suit";
+        if (traitId == 8) return "Cosmic Suit";
+        if (traitId == 9) return "Bitcoin Suit";
+        if (traitId == 10) return "Ethereum Suit";
+        if (traitId == 11) return "OKB Suit";
+        if (traitId == 12) return "Developer Suit";
+        if (traitId == 13) return "Office Suit";
+        if (traitId == 14) return "Nature Suit";
+        if (traitId == 15) return "Royal Suit";
+        if (traitId == 16) return BanmaoKingRoyalLib.BODY_NAME;
         revert InvalidBody(traitId);
     }
 
     function render(uint8 traitId, uint256 tokenId) external view returns (string memory) {
-        (string memory peel, string memory shade) = _colors(traitId);
-        return string.concat('<g id="body">', _defs(peel, shade), anatomyPart.actionPose(tokenId), _catBehind(), _bananaShell(shade), _faceRim(), _cat(), _costumeDetails(), anatomyPart.frontPaws(tokenId), '</g>');
+        (string memory peel, string memory shade) = traitId == 16 ? (BanmaoKingRoyalLib.BODY_COLOR, BanmaoKingRoyalLib.BODY_SHADE) : _colors(traitId);
+        if (traitId == 7) return cyborg.render(7);
+        return string.concat('<g id="body">', _defs(peel, shade), anatomyPart.actionPose(tokenId), _catBehind(), _bananaShell(shade), _faceRim(), _cat(), _costumeDetails(), anatomyPart.frontPaws(tokenId), effects.render(traitId), '</g>');
     }
 
 
@@ -50,7 +64,7 @@ contract BanmaoKingBodyLib is IBanmaoKingBodyLib {
     }
 
     function _defs(string memory peel, string memory shade) private pure returns (string memory) {
-        return string.concat('<defs><linearGradient id="bk-peel" x1=".12" y1=".08" x2=".9" y2=".82"><stop stop-color="', _peelHighlight(peel), '"/><stop offset=".28" stop-color="', peel, '"/><stop offset=".72" stop-color="', peel, '"/><stop offset="1" stop-color="', shade, '"/></linearGradient><linearGradient id="bk-fur" x1=".2" y1="0" x2=".8" y2="1"><stop stop-color="#ffc77e"/><stop offset=".58" stop-color="#e99a50"/><stop offset="1" stop-color="#c87538"/></linearGradient><radialGradient id="bk-muzzle"><stop stop-color="#fffaf0"/><stop offset="1" stop-color="#f3d5b4"/></radialGradient><radialGradient id="bk-opening" cx="50%" cy="44%" r="62%"><stop offset=".72" stop-color="#744823"/><stop offset=".9" stop-color="#5b351c"/><stop offset="1" stop-color="#3f2516"/></radialGradient></defs>');
+        return string.concat('<defs>', keccak256(bytes(peel)) == keccak256(bytes(BanmaoKingRoyalLib.BODY_COLOR)) ? BanmaoKingRoyalLib.PEEL : string.concat('<linearGradient id="bk-peel" x1=".12" y1=".08" x2=".9" y2=".82"><stop stop-color="', _peelHighlight(peel), '"/><stop offset=".28" stop-color="', peel, '"/><stop offset=".72" stop-color="', peel, '"/><stop offset="1" stop-color="', shade, '"/></linearGradient>'), '<linearGradient id="bk-fur" x1=".2" y1="0" x2=".8" y2="1"><stop stop-color="#ffc77e"/><stop offset=".58" stop-color="#e99a50"/><stop offset="1" stop-color="#c87538"/></linearGradient><radialGradient id="bk-muzzle"><stop stop-color="#fffaf0"/><stop offset="1" stop-color="#f3d5b4"/></radialGradient><radialGradient id="bk-opening" cx="50%" cy="44%" r="62%"><stop offset=".72" stop-color="#744823"/><stop offset=".9" stop-color="#5b351c"/><stop offset="1" stop-color="#3f2516"/></radialGradient></defs>');
     }
 
     function _catBehind() private pure returns (string memory) {
@@ -86,6 +100,14 @@ contract BanmaoKingBodyLib is IBanmaoKingBodyLib {
         if (traitId == 5) return ("#a985e8", "#6540a9");
         if (traitId == 6) return ("#ff8fc6", "#d64f91");
         if (traitId == 7) return ("#d8d8d8", "#777777");
+        if (traitId == 8) return ("#49318c", "#201342");
+        if (traitId == 9) return ("#f7931a", "#994609");
+        if (traitId == 10) return ("#8198ef", "#39468b");
+        if (traitId == 11) return ("#eeeeee", "#454545");
+        if (traitId == 12) return ("#46d5b0", "#147663");
+        if (traitId == 13) return ("#50658c", "#202f4b");
+        if (traitId == 14) return ("#ffb7ce", "#ae5477");
+        if (traitId == 15) return ("#ca4262", "#76213d");
         revert InvalidBody(traitId);
     }
 

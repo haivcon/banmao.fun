@@ -1,4 +1,8 @@
+import profiles from './choreography.json';
+import { BODY_TRAITS } from './traits';
+import { bodyEffects, cyborgBody } from './body-effects';
 import { actionPoseSvg, frontPawsSvg } from "./anatomy";
+import { refinedCore, expansionFace, whiskersSvg } from './expression-design';
 export { actionPoseSvg, frontPawsSvg } from "./anatomy";
 
 function peelHighlight(peel: string) {
@@ -14,6 +18,8 @@ function peelHighlight(peel: string) {
   }
 }
 export function expressionSvg(id: number) {
+  if (!Number.isInteger(id) || id < 0 || id > 20) throw new RangeError('Invalid expression');
+  if (id >= 12) return expansionFace(id);
   const defaultEyes = `<ellipse cx="218" cy="215" rx="21" ry="25" fill="#211d19" stroke="#784727" stroke-width="3"/><ellipse cx="294" cy="215" rx="21" ry="25" fill="#211d19" stroke="#784727" stroke-width="3"/><ellipse cx="211" cy="206" rx="7" ry="9" fill="white"/><ellipse cx="287" cy="206" rx="7" ry="9" fill="white"/>`;
   const happyEyes = `<ellipse cx="224" cy="211" rx="20" ry="24" fill="#211d19" stroke="#80643a" stroke-width="2.5"/><ellipse cx="288" cy="211" rx="20" ry="24" fill="#211d19" stroke="#80643a" stroke-width="2.5"/><ellipse cx="217" cy="202" rx="6.5" ry="8.5" fill="white"/><ellipse cx="281" cy="202" rx="6.5" ry="8.5" fill="white"/><circle cx="230" cy="218" r="3" fill="white" opacity=".78"/><circle cx="294" cy="218" r="3" fill="white" opacity=".78"/>`;
   const brow =
@@ -60,52 +66,29 @@ export function expressionSvg(id: number) {
     id === 0 || id === 1 || id === 3
       ? `<ellipse cx="190" cy="248" rx="14" ry="7" fill="#ef8b8b" opacity=".3"/><ellipse cx="322" cy="248" rx="14" ry="7" fill="#ef8b8b" opacity=".3"/>`
       : "";
-  const whiskers = `<path class="king-whiskers-left" d="M211 253Q189 247 169 243M211 260Q187 260 164 260M211 267Q189 273 169 277" fill="none" stroke="#784727" stroke-width="2.5" stroke-linecap="round" opacity=".78"/><path class="king-whiskers-right" d="M301 253Q323 247 343 243M301 260Q325 260 348 260M301 267Q323 273 343 277" fill="none" stroke="#784727" stroke-width="2.5" stroke-linecap="round" opacity=".78"/>`;
   const nose = `<path d="M256 240l-9 7 9 8 9-8z" fill="#df7e82" stroke="#784727" stroke-width="2"/>`;
-  return `<g id="expression">${eyes}${brow}${tears}${nose}<g class="king-mouth">${mouth}</g><g class="king-whiskers">${whiskers}</g>${blush}</g>`;
+  return refinedCore(`<g id="expression">${eyes}${brow}${tears}${nose}<g class="king-mouth">${mouth}</g>${whiskersSvg()}${blush}</g>`, id);
 }
 
-export const ACTION_NAMES = [
-  "Royal Stand",
-  "Banana Wave",
-  "King's March",
-  "Big Welcome",
-  "Tiptoe",
-  "Mischief",
-] as const;
+export const ACTION_NAMES = profiles.map(profile => profile.name);
 export const ACTION_POSE_COUNT = ACTION_NAMES.length;
-
-export function actionIndex(tokenId: number) {
-  return (
-    ((tokenId % ACTION_POSE_COUNT) + ACTION_POSE_COUNT) % ACTION_POSE_COUNT
-  );
+export function actionIndex(expression: number) {
+  if (!Number.isInteger(expression) || expression < 0 || expression >= ACTION_POSE_COUNT) throw new RangeError('Invalid expression');
+  return expression;
 }
-
-export function actionTransform(tokenId: number) {
-  return [
-    "translate(0 0) rotate(0 256 330)",
-    "translate(-3 1) rotate(-2 256 330)",
-    "translate(5 1) rotate(2.5 256 330)",
-    "translate(0 2) rotate(0 256 330)",
-    "translate(0 -5) rotate(-1 256 330)",
-    "translate(-5 2) rotate(-3 256 330)",
-  ][actionIndex(tokenId)];
-}
-
-export function actionShadowSvg(tokenId: number) {
-  const shadows = [
-    [256, 477, 101, 13, ".18"],
-    [251, 477, 98, 12, ".17"],
-    [263, 479, 108, 11, ".16"],
-    [256, 478, 116, 13, ".17"],
-    [256, 482, 78, 8, ".12"],
-    [247, 479, 91, 11, ".16"],
-  ] as const;
-  const [cx, cy, rx, ry, opacity] = shadows[actionIndex(tokenId)];
-  return `<ellipse id="action-shadow" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#625b52" opacity="${opacity}"/>`;
+export function actionTransform(_expression: number) { return 'translate(0 0)'; }
+export function actionShadowSvg(_expression: number) {
+  return '<ellipse id="action-shadow" cx="256" cy="477" rx="101" ry="13" fill="#625b52" opacity=".18"/>';
 }
 
 export function bodySvg(peel: string, shade: string, tokenId = 0) {
+  const id = BODY_TRAITS.findIndex(body => body.color === peel);
+  const base = baseBodySvg(id === 7 ? '#ffe53b' : peel, id === 7 ? '#d9ad14' : shade, tokenId);
+  const styled = id === 7 ? cyborgBody(base) : base;
+  return styled.replace(/<\/g>$/, (id >= 0 ? bodyEffects(id) : '') + '</g>');
+}
+
+export function baseBodySvg(peel: string, shade: string, tokenId = 0) {
   return `<g id="body"><defs><linearGradient id="bk-peel" x1=".12" y1=".08" x2=".9" y2=".82"><stop stop-color="${peelHighlight(peel)}"/><stop offset=".28" stop-color="${peel}"/><stop offset=".72" stop-color="${peel}"/><stop offset="1" stop-color="${shade}"/></linearGradient><linearGradient id="bk-fur" x1=".2" y1="0" x2=".8" y2="1"><stop stop-color="#ffc77e"/><stop offset=".58" stop-color="#e99a50"/><stop offset="1" stop-color="#c87538"/></linearGradient><radialGradient id="bk-muzzle"><stop stop-color="#fffaf0"/><stop offset="1" stop-color="#f3d5b4"/></radialGradient><radialGradient id="bk-opening" cx="50%" cy="44%" r="62%"><stop offset=".72" stop-color="#744823"/><stop offset=".9" stop-color="#5b351c"/><stop offset="1" stop-color="#3f2516"/></radialGradient></defs>${actionPoseSvg(tokenId)}
 <g id="cat-behind" display="none"><g transform="translate(318 405) scale(1.07) translate(-318 -382)"><path d="M318 382c29-2 39 25 61 30 22 5 41-8 42-27 1-15-11-24-22-18-8 4-9 15-2 20 5 4 12 1 14-4 2 10-6 18-16 19-22 3-38-27-77-25z" fill="url(#bk-fur)" stroke="#80643a" stroke-width="2.8" stroke-linejoin="round"/><path d="M342 387q9 15 20 20M362 402q9 10 19 12M385 405q9 5 18 3" fill="none" stroke="#9f572f" stroke-width="5" stroke-linecap="round"/></g><path d="M178 418l-2 39c-16 6-24 19-19 29 6 13 39 14 52 3 9-7 6-21-7-29l2-42zM308 418l2 42c-13 8-16 22-7 29 13 11 46 10 52-3 5-10-3-23-19-29l-2-39z" fill="url(#bk-fur)" stroke="#80643a" stroke-width="2.8"/><path d="M162 477q22-9 45 0M305 477q23-9 45 0M176 462q-3 10 0 19M196 461q-2 10 1 19M315 461q-3 10-1 19M336 462q3 10 0 19" fill="none" stroke="#b66c38" stroke-width="3" stroke-linecap="round"/><path d="M171 301c-27 7-48 29-49 53-1 20 13 34 30 28 20-7 30-42 33-74zM341 301c27 7 48 29 49 53 1 20-13 34-30 28-20-7-30-42-33-74z" fill="url(#bk-fur)" stroke="#80643a" stroke-width="2.8"/><path d="M143 330q16 3 32 12M139 347q15 4 30 13M370 331q-16 3-32 12M374 348q-15 4-30 13" fill="none" stroke="#b96832" stroke-width="4" stroke-linecap="round"/><path d="M139 361q8 10 18 7M373 362q-8 10-18 7" fill="none" stroke="#ffe1b2" stroke-width="4" stroke-linecap="round"/></g><g id="banana-shell"><path d="M239 76c-9-18-10-38-5-56 10-7 24-9 34-4 4 18 2 40-4 58 44 19 73 64 85 119 15 73 15 158-6 216-9 26-22 43-39 57-22 10-51 11-76 4-34-8-60-27-70-58-21-58-21-143-6-216 12-58 38-102 82-126z" fill="url(#bk-peel)" stroke="#80643a" stroke-width="2.8" stroke-linejoin="round"/><path d="M264 74c44 19 73 64 85 119 15 73 15 158-6 216-9 26-22 43-39 57-10 4-20 6-31 7 26-39 39-97 36-176-3-90-16-165-45-223z" fill="${shade}" opacity=".2"/><path d="M234 20c10-7 24-9 34-4l1 15c-10 8-25 10-36 5z" fill="#79512f" stroke="#65503a" stroke-width="2.4"/><path d="M239 22q12-5 25-3" fill="none" stroke="#c39b71" stroke-width="1.8" stroke-linecap="round"/><path d="M165 194c17-42 49-64 91-64s76 22 91 64c6 53-26 91-91 94-65-3-97-41-91-94z" fill="url(#bk-opening)" stroke="#80643a" stroke-width="2.4"/><path d="M181 122c-20 71-24 157-10 226 12 59 45 101 96 118" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" opacity=".16"/><path d="M242 104c-14 91-12 181-2 253 8 57 18 91 30 108" fill="none" stroke="#fff8a6" stroke-width="1.8" stroke-linecap="round" opacity=".5"/><path d="M322 115c25 71 31 155 21 226-9 62-33 104-70 124" fill="none" stroke="${shade}" stroke-width="2.2" stroke-linecap="round" opacity=".48"/></g>
 

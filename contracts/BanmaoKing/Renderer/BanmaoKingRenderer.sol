@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
+import {BanmaoKingDiamondRays} from "../Lib/BanmaoKingDiamondRays.sol";
 
 import {BanmaoKingMotionPart0, BanmaoKingMotionPart1} from "../Lib/BanmaoKingMotionLib.sol";
 import {BanmaoKingBadgeLib} from "../Lib/BanmaoKingBadgeLib.sol";
+import {BanmaoKingBackgroundExpansion} from "../Lib/BanmaoKingBackgroundExpansion.sol";
+import {BanmaoKingBackgroundEffects} from "../Lib/BanmaoKingBackgroundEffects.sol";
 import {Base64} from "@openzeppelin/contracts/utils/Base64.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165Checker.sol";
@@ -20,6 +23,8 @@ contract BanmaoKingRenderer is IBanmaoKingRenderer {
     using Strings for uint256;
     using ERC165Checker for address;
 
+    BanmaoKingBackgroundExpansion public immutable expansion;
+    BanmaoKingBackgroundEffects public immutable backgroundEffects = new BanmaoKingBackgroundEffects();
     error InvalidLayer(address layer);
     error InvalidBackground(uint8 traitId);
 
@@ -28,14 +33,19 @@ contract BanmaoKingRenderer is IBanmaoKingRenderer {
     BanmaoKingMotionPart1 public immutable motionPart1;
     IBanmaoKingBodyLib public immutable bodyLib;
     IBanmaoKingExpressionLib public immutable expressionLib;
+    BanmaoKingDiamondRays public immutable diamondRays = new BanmaoKingDiamondRays();
     IBanmaoKingAccessoryLib public immutable accessoryLib;
 
-    constructor(address bodyLib_, address expressionLib_, address accessoryLib_) {
+    constructor(address bodyLib_, address expressionLib_, address accessoryLib_, address backgroundExpansion_, address motionPart0_, address motionPart1_) {
+        if (backgroundExpansion_.code.length == 0) revert InvalidLayer(backgroundExpansion_);
+        expansion = BanmaoKingBackgroundExpansion(backgroundExpansion_);
         if (!bodyLib_.supportsInterface(type(IBanmaoKingBodyLib).interfaceId)) revert InvalidLayer(bodyLib_);
         if (!expressionLib_.supportsInterface(type(IBanmaoKingExpressionLib).interfaceId)) revert InvalidLayer(expressionLib_);
         if (!accessoryLib_.supportsInterface(type(IBanmaoKingAccessoryLib).interfaceId)) revert InvalidLayer(accessoryLib_);
-        motionPart0 = new BanmaoKingMotionPart0();
-        motionPart1 = new BanmaoKingMotionPart1();
+        if (motionPart0_.code.length == 0) revert InvalidLayer(motionPart0_);
+        if (motionPart1_.code.length == 0) revert InvalidLayer(motionPart1_);
+        motionPart0 = BanmaoKingMotionPart0(motionPart0_);
+        motionPart1 = BanmaoKingMotionPart1(motionPart1_);
         bodyLib = IBanmaoKingBodyLib(bodyLib_);
         expressionLib = IBanmaoKingExpressionLib(expressionLib_);
         accessoryLib = IBanmaoKingAccessoryLib(accessoryLib_);
@@ -63,14 +73,14 @@ contract BanmaoKingRenderer is IBanmaoKingRenderer {
             : '<defs><filter id="king-shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#12100d" flood-opacity=".28"/></filter></defs>';
         string memory group = traits_.background == 0 ? '<g>' : '<g filter="url(#king-shadow)">';
         string memory character = string.concat(
-            '<g transform="', _actionTransform(tokenId), '" data-action="', _actionName(tokenId), '">',
+            '<g id="king-action-root" transform="translate(0 0)" data-action="', motionPart1.actionName(traits_.expression), '">',
             '<g id="smil-king-character-motion" class="king-character-motion">', accessoryLib.renderRear(traits_.accessory),
-            bodyLib.render(traits_.body, tokenId), expressionLib.render(traits_.expression),
+            bodyLib.render(traits_.body, tokenId), (traits_.expression == 13 ? string.concat(diamondRays.render(uint8((tokenId % 36 * 7 + 3) % 6)), diamondRays.render(uint8(6 + (tokenId / 6 % 6 * 5 + 1) % 6))) : ""), expressionLib.render(traits_.expression),
             accessoryLib.render(traits_.accessory), '</g></g>'
         );
-        string memory scene = string.concat(_background(traits_.background), _particles(traits_.background),
-            '<g class="king-ground-motion">', _actionShadow(tokenId), '</g>', shadow);
-        return string.concat(_svgOpen(tokenId, traits_), _motionStyle(traits_), motionPart1.pose(uint8(tokenId % 6), traits_.expression), motionPart1.tail(traits_.expression), scene, group, character, '</g>', BanmaoKingBadgeLib.render(tokenId, traits_.background), '</svg>');
+        string memory scene = string.concat(_background(traits_.background), _particles(traits_.background), backgroundEffects.render(traits_.background),
+            '<g class="king-ground-motion">', _actionShadow(), '</g>', shadow);
+        return string.concat(_svgOpen(tokenId, traits_), _motionStyle(traits_), motionPart1.choreography(traits_.expression),  scene, group, character, '</g>', BanmaoKingBadgeLib.render(tokenId, traits_.background), BanmaoKingBadgeLib.watermark(traits_), '</svg>');
     }
 
     function _svgOpen(uint256 tokenId, BanmaoKingTraits calldata traits_) private pure returns (string memory) {
@@ -81,53 +91,28 @@ contract BanmaoKingRenderer is IBanmaoKingRenderer {
         );
     }
 
-    function renderAttributes(uint256 tokenId, BanmaoKingTraits calldata traits_) public view returns (string memory) {
+    function renderAttributes(uint256 /* tokenId */, BanmaoKingTraits calldata traits_) public view returns (string memory) {
         return string.concat(
             '[{"trait_type":"Body","value":"', bodyLib.traitName(traits_.body),
             '"},{"trait_type":"Expression","value":"', expressionLib.traitName(traits_.expression),
             '"},{"trait_type":"Accessory","value":"', accessoryLib.traitName(traits_.accessory),
             '"},{"trait_type":"Background","value":"', _backgroundName(traits_.background),
-            '"},{"trait_type":"Action","value":"', _actionName(tokenId), '"}]'
+            '"},{"trait_type":"Action","value":"', motionPart1.actionName(traits_.expression), '"}]'
         );
     }
 
-    function _actionName(uint256 tokenId) private pure returns (string memory) {
-        uint256 pose = tokenId % 6;
-        if (pose == 0) return "Royal Stand";
-        if (pose == 1) return "Banana Wave";
-        if (pose == 2) return "King's March";
-        if (pose == 3) return "Big Welcome";
-        if (pose == 4) return "Tiptoe";
-        return "Mischief";
-    }
-
-    function _actionTransform(uint256 tokenId) private pure returns (string memory) {
-        uint256 pose = tokenId % 6;
-        if (pose == 0) return "translate(0 0) rotate(0 256 330)";
-        if (pose == 1) return "translate(-3 1) rotate(-2 256 330)";
-        if (pose == 2) return "translate(5 1) rotate(2.5 256 330)";
-        if (pose == 3) return "translate(0 2) rotate(0 256 330)";
-        if (pose == 4) return "translate(0 -5) rotate(-1 256 330)";
-        return "translate(-5 2) rotate(-3 256 330)";
-    }
-
-    function _actionShadow(uint256 tokenId) private pure returns (string memory) {
-        uint256 pose = tokenId % 6;
-        if (pose == 0) return '<ellipse id="action-shadow" cx="256" cy="477" rx="101" ry="13" fill="#625b52" opacity=".18"/>';
-        if (pose == 1) return '<ellipse id="action-shadow" cx="251" cy="477" rx="98" ry="12" fill="#625b52" opacity=".17"/>';
-        if (pose == 2) return '<ellipse id="action-shadow" cx="263" cy="479" rx="108" ry="11" fill="#625b52" opacity=".16"/>';
-        if (pose == 3) return '<ellipse id="action-shadow" cx="256" cy="478" rx="116" ry="13" fill="#625b52" opacity=".17"/>';
-        if (pose == 4) return '<ellipse id="action-shadow" cx="256" cy="482" rx="78" ry="8" fill="#625b52" opacity=".12"/>';
-        return '<ellipse id="action-shadow" cx="247" cy="479" rx="91" ry="11" fill="#625b52" opacity=".16"/>';
+    function _actionShadow() private pure returns (string memory) {
+        return '<ellipse id="action-shadow" cx="256" cy="477" rx="101" ry="13" fill="#625b52" opacity=".18"/>';
     }
 
     function _motionStyle(BanmaoKingTraits calldata traits_) private view returns (string memory) {
-        return string.concat(motionPart0.contentFor(traits_.expression), motionPart1.contentFor(traits_.expression), motionPart0.accessory(traits_.accessory), motionPart0.background(traits_.background));
+        return string.concat(motionPart0.contentFor(traits_.expression), motionPart1.contentFor(traits_.expression), motionPart0.accessory(traits_.accessory < 12 ? traits_.accessory : 0), motionPart0.background(traits_.background < 8 ? traits_.background : 0));
     }
 
     function _particles(uint8 id) private pure returns (string memory) {
-        string[8] memory accents = ['#ffe76a', '#fff1e8', '#eafffa', '#493b9b', '#5ed3ff', '#ff7f50', '#ffffff', '#e9f4ff'];
-        if (id > 7) revert InvalidBackground(id);
+        string[8] memory accents = ['#ffe76a', '#75f7ec', '#eafffa', '#493b9b', '#5ed3ff', '#ff7f50', '#ffffff', '#e9f4ff'];
+        if (id >= 17) revert InvalidBackground(id);
+        if (id >= 8) return "";
         return string.concat(
             '<g id="smil-king-particles" class="king-particles" aria-hidden="true" fill="', accents[id], '">',
             '<circle cx="66" cy="180" r="3"/><circle cx="442" cy="260" r="4"/><circle cx="82" cy="376" r="2.5"/>',
@@ -135,9 +120,10 @@ contract BanmaoKingRenderer is IBanmaoKingRenderer {
         );
     }
 
-    function _background(uint8 id) private pure returns (string memory) {
+    function _background(uint8 id) private view returns (string memory) {
+        if (id >= 8) return expansion.render(id);
         if (id == 0) return '<rect width="512" height="512" fill="#f4efe7"/><ellipse cx="256" cy="260" rx="210" ry="225" fill="#fffaf0" opacity=".45"/><path d="M48 444q208 35 416 0" fill="none" stroke="#dbcdb7" stroke-width="2" opacity=".4"/>';
-        if (id == 1) return '<rect width="512" height="512" fill="#ff9f9f"/><path d="M0 80h512M0 160h512M0 240h512M0 320h512M0 400h512" stroke="#fff" opacity=".16" stroke-width="20"/><path d="M0 120h512M0 280h512M0 440h512" stroke="#fff1e8" opacity=".12" stroke-width="8"/>';
+        if (id == 1) return "<rect width=\"512\" height=\"512\" fill=\"#101329\"/><circle cx=\"256\" cy=\"165\" r=\"115\" fill=\"#312059\"/><circle cx=\"256\" cy=\"165\" r=\"103\" fill=\"none\" stroke=\"#cf66ff\" stroke-width=\"2\"/><path d=\"M0 330H512V512H0Z\" fill=\"#161f38\"/><path d=\"M0 370H512M0 426H512M0 500H512M256 330L0 512M256 330L96 512M256 330L416 512M256 330L512 512\" fill=\"none\" stroke=\"#4cdfeb\" opacity=\".4\"/><path d=\"M15 330V202H62V250H92V165H128V330M384 330V186H418V242H447V149H486V330\" fill=\"#1c2844\" stroke=\"#5bf4e8\" stroke-width=\"2\"/><path d=\"M28 225h19m-19 18h19M102 187h14m-14 18h14M459 174h14m-14 18h14M395 211h12\" stroke=\"#e08bff\" stroke-width=\"3\"/><g fill=\"none\" stroke=\"#75f7ec\" opacity=\".7\"><path d=\"M40 115l22-13 22 13v26l-22 13-22-13Z M428 71l18-10 18 10v22l-18 10-18-10Z\"/><path d=\"M62 154v28h-35M446 103v25h36\"/></g>";
         if (id == 2) return '<rect width="512" height="512" fill="#75d7c3"/><circle cx="64" cy="64" r="14" fill="#fff" opacity=".3"/><circle cx="448" cy="135" r="24" fill="#fff" opacity=".25"/><g id="smil-king-bg-drift" class="king-bg-drift" fill="#eafffa" fill-opacity=".18" stroke="#eafffa" stroke-opacity=".45" stroke-width="2"><circle cx="86" cy="324" r="17"/><circle cx="423" cy="392" r="25"/><circle cx="124" cy="177" r="8"/><circle cx="376" cy="65" r="10"/><path d="M411 383q2-7 9-8" fill="none" stroke-opacity=".8" stroke-linecap="round"/></g>';
         if (id == 3) return '<rect width="512" height="512" fill="#7766cc"/><path d="M0 512L512 0v512z" fill="#493b9b"/><circle cx="75" cy="84" r="8" fill="#fff2a8"/><circle cx="430" cy="72" r="5" fill="#fff2a8"/><path d="M0 504L504 0" stroke="#c5b5fa" stroke-width="2" opacity=".4"/><path id="smil-king-bg-jewel" class="king-jewel" d="M414 420v16m-8-8h16M93 338v10m-5-5h10" stroke="#fff2a8" stroke-width="2" stroke-linecap="round"/>';
         if (id == 4) return '<rect width="512" height="512" fill="#17233d"/><path d="M256 0v512M0 256h512" stroke="#5ed3ff" opacity=".16"/><circle cx="84" cy="80" r="3" fill="white"/><circle cx="425" cy="122" r="4" fill="white"/><path d="M64 0v512M128 0v512M192 0v512M320 0v512M384 0v512M448 0v512M0 64h512M0 128h512M0 192h512M0 320h512M0 384h512M0 448h512" stroke="#5ed3ff" opacity=".08"/><g id="smil-king-bg-jewel" class="king-jewel" fill="#d2f3ff"><circle cx="70" cy="410" r="2"/><circle cx="400" cy="330" r="2"/><circle cx="360" cy="48" r="1.5"/></g>';
@@ -147,9 +133,10 @@ contract BanmaoKingRenderer is IBanmaoKingRenderer {
         revert InvalidBackground(id);
     }
 
-    function _backgroundName(uint8 id) private pure returns (string memory) {
+    function _backgroundName(uint8 id) private view returns (string memory) {
+        if (id >= 8) return expansion.traitName(id);
         if (id == 0) return "Banana Cream";
-        if (id == 1) return "Coral Stripes";
+        if (id == 1) return "Cyberpunk Nexus";
         if (id == 2) return "Mint Bubbles";
         if (id == 3) return "Royal Split";
         if (id == 4) return "Midnight Grid";

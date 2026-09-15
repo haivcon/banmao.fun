@@ -1,4 +1,5 @@
 "use client";
+import { metadataTraits } from "./composition";
 import { useEffect, useRef, useState } from "react";
 import { useAccount, usePublicClient, useSwitchChain, useWalletClient } from "wagmi";
 import { decodeEventLog, erc20Abi, formatUnits, zeroAddress, type Hash, type PublicClient } from "viem";
@@ -6,6 +7,7 @@ import { ConnectButton } from "../../components/wallet/WalletConnection";
 import { BANMAO_KING_DEPLOYMENT as deployment, banmaoKingMintReady } from "./deployment";
 import { kingAbi, kingAddress, paymentAddress, validateMintState, decodeKingMetadata } from "./mint";
 import { KING_T, kingError, type Lang } from "./i18n";
+import { identifiedKingImage, kingSharePath } from "./identity";
 import { animatedKingImage } from "./animated-image";
 
 export default function KingMint({ lang }: { lang: Lang }) {
@@ -13,7 +15,7 @@ export default function KingMint({ lang }: { lang: Lang }) {
   const client = usePublicClient({ chainId: 196 }) as PublicClient | undefined;
   const { data: wallet } = useWalletClient();
   const { switchChainAsync } = useSwitchChain();
-  const [state, setState] = useState<{ supply: bigint; balance: bigint; allowance: bigint }>();
+  const [state, setState] = useState<{ supply: bigint; max: bigint; balance: bigint; allowance: bigint }>();
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState(false);
   const [readFailed, setReadFailed] = useState(false);
@@ -35,12 +37,13 @@ export default function KingMint({ lang }: { lang: Lang }) {
     async function refresh() {
       if (!client) return;
       try {
-        const [supply, balance, allowance] = await Promise.all([
+        const [supply, max, balance, allowance] = await Promise.all([
           client.readContract({ authorizationList: undefined, address: kingAddress, abi: kingAbi, functionName: "totalSupply" }),
+          client.readContract({ authorizationList: undefined, address: kingAddress, abi: kingAbi, functionName: "maxSupply" }),
           address ? client.readContract({ authorizationList: undefined, address: paymentAddress, abi: erc20Abi, functionName: "balanceOf", args: [address] }) : 0n,
           address ? client.readContract({ authorizationList: undefined, address: paymentAddress, abi: erc20Abi, functionName: "allowance", args: [address, kingAddress] }) : 0n,
         ]);
-        if (active) { setState({ supply, balance, allowance }); setReadFailed(false); }
+        if (active) { setState({ supply, max, balance, allowance }); setReadFailed(false); }
       } catch { if (active) { setState(undefined); setReadFailed(true); } }
     }
     void refresh(); const timer = setInterval(refresh, 12000);
@@ -62,10 +65,11 @@ export default function KingMint({ lang }: { lang: Lang }) {
         setMessage(t.confirmed);
         void Promise.all([
           client.readContract({ authorizationList: undefined, address: kingAddress, abi: kingAbi, functionName: "totalSupply" }),
+          client.readContract({ authorizationList: undefined, address: kingAddress, abi: kingAbi, functionName: "maxSupply" }),
           client.readContract({ authorizationList: undefined, address: paymentAddress, abi: erc20Abi, functionName: "balanceOf", args: [address!] }),
           client.readContract({ authorizationList: undefined, address: paymentAddress, abi: erc20Abi, functionName: "allowance", args: [address!, kingAddress] }),
-        ]).then(([supply, balance, allowance]) => {
-          if (active) setState({ supply, balance, allowance });
+        ]).then(([supply, max, balance, allowance]) => {
+          if (active) setState({ supply, max, balance, allowance });
         }).catch(() => { /* Regular balance polling retries failed reads. */ });
         if (receipt.status === "reverted") { setMessage(t.reverted); return; }
         for (const log of receipt.logs) {
@@ -86,7 +90,7 @@ export default function KingMint({ lang }: { lang: Lang }) {
     if (tokenId !== undefined && client) client.readContract({ authorizationList: undefined, address: kingAddress, abi: kingAbi, functionName: "tokenURI", args: [tokenId] }).then(uri => {
       if (!active) return;
       const decoded = decodeKingMetadata(uri);
-      const image = animatedKingImage(decoded.image);
+      const image = identifiedKingImage(animatedKingImage(decoded.image), metadataTraits(decoded.attributes));
       setMetadata(decoded);
       setDisplayImage(image);
     }).catch(() => { if (active) setMessage(t.imageError); });
@@ -135,11 +139,11 @@ export default function KingMint({ lang }: { lang: Lang }) {
   }
   return <section className="king-mint-box" aria-label={t.mint}>
     <div className="king-mint-title"><h2>{t.mint} · Banmao King</h2><span className="king-preview-badge">{t.verified}</span></div>
-    <p><strong>{new Intl.NumberFormat(lang).format(6666)} BANMAO / NFT</strong> · {state ? `${new Intl.NumberFormat(lang).format(state.supply)} / ${new Intl.NumberFormat(lang).format(deployment.maxSupply)}` : t.loading}</p>
-    <p>{t.mintNote}</p><p className="king-chip">{t.gas}</p>{state && <progress aria-label={t.supply} value={Number(state.supply)} max={deployment.maxSupply} />}
+    <p><strong>{new Intl.NumberFormat(lang).format(6666)} BANMAO / NFT</strong> · {state ? `${new Intl.NumberFormat(lang).format(state.supply)} / ${new Intl.NumberFormat(lang).format(state.max)}` : t.loading}</p>
+    <p>{t.mintNote}</p><p className="king-chip">{t.gas}</p>{state && <progress aria-label={t.supply} value={Number(state.supply)} max={Number(state.max)} />}
     {address && <p>{t.balance} · BANMAO: {state ? formatUnits(state.balance, 18) : "—"}</p>}
     <div className="king-wallet-row"><ConnectButton accountStatus="address" chainStatus="none" showBalance={false} label={t.connect} />
-      {address && chainId !== 196 ? <button type="button" onClick={() => void switchChainAsync({ chainId: 196 }).catch(() => setMessage(t.switchHelp))}>{t.switchNetwork}</button> : <button type="button" disabled={!address || !state || busy || pending || state.balance < price || state.supply >= 9216n} onClick={() => void transact()}>{busy || pending ? t.processing : !state ? t.waiting : state.supply >= 9216n ? t.soldOut : state.balance < price ? t.insufficient : state.allowance >= price ? t.mintAction : state.allowance > 0n ? t.resetAllowance : t.approve}</button>}
+      {address && chainId !== 196 ? <button type="button" onClick={() => void switchChainAsync({ chainId: 196 }).catch(() => setMessage(t.switchHelp))}>{t.switchNetwork}</button> : <button type="button" disabled={!address || !state || busy || pending || state.balance < price || state.supply >= state.max} onClick={() => void transact()}>{busy || pending ? t.processing : !state ? t.waiting : state.supply >= state.max ? t.soldOut : state.balance < price ? t.insufficient : state.allowance >= price ? t.mintAction : state.allowance > 0n ? t.resetAllowance : t.approve}</button>}
     </div>
     {readFailed && <div role="status"><p>{t.readError}</p><button type="button" disabled={busy || pending} onClick={() => { setReadFailed(false); setReadRetry(n => n + 1); }}>{t.retry}</button></div>}
     <p role="status" aria-live="polite">{message}</p>
@@ -147,6 +151,8 @@ export default function KingMint({ lang }: { lang: Lang }) {
     {tokenId !== undefined && (
       <div>
         <h3>{t.success} #{tokenId.toString()}</h3>
+        <p><a href={kingSharePath(tokenId)}>{lang === "vi" ? "Tra cứu / chia sẻ NFT" : "Look up / share NFT"}</a></p>
+        {displayImage && <a href={displayImage} download={`BanmaoKing-${tokenId}-preview.svg`}>{lang === "vi" ? "Tải bản xem thử có mã số" : "Download preview with ID"}</a>}
         {metadata ? (
           <>
             {/* On-chain SVG data URI: render the original without an image optimization proxy. */}

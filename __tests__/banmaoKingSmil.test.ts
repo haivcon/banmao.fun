@@ -43,7 +43,7 @@ describe('shared SMIL preview', () => {
   });
   test('stronger mouth peaks preserve neutral shapes and closed morph loops', () => {
     expect(animatedExpressionSvg(0)).toContain('M241 255q15 22 30 0');
-    expect(animatedExpressionSvg(8)).toContain('M249 278q8 26 15 0');
+    expect(animatedExpressionSvg(8)).toContain('M250 273q22-3 25 14q-17 18-25-14Z');
     for (let id = 0; id < 12; id++) {
       const mouth = animatedExpressionSvg(id).match(/<g class="king-mouth"[^>]*>(.*?)<\/g>/)![1];
       for (const [, attribute, values] of mouth.matchAll(/<animate attributeName="(d|ry)" values="([^"]+)"/g)) {

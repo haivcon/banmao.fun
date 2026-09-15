@@ -1,18 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
+import {BanmaoKingRoyalAccessory} from "./BanmaoKingRoyalAccessory.sol";
 
+import {BanmaoKingAccessoryExpansion} from "./BanmaoKingAccessoryExpansion.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {IBanmaoKingAccessoryLib} from "../IBanmaoKingRenderer.sol";
 
 /// @notice Stateless, permanently deployed accessory-layer catalogue.
 contract BanmaoKingAccessoryLib is IBanmaoKingAccessoryLib {
+    BanmaoKingRoyalAccessory public immutable royal = new BanmaoKingRoyalAccessory();
+    BanmaoKingAccessoryExpansion public immutable expansion = new BanmaoKingAccessoryExpansion();
     error InvalidAccessory(uint8 traitId);
 
     function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
         return interfaceId == type(IERC165).interfaceId || interfaceId == type(IBanmaoKingAccessoryLib).interfaceId;
     }
 
-    function traitName(uint8 id) external pure returns (string memory) {
+    function traitName(uint8 id) external view returns (string memory) {
+        if (id == 20) return "Imperial Regalia";
+        if (id >= 12) return expansion.traitName(id);
         if (id == 0) return "None";
         if (id == 1) return "King Crown";
         if (id == 2) return "Red Bow";
@@ -28,14 +34,18 @@ contract BanmaoKingAccessoryLib is IBanmaoKingAccessoryLib {
         revert InvalidAccessory(id);
     }
 
-    function renderRear(uint8 id) external pure returns (string memory) {
-        if (id >= 12) revert InvalidAccessory(id);
+    function renderRear(uint8 id) external view returns (string memory) {
+        if (id == 20) return royal.renderRear();
+        if (id > 20) revert InvalidAccessory(id);
+        if (id >= 12) return expansion.renderRear(id);
         if (id == 9) return '<g id="accessory-rear"><path class="king-wizard-brim king-wizard-brim-rear" d="M177 136C170 114 342 114 335 136Q299 150 256 146Q213 150 177 136Z" fill="#493676" stroke="#392c59" stroke-width="4"/><path d="M185 130Q256 108 327 130" fill="none" stroke="#a08ad7" stroke-width="3" stroke-linecap="round"/></g>';
         if (id == 10) return '<g id="accessory-rear"><g id="smil-king-halo-float-rear" class="king-halo-float-rear"><path class="king-halo-back" d="M184 61a72 17 0 0 1 144 0" fill="none" stroke="#a87a38" stroke-width="4"/><path d="M184 59a72 17 0 0 1 144 0" fill="none" stroke="#e7bf65" stroke-width="2.5"/><path d="M193 53c20-13 106-13 126 0" fill="none" stroke="#fff0b0" stroke-width="1" stroke-linecap="round"/></g></g>';
         return '';
     }
 
-    function render(uint8 id) external pure returns (string memory) {
+    function render(uint8 id) external view returns (string memory) {
+        if (id == 20) return royal.render();
+        if (id >= 12) return expansion.render(id);
         if (id == 0) return '<g id="accessory"/>';
         if (id == 1) return '<g id="accessory"><path class="king-crown-velvet" d="M214 120q3-28 20-23 22-16 44 0 17-5 20 23z" fill="#922b46" stroke="#713048" stroke-width="3"/><path d="M229 106q27-16 54 0" fill="none" stroke="#c74a62" stroke-width="4" stroke-linecap="round"/><path class="king-crown" d="M214 126l-15-40q-2-7 4-3l27 20 21-35q5-7 10 0l21 35 27-20q6-4 4 3l-15 40q-42-12-84 0z" fill="#ffd35b" stroke="#80502c" stroke-width="4" stroke-linejoin="round"/><path d="M208 106l9 18q39-11 78 0l10-25-21 17-28-35-24 35z" fill="#eaa035"/><path d="M211 104l5 12M240 99l16-27M286 108l17-13" fill="none" stroke="#fff3ba" stroke-width="3" stroke-linecap="round"/><path class="king-crown-band" d="M214 125q42-13 84 0l-4 17q-38-10-76 0z" fill="#f7c04d" stroke="#80502c" stroke-width="4" stroke-linejoin="round"/><path d="M219 135q37-10 74 0l-1 5q-36-9-72 0z" fill="#d9902c"/><path d="M220 127q36-10 72 0" fill="none" stroke="#fff3ba" stroke-width="3" stroke-linecap="round"/><path class="king-crown-side-gems" d="M229 123l5 6-5 6-5-6zM283 123l5 6-5 6-5-6z" fill="#bc304f" stroke="#80502c" stroke-width="2" stroke-linejoin="round"/><path id="smil-king-crown-ruby" class="king-crown-ruby" d="M256 115l11 10-11 13-11-13z" fill="#aa2748" stroke="#80502c" stroke-width="2" stroke-linejoin="round"/><path d="M256 118l8 7-8 9z" fill="#ef5d77"/><path d="M256 118v7h-8z" fill="#ff9ba9"/><path d="M248 125h16l-8 9z" fill="#cf3658"/><path id="smil-king-jewel" class="king-jewel" d="M252 121l2-3 2 3-2 3zM227 127l2-2 1 2-1 2zM282 127l1-2 2 2-2 2z" fill="#fff3e2"/></g>';
         if (id == 2) return '<g id="accessory"><g id="smil-king-bow-tails" class="king-bow-tails"><path d="M249 302l-16 32 13-3 7 9 6-34M263 302l17 29-12-2-7 10-6-33" fill="#bd304b" stroke="#792c3e" stroke-width="4" stroke-linejoin="round"/><path d="M249 314l-7 12M265 313l6 11" fill="none" stroke="#ef6879" stroke-width="3" stroke-linecap="round"/></g><path d="M248 295c-13-7-28-15-33-7-5 7-5 26 1 30 7 5 22-5 32-9M264 295c14-8 28-13 33-5 4 8 4 24-2 28-7 4-20-5-31-9" fill="#e64a61" stroke="#792c3e" stroke-width="4" stroke-linejoin="round"/><path d="M217 309q13 2 28-7l-1 8q-20 14-28 7zM269 303q14 8 27 6l-1 8q-9 4-26-7z" fill="#c33350"/><path d="M220 292q8-1 17 5M276 297q9-4 15-2" fill="none" stroke="#ff9b9e" stroke-width="3" stroke-linecap="round"/><path d="M245 301l-13-1M268 301l12 1" fill="none" stroke="#9d2e45" stroke-width="3" stroke-linecap="round"/><rect id="smil-king-bow-knot" class="king-bow-knot" x="246" y="291" width="20" height="23" rx="7" fill="#d83c56" stroke="#792c3e" stroke-width="4"/><path d="M252 297v10" stroke="#ff969b" stroke-width="3" stroke-linecap="round"/></g>';

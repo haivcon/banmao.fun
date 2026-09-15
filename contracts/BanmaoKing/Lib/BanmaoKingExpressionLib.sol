@@ -1,19 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
+import {BanmaoKingExpressionExpansion} from "./BanmaoKingExpressionExpansion.sol";
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 import {IBanmaoKingExpressionLib} from "../IBanmaoKingRenderer.sol";
 
 import {BanmaoKingExpressionPart0, BanmaoKingExpressionPart1, BanmaoKingExpressionPart2} from "./BanmaoKingExpressionParts.sol";
 /// @notice Stateless, permanently deployed face-expression catalogue.
 contract BanmaoKingExpressionLib is IBanmaoKingExpressionLib {
+    BanmaoKingExpressionExpansion public immutable expansion = new BanmaoKingExpressionExpansion();
     error InvalidExpression(uint8 traitId);
 
     function supportsInterface(bytes4 interfaceId) external pure returns (bool) {
         return interfaceId == type(IERC165).interfaceId || interfaceId == type(IBanmaoKingExpressionLib).interfaceId;
     }
 
-    function traitName(uint8 id) external pure returns (string memory) {
+    function traitName(uint8 id) external view returns (string memory) {
+        if (id >= 12) return expansion.traitName(id);
         if (id == 0) return "Happy Smile";
         if (id == 1) return "Joy";
         if (id == 2) return "Wink";
@@ -42,6 +45,7 @@ contract BanmaoKingExpressionLib is IBanmaoKingExpressionLib {
         part2 = BanmaoKingExpressionPart2(p2);
     }
     function render(uint8 id) external view returns(string memory) {
+        if (id >= 12) return expansion.render(id);
         if (id < 4) return part0.render(id);
         if (id < 8) return part1.render(id);
         if (id < 12) return part2.render(id);

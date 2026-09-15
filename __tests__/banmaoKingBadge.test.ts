@@ -33,10 +33,12 @@ describe('King pixel identity badge', () => {
     const origins = cells.map(c => [Number(c[1]) + Number(c[3]), Number(c[2]) + Number(c[4])]);
     const boxOrigins = [[276, 142], [444, 142], [360, 226], [276, 310], [444, 310]];
     expect(cells).toHaveLength(75);
+    expect(Math.min(...origins.map(([x]) => x))).toBe(386);
+    expect(Math.min(...origins.map(([, y]) => y))).toBe(25);
     origins.forEach((origin, i) => {
       const [x, y] = boxOrigins[Math.floor(i / 15)];
       const cell = i % 15;
-      expect(origin).toEqual([386 + (x - 276) / 84 * 30 + cell % 3 * 10, 14 + (y - 142) / 84 * 30 + Math.floor(cell % 9 / 3) * 10]);
+      expect(origin).toEqual([386 + (x - 276) / 84 * 15 + cell % 3 * 5, 25 + (y - 142) / 84 * 15 + Math.floor(cell % 9 / 3) * 5]);
     });
   });
   test('uses bounded fallback for full uint256 and rejects invalid IDs', () => {
@@ -47,8 +49,8 @@ describe('King pixel identity badge', () => {
     expect(() => tokenBadgeSvg(id + BigInt(1))).toThrow();
   });
   test('adapts contrast and scatter without changing digits', () => {
-    expect(tokenBadgeSvg(42, 4)).toContain('fill="#ffe9a0"');
-    expect(tokenBadgeSvg(42, 0)).toContain('fill="#634323"');
+    expect(tokenBadgeSvg(42, 4)).toContain('fill="#fff4cf"');
+    expect(tokenBadgeSvg(42, 0)).toContain('fill="#342313"');
     expect(tokenBadgeSvg(42)).not.toBe(tokenBadgeSvg(43));
   });
 });
