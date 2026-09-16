@@ -10,13 +10,16 @@ library BanmaoKingChoreography {
     using Strings for uint256;
     struct Profile { string name; string duration; string left; string right; string footLeft; string footRight; string lean; string lift; string tail; }
     function rotate(string memory target, string memory beats, string memory pivot, string memory duration) internal pure returns (string memory) {
+        return rotateMode(target, beats, pivot, duration, '');
+    }
+    function rotateMode(string memory target, string memory beats, string memory pivot, string memory duration, string memory mode) internal pure returns (string memory) {
         bytes memory raw = bytes(beats);
         string memory values;
         for (uint256 i; i < raw.length; i++) {
             if (raw[i] == bytes1(';')) values = string.concat(values, ' ', pivot, ';');
             else values = string.concat(values, string(abi.encodePacked(raw[i])));
         }
-        return string.concat('<animateTransform href="#smil-', target, '" attributeName="transform" type="rotate" values="', values, ' ', pivot, '"', timing(duration), '/>');
+        return string.concat('<animateTransform href="#smil-', target, '" attributeName="transform" type="rotate"', mode, ' values="', values, ' ', pivot, '"', timing(duration), '/>');
     }
     function inverse(string memory beats) internal pure returns (string memory result) {
         bytes memory raw = bytes(beats);
@@ -62,7 +65,7 @@ library BanmaoKingChoreography {
         string memory beats = left ? D.wristLeft(id) : D.wrist(id);
         string memory t = directed(id, left, duration);
         result = string.concat(rotate(string.concat('king-wrist-', side), beats, '0 -12', t), result);
-        if (!left) result = string.concat(staffBob(beats, t), rotate('king-held-wrist', beats, '0 -12', t), rotate('king-shield-counter-wrist', inverse(beats), '369 357', t), result);
+        if (!left) result = string.concat(staffBob(beats, t), rotate('king-held-wrist', inverse(profile(id).right), '0 -12', t), rotateMode('king-held-wrist', inverse(profile(id).lean), '0 -12', duration, ' additive="sum"'), rotate('king-shield-counter-wrist', inverse(beats), '369 357', t), result);
         return result;
     }
     function motion(uint8 id) internal pure returns (string memory) {

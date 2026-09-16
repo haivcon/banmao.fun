@@ -5,6 +5,7 @@ import {BanmaoKingArtUpgrade} from "../Lib/BanmaoKingArtUpgrade.sol";
 import {BanmaoKingDiamondRays} from "../Lib/BanmaoKingDiamondRays.sol";
 
 import {BanmaoKingMotionPart0, BanmaoKingMotionPart1} from "../Lib/BanmaoKingMotionLib.sol";
+import {BanmaoKingBirthdayLib} from "../Lib/BanmaoKingBirthdayLib.sol";
 import {BanmaoKingBadgeLib} from "../Lib/BanmaoKingBadgeLib.sol";
 import {BanmaoKingBackgroundExpansion} from "../Lib/BanmaoKingBackgroundExpansion.sol";
 import {BanmaoKingBackgroundEffects} from "../Lib/BanmaoKingBackgroundEffects.sol";
@@ -92,7 +93,7 @@ contract BanmaoKingRenderer is IBanmaoKingRenderer {
         );
         string memory scene = string.concat(_background(traits_.background), _particles(traits_.background), backgroundEffects.render(traits_.background),
             _sceneUpgrade(traits_), '<g class="king-ground-motion">', _actionShadow(), '</g>', shadow);
-        return string.concat(_svgOpen(tokenId, traits_), _motionStyle(traits_), motionPart1.choreography(traits_.expression), scene, secondaryMotion.render(traits_.expression), group, character, '</g>', BanmaoKingBadgeLib.render(tokenId, traits_.background), BanmaoKingBadgeLib.watermark(traits_), '</svg>');
+        return string.concat(_svgOpen(tokenId, traits_), _motionStyle(traits_), motionPart1.choreography(traits_.expression), scene, secondaryMotion.render(traits_.expression), group, character, '</g>', (traits_.accessory == 5 ? BanmaoKingBirthdayLib.render() : ''), BanmaoKingBadgeLib.render(tokenId, traits_.background), BanmaoKingBadgeLib.watermark(traits_), '</svg>');
     }
 
     function _accessory(uint8 id) private view returns (string memory) {

@@ -16,7 +16,7 @@ export function accessoryLabEffects(id: number): string {
     case 5: return `<g>${move('translate','0 0;5 13;-3 23;0 0',5.7)}${path('M174 128q-8 6 0 12m155-47q9 6 1 12','#ffaecc','',3)}${star(321,126,-2)}</g>`;
     case 6: return path('M207 309Q256 347 307 308','#fff8cd',loop('stroke-dashoffset','0;-90',4.4),2).replace('fill="none"','stroke-dasharray="3 87" fill="none"');
     case 7: return `<circle cx="363" cy="337" r="3" fill="#e1fff5" opacity=".7">${loop('cy','337;342;345;337',6.2)}${loop('opacity','.7;.9;0;.7',6.2)}</circle>`;
-    case 8: return `<g stroke="#9ae8ff" stroke-width="3">${[0,1,2,3].map(i=>path(`M${151+i*5} 218v10m${190-i*10} -10v10`,'#9ae8ff',loop('stroke-width','1;4;1;2;1',1.7,-i*.21))).join('')}</g>`;
+    case 8: return `<g stroke="#9ae8ff" stroke-width="3">${[0,1,2,3].map(i=>path(`M${151+i*5} 208v10m${190-i*10} -10v10`,'#9ae8ff',loop('stroke-width','1;4;1;2;1',1.7,-i*.21))).join('')}</g>`;
     case 9: return `<g>${move('rotate','0 256 95;360 256 95',18)}${star(256,57,0)}${star(288,95,-2)}${star(256,133,-1)}</g>`;
     case 10: return `<g opacity=".3">${path('M204 73l-8 12M230 81l-4 15M282 81l4 15M308 73l8 12','#ffe8a0',loop('opacity','.15;.65;.15',6.6))}</g>`;
     case 11: return path('M181 333Q159 367 157 394M331 333Q353 367 355 394','#ffd6a0',loop('d','M181 333Q159 367 157 394M331 333Q353 367 355 394;M181 333Q172 367 151 390M331 333Q340 367 361 390;M181 333Q159 367 157 394M331 333Q353 367 355 394',4.9));

@@ -107,6 +107,7 @@ tools
 # Reproducible King code generation and its focused regression tests.
 !/tools/
 /tools/*
+!/tools/soften-king-wrists.cjs
 !/tools/king-svg-codegen.cjs
 !/tools/king-background-codegen.cjs
 !/tools/deploy-king-graph.cjs

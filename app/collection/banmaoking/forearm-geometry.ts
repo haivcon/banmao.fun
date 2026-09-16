@@ -3,7 +3,10 @@
 export function forearmGeometry(side: 'left' | 'right', wrist: number, shoulder: number, gripping = false) {
   const left = side === 'left';
   const x = left ? 143 : 369;
-  const angle = ((gripping ? 0 : left ? 36 : -36) + wrist) * Math.PI / 180;
+  // A held prop and its palm form a rigid socket; only the shoulder lifts it.
+  // Match the grip-only wrist override in the neutral rig, including in-between frames.
+  // The grip follows the shoulder-to-palm axis rather than pointing down.
+  const angle = (gripping ? (left ? 28 : -28) : (left ? 36 : -36) + wrist) * Math.PI / 180;
   const sin = Math.sin(angle), cos = Math.cos(angle);
   const point = (px: number, py: number) => [x + px * cos - (py + 12) * sin, 345 + px * sin + (py + 12) * cos];
   // Palm is enlarged about its attachment pivot, not about the SVG origin.
@@ -12,7 +15,8 @@ export function forearmGeometry(side: 'left' | 'right', wrist: number, shoulder:
   const center = point(0, -12);
   const tangent = (p: number[]) => [p[0] + 12 * sin, p[1] - 12 * cos];
   const format = (p: number[]) => p.map(v => Number(v.toFixed(2))).join(' ');
-  const bend = Math.min(4.5, Math.abs(shoulder) / 30) * (left ? -1 : 1);
+  // Gripping arms use a straighter forearm to avoid ugly bending at extreme rotations.
+  const bend = gripping ? 0 : Math.min(4.5, Math.abs(shoulder) / 30) * (left ? -1 : 1);
   const start = left ? '164 302' : '348 302';
   const end = left ? '184 310' : '328 310';
   // Two smooth cubic spans give the arm a rounded belly instead of a wedge.

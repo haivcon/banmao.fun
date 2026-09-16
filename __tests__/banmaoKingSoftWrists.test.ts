@@ -4,6 +4,61 @@ import profiles from '../app/collection/banmaoking/choreography.json';
 import rig from '../app/collection/banmaoking/neutral-rig.json';
 import { cyborgBody } from '../app/collection/banmaoking/body-effects';
 import { secondaryMotionSvg } from '../app/collection/banmaoking/secondary-motion';
+import { previewSvg } from '../app/collection/banmaoking/smil-preview';
+
+test('grip tangent follows the shoulder-to-palm axis instead of bending vertically down', () => {
+  const curve = nums(forearmGeometry('right', 0, 0, true).contour.split('C')[2].split('M')[0]);
+  const dx = curve[4] - curve[2], dy = curve[5] - curve[3];
+  // Shoulder center (338,306) to attachment (369,345): about 38.5 degrees
+  // from vertical. Allow a soft transition, but reject the old vertical wrist.
+  const alignment = (dx * 31 + dy * 39) / (Math.hypot(dx, dy) * Math.hypot(31, 39));
+  expect(alignment).toBeGreaterThan(Math.cos(12 * Math.PI / 180));
+});
+
+test.each([6, 9, 14, 15, 17, 19, 20])('accessory %i shares the tilted palm socket in both body rigs', accessory => {
+  for (const body of [0, 7]) {
+    const svg = previewSvg({ body, accessory, expression: 5, background: 0 }, 1, 'socket');
+    expect(svg).toContain('.king-arm-right .king-paw-alignment-cupped{transform:rotate(-28deg);transform-origin:0px -12px}');
+    const propRule = '[id$="smil-king-held-wrist"]{transform:rotate(-28deg)!important;transform-origin:0px -12px}';
+    expect(svg).not.toContain(propRule);
+    const tracks = svg.match(/<animateTransform[^>]*href="#socket-smil-king-held-wrist"[^>]*>/g) || [];
+    expect(tracks).toHaveLength(2);
+    expect(tracks[0]).toContain('values="0 0 -12;-8 0 -12;108 0 -12;120 0 -12;50 0 -12;6 0 -12;0 0 -12"');
+    expect(tracks[1]).toContain('additive="sum"');
+    expect(svg).toContain('[data-accessory="6"] [data-ak-grip]{display:none}');
+    expect(svg).toContain('id="socket-smil-king-held-wrist"');
+    const offset = svg.match(/\[id\$="smil-king-held-arm"\]>g\{transform:translate\(([\d.]+)px,([\d.]+)px\)\}/)!;
+    expect(offset).not.toBeNull();
+    // Undo palm rotation/scaling: the prop pivot must land inside the
+    // distal palm at (0,4), not at the wrist (0,-12) or outside the fingers.
+    const dx = Number(offset[1]) - 369;
+    // Undo the additional 3-unit lift before checking the anatomical anchor.
+    expect(Number(offset[1])).toBeCloseTo(377.26, 2);
+    expect(Number(offset[2])).toBeCloseTo(369.54, 2);
+    const dy = Number(offset[2]) + 3 - 12 - 345;
+    const angle = -28 * Math.PI / 180;
+    expect((dx * Math.cos(angle) + dy * Math.sin(angle)) / 1.1).toBeCloseTo(0, 2);
+    expect((-dx * Math.sin(angle) + dy * Math.cos(angle)) / 1.1 - 12).toBeCloseTo(4, 2);
+    expect(svg).not.toContain('translate(373px,352px)');
+    expect(svg).not.toContain('translate(376px,352px)');
+    // The nudge belongs to the prop socket, not the anatomical palm anchor.
+    expect(svg).toContain('translate(369 357)');
+    expect(svg).toContain(forearmGeometry('right', 0, 0, true).contour);
+  }
+});
+
+// Inspect assembled, prefixed scenes, not just the isolated geometry helper.
+test.each([6, 9, 14, 15, 17, 19, 20])('accessory %i keeps all inverse prop rotations locked in normal and Cyborg previews', accessory => {
+  for (const body of [0, 7]) {
+    const svg = previewSvg({ body, accessory, expression: 5, background: 0 }, 1, 'grip-test');
+    for (const target of ['shield-counter-arm', 'shield-counter-lean', 'staff-counter-arm', 'staff-counter-lean', 'staff-counter-turn']) {
+      expect(svg).toContain(`[id$="smil-king-${target}"]`);
+    }
+    expect(svg).toContain('[id$="smil-king-staff-counter-turn"]){transform:none!important}');
+    expect(svg).toContain('id="grip-test-smil-king-held-arm"');
+    expect(svg).toContain('href="#grip-test-smil-king-arm-right"');
+  }
+});
 
 test.each(profiles.map((_, i) => i))('wrist %i has no independent palm scaling or reversed distal contour', id => {
   expect(secondaryMotionSvg(id)).not.toMatch(/<animateTransform[^>]*href="#king-paw-/);
@@ -26,6 +81,26 @@ test.each(profiles.map((_, i) => i))('wrist %i has no independent palm scaling o
       }
     }
   }
+});
+
+test('gripping forearm stays rigid at every raised-arm beat and between beats', () => {
+  const neutral = forearmGeometry('right', 0, 0, true);
+  profiles.forEach((profile, id) => {
+    const wrists = direction[id][3].split(';').map(Number);
+    const shoulders = profile.right.split(';').map(Number);
+    for (let beat = 0; beat < 6; beat++) for (let sample = 0; sample <= 10; sample++) {
+      const t = sample / 10;
+      expect(forearmGeometry('right', wrists[beat] * (1 - t) + wrists[beat + 1] * t,
+        shoulders[beat] * (1 - t) + shoulders[beat + 1] * t, true)).toEqual(neutral);
+    }
+  });
+  expect(forearmGeometry('right', 12, 90)).not.toEqual(forearmGeometry('right', 0, 0));
+});
+
+test.each([false, true])('grip-only wrist lock includes props and inverse wrist tracks (cyborg=%s)', cyborg => {
+  const svg = cyborg ? cyborgBody(rig.rear) : rig.rear;
+  const selector = ':is([data-accessory="6"],[data-accessory="9"],[data-accessory="14"],[data-accessory="15"],[data-accessory="17"],[data-accessory="19"],[data-accessory="20"])';
+  expect(svg).toContain(`${selector} :is([id$="smil-king-wrist-right"],[id$="smil-king-shield-counter-wrist"],[id$="smil-king-staff-counter-wrist"]){transform:none!important}`);
 });
 
 test.each([false, true])('palms and forearms share seam-free paint (cyborg=%s)', cyborg => {
@@ -70,7 +145,7 @@ test.each(profiles.map((_, i) => i))('wrist %i meets the palm with a continuous 
         const g = forearmGeometry(side, w, Number(profiles[id][side].split(';')[beat]), grip);
         const curve = nums(g.contour.split('C')[2].split('M')[0]);
         expect(g.contour.match(/C/g)).toHaveLength(4);
-        const angle = ((grip ? 0 : left ? 36 : -36) + w) * Math.PI / 180;
+        const angle = (grip ? (left ? 28 : -28) : (left ? 36 : -36) + w) * Math.PI / 180;
         const px = left ? -11 : 11;
         const expected = [(left ? 143 : 369) + px * Math.cos(angle) + 4.4 * Math.sin(angle), 345 + px * Math.sin(angle) - 4.4 * Math.cos(angle)];
         expect(Math.hypot(curve[4] - expected[0], curve[5] - expected[1])).toBeLessThan(.008);
