@@ -1,5 +1,20 @@
 # BanmaoKing behavior-preserving cleanup
 
+## Badge gas optimization and compiler warning fix (2026-09-16)
+
+- Badge assembly now uses O(n log n) balanced merge tree instead of O(n²) sequential append.
+  tokenURI returns at 50M gas (previously reverted); SVG content is byte-identical.
+- MotionLib Part1 unused variable warning resolved: removed dead `durations` array,
+  replaced with `require(expression < 21)` range validation.
+- SMIL tests aligned with choreography/volume split and watery tears expression.
+- Security tests aligned with 17/21/21/17 catalogue, expression action names from
+  choreography.json, snapshot restore between tests, and proper ganache disconnect.
+- All 201 core tests passed (Codegen 30, DeployGraph 2, SecondaryMotion 51,
+  SoftWrists 68, SMIL 50).
+- Badge exact parity verified at 42, 999, 9216, 10000 and uint256 max.
+- TypeScript exit 0.
+- All compiled contracts below EIP-170/EIP-3860 limits.
+
 ## Validation follow-up (2026-09-16)
 
 Current release gate is NOT green. Fresh observed results:
