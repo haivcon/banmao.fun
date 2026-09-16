@@ -14,6 +14,9 @@ import { animatedExpressionSvg } from "../../app/collection/banmaoking/motion";
 import { ACCESSORY_SVGS, BACKGROUND_SVGS, accessoryRearSvg } from "../../app/collection/banmaoking/scene";
 import { tokenBadgeSvg } from "../../app/collection/banmaoking/badge";
 import { BODY_TRAITS } from "../../app/collection/banmaoking/traits";
+import profiles from "../../app/collection/banmaoking/choreography.json";
+import { choreographySvg } from "../../app/collection/banmaoking/choreography";
+import { secondaryMotionSvg } from "../../app/collection/banmaoking/secondary-motion";
 
 type Artifact = {
   abi: ethers.ContractInterface;
@@ -200,7 +203,8 @@ describe("BanmaoKing immutable on-chain release", () => {
   const nativePrice = ethers.utils.parseEther("1");
   const erc20Price = ethers.utils.parseEther("25");
 
-  beforeEach(async () => {
+  let snapshot: string;
+  beforeAll(async () => {
     provider = new ethers.providers.Web3Provider(
       ganache.provider({ logging: { quiet: true } }) as never,
     );
@@ -223,6 +227,17 @@ describe("BanmaoKing immutable on-chain release", () => {
       500,
       ethers.utils.id("BANMAO_KING_TEST_SEED"),
     ]);
+    snapshot = await provider.send("evm_snapshot", []);
+  });
+
+  beforeEach(async () => {
+    expect(await provider.send("evm_revert", [snapshot])).toBe(true);
+    snapshot = await provider.send("evm_snapshot", []);
+  });
+
+  afterAll(async () => {
+    const rpc = provider?.provider as unknown as { disconnect: () => Promise<void> };
+    await rpc?.disconnect();
   });
 
   test("mints 9216 unique combinations, exhausts configured supply and rejects oversized supply", async () => {
@@ -402,7 +417,7 @@ describe("BanmaoKing immutable on-chain release", () => {
     expect(metadata.attributes).toHaveLength(5);
     expect(metadata.attributes[4]).toEqual({
       trait_type: "Action",
-      value: "Banana Wave",
+      value: profiles[Number(before.expression)].name,
     });
     const svg = Buffer.from(metadata.image.split(",")[1], "base64").toString(
       "utf8",
@@ -426,7 +441,8 @@ describe("BanmaoKing immutable on-chain release", () => {
       const svg = normalize(await renderer.renderSVG(id, traits));
       const palette = BODY_TRAITS[traits.body];
       const character = normalize(accessoryRearSvg(id) + bodySvg(palette.color, palette.shade, id) + animatedExpressionSvg(id) + ACCESSORY_SVGS[id]);
-      expect(svg).toContain(`<g class="king-character-motion">${character}</g>`);
+      expect(svg).toContain(character);
+      expect(svg).toContain(`<g class="king-character-motion" data-accessory="${id}">`);
       expect(svg).toContain(BACKGROUND_SVGS[traits.background]);
       expect(svg).toContain(actionShadowSvg(id));
       expect(svg).toContain(staticGeometry(tokenBadgeSvg(id, traits.background)));
@@ -440,34 +456,27 @@ describe("BanmaoKing immutable on-chain release", () => {
 
   test("matches pixel badges at digit boundaries and uint256 fallback", async () => {
     for (const id of [42, 999, 9216, 10000, ethers.constants.MaxUint256.toString()]) {
-      const svg = staticGeometry(await renderer.renderSVG(id, { body: 0, expression: 0, accessory: 0, background: 4 }));
+      const rendered = await renderer.renderSVG(id, { body: 0, expression: 0, accessory: 0, background: 4 });
+      expect(rendered).toContain(tokenBadgeSvg(BigInt(id), 4));
+      const svg = staticGeometry(rendered);
       expect(svg).toContain(staticGeometry(tokenBadgeSvg(BigInt(id), 4)));
     }
   });
 
-  test("renders six deterministic on-chain action poses from token ID", async () => {
-    const base = { body: 0, expression: 0, accessory: 0, background: 0 };
-    for (let tokenId = 0; tokenId < 6; tokenId += 1) {
-      const svg = staticGeometry(await renderer.renderSVG(tokenId, base)).replace(
-        />\s+</g,
-        "><",
-      );
-      const expectedBody = staticGeometry(bodySvg(
-        BODY_TRAITS[0].color,
-        BODY_TRAITS[0].shade,
-        tokenId,
-      )).replace(/>\s+</g, "><");
-      expect(svg).toContain(expectedBody);
-      expect(svg).toContain(`data-pose="${tokenId}"`);
-      await expect(sharp(Buffer.from(svg)).metadata()).resolves.toMatchObject({
-        width: 512,
-        height: 512,
-      });
-    }
-    expect(await renderer.renderSVG(6, base)).toContain('data-pose="0"');
-  });
+  test.each(profiles.map((profile, expression) => [expression, profile.name] as const))(
+    "renders expression %i choreography (%s) on-chain",
+    async (expression, name) => {
+      const traits = { body: 0, expression, accessory: 0, background: 0 };
+      const svg = await renderer.renderSVG(1, traits);
+      expect(svg).toContain(`data-action="${name}"`);
+      expect(svg).toContain(choreographySvg(expression));
+      expect(svg).toContain(secondaryMotionSvg(expression));
+      expect(svg).not.toContain('data-pose=');
+      await expect(sharp(Buffer.from(svg)).metadata()).resolves.toMatchObject({ width: 512, height: 512 });
+    },
+  );
 
-  test("embeds self-contained animation in minted token metadata with a raster fallback", async () => {
+  test("embeds self-contained animated SVG in minted metadata and permits local rasterization", async () => {
     await king.mint(ownerAddress, ethers.constants.AddressZero, { value: nativePrice });
     const uri: string = await king.tokenURI(1);
     const metadata = JSON.parse(Buffer.from(uri.split(",")[1], "base64").toString());
@@ -486,9 +495,9 @@ describe("BanmaoKing immutable on-chain release", () => {
     }
   });
 
-  test("renders every catalogue entry and rejects out-of-range traits", async () => {
+  test.each(Array.from({ length: 17 }, (_, body) => body))("renders body catalogue entry %i", async body => {
     const base = { body: 0, expression: 0, accessory: 0, background: 0 };
-    for (let body = 0; body < 8; body += 1) {
+    {
       const svg = await renderer.renderSVG(1, { ...base, body });
       const palette = BODY_TRAITS[body];
       const normalizedSvg = staticGeometry(svg).replace(/>\s+</g, "><");
@@ -497,24 +506,9 @@ describe("BanmaoKing immutable on-chain release", () => {
         "><",
       );
       expect(normalizedSvg).toContain(normalizedBody);
-      expect(normalizedBody).toContain(
-        "M318 382c29-2 39 25 61 30 22 5 41-8 42-27",
-      );
-      expect(normalizedBody).toContain("M178 418l-2 39c-16 6-24 19-19 29");
-      expect(normalizedBody).toContain(
-        "M171 301c-27 7-48 29-49 53-1 20 13 34 30 28",
-      );
-      expect(normalizedBody).toContain(
-        'transform="translate(318 405) scale(1.07) translate(-318 -382)"',
-      );
-      expect(normalizedBody).toContain(
-        "M342 387q9 15 20 20M362 402q9 10 19 12M385 405q9 5 18 3",
-      );
-      expect(normalizedBody).toContain("M162 477q22-9 45 0M305 477q23-9 45 0");
-      expect(normalizedBody).toContain(
-        "M143 330q16 3 32 12M139 347q15 4 30 13",
-      );
-      expect(normalizedBody).toContain("M139 361q8 10 18 7M373 362q-8 10-18 7");
+      // Compare the whole authored body, including the Cyborg variant, rather
+      // than asserting the superseded common limb paths on every costume.
+      await expect(sharp(Buffer.from(svg)).metadata()).resolves.toMatchObject({ width: 512, height: 512 });
       expect(normalizedBody).not.toContain('id="bk-tail-clip"');
       expect(normalizedBody).not.toContain('id="tail"');
       expect(normalizedBody).not.toContain('id="hind-legs"');
@@ -526,31 +520,21 @@ describe("BanmaoKing immutable on-chain release", () => {
         normalizedBody.indexOf('id="cat"'),
       );
     }
-    for (let expression = 0; expression < 12; expression += 1) {
-      const svg = await renderer.renderSVG(1, { ...base, expression });
-      expect(staticGeometry(svg)).toContain(staticGeometry(animatedExpressionSvg(expression)));
-      expect(svg).toContain(`data-expression="${expression}"`);
+  });
+
+  test.each(Array.from({ length: 21 }, (_, id) => id))("renders expression/accessory catalogue entry %i", async id => {
+    const svg = await renderer.renderSVG(1, { body: 0, expression: id, accessory: id, background: id % 17 });
+    expect(staticGeometry(svg)).toContain(staticGeometry(animatedExpressionSvg(id)));
+    expect(svg).toContain(`data-expression="${id}"`);
+    expect(svg).toContain('id="accessory"');
+    await expect(sharp(Buffer.from(svg)).metadata()).resolves.toMatchObject({ width: 512, height: 512 });
+  });
+
+  test("rejects first out-of-range catalogue IDs", async () => {
+    const base = { body: 0, expression: 0, accessory: 0, background: 0 };
+    for (const [key, value] of Object.entries({ body: 17, expression: 21, accessory: 21, background: 17 })) {
+      await expect(renderer.renderSVG(1, { ...base, [key]: value })).rejects.toThrow();
     }
-    for (let accessory = 0; accessory < 12; accessory += 1) {
-      expect(await renderer.renderSVG(1, { ...base, accessory })).toContain(
-        'id="accessory"',
-      );
-    }
-    for (let background = 0; background < 8; background += 1) {
-      expect(await renderer.renderSVG(1, { ...base, background })).toMatch(
-        /^<svg[\s\S]*<\/svg>$/,
-      );
-    }
-    await expect(renderer.renderSVG(1, { ...base, body: 8 })).rejects.toThrow();
-    await expect(
-      renderer.renderSVG(1, { ...base, expression: 12 }),
-    ).rejects.toThrow();
-    await expect(
-      renderer.renderSVG(1, { ...base, accessory: 12 }),
-    ).rejects.toThrow();
-    await expect(
-      renderer.renderSVG(1, { ...base, background: 8 }),
-    ).rejects.toThrow();
   });
 
   test("allows anyone to refresh metadata repeatedly without changing token state or funds", async () => {

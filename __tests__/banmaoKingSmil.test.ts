@@ -3,6 +3,10 @@ import { smilMarkup } from '../app/collection/banmaoking/smil';
 import { tokenBadgeSvg } from '../app/collection/banmaoking/badge';
 import { animatedExpressionSvg } from '../app/collection/banmaoking/motion';
 import { expressionSvg } from '../app/collection/banmaoking/artwork';
+import { wateryTears } from '../app/collection/banmaoking/expression-effects';
+import { choreographySvg } from '../app/collection/banmaoking/choreography';
+import { secondaryMotionSvg } from '../app/collection/banmaoking/secondary-motion';
+import profiles from '../app/collection/banmaoking/choreography.json';
 
 describe('shared SMIL preview', () => {
   test.each(Array.from({length:24},(_,i)=>i))('valid unique scoped animated targets %i', i => {
@@ -19,14 +23,28 @@ describe('shared SMIL preview', () => {
   });
   test.each(Array.from({length:12},(_,i)=>i))('preserves eye geometry for mood %i', i => {
     const animated = animatedExpressionSvg(i);
-    // SMIL adds wrappers, closed lids and animation children, not a new neutral face.
-    for (const [, d] of expressionSvg(i).matchAll(/\bd="([^"]+)"/g)) expect(animated).toContain(`d="${d}"`);
+    // The watery expression replaces static tear geometry, not the eyes or mouth.
+    const neutral = expressionSvg(i).replace(/<g class="king-tears">[\s\S]*?<\/g>/, '');
+    for (const [, d] of neutral.matchAll(/\bd="([^"]+)"/g)) expect(animated).toContain(`d="${d}"`);
+    if (i === 7) expect(animated).toContain(wateryTears());
     expect(smilMarkup(i)).not.toMatch(/__MOOD__|undefined/);
   });
   test.each(Array.from({length:12},(_,i)=>i))('bounded breathing and expression-specific blush %i', i => {
     const motion = smilMarkup(i);
-    expect(motion.match(/href="#smil-king-character-motion"/g)).toHaveLength(1);
-    expect(motion).toContain('values="0 0;0 -3.5;0 0"');
+    // Whole-body lean belongs to choreography; volume breathing has its own wrapper.
+    expect(motion).not.toContain('href="#smil-king-character-motion"');
+    expect(choreographySvg(i).match(/href="#smil-king-character-motion"/g)).toHaveLength(1);
+    const volume = secondaryMotionSvg(i).match(/<animateTransform href="#king-volume-motion"[^>]+/)!;
+    expect(volume).not.toBeNull();
+    expect(volume[0]).toContain('type="scale"');
+    expect(volume[0]).toContain(`dur="${profiles[i].duration}s"`);
+    const scales = volume[0].match(/values="([^"]+)"/)![1].split(';').map(frame => frame.split(' ').map(Number));
+    expect(scales[0]).toEqual(scales.at(-1));
+    for (const [x, y] of scales) {
+      expect(x * y).toBeCloseTo(1, 3);
+      expect(y).toBeGreaterThanOrEqual(.98);
+      expect(y).toBeLessThanOrEqual(1.03);
+    }
     const timing = ['4','2','3.2','2.8','7','2.2','5','6','2.4','7','2.6','8'][i];
     expect(motion).toContain(`dur="${timing}s"`);
     const face = animatedExpressionSvg(i);

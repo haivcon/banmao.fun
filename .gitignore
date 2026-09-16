@@ -112,12 +112,17 @@ tools
 !/tools/deploy-king-graph.cjs
 !/tools/run-king-validation.cjs
 !/tools/validate-king-refactor.cjs
+!/tools/diagnose-king-metadata.cjs
 !/__tests__/
 /__tests__/*
 !/__tests__/banmaoKingCodegen.test.ts
 !/__tests__/banmaoKingDeployGraph.test.ts
 !/__tests__/banmaoKingSecondaryMotion.test.ts
 !/__tests__/banmaoKingSoftWrists.test.ts
+!/__tests__/banmaoKingSmil.test.ts
+!/__tests__/contracts/
+/__tests__/contracts/*
+!/__tests__/contracts/banmaoKing.security.test.ts
 
 # Local-only scripts: never publish deployment or maintenance tooling.
 /scripts/
