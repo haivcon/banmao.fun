@@ -10,9 +10,29 @@ library BanmaoKingBadgeLib {
         bytes memory text = bytes(id.toString());
         string memory opening = string.concat('<g class="king-token-badge" transform="', Identity.BADGE_TRANSFORM, '" fill="', Identity.ink(background), '">');
         if (text.length > 4) return string.concat(opening, '<title>Token #', string(text), '</title><text x="386" y="40" font-size="8" textLength="112" lengthAdjust="spacingAndGlyphs">#', string(text), '</text></g>');
-        string memory cells;
-        for (uint256 i; i < 75; ++i) cells = string.concat(cells, _cell(id, text, i));
-        return string.concat(opening, '<title>Token #', string(text), '</title><g class="king-token-cells">', cells, '</g></g>');
+        // Pre-compute the 11 glyph maps once; avoids allocating string[11]
+        // inside every _cell call (75x).
+        bytes[11] memory maps;
+        maps[0] = '111101101101111'; maps[1] = '010110010010111';
+        maps[2] = '111001111100111'; maps[3] = '111001111001111';
+        maps[4] = '101101111001001'; maps[5] = '111100111001111';
+        maps[6] = '111100111101111'; maps[7] = '111001010010010';
+        maps[8] = '111101111101111'; maps[9] = '111101111001111';
+        maps[10] = '101111101111101';
+        // Merge adjacent chunks in a balanced tree. Repeatedly appending to one
+        // growing string copies the entire prefix 75 times and inflates EVM memory.
+        // This preserves every SVG byte while bounding the copying to O(n log n).
+        string[75] memory cells;
+        for (uint256 i; i < 75; ++i) cells[i] = _cell(id, text, i, maps);
+        uint256 count = 75;
+        while (count > 1) {
+            uint256 next;
+            for (uint256 i; i < count; i += 2) {
+                cells[next++] = i + 1 < count ? string.concat(cells[i], cells[i + 1]) : cells[i];
+            }
+            count = next;
+        }
+        return string.concat(opening, '<title>Token #', string(text), '</title><g class="king-token-cells">', cells[0], '</g></g>');
     }
     function compositionCode(BanmaoKingTraits memory traits_) internal pure returns (string memory) {
         require(traits_.body < 17 && traits_.expression < 21 && traits_.accessory < 21 && traits_.background < 17, "Invalid traits");
@@ -25,35 +45,39 @@ library BanmaoKingBadgeLib {
     function watermark(BanmaoKingTraits memory traits_) internal pure returns (string memory) {
         return string.concat(Identity.WATERMARK_OPEN, ' fill="', Identity.ink(traits_.background), '" stroke="', Identity.outline(traits_.background), '"', Identity.WATERMARK_FONT, '>', compositionCode(traits_), '</text></g>');
     }
-    function _cell(uint256 id, bytes memory text, uint256 i) private pure returns (string memory) {
+    function _cell(uint256 id, bytes memory text, uint256 i, bytes[11] memory maps) private pure returns (string memory) {
         uint256 glyph = i / 15;
         uint256 cell = i % 15;
-        string memory lit = '0';
+        string memory lit;
         {
-        string[11] memory maps = ['111101101101111','010110010010111','111001111100111','111001111001111','101101111001001','111100111001111','111100111101111','111001010010010','111101111101111','111101111001111','101111101111101'];
-        if (glyph <= text.length) {
-            uint256 digit = glyph == 0 ? 10 : uint8(text[glyph - 1]) - 48;
-            if (bytes(maps[digit])[cell] == '1') lit = '1';
-        }
+            bool isLit;
+            if (glyph <= text.length) {
+                uint256 digit = glyph == 0 ? 10 : uint8(text[glyph - 1]) - 48;
+                isLit = maps[digit][cell] == '1';
+            }
+            lit = isLit ? '1' : '0';
         }
         bool bar = glyph == 0 && (cell / 3 == 1 || cell / 3 == 3);
+        string memory w = bar ? '6' : glyph == 0 ? '3' : '4';
         uint256 x = glyph == 0 ? 386 + (bar ? cell % 3 * 6 : 3 + cell % 3 * 3) : 386 + glyph * 22 + cell % 3 * 5;
         uint256 y = 25 + cell / 3 * 5;
-        string memory start = string.concat('<rect x="', x.toString(), '" y="', y.toString(), '" width="', bar ? '6' : glyph == 0 ? '3' : '4', '" height="4" opacity="', lit);
+        string memory part;
         {
-        uint256[5] memory cx = [uint256(386),446,416,386,446];
-        uint256[5] memory cy = [uint256(14),14,44,74,74];
-        start = string.concat(start, '" style="--tx:', _logoDelta(cx[glyph] + cell % 3 * 10, x, Identity.LOGO_CENTER_X), 'px;--ty:', _logoDelta(cy[glyph] + cell % 9 / 3 * 10, y, Identity.LOGO_CENTER_Y));
+            uint256[5] memory cx = [uint256(386),446,416,386,446];
+            uint256[5] memory cy = [uint256(14),14,44,74,74];
+            string memory logoTx = _logoDelta(cx[glyph] + cell % 3 * 10, x, Identity.LOGO_CENTER_X);
+            string memory logoTy = _logoDelta(cy[glyph] + cell % 9 / 3 * 10, y, Identity.LOGO_CENTER_Y);
+            part = string.concat('" style="--tx:', logoTx, 'px;--ty:', logoTy, 'px;--sx:');
+            part = string.concat(part, _delta(384 + (id % 97 + i * 17) % 111, x), 'px;--sy:', _delta(14 + (i * 13 + id % 31) % 43, y));
+            part = string.concat(part, 'px;--lit:', lit, ';--cell-width:', w, 'px;--logo-lit:', cell < 9 ? '1' : '0', '">');
+            part = string.concat(part, _motion(id, i, x, y, lit, w, logoTx, logoTy), '</rect>');
         }
-        start = string.concat(start, 'px;--sx:', _delta(384 + (id % 97 + i * 17) % 111, x), 'px;--sy:', _delta(14 + (i * 13 + id % 31) % 43, y), 'px;--lit:', lit, ';--cell-width:', bar ? '6' : glyph == 0 ? '3' : '4', 'px;--logo-lit:', cell < 9 ? '1' : '0', '">');
-        return string.concat(start, _motion(id, i, x, y, lit, bar ? '6' : glyph == 0 ? '3' : '4'), '</rect>');
+        return string.concat('<rect x="', x.toString(), '" y="', y.toString(), '" width="', w, '" height="4" opacity="', lit, part);
     }
-    function _motion(uint256 id, uint256 i, uint256 x, uint256 y, string memory lit, string memory width) private pure returns (string memory) {
+    function _motion(uint256 id, uint256 i, uint256 x, uint256 y, string memory lit, string memory width, string memory logoTx, string memory logoTy) private pure returns (string memory) {
         string memory motion;
         {
-        uint256[5] memory cx = [uint256(386),446,416,386,446];
-        uint256[5] memory cy = [uint256(14),14,44,74,74];
-        string memory logo = string.concat(_logoDelta(cx[i / 15] + i % 15 % 3 * 10, x, Identity.LOGO_CENTER_X), ' ', _logoDelta(cy[i / 15] + i % 15 % 9 / 3 * 10, y, Identity.LOGO_CENTER_Y));
+        string memory logo = string.concat(logoTx, ' ', logoTy);
         string memory scatter = string.concat(_delta(384 + (id % 97 + i * 17) % 111, x), ' ', _delta(14 + (i * 13 + id % 31) % 43, y));
         motion = string.concat('<animateTransform attributeName="transform" type="translate" values="0 0;0 0;', scatter, ';', logo, ';', logo, ';', scatter, ';0 0;0 0" keyTimes="0;.2;.3;.42;.64;.76;.88;1" dur="8s" repeatCount="indefinite" additive="sum"/>');
         }

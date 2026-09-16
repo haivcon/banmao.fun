@@ -47,9 +47,8 @@ contract BanmaoKingMotionPart1 {
  function content() external pure returns(string memory) { return _content(0); }
  function contentFor(uint8 expression) external pure returns(string memory) { return _content(expression); }
  function _content(uint8 expression) private pure returns(string memory) {
- string[21] memory durations = ["4","2","3.2","2.8","7","2.2","5","6","2.4","7","2.6","8","6.4","4.6","3.6","9","5.4","4.8","3.4","10","7.3"];
- string memory timing = durations[expression];
- string memory result = '';
- return result;
+ // Durations mirror Part0; Part1 content is empty but validates range.
+ require(expression < 21);
+ return '';
  }
 }
