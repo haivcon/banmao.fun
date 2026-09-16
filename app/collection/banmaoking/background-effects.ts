@@ -1,3 +1,4 @@
+import { backgroundLife } from './background-life';
 // Visual tiers only: these do not alter mint probabilities or metadata rarity.
 export const BACKGROUND_EFFECT_TIERS = ['simple','simple','simple','rare','rare','rare','rare','simple','ultra','rare','rare','rare','rare','rare','ultra','ultra','ultra'] as const;
 const drift = (dx:number,dy:number,dur:number,phase=0) => `<animateTransform attributeName="transform" type="translate" values="0 0;${dx} ${dy};0 0" dur="${dur}s" begin="${phase}s" repeatCount="indefinite"/>`;
@@ -25,5 +26,5 @@ export function backgroundEffects(id:number): string {
     orbit(233,72,'#ffe6a5')+`<path d="M76 0l-30 480h75L146 0M366 0l25 480h75L436 0" fill="#ffeab1" opacity=".05">${pulse(18)}</path>`,
   ];
   if(!Number.isInteger(id)||!motifs[id]) throw new RangeError('Invalid background');
-  return `<g data-background-tier="${BACKGROUND_EFFECT_TIERS[id]}" data-background-effect="${id}">${motifs[id]}</g>`;
+  return `<g data-background-tier="${BACKGROUND_EFFECT_TIERS[id]}" data-background-effect="${id}">${motifs[id]}${backgroundLife(id)}</g>`;
 }

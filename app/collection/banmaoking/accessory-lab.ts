@@ -6,7 +6,7 @@ const star = (x: number, y: number, delay: number) => `<path d="M${x-4} ${y}h8m-
 
 // Each slot has its own silhouette/detail choreography, not a shared wobble.
 export function accessoryLabEffects(id: number): string {
-  if (id >= 13) return ""; // These effects now live inside canonical accessory groups.
+  if (id === 6 || id === 7 || id >= 13) return ""; // These effects now live inside canonical accessory groups.
   switch (id) {
     case 0: return '';
     case 1: return [203,256,309].map((x,i) => star(x, i === 1 ? 64 : 83, -i*1.1)).join('') + path('M220 132Q256 123 292 132','#fff4bd',loop('stroke-dashoffset','80;0;-80',6),2).replace('fill="none"','stroke-dasharray="8 72" fill="none"');

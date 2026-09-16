@@ -9,8 +9,11 @@ import {IBanmaoKingBodyLib} from "../IBanmaoKingRenderer.sol";
 import {BanmaoKingAnatomyPart} from "./BanmaoKingAnatomyPart.sol";
 /// @notice Stateless, permanently deployed body-layer catalogue.
 contract BanmaoKingBodyLib is IBanmaoKingBodyLib {
+    // Validation errors.
     error InvalidBody(uint8 traitId);
     error InvalidPart(address part);
+
+    // Dependencies: anatomy is injected; effects and Cyborg are constructor children.
     BanmaoKingAnatomyPart public immutable anatomyPart;
     BanmaoKingBodyEffects public immutable effects = new BanmaoKingBodyEffects();
     BanmaoKingCyborgBody public immutable cyborg = new BanmaoKingCyborgBody();
@@ -47,19 +50,25 @@ contract BanmaoKingBodyLib is IBanmaoKingBodyLib {
     function render(uint8 traitId, uint256 tokenId) external view returns (string memory) {
         (string memory peel, string memory shade) = traitId == 16 ? (BanmaoKingRoyalLib.BODY_COLOR, BanmaoKingRoyalLib.BODY_SHADE) : _colors(traitId);
         if (traitId == 7) return cyborg.render(7);
-        return string.concat('<g id="body">', _defs(peel, shade), anatomyPart.actionPose(tokenId), _catBehind(), _bananaShell(shade), _faceRim(), _cat(), _costumeDetails(), anatomyPart.frontPaws(tokenId), effects.render(traitId), '</g>');
+        return string.concat('<g id="body">', _defs(peel, shade), anatomyPart.actionPose(tokenId), _catBehind(), _bananaShell(shade), _faceRim(), _cat(), _costumeDetails(), effects.render(traitId), '</g>');
     }
 
-
-
     function _peelHighlight(string memory peel) private pure returns (string memory) {
-        if (keccak256(bytes(peel)) == keccak256(bytes("#fff36b"))) return "#fffac5";
-        if (keccak256(bytes(peel)) == keccak256(bytes("#bde33b"))) return "#edf9be";
-        if (keccak256(bytes(peel)) == keccak256(bytes("#ffad6b"))) return "#ffe3c4";
-        if (keccak256(bytes(peel)) == keccak256(bytes("#72d8e8"))) return "#d8faff";
-        if (keccak256(bytes(peel)) == keccak256(bytes("#a985e8"))) return "#eee3ff";
-        if (keccak256(bytes(peel)) == keccak256(bytes("#ff8fc6"))) return "#ffe0f0";
-        if (keccak256(bytes(peel)) == keccak256(bytes("#d8d8d8"))) return "#ffffff";
+        if (bytes7(bytes(peel)) == bytes7("#fff36b")) return "#fffac5";
+        if (bytes7(bytes(peel)) == bytes7("#bde33b")) return "#edf9be";
+        if (bytes7(bytes(peel)) == bytes7("#ffad6b")) return "#ffe3c4";
+        if (bytes7(bytes(peel)) == bytes7("#72d8e8")) return "#d8faff";
+        if (bytes7(bytes(peel)) == bytes7("#a985e8")) return "#eee3ff";
+        if (bytes7(bytes(peel)) == bytes7("#ff8fc6")) return "#ffe0f0";
+        if (bytes7(bytes(peel)) == bytes7("#d8d8d8")) return "#ffffff";
+        if (bytes7(bytes(peel)) == bytes7("#49318c")) return "#b5a0d8";
+        if (bytes7(bytes(peel)) == bytes7("#f7931a")) return "#ffe2a0";
+        if (bytes7(bytes(peel)) == bytes7("#8198ef")) return "#d8e3ff";
+        if (bytes7(bytes(peel)) == bytes7("#eeeeee")) return "#ffffff";
+        if (bytes7(bytes(peel)) == bytes7("#46d5b0")) return "#c0f5e8";
+        if (bytes7(bytes(peel)) == bytes7("#50658c")) return "#b8c6dc";
+        if (bytes7(bytes(peel)) == bytes7("#ffb7ce")) return "#ffe5ef";
+        if (bytes7(bytes(peel)) == bytes7("#ca4262")) return "#f0a0b8";
         return "#fff9a8";
     }
 
@@ -71,12 +80,9 @@ contract BanmaoKingBodyLib is IBanmaoKingBodyLib {
         return '<g id="cat-behind" display="none"><g transform="translate(318 405) scale(1.07) translate(-318 -382)"><path d="M318 382c29-2 39 25 61 30 22 5 41-8 42-27 1-15-11-24-22-18-8 4-9 15-2 20 5 4 12 1 14-4 2 10-6 18-16 19-22 3-38-27-77-25z" fill="url(#bk-fur)" stroke="#80643a" stroke-width="2.8" stroke-linejoin="round"/><path d="M342 387q9 15 20 20M362 402q9 10 19 12M385 405q9 5 18 3" fill="none" stroke="#9f572f" stroke-width="5" stroke-linecap="round"/></g><path d="M178 418l-2 39c-16 6-24 19-19 29 6 13 39 14 52 3 9-7 6-21-7-29l2-42zM308 418l2 42c-13 8-16 22-7 29 13 11 46 10 52-3 5-10-3-23-19-29l-2-39z" fill="url(#bk-fur)" stroke="#80643a" stroke-width="2.8"/><path d="M162 477q22-9 45 0M305 477q23-9 45 0M176 462q-3 10 0 19M196 461q-2 10 1 19M315 461q-3 10-1 19M336 462q3 10 0 19" fill="none" stroke="#b66c38" stroke-width="3" stroke-linecap="round"/><path d="M171 301c-27 7-48 29-49 53-1 20 13 34 30 28 20-7 30-42 33-74zM341 301c27 7 48 29 49 53 1 20-13 34-30 28-20-7-30-42-33-74z" fill="url(#bk-fur)" stroke="#80643a" stroke-width="2.8"/><path d="M143 330q16 3 32 12M139 347q15 4 30 13M370 331q-16 3-32 12M374 348q-15 4-30 13" fill="none" stroke="#b96832" stroke-width="4" stroke-linecap="round"/><path d="M139 361q8 10 18 7M373 362q-8 10-18 7" fill="none" stroke="#ffe1b2" stroke-width="4" stroke-linecap="round"/></g>';
     }
 
-
-
     function _bananaShell(string memory shade) private pure returns (string memory) {
         return string.concat('<g id="banana-shell"><path d="M239 76c-9-18-10-38-5-56 10-7 24-9 34-4 4 18 2 40-4 58 44 19 73 64 85 119 15 73 15 158-6 216-9 26-22 43-39 57-22 10-51 11-76 4-34-8-60-27-70-58-21-58-21-143-6-216 12-58 38-102 82-126z" fill="url(#bk-peel)" stroke="#80643a" stroke-width="2.8" stroke-linejoin="round"/><path d="M264 74c44 19 73 64 85 119 15 73 15 158-6 216-9 26-22 43-39 57-10 4-20 6-31 7 26-39 39-97 36-176-3-90-16-165-45-223z" fill="', shade, '" opacity=".2"/><path d="M234 20c10-7 24-9 34-4l1 15c-10 8-25 10-36 5z" fill="#79512f" stroke="#65503a" stroke-width="2.4"/><path d="M239 22q12-5 25-3" fill="none" stroke="#c39b71" stroke-width="1.8" stroke-linecap="round"/><path d="M165 194c17-42 49-64 91-64s76 22 91 64c6 53-26 91-91 94-65-3-97-41-91-94z" fill="url(#bk-opening)" stroke="#80643a" stroke-width="2.4"/><path d="M181 122c-20 71-24 157-10 226 12 59 45 101 96 118" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" opacity=".16"/><path d="M242 104c-14 91-12 181-2 253 8 57 18 91 30 108" fill="none" stroke="#fff8a6" stroke-width="1.8" stroke-linecap="round" opacity=".5"/><path d="M322 115c25 71 31 155 21 226-9 62-33 104-70 124" fill="none" stroke="', shade, '" stroke-width="2.2" stroke-linecap="round" opacity=".48"/></g>');
     }
-
 
     // Paint the opening rim behind the cat so it cannot cut across moving ears.
     function _faceRim() private pure returns (string memory) {
@@ -110,16 +116,5 @@ contract BanmaoKingBodyLib is IBanmaoKingBodyLib {
         if (traitId == 15) return ("#ca4262", "#76213d");
         revert InvalidBody(traitId);
     }
-
-
-
-
-
-
-
-
-
-
-
 
 }

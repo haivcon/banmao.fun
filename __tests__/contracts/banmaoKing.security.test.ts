@@ -210,14 +210,8 @@ describe("BanmaoKing immutable on-chain release", () => {
     treasury = await provider.getSigner(3).getAddress();
     token = await deploy("TestToken", owner);
     feeToken = await deploy("FeeToken", owner);
-    const body = await deploy("BanmaoKingBodyLib", owner);
-    const expression = await deploy("BanmaoKingExpressionLib", owner);
-    const accessory = await deploy("BanmaoKingAccessoryLib", owner);
-    renderer = await deploy("BanmaoKingRenderer", owner, [
-      body.address,
-      expression.address,
-      accessory.address,
-    ]);
+    const { deployKingGraph } = jest.requireActual('../../tools/deploy-king-graph.cjs');
+    ({ renderer } = await deployKingGraph((name: string, args: unknown[]) => deploy(name, owner, args)));
     king = await deploy("BanmaoKingNFT", owner, [
       renderer.address,
       treasury,
@@ -231,9 +225,11 @@ describe("BanmaoKing immutable on-chain release", () => {
     ]);
   });
 
-  test("exhausts all 9216 combinations without replacement and rejects oversized supply", async () => {
+  test("mints 9216 unique combinations, exhausts configured supply and rejects oversized supply", async () => {
+    const combinations = 17 * 21 * 21 * 17;
+    expect(await king.TOTAL_COMBINATIONS()).toEqual(ethers.BigNumber.from(combinations));
     const args = [renderer.address, treasury, 9216, 1, [], [], treasury, 500, ethers.constants.HashZero];
-    await expect(deploy("BanmaoKingNFT", owner, [...args.slice(0, 2), 9217, ...args.slice(3)])).rejects.toThrow();
+    await expect(deploy("BanmaoKingNFT", owner, [...args.slice(0, 2), combinations + 1, ...args.slice(3)])).rejects.toThrow();
     const uniqueKing = await deploy("BanmaoKingNFT", owner, args);
     const batch = await deploy("KingBatchMinter", owner);
     const seen = new Set<number>();
@@ -246,10 +242,10 @@ describe("BanmaoKing immutable on-chain release", () => {
         if (event.name !== "KingMinted") continue;
         const packed = Number(event.args.packedTraits);
         expect(seen.has(packed)).toBe(false);
-        expect(packed & 255).toBeLessThan(8);
-        expect((packed >>> 8) & 255).toBeLessThan(12);
-        expect((packed >>> 16) & 255).toBeLessThan(12);
-        expect(packed >>> 24).toBeLessThan(8);
+        expect(packed & 255).toBeLessThan(17);
+        expect((packed >>> 8) & 255).toBeLessThan(21);
+        expect((packed >>> 16) & 255).toBeLessThan(21);
+        expect(packed >>> 24).toBeLessThan(17);
         seen.add(packed);
       }
     }
@@ -388,10 +384,10 @@ describe("BanmaoKing immutable on-chain release", () => {
       value: nativePrice,
     });
     const before = await king.traits(1);
-    expect(Number(before.body)).toBeLessThan(8);
-    expect(Number(before.expression)).toBeLessThan(12);
-    expect(Number(before.accessory)).toBeLessThan(12);
-    expect(Number(before.background)).toBeLessThan(8);
+    expect(Number(before.body)).toBeLessThan(17);
+    expect(Number(before.expression)).toBeLessThan(21);
+    expect(Number(before.accessory)).toBeLessThan(21);
+    expect(Number(before.background)).toBeLessThan(17);
 
     const recipient = await provider.getSigner(1).getAddress();
     await king.transferFrom(ownerAddress, recipient, 1);
@@ -439,7 +435,7 @@ describe("BanmaoKing immutable on-chain release", () => {
       const part1 = new ethers.Contract(await renderer.motionPart1(), artifacts.BanmaoKingMotionPart1.abi, provider);
       expect(await renderer.renderSVG(id, traits)).toContain((await part0.contentFor(id)) + (await part1.contentFor(id)));
     }
-    expect((artifacts.BanmaoKingRenderer.bytecode.length - 2) / 2 + 96).toBeLessThanOrEqual(49_152);
+    expect((artifacts.BanmaoKingRenderer.bytecode.length - 2) / 2 + 10 * 32).toBeLessThanOrEqual(49_152);
   });
 
   test("matches pixel badges at digit boundaries and uint256 fallback", async () => {
@@ -631,14 +627,7 @@ describe("BanmaoKing immutable on-chain release", () => {
 
   test("blocks treasury reentrancy while allowing the original mint", async () => {
     const reentering = await deploy("ReenteringTreasury", owner);
-    const body = await deploy("BanmaoKingBodyLib", owner);
-    const expression = await deploy("BanmaoKingExpressionLib", owner);
-    const accessory = await deploy("BanmaoKingAccessoryLib", owner);
-    const localRenderer = await deploy("BanmaoKingRenderer", owner, [
-      body.address,
-      expression.address,
-      accessory.address,
-    ]);
+    const localRenderer = renderer;
     const guardedKing = await deploy("BanmaoKingNFT", owner, [
       localRenderer.address,
       reentering.address,

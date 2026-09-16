@@ -23,7 +23,7 @@ describe('expression-owned choreography', () => {
       expect(scene.indexOf('id="check-smil-king-arm-right"')).toBeLessThan(scene.indexOf('id="check-banana-shell"'));
       expect(scene).not.toContain('id="check-front-paws"');
       expect(scene).toContain('class="king-forearm"');
-      expect(scene).toContain('M164 302C154 312 143 325 131 339Q126 351 143 352');
+      expect(scene).toMatch(/id="check-king-forearm-left"[^>]*d="M164 302C150 300/);
       for (const side of ['left', 'right']) {
         expect(scene).toContain(`id="check-smil-king-wrist-${side}"`);
         expect(scene).toContain(`<animateTransform href="#check-smil-king-wrist-${side}"`);

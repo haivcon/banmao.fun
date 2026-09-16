@@ -51,7 +51,8 @@ export function animatedExpressionSvg(id: number) {
     eyes = `<g class="king-eyes-symbolic">${eyes}<animateTransform attributeName="transform" type="rotate" additive="sum" values="0 256 215;0 256 215;${id === 3 ? 2 : -3} 256 215;0 256 215;0 256 215" keyTimes="0;.4;.55;.7;1" calcMode="spline" keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1" dur="${durations[id]}s" repeatCount="indefinite"/></g>`;
   } else {
     // Discrete visibility switches between actual open and closed shapes, never a fade.
-    const timing = `keyTimes="${eyeProfiles[id]?.blink ?? '0;.84;.865;.9;1'}" calcMode="discrete" dur="${eyeProfiles[id]?.duration ?? durations[id]}s" repeatCount="indefinite"`;
+    const basicBlinks: Record<number, string> = { 0: '0;.81;.825;.85;1', 1: '0;.74;.76;.79;1', 2: '0;.88;.9;.93;1', 5: '0;.95;.96;.975;1', 6: '0;.9;.91;.935;1' };
+    const timing = `keyTimes="${basicBlinks[id] ?? eyeProfiles[id]?.blink ?? '0;.84;.865;.9;1'}" calcMode="discrete" dur="${eyeProfiles[id]?.duration ?? durations[id]}s" repeatCount="indefinite"`;
     let wink = '';
     if (id === 2) {
       const tag = eyes.match(/^<path[^>]+\/>/)![0];
@@ -61,6 +62,11 @@ export function animatedExpressionSvg(id: number) {
     const lids = id === 2 ? 'M273 217q19 9 38 0' : id === 0 ? 'M204 213q20 9 40 0M268 213q20 9 40 0' : 'M197 217q21 9 42 0M273 217q21 9 42 0';
     eyes = `${wink}<g class="king-eyes-open">${eyes}<animate attributeName="visibility" values="visible;hidden;hidden;visible;visible" ${timing}/></g><g class="king-closed-lids" visibility="hidden"><path d="${lids}" fill="none" stroke="#633c25" stroke-width="3.5" stroke-linecap="round"/><animate attributeName="visibility" values="hidden;visible;visible;hidden;hidden" ${timing}/></g>`;
   }
-  const detail = svg.slice(eyeEnd).replace(/<g class="king-tears">[\s\S]*?<\/g>/, wateryTears());
+  const whiskerAngles = [2,3,2,3,-4,6,-2,-3,4,1,5,.5,2,2,1,-3,3,2,-2,.5,1];
+  const detail = svg.slice(eyeEnd).replace(/<g class="king-tears">[\s\S]*?<\/g>/, wateryTears()).replace(/<path\b[^>]*class="king-whiskers-(left|right)"[^>]*\/>/g, (tag, side: string) => {
+    const angle = whiskerAngles[id] * (side === 'left' ? -1 : 1);
+    const pivot = side === 'left' ? '211 260' : '301 260';
+    return `<g data-whisker-mood="${id}">${tag}<animateTransform attributeName="transform" type="rotate" values="0 ${pivot};${angle} ${pivot};0 ${pivot}" dur="${durations[id]}s" repeatCount="indefinite"/></g>`;
+  });
   return detailMotion(`${start}${eyes}${detail}`, id).replace(`data-mouth-motion="${id}">`, `data-mouth-motion="${id}"><animateTransform attributeName="transform" type="translate" additive="sum" values="0 0;${id === 2 || id === 9 || id === 16 ? 1 : 0} ${id === 4 || id === 15 ? 2 : -1};0 0" dur="${durations[id]}s" repeatCount="indefinite"/>`);
 }

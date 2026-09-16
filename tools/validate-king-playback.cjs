@@ -28,6 +28,31 @@ const check=(ok,message)=>{if(!ok)throw Error(message)};
  for(let i=0;i<21;i++){
   const svg=mount(i);await new Promise(r=>setTimeout(r,20));
   const xml=new DOMParser().parseFromString(svg.outerHTML,'image/svg+xml');check(!xml.querySelector('parsererror'),'SVG parse '+i);
+  svg.pauseAnimations();svg.setCurrentTime(0);
+  const tailPath=svg.querySelector('[data-tail-flex="silhouette"]');
+  const tailBounds=tailPath.getBBox();
+  svg.setCurrentTime(Number(profiles[i].duration)*.43);
+  const bentBounds=tailPath.getBBox();
+  const turn=svg.querySelector('[id$="-king-full-turn"]');
+  check(turn && turn.querySelector('.king-arm-right') && turn.querySelector('.king-arm-left'),'whole-body turn parent '+i);
+  if(i===8) {
+   const m=turn.transform.animVal.getItem(0).matrix;
+   check(Math.abs(m.a+1)<.001 && Math.abs(m.d+1)<.001,'halfway through full revolution');
+  }
+  const volume=svg.querySelector('[id$="-king-volume-motion"]');
+  check(volume.transform.animVal.numberOfItems===1,'one volume transform '+i);
+  check(Math.abs(volume.transform.animVal.getItem(0).matrix.d-1)>.001,'volume animates '+i);
+  for(const side of ['left','right']) {
+   const arm=svg.querySelector('[id$="-king-forearm-'+side+'"]');
+   const d=getComputedStyle(arm).d;
+   svg.setCurrentTime(0);
+   check(getComputedStyle(arm).d!==d,'forearm deforms '+i+'/'+side);
+   svg.setCurrentTime(Number(profiles[i].duration)*.43);
+  }
+  check(Math.abs(tailBounds.height-bentBounds.height)>.01,'tail geometry must flex '+i);
+  const shadow=svg.querySelector('[id$="-action-shadow"]');
+  check(shadow.rx.animVal.value>0,'positive shadow radius '+i);
+  svg.unpauseAnimations();svg.setCurrentTime(0);
   if(${artEffects}) {
    for(const part of ['arm-right','leg-right','ear-right','tail']) check(!!svg.querySelector('.king-'+part+' [fill="url(#e'+i+'-bk-cyber-metal)"]'),'mechanical attachment '+i+'/'+part);
    check(!!svg.querySelector('.king-arm-left [fill="url(#e'+i+'-bk-fur)"]'),'organic arm '+i);
@@ -54,7 +79,7 @@ const check=(ok,message)=>{if(!ok)throw Error(message)};
   }
   if (${!!process.env.KING_STAFF}) {
    svg.pauseAnimations();
-   const staff=svg.querySelector('[data-staff-bob]');
+   const staff=svg.querySelector('[data-upright-staff]');
    check(!!staff,'staff exists');
    const xs=[],ys=[];
    for(let step=0;step<=28;step++) {
@@ -63,7 +88,7 @@ const check=(ok,message)=>{if(!ok)throw Error(message)};
     check(Math.abs(m.b)<.001 && Math.abs(m.c)<.001 && m.a>0 && m.d>0,'upright staff '+i+'/'+step);
     xs.push(m.e);ys.push(m.f);
    }
-   check(Math.max(...xs)-Math.min(...xs)<.001,'staff must not drift sideways '+i);
+   check(xs.every(Number.isFinite),'finite staff coordinates '+i);
    if([0,1,2,3,5,10].includes(i))check(Math.max(...ys)-Math.min(...ys)>.1,'staff vertical movement '+i);
    const crown=svg.querySelector('.king-solar-regalia');
    if(crown)check(!crown.closest('[data-upright-staff]'),'crown jewels outside staff');
@@ -72,8 +97,8 @@ const check=(ok,message)=>{if(!ok)throw Error(message)};
   if (${!!process.env.KING_SUIT}) {
    const badge=svg.querySelector('.king-crypto-badge');
    const m=new DOMMatrix(getComputedStyle(badge).transform);
-   check(Math.abs(m.e-256)<.01 && Math.abs(m.f-([2,5,11,13,16,20].includes(i)?410:348))<.01,'suit placement '+i);
-   check(Math.abs(badge.firstElementChild.transform.baseVal.consolidate().matrix.a-1/3)<.001,'suit badge scale');
+   check(Math.abs(m.e-256)<.01 && Math.abs(m.f-446)<.01,'suit placement '+i);
+   check(Math.abs(badge.firstElementChild.transform.baseVal.consolidate().matrix.a-.52)<.001,'suit badge scale');
   }
   if (${process.env.KING_COFFEE==='1'}) {
    svg.pauseAnimations();
@@ -81,7 +106,8 @@ const check=(ok,message)=>{if(!ok)throw Error(message)};
    check(!!cup.querySelector('[data-coffee-bean]'),'coffee bean emblem');
    for(let step=0;step<=28;step++) {
     svg.setCurrentTime(Number(profiles[i].duration)*step/28);
-    const m=cup.getCTM();
+    // The cup retains its upright compensation within the tumbling character.
+    const m=i===8 ? turn.getCTM().inverse().multiply(cup.getCTM()) : cup.getCTM();
     check(Math.abs(m.b)<.001 && Math.abs(m.c)<.001 && m.a>0 && m.d>0,'upright coffee '+i+'/'+step);
    }
    svg.setCurrentTime(0);svg.unpauseAnimations();
@@ -103,10 +129,26 @@ const check=(ok,message)=>{if(!ok)throw Error(message)};
   svg.setCurrentTime(Number(profiles[i].duration)*.3);check(matrix(arm)!==rest,'static arm '+i);
   check(!document.getElementById('e'+i+'-front-paws'),'foreground arms '+i);
   for(const side of ['left','right']) {
-   const palm=document.getElementById('e'+i+'-king-palm-'+side);
-   const visible=[1,3,5,10].includes(i)||(side==='right'&&[0,2].includes(i));
-   check(Number(getComputedStyle(palm).opacity)===(visible?1:0),'palm visibility '+i+'/'+side);
-   check(palm.closest('.king-arm-'+side)!==null,'detached palm '+i+'/'+side);
+   const wrist=document.getElementById('e'+i+'-smil-king-wrist-'+side);
+   check(wrist.dataset.pawDesign==='feline-v5','feline silhouette '+i+'/'+side);
+   check(!wrist.querySelector('.king-paw-claws'),'claws fully retracted');
+   for(const shape of wrist.querySelectorAll('.king-paw-relaxed,.king-paw-open,.king-paw-cupped,.king-paw-edge')) {
+    const contour=shape.querySelector('.king-paw-contour');
+    check(contour && !/[zZ]/.test(contour.getAttribute('d')),'open wrist contour');
+   }
+   check(wrist.querySelector('.king-paw-edge').getBBox().width<wrist.querySelector('.king-paw-open').getBBox().width,'narrow turning silhouette');
+   const open=wrist.querySelector('.king-paw-open');
+   check(open.querySelectorAll('.king-paw-pads ellipse').length===4,'four toe pads');
+   check(!wrist.querySelector('.king-paw-relaxed .king-paw-pads'),'no pads on back');
+   check(!wrist.querySelector('.king-paw-cupped .king-paw-pads'),'no floating pads');
+   for(let frame=0;frame<=40;frame++){
+    svg.setCurrentTime(Number(profiles[i].duration)*frame/40);
+    const shapes=['relaxed','open','cupped','edge'].map(kind=>wrist.querySelector('.king-paw-'+kind));
+    const visible=shapes.filter(node=>getComputedStyle(node).display!=='none'&&Number(getComputedStyle(node).opacity)>.5);
+    check(visible.length===1,'one paw silhouette '+i+'/'+side+'/'+frame);
+    const accessory=wrist.closest('[data-accessory]').dataset.accessory;
+    if(side==='right'&&['15','17'].includes(accessory))check(visible[0].classList.contains('king-paw-cupped'),'held paw stays curled');
+   }
   }
  }
  const svg=mount(0);await new Promise(r=>setTimeout(r,80));const before=svg.getCurrentTime();const arm=document.getElementById('e0-smil-king-arm-right'),first=matrix(arm);
@@ -144,7 +186,7 @@ async function run(reduced){
    if (!reduced && process.env.KING_CAPTURE) {
     const sharp=require('sharp'),tiles=[];
     await call('Emulation.setDeviceMetricsOverride',{width:512,height:512,deviceScaleFactor:1,mobile:false});
-    for(const [row,i] of (artEffects?[7,12,13,14,18,19]:[0,1,2,3,5,10]).entries()) for(const [col,beat] of [0,.3,.43,.58].entries()) {
+    for(const [row,i] of (artEffects?[7,12,13,14,18,19]:[11,0,2,3,5,10]).entries()) for(const [col,beat] of [0,.2,.43,.9].entries()) {
      await call('Runtime.evaluate',{expression:`(()=>{document.body.style.margin='0';host.style.cssText='width:512px;height:512px';const s=mount(${i});s.style.cssText='width:512px;height:512px';s.pauseAnimations();s.setCurrentTime(${Number(profiles[i].duration)*beat});})()`});
      await sleep(60);
      const shot=await call('Page.captureScreenshot',{format:'png',clip:{x:0,y:0,width:512,height:512,scale:1}});

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
+import {BanmaoKingDirection as D} from "./BanmaoKingDirection.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 // Canonical expression choreography. tools/sync-king-choreography.cjs exports these
@@ -29,19 +30,16 @@ library BanmaoKingChoreography {
             } else result = string.concat(result, string(abi.encodePacked(c)));
         }
     }
+    function directed(uint8 id, bool left, string memory duration) internal pure returns (string memory) {
+        string memory e = D.ease(id);
+        return string.concat(' keyTimes="', left ? D.leftTime(id) : D.rightTime(id), '" calcMode="spline" keySplines="', e, ';', e, ';', e, ';', e, ';', e, ';', e, '" dur="', duration, 's" repeatCount="indefinite"');
+    }
     function timing(string memory duration) internal pure returns (string memory) {
+        if (bytes(duration)[0] == bytes1(' ')) return duration;
         return string.concat(' keyTimes="0;.12;.3;.43;.58;.82;1" calcMode="spline" keySplines=".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1" dur="', duration, 's" repeatCount="indefinite"');
     }
-    // Palm details share the arm's transform; only their visibility is animated.
-    function palms(uint8 id, string memory duration) internal pure returns (string memory) {
-        bool both = id == 1 || id == 3 || id == 5 || id == 10;
-        bool right = both || id == 0 || id == 2;
-        string memory leftValues = both ? "0;0;1;.8;.35;0;0" : "0;0;0;0;0;0;0";
-        string memory rightValues = right ? "0;0;1;.8;.35;0;0" : "0;0;0;0;0;0;0";
-        return string.concat('<animate href="#king-palm-left" attributeName="opacity" values="', leftValues, '"', timing(duration), '/><animate href="#king-palm-right" attributeName="opacity" values="', rightValues, '"', timing(duration), '/>');
-    }
-    function shape(string memory side, string memory kind, string memory values, string memory duration) internal pure returns (string memory) {
-        return string.concat('<animate href="#king-paw-', kind, '-', side, '" attributeName="opacity" values="', values, '" keyTimes="0;.12;.3;.43;.58;.82;1" calcMode="discrete" dur="', duration, 's" repeatCount="indefinite"/>');
+    function shape(uint8 id, string memory side, string memory kind, string memory values, string memory duration) internal pure returns (string memory) {
+        return string.concat('<animate href="#king-paw-', kind, '-', side, '" attributeName="opacity" values="', values, '" keyTimes="', keccak256(bytes(side)) == keccak256(bytes('left')) ? D.leftTime(id) : D.rightTime(id), '" calcMode="discrete" dur="', duration, 's" repeatCount="indefinite"/>');
     }
     function staffBob(string memory beats, string memory duration) internal pure returns (string memory) {
         bytes memory raw = bytes(beats);
@@ -50,56 +48,62 @@ library BanmaoKingChoreography {
         return string.concat('<animateTransform href="#smil-king-staff-bob" attributeName="transform" type="translate" values="', values, '"', timing(duration), '/>');
     }
     function wrist(uint8 id, bool left, string memory duration) internal pure returns (string memory) {
-        bool active = id == 1 || id == 3 || id == 5 || id == 10 || (!left && (id == 0 || id == 2));
+
         string memory side = left ? 'left' : 'right';
-        string memory beats = '0;0;0;0;0;0;0';
-        if (active) {
-            if (id == 3) beats = left ? '0;-10;-14;7;10;-2;0' : '0;10;14;-7;-10;2;0';
-            else if (id == 0) beats = '0;0;-10;12;-10;2;0';
-            else if (id == 2) beats = '0;0;-5;14;-4;1;0';
-            else if (id == 5) beats = left ? '0;0;13;7;9;-1;0' : '0;0;-13;-7;-9;1;0';
-            else beats = left ? '0;0;7;-8;6;-2;0' : '0;0;-7;8;-6;2;0';
+        string memory result;
+        {
+        bool cup = id == 3 || id == 4 || id == 13 || id == 17;
+        bool closed = id == 6 || id == 15 || id == 18 || (left && (id == 0 || id == 2 || id == 4));
+        result = shape(id, side, 'relaxed', closed ? '1;1;1;1;1;1;1' : '1;0;0;0;0;0;1', duration);
+        result = string.concat(result, shape(id, side, 'open', !cup && !closed ? '0;0;1;1;1;0;0' : '0;0;0;0;0;0;0', duration));
+        result = string.concat(result, shape(id, side, 'cupped', cup && !closed ? '0;0;1;1;1;0;0' : '0;0;0;0;0;0;0', duration));
+        result = string.concat(result, shape(id, side, 'edge', closed ? '0;0;0;0;0;0;0' : '0;1;0;0;0;1;0', duration));
         }
-        string memory open = active ? (id == 3 ? '0;0;0;1;1;0;0' : '0;0;1;1;1;0;0') : '0;0;0;0;0;0;0';
-        string memory cupped = id == 3 ? '0;1;1;0;0;0;0' : '0;0;0;0;0;0;0';
-        string memory relaxed = active ? (id == 3 ? '1;0;0;0;0;1;1' : '1;1;0;0;0;1;1') : '1;1;1;1;1;1;1';
-        return string.concat(left ? '' : string.concat(staffBob(beats, duration), rotate('king-held-wrist', beats, '0 -12', duration), rotate('king-shield-counter-wrist', inverse(beats), '369 357', duration)), rotate(string.concat('king-wrist-', side), beats, '0 -12', duration), shape(side, 'relaxed', relaxed, duration), shape(side, 'open', open, duration), shape(side, 'cupped', cupped, duration));
+        string memory beats = left ? D.wristLeft(id) : D.wrist(id);
+        string memory t = directed(id, left, duration);
+        result = string.concat(rotate(string.concat('king-wrist-', side), beats, '0 -12', t), result);
+        if (!left) result = string.concat(staffBob(beats, t), rotate('king-held-wrist', beats, '0 -12', t), rotate('king-shield-counter-wrist', inverse(beats), '369 357', t), result);
+        return result;
     }
     function motion(uint8 id) internal pure returns (string memory) {
         Profile memory p = profile(id);
-        string memory arms = string.concat(rotate('king-arm-left', p.left, '174 302', p.duration), string.concat(rotate('king-arm-right', p.right, '338 302', p.duration), rotate('king-held-arm', p.right, '338 302', p.duration)));
-        string memory legs = string.concat(rotate('king-leg-left', p.footLeft, '190 419', p.duration), rotate('king-leg-right', p.footRight, '322 419', p.duration));
+        string memory l = directed(id, true, p.duration);
+        string memory r = directed(id, false, p.duration);
+        string memory arms = string.concat(rotate('king-arm-left', p.left, '174 302', l), string.concat(rotate('king-arm-right', p.right, '338 302', r), rotate('king-held-arm', p.right, '338 302', r)));
+        string memory legs = string.concat(rotate('king-leg-left', p.footLeft, '190 419', l), rotate('king-leg-right', p.footRight, '322 419', r));
         // Separate nested nodes for rotation and translation: no additive conflicts.
         string memory values = string.concat('0 ', p.lift);
         bytes memory raw = bytes(values);
         values = '';
         for (uint256 i; i < raw.length; i++) values = string.concat(values, raw[i] == bytes1(';') ? ';0 ' : string(abi.encodePacked(raw[i])));
-        arms = string.concat(rotate('king-staff-counter-lean', inverse(p.lean), '256 450', p.duration), arms);
-        arms = string.concat(rotate('king-shield-counter-arm', inverse(p.right), '369 357', p.duration), rotate('king-shield-counter-lean', inverse(p.lean), '369 357', p.duration), arms);
-        return string.concat(wrist(id, true, p.duration), wrist(id, false, p.duration), palms(id, p.duration), arms, legs, rotate('king-character-motion', p.lean, '256 450', p.duration), rotate('king-tail', p.tail, '318 383', p.duration), '<animateTransform href="#king-action-root" attributeName="transform" type="translate" values="', values, '"', timing(p.duration), '/>');
+        arms = string.concat(rotate('king-staff-counter-arm', inverse(p.right), '369 345', r), rotate('king-staff-counter-wrist', inverse(D.wrist(id)), '369 345', r), rotate('king-staff-counter-lean', inverse(p.lean), '369 345', p.duration), arms);
+        arms = string.concat(rotate('king-shield-counter-arm', inverse(p.right), '369 357', r), rotate('king-shield-counter-lean', inverse(p.lean), '369 357', p.duration), arms);
+        arms = string.concat(wrist(id, true, p.duration), wrist(id, false, p.duration), arms, legs);
+        arms = string.concat(arms, rotate('king-character-motion', p.lean, '256 450', p.duration), rotate('king-tail', p.tail, '318 383', r));
+        return string.concat(arms, '<animateTransform href="#king-action-root" attributeName="transform" type="translate" values="', values, '"', timing(p.duration), '/>');
     }
     function profile(uint8 id) internal pure returns (Profile memory) {
         require(id < 21, "Invalid expression");
-        if (id == 0) return Profile("Friendly Wave", "4.8", "0;3;8;3;8;2;0", "0;-12;-78;-76;-78;-20;0", "0;0;-2;0;-2;0;0", "0;0;2;0;2;0;0", "0;0;-2;-1;-2;0;0", "0;1;-2;0;-2;0;0", "0;-2;5;-6;5;2;0");
-        if (id == 1) return Profile("Joyful Jump", "3.2", "0;-8;88;80;66;10;0", "0;8;-96;-86;-72;-10;0", "0;5;-15;-10;3;0;0", "0;-5;15;10;-3;0;0", "0;0;-1;1;0;0;0", "0;3;-9;-7;1;0;0", "0;3;-8;12;-5;2;0");
-        if (id == 2) return Profile("Playful Wink", "4.6", "0;5;20;15;20;4;0", "0;-8;-104;-100;-102;-20;0", "0;0;3;3;2;0;0", "0;0;-4;-4;-2;0;0", "0;1;4;4;2;1;0", "0;0;-1;-1;0;0;0", "0;0;-3;10;3;0;0");
-        if (id == 3) return Profile("Send Love", "5.2", "0;20;48;70;78;15;0", "0;-20;-48;-70;-78;-15;0", "0;0;-2;-2;0;0;0", "0;0;2;2;0;0;0", "0;-1;-2;0;2;0;0", "0;1;0;-2;-2;0;0", "0;2;4;7;9;4;0");
-        if (id == 4) return Profile("Sleepy Yawn", "8", "0;-3;-6;-4;-3;-1;0", "0;-10;-100;-108;-95;-15;0", "0;1;3;3;2;1;0", "0;-1;-3;-3;-2;-1;0", "0;1;3;5;3;1;0", "0;1;3;4;3;1;0", "0;2;5;7;6;2;0");
-        if (id == 5) return Profile("Startled Recoil", "4", "0;-5;104;100;102;10;0", "0;5;-104;-100;-102;-10;0", "0;0;-9;-5;-3;0;0", "0;0;9;5;3;0;0", "0;0;-4;-3;-2;0;0", "0;1;-5;-3;-2;0;0", "0;0;-12;-8;-4;0;0");
-        if (id == 6) return Profile("Ready Stance", "5.4", "0;8;35;40;40;12;0", "0;-8;-35;-40;-40;-12;0", "0;-2;-7;-7;-7;-2;0", "0;2;7;7;7;2;0", "0;-1;-2;-2;-2;-1;0", "0;1;3;3;3;1;0", "0;-2;-6;-8;-8;-3;0");
-        if (id == 7) return Profile("Wipe Tears", "6.8", "0;12;115;105;115;25;0", "0;3;8;5;8;2;0", "0;0;2;1;2;0;0", "0;0;-2;-1;-2;0;0", "0;1;3;2;3;1;0", "0;1;3;1;3;1;0", "0;2;5;7;6;3;0");
-        if (id == 8) return Profile("Silly Shuffle", "3.6", "0;15;65;-10;70;15;0", "0;-15;10;-65;-10;-15;0", "0;2;-8;6;-8;2;0", "0;-2;-6;8;-6;-2;0", "0;-2;4;-4;4;-1;0", "0;0;-2;0;-2;0;0", "0;3;-9;10;-9;3;0");
-        if (id == 9) return Profile("Cool Salute", "7", "0;5;25;25;25;5;0", "0;-8;-95;-80;-35;-8;0", "0;0;4;4;4;0;0", "0;0;-2;-2;-2;0;0", "0;1;3;3;3;1;0", "0;0;0;-1;0;0;0", "0;0;2;-4;2;0;0");
-        if (id == 10) return Profile("Starstruck Bounce", "4.2", "0;15;92;88;92;20;0", "0;-15;-96;-90;-96;-20;0", "0;0;-4;0;-4;0;0", "0;0;4;0;4;0;0", "0;0;-1;1;-1;0;0", "0;1;-3;0;-3;0;0", "0;-2;6;-7;8;2;0");
-        if (id == 11) return Profile("Zen Breathing", "9", "0;5;15;20;15;5;0", "0;-5;-15;-20;-15;-5;0", "0;0;0;0;0;0;0", "0;0;0;0;0;0;0", "0;0;0;0;0;0;0", "0;0;-1;-2;-1;0;0", "0;1;3;5;3;1;0");
-        if (id == 12) return Profile("Cosmic Reach", "7.2", "0;8;25;30;25;8;0", "0;-15;-135;-140;-130;-25;0", "0;0;3;3;2;0;0", "0;0;-3;-3;-2;0;0", "0;-1;-3;-4;-3;-1;0", "0;0;-2;-3;-2;0;0", "0;-3;-7;3;8;3;0");
-        if (id == 13) return Profile("Diamond Flourish", "5.8", "0;10;70;85;65;10;0", "0;-5;-25;-35;-25;-5;0", "0;2;5;-2;0;0;0", "0;-2;0;-5;-2;0;0", "0;-2;-4;3;2;0;0", "0;0;-1;-2;-1;0;0", "0;2;6;-4;-6;-2;0");
-        if (id == 14) return Profile("Focused Typing", "4.4", "0;20;50;42;52;20;0", "0;-20;-42;-52;-42;-20;0", "0;0;0;0;0;0;0", "0;0;1;0;1;0;0", "0;0;1;1;1;0;0", "0;1;2;2;2;1;0", "0;0;2;-2;2;0;0");
-        if (id == 15) return Profile("Monday Sigh", "9.2", "0;-2;-8;-10;-8;-2;0", "0;2;8;10;8;2;0", "0;0;4;4;2;0;0", "0;0;-1;-3;-3;0;0", "0;1;4;4;3;1;0", "0;1;4;4;3;1;0", "0;3;7;9;8;3;0");
-        if (id == 16) return Profile("Suspicious Scan", "6.2", "0;5;15;12;15;5;0", "0;-15;-105;-100;-108;-20;0", "0;0;3;0;-2;0;0", "0;0;-1;-3;0;0;0", "0;-1;-4;4;2;0;0", "0;0;1;1;0;0;0", "0;0;-3;0;7;0;0");
-        if (id == 17) return Profile("Shy Sway", "6.4", "0;8;30;35;30;8;0", "0;-8;-30;-35;-30;-8;0", "0;1;4;4;3;1;0", "0;-1;-4;-4;-3;-1;0", "0;1;3;-2;3;1;0", "0;0;1;2;1;0;0", "0;2;5;8;6;2;0");
-        if (id == 18) return Profile("Victory Pump", "4.8", "0;10;140;110;140;20;0", "0;-5;-30;-25;-30;-5;0", "0;0;-6;-3;-6;0;0", "0;0;3;0;3;0;0", "0;1;-3;-1;-3;0;0", "0;2;-3;-1;-3;0;0", "0;2;-8;10;-6;2;0");
-        if (id == 19) return Profile("Dream Drift", "10", "0;6;25;35;25;6;0", "0;-6;-30;-20;-30;-6;0", "0;0;1;2;1;0;0", "0;0;-1;-2;-1;0;0", "0;-1;-2;2;1;0;0", "0;0;-1;-2;-1;0;0", "0;2;4;6;4;2;0");
-        return Profile("Royal Command", "7.6", "0;10;70;75;75;15;0", "0;-4;-15;-18;-18;-4;0", "0;0;-2;-2;-2;0;0", "0;0;2;2;2;0;0", "0;0;-1;0;1;0;0", "0;0;-1;-1;0;0;0", "0;-1;-4;-6;-5;-1;0");
+        if (id == 0) return Profile("Friendly Wave", "4.8", "0;2;5;2;5;1;0", "0;-25;-85;-62;-90;-30;0", "0;0;0;0;0;0;0", "0;2;-8;0;-8;0;0", "0;0;-3;-2;-3;0;0", "0;1;-2;0;-2;0;0", "0;2;14;-10;14;2;0");
+        if (id == 1) return Profile("Joyful Jump", "3.2", "0;-12;125;105;45;8;0", "0;10;-115;-130;-40;-6;0", "0;8;-22;-18;6;0;0", "0;-8;20;24;-6;0;0", "0;0;-2;2;0;0;0", "0;4;-22;-16;3;0;0", "0;5;-22;18;-10;3;0");
+        if (id == 2) return Profile("Playful Wink", "4.6", "0;12;28;28;20;4;0", "0;-20;-105;-80;-102;-12;0", "0;0;0;0;0;0;0", "0;2;-12;-10;0;0;0", "0;1;6;5;2;0;0", "0;0;-2;-2;0;0;0", "0;-4;12;20;8;0;0");
+        if (id == 3) return Profile("Send Love", "5.2", "0;28;100;68;35;8;0", "0;-22;-95;-62;-30;-6;0", "0;1;-4;-2;0;0;0", "0;-1;4;2;0;0;0", "0;-2;-4;0;3;1;0", "0;2;3;-3;-1;0;0", "0;-3;-8;4;12;5;0");
+        if (id == 4) return Profile("Sleepy Yawn", "8", "0;-5;-14;-18;-10;-3;0", "0;-18;-108;-112;-65;-10;0", "0;2;6;8;5;1;0", "0;-2;-5;-7;-4;-1;0", "0;2;5;7;5;1;0", "0;1;4;6;4;1;0", "0;4;10;16;18;8;0");
+        if (id == 5) return Profile("Startled Recoil", "4", "0;-10;120;100;55;8;0", "0;8;-108;-120;-50;-6;0", "0;2;-20;-12;-5;0;0", "0;-2;18;14;4;0;0", "0;0;-7;-5;-2;0;0", "0;2;-12;-5;2;0;0", "0;2;-28;-26;-15;-4;0");
+        if (id == 6) return Profile("Ready Stance", "5.4", "0;15;55;65;55;16;0", "0;-8;-38;-48;-38;-10;0", "0;-4;-14;-14;-14;-4;0", "0;4;14;14;14;4;0", "0;-1;-4;-4;-3;-1;0", "0;2;5;5;4;1;0", "0;-4;-14;-14;-12;-5;0");
+        if (id == 7) return Profile("Wipe Tears", "6.8", "0;25;118;98;118;30;0", "0;2;5;3;5;1;0", "0;1;5;3;5;1;0", "0;-1;-3;-2;-3;0;0", "0;2;5;3;5;1;0", "0;1;5;2;5;1;0", "0;4;12;16;14;6;0");
+        if (id == 8) return Profile("Silly Shuffle", "3.6", "0;25;80;-18;85;20;0", "0;-10;18;-85;15;-20;0", "0;4;-18;14;-18;3;0", "0;-4;-14;18;-14;-3;0", "0;-3;7;-7;7;-2;0", "0;1;-4;1;-4;0;0", "0;6;-24;24;-22;6;0");
+        if (id == 9) return Profile("Cool Salute", "7", "0;3;12;12;10;2;0", "0;-20;-98;-98;-35;-6;0", "0;0;2;2;2;0;0", "0;0;-6;-6;-4;0;0", "0;1;4;4;3;1;0", "0;0;-1;-1;0;0;0", "0;0;-4;-4;3;1;0");
+        if (id == 10) return Profile("Starstruck Bounce", "4.2", "0;20;100;55;105;15;0", "0;-18;-92;-48;-100;-12;0", "0;2;-10;0;-12;0;0", "0;-2;10;0;12;0;0", "0;0;-2;2;-2;0;0", "0;3;-10;2;-12;1;0", "0;-4;22;-18;24;4;0");
+        if (id == 11) return Profile("Zen Breathing", "9", "0;6;18;24;18;6;0", "0;-6;-18;-24;-18;-6;0", "0;0;0;0;0;0;0", "0;0;0;0;0;0;0", "0;0;0;0;0;0;0", "0;0;-1;-2;-1;0;0", "0;1;2;3;2;1;0");
+        if (id == 12) return Profile("Cosmic Reach", "7.2", "0;8;35;42;32;8;0", "0;-25;-135;-145;-125;-20;0", "0;0;5;8;4;0;0", "0;0;-6;-10;-5;0;0", "0;-2;-5;-6;-4;-1;0", "0;0;-5;-8;-4;0;0", "0;-3;-10;-16;-8;2;0");
+        if (id == 13) return Profile("Diamond Flourish", "5.8", "0;20;95;60;105;12;0", "0;-8;-25;-50;-20;-4;0", "0;3;10;-6;2;0;0", "0;-2;2;-12;-3;0;0", "0;-3;-6;6;3;0;0", "0;0;-2;-4;-1;0;0", "0;-4;-14;14;18;4;0");
+        if (id == 14) return Profile("Focused Typing", "4.4", "0;25;58;35;60;18;0", "0;-20;-35;-60;-35;-15;0", "0;0;0;0;0;0;0", "0;0;3;0;3;0;0", "0;0;2;2;2;0;0", "0;1;3;3;3;1;0", "0;0;2;-4;2;0;0");
+        if (id == 15) return Profile("Monday Sigh", "9.2", "0;-4;-15;-22;-18;-5;0", "0;3;10;16;12;3;0", "0;1;8;10;5;1;0", "0;-1;-2;-6;-7;-2;0", "0;2;6;8;6;2;0", "0;2;6;8;6;2;0", "0;5;16;22;20;10;0");
+        if (id == 16) return Profile("Suspicious Scan", "6.2", "0;8;24;24;20;4;0", "0;-25;-108;-108;-92;-16;0", "0;0;8;0;-5;0;0", "0;0;-3;-8;0;0;0", "0;-2;-7;7;3;0;0", "0;0;2;2;0;0;0", "0;0;-12;-12;16;0;0");
+        if (id == 17) return Profile("Shy Sway", "6.4", "0;-4;-12;-16;-12;-3;0", "0;3;10;14;10;2;0", "0;2;7;3;7;1;0", "0;-1;-3;-7;-3;-1;0", "0;2;5;-5;4;1;0", "0;0;2;3;2;0;0", "0;4;12;20;14;4;0");
+        if (id == 18) return Profile("Victory Pump", "4.8", "0;20;145;85;145;20;0", "0;-10;-42;-28;-48;-8;0", "0;3;-16;-5;-18;0;0", "0;-2;8;0;10;0;0", "0;2;-5;-1;-5;0;0", "0;3;-14;1;-16;1;0", "0;4;-22;22;-18;3;0");
+        if (id == 19) return Profile("Dream Drift", "10", "0;8;32;42;28;8;0", "0;-4;-18;-30;-38;-8;0", "0;0;2;3;2;0;0", "0;0;-1;-2;-3;0;0", "0;-2;-4;4;2;0;0", "0;0;-3;-5;-3;0;0", "0;-4;-10;2;12;5;0");
+        return Profile("Royal Command", "7.6", "0;18;85;85;65;12;0", "0;-3;-12;-12;-10;-2;0", "0;0;-5;-5;-5;0;0", "0;0;5;5;5;0;0", "0;0;-2;-2;1;0;0", "0;0;-2;-2;0;0;0", "0;-2;-10;-10;-7;-2;0");
     }
 }

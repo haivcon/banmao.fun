@@ -1,3 +1,4 @@
+import { suitUpgrade } from './art-upgrade';
 // Shared authored costume details, mirrored into Solidity by sync-king-art-effects.cjs.
 const pulse = '<animate attributeName="opacity" values=".3;.85;.3" dur="5s" repeatCount="indefinite"/>';
 const trace = (d: string, color: string) => `<path d="${d}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="6 18"><animate attributeName="stroke-dashoffset" values="48;0" dur="5s" repeatCount="indefinite"/></path>`;
@@ -25,6 +26,7 @@ export function bodyEffects(id: number): string {
     trace('M194 318q-9 77 37 122M318 318q9 77-37 122','#ffe8a5')+star(256,370,'#fff3c2'),
   ];
   if (!Number.isInteger(id) || !details[id]) throw new RangeError('Invalid body');
+  details[id] += suitUpgrade(id);
   if (id === 12) {
     // Localize the terminal badge without shrinking the surrounding suit traces.
     details[id] = details[id].replace('<rect ', '<g transform="translate(256 348)"><g transform="translate(-256 -348)"><rect ').replace('/>'+trace('M212 381h24v17h40v-17h24','#cbffe8'), '/></g></g>'+trace('M212 381h24v17h40v-17h24','#cbffe8'));
@@ -33,8 +35,8 @@ export function bodyEffects(id: number): string {
     // Keep the badge on the suit, below chest-covering props rather than above them.
     const color = id === 1 ? '#fff5ad' : id === 15 ? '#ffe6a2' : ['#ffe7a2', '#dfdeff', '#bfffe5', '#72efb8'][id - 9];
     const aura = `<circle data-suit-aura="true" r="32" fill="none" stroke="${color}" stroke-width="2" opacity="0"><animate attributeName="r" values="28;40;40" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values=".7;0;0" dur="3s" repeatCount="indefinite"/></circle>`;
-    details[id] = details[id].replace('<g transform="translate(256 348)">', `<g class="king-crypto-badge" transform="translate(256 348)"><g transform="scale(.3333333333)">${aura}`).replace('</g>', '</g></g>');
-    const placement = '<style>[data-accessory="2"] .king-crypto-badge,[data-accessory="5"] .king-crypto-badge,[data-accessory="11"] .king-crypto-badge,[data-accessory="13"] .king-crypto-badge,[data-accessory="16"] .king-crypto-badge,[data-accessory="20"] .king-crypto-badge{transform:translate(256px,410px)}</style>';
+    details[id] = details[id].replace('<g transform="translate(256 348)">', `<g class="king-crypto-badge" transform="translate(256 446)"><g transform="scale(.52)">${aura}`).replace('</g>', '</g></g>');
+    const placement = '';
     return `${placement}<g class="king-body-effect" data-body-effect="${id}">${details[id]}</g>`;
   }
   return `<g class="king-body-effect" data-body-effect="${id}">${details[id]}</g>`;
@@ -59,7 +61,7 @@ export function cyborgBody(svg: string): string {
       return tag;
     }
     if(tag.includes('d="M171 198')) return tag.replace('url(#bk-fur)','url(#bk-cyber-split)');
-    if(depth) return tag.replace('url(#bk-fur)','url(#bk-cyber-metal)').replace(/#(?:b96832|b66c38|9f572f|a95d31)/g,'#485e70').replace('#e7a5aa','#8edce8');
+    if(depth) return tag.replace('fill="#e99a50"','fill="#71889b"').replace('url(#bk-fur)','url(#bk-cyber-metal)').replace(/#(?:b96832|b66c38|9f572f|a95d31)/g,'#485e70').replace('#e7a5aa','#8edce8');
     return tag;
   });
 }

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
+import {BanmaoKingSecondaryMotion} from "../Lib/BanmaoKingSecondaryMotion.sol";
+import {BanmaoKingArtUpgrade} from "../Lib/BanmaoKingArtUpgrade.sol";
 import {BanmaoKingDiamondRays} from "../Lib/BanmaoKingDiamondRays.sol";
 
 import {BanmaoKingMotionPart0, BanmaoKingMotionPart1} from "../Lib/BanmaoKingMotionLib.sol";
@@ -23,8 +25,10 @@ contract BanmaoKingRenderer is IBanmaoKingRenderer {
     using Strings for uint256;
     using ERC165Checker for address;
 
+    BanmaoKingSecondaryMotion public immutable secondaryMotion;
+    BanmaoKingArtUpgrade public immutable artUpgrade;
     BanmaoKingBackgroundExpansion public immutable expansion;
-    BanmaoKingBackgroundEffects public immutable backgroundEffects = new BanmaoKingBackgroundEffects();
+    BanmaoKingBackgroundEffects public immutable backgroundEffects;
     error InvalidLayer(address layer);
     error InvalidBackground(uint8 traitId);
 
@@ -33,10 +37,18 @@ contract BanmaoKingRenderer is IBanmaoKingRenderer {
     BanmaoKingMotionPart1 public immutable motionPart1;
     IBanmaoKingBodyLib public immutable bodyLib;
     IBanmaoKingExpressionLib public immutable expressionLib;
-    BanmaoKingDiamondRays public immutable diamondRays = new BanmaoKingDiamondRays();
+    BanmaoKingDiamondRays public immutable diamondRays;
     IBanmaoKingAccessoryLib public immutable accessoryLib;
 
-    constructor(address bodyLib_, address expressionLib_, address accessoryLib_, address backgroundExpansion_, address motionPart0_, address motionPart1_) {
+    constructor(address bodyLib_, address expressionLib_, address accessoryLib_, address backgroundExpansion_, address motionPart0_, address motionPart1_, address secondaryMotion_, address artUpgrade_, address backgroundEffects_, address diamondRays_) {
+        if (backgroundEffects_.code.length == 0) revert InvalidLayer(backgroundEffects_);
+        if (diamondRays_.code.length == 0) revert InvalidLayer(diamondRays_);
+        backgroundEffects = BanmaoKingBackgroundEffects(backgroundEffects_);
+        diamondRays = BanmaoKingDiamondRays(diamondRays_);
+        if (artUpgrade_.code.length == 0) revert InvalidLayer(artUpgrade_);
+        artUpgrade = BanmaoKingArtUpgrade(artUpgrade_);
+        if (secondaryMotion_.code.length == 0) revert InvalidLayer(secondaryMotion_);
+        secondaryMotion = BanmaoKingSecondaryMotion(secondaryMotion_);
         if (backgroundExpansion_.code.length == 0) revert InvalidLayer(backgroundExpansion_);
         expansion = BanmaoKingBackgroundExpansion(backgroundExpansion_);
         if (!bodyLib_.supportsInterface(type(IBanmaoKingBodyLib).interfaceId)) revert InvalidLayer(bodyLib_);
@@ -74,20 +86,29 @@ contract BanmaoKingRenderer is IBanmaoKingRenderer {
         string memory group = traits_.background == 0 ? '<g>' : '<g filter="url(#king-shadow)">';
         string memory character = string.concat(
             '<g id="king-action-root" transform="translate(0 0)" data-action="', motionPart1.actionName(traits_.expression), '">',
-            '<g id="smil-king-character-motion" class="king-character-motion">', accessoryLib.renderRear(traits_.accessory),
+            '<g transform="translate(256 490)"><g id="king-volume-motion"><g transform="translate(-256 -490)"><g id="king-full-turn"><g id="smil-king-character-motion" class="king-character-motion" data-accessory="', uint256(traits_.accessory).toString(), '">', accessoryLib.renderRear(traits_.accessory),
             bodyLib.render(traits_.body, tokenId), (traits_.expression == 13 ? string.concat(diamondRays.render(uint8((tokenId % 36 * 7 + 3) % 6)), diamondRays.render(uint8(6 + (tokenId / 6 % 6 * 5 + 1) % 6))) : ""), expressionLib.render(traits_.expression),
-            accessoryLib.render(traits_.accessory), '</g></g>'
+            _accessory(traits_.accessory), '</g></g></g></g></g></g>'
         );
         string memory scene = string.concat(_background(traits_.background), _particles(traits_.background), backgroundEffects.render(traits_.background),
-            '<g class="king-ground-motion">', _actionShadow(), '</g>', shadow);
-        return string.concat(_svgOpen(tokenId, traits_), _motionStyle(traits_), motionPart1.choreography(traits_.expression),  scene, group, character, '</g>', BanmaoKingBadgeLib.render(tokenId, traits_.background), BanmaoKingBadgeLib.watermark(traits_), '</svg>');
+            _sceneUpgrade(traits_), '<g class="king-ground-motion">', _actionShadow(), '</g>', shadow);
+        return string.concat(_svgOpen(tokenId, traits_), _motionStyle(traits_), motionPart1.choreography(traits_.expression), scene, secondaryMotion.render(traits_.expression), group, character, '</g>', BanmaoKingBadgeLib.render(tokenId, traits_.background), BanmaoKingBadgeLib.watermark(traits_), '</svg>');
+    }
+
+    function _accessory(uint8 id) private view returns (string memory) {
+        if (id == 19) return artUpgrade.render(39);
+        return string.concat(accessoryLib.render(id), id == 12 || id == 18 ? artUpgrade.render(id + 20) : '');
+    }
+
+    function _sceneUpgrade(BanmaoKingTraits calldata t) private view returns (string memory) {
+        return string.concat(t.background == 0 || t.background == 5 ? artUpgrade.render(t.background) : '',
+            t.body >= 8 && t.body <= 16 && t.body == t.background ? artUpgrade.render(48) : '');
     }
 
     function _svgOpen(uint256 tokenId, BanmaoKingTraits calldata traits_) private pure returns (string memory) {
         return string.concat(
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Banmao King #',
-            tokenId.toString(), '" class="king-art" data-animated="true" data-expression="', uint256(traits_.expression).toString(),
-            '" data-accessory="', uint256(traits_.accessory).toString(), '">'
+            tokenId.toString(), '" class="king-art" data-animated="true" data-expression="', uint256(traits_.expression).toString(), '">'
         );
     }
 

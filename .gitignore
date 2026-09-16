@@ -1,4 +1,5 @@
 
+
 # Dependencies and package-manager state
 /node_modules/
 yarn.lock
@@ -55,6 +56,12 @@ pnpm-lock.yaml
 /public/previews/
 
 # Logs and temporary files
+/.tmp/
+logs/
+log/
+*.out
+*.err
+*.exit
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -93,17 +100,29 @@ ehthumbs.db
 # Large local reference material
 /1/
 /api_docs/
+.tmp
+__tests__
+tools
 
-# Deployment and maintenance scripts are not published.
+# Reproducible King code generation and its focused regression tests.
+!/tools/
+/tools/*
+!/tools/king-svg-codegen.cjs
+!/tools/king-background-codegen.cjs
+!/tools/deploy-king-graph.cjs
+!/tools/run-king-validation.cjs
+!/tools/validate-king-refactor.cjs
+!/__tests__/
+/__tests__/*
+!/__tests__/banmaoKingCodegen.test.ts
+!/__tests__/banmaoKingDeployGraph.test.ts
+!/__tests__/banmaoKingSecondaryMotion.test.ts
+!/__tests__/banmaoKingSoftWrists.test.ts
+
+# Local-only scripts: never publish deployment or maintenance tooling.
 /scripts/
 /deployments/*
-!/deployments/banmaobox-releases/
-/deployments/banmaobox-releases/*
-!/deployments/banmaobox-releases/22aad5bfec33af537e970ff3f2cca2f43d7ebfe63d1c537712d9ecb8728ebc8d.json
-!/deployments/banmaobox-releases/9de8225e702132fedede336deb636ffa87247dc03543ea39107bf6760d096c55.json
-!/deployments/banmaobox-releases/65287404e198cceb2b9dc76cb7eacb6b263d38120e147614470598e4fc0e861f.json
-!/deployments/banmaobox-releases/39e47f551ed420c27970a6e4b492121ccac445f53eb872899415d33c8f7cf143.json
-!/deployments/banmaobox-releases/bab1bdf95aba877a2f31c125ef37abcea16c6909473cf84765c1e29bbb04ce01.json
+
 # Local-only removed games: keep source on this machine, never commit/deploy
 /local-only/
 /app/gamefi/banmaominer/
@@ -118,6 +137,7 @@ ehthumbs.db
 /app/api/launchpad/
 
 # Local-only planning and internal review material
+.hermes.md
 BANMAOBOX_DETAILED_PLAN_VN.md
 /ANALYSIS_REPORT_VN.md
 /CODEBASE_GUIDE_VN.md
