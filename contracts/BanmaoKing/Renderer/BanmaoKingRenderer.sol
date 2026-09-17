@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
+import {BanmaoKingTitanSuit} from "../Lib/BanmaoKingBodyEffects.sol";
 import {BanmaoKingSecondaryMotion} from "../Lib/BanmaoKingSecondaryMotion.sol";
 import {BanmaoKingArtUpgrade} from "../Lib/BanmaoKingArtUpgrade.sol";
 import {BanmaoKingDiamondRays} from "../Lib/BanmaoKingDiamondRays.sol";
@@ -82,18 +83,53 @@ contract BanmaoKingRenderer is IBanmaoKingRenderer {
     }
 
     function renderSVG(uint256 tokenId, BanmaoKingTraits calldata traits_) public view returns (string memory) {
+        return _renderSVG(tokenId, traits_, false);
+    }
+
+    function miniTraits(uint256 tokenId, uint8 slot) public pure returns (BanmaoKingTraits memory t) {
+        require(slot < 2, "Invalid mini slot");
+        uint256 seed = uint256(keccak256(abi.encode("banmao-mini-v1", tokenId, slot)));
+        t.body = uint8(seed % 15);
+        t.expression = uint8((seed >> 64) % 21);
+        t.accessory = uint8((seed >> 128) % 22);
+        if (t.accessory >= 21) t.accessory += 1; // Allow None; exclude only recursive mini companions.
+    }
+
+    function _minis(uint256 tokenId) private view returns (string memory result) {
+        for (uint8 slot; slot < 2; slot++) {
+            string memory image = Base64.encode(bytes(_renderSVG(tokenId, miniTraits(tokenId, slot), true)));
+            result = string.concat(result, '<image data-mini="', uint256(slot).toString(), '" x="', slot == 0 ? '24' : '348', '" y="334" width="140" height="140" href="data:image/svg+xml;base64,', image, '"/>');
+        }
+    }
+
+    function _renderSVG(uint256 tokenId, BanmaoKingTraits memory traits_, bool mini) private view returns (string memory) {
         string memory shadow = traits_.background == 0 ? ''
             : '<defs><filter id="king-shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#12100d" flood-opacity=".28"/></filter></defs>';
         string memory group = traits_.background == 0 ? '<g>' : '<g filter="url(#king-shadow)">';
-        string memory character = string.concat(
+        string memory character = _character(tokenId, traits_);
+        string memory scene = mini ? '' : string.concat(_background(traits_.background), _particles(traits_.background), backgroundEffects.render(traits_.background),
+            _sceneUpgrade(traits_), '<g class="king-ground-motion">', _actionShadow(), '</g>', shadow);
+        string memory artwork = string.concat(_svgOpen(tokenId, traits_), _motionStyle(traits_), motionPart1.choreography(traits_.expression), scene, secondaryMotion.render(traits_.expression), group, character, '</g>');
+        return string.concat(artwork, _worldEffects(traits_), mini ? '' : _badges(tokenId, traits_), traits_.accessory == 21 ? _minis(tokenId) : '', '</svg>');
+    }
+
+    function _character(uint256 tokenId, BanmaoKingTraits memory traits_) private view returns (string memory) {
+        return string.concat(
             '<g id="king-action-root" transform="translate(0 0)" data-action="', motionPart1.actionName(traits_.expression), '">',
             '<g transform="translate(256 490)"><g id="king-volume-motion"><g transform="translate(-256 -490)"><g id="king-full-turn"><g id="smil-king-character-motion" class="king-character-motion" data-accessory="', uint256(traits_.accessory).toString(), '">', accessoryLib.renderRear(traits_.accessory),
-            bodyLib.render(traits_.body, tokenId), (traits_.expression == 13 ? string.concat(diamondRays.render(uint8((tokenId % 36 * 7 + 3) % 6)), diamondRays.render(uint8(6 + (tokenId / 6 % 6 * 5 + 1) % 6))) : ""), expressionLib.render(traits_.expression),
-            _accessory(traits_.accessory), '</g></g></g></g></g></g>'
+            bodyLib.render(traits_.body, tokenId), (traits_.expression == 13 ? string.concat(diamondRays.render(uint8((tokenId % 36 * 7 + 3) % 6)), diamondRays.render(uint8(6 + (tokenId / 6 % 6 * 5 + 1) % 6))) : ""), expressionLib.render(traits_.expression), traits_.body == 4 ? BanmaoKingTitanSuit.eye() : '',
+            traits_.accessory == 21 ? '' : _accessory(traits_.accessory), '</g></g></g></g></g></g>'
         );
-        string memory scene = string.concat(_background(traits_.background), _particles(traits_.background), backgroundEffects.render(traits_.background),
-            _sceneUpgrade(traits_), '<g class="king-ground-motion">', _actionShadow(), '</g>', shadow);
-        return string.concat(_svgOpen(tokenId, traits_), _motionStyle(traits_), motionPart1.choreography(traits_.expression), scene, secondaryMotion.render(traits_.expression), group, character, '</g>', (traits_.accessory == 5 ? BanmaoKingBirthdayLib.render() : ''), BanmaoKingBadgeLib.render(tokenId, traits_.background), BanmaoKingBadgeLib.watermark(traits_), '</svg>');
+    }
+
+    function _badges(uint256 tokenId, BanmaoKingTraits memory traits_) private pure returns (string memory) {
+        return string.concat(BanmaoKingBadgeLib.render(tokenId, traits_.background), BanmaoKingBadgeLib.watermark(traits_));
+    }
+
+    function _worldEffects(BanmaoKingTraits memory traits_) private view returns (string memory) {
+        if (traits_.accessory == 19) return artUpgrade.bubbles(traits_.expression);
+        if (traits_.accessory == 5) return BanmaoKingBirthdayLib.render();
+        return '';
     }
 
     function _accessory(uint8 id) private view returns (string memory) {
@@ -101,12 +137,12 @@ contract BanmaoKingRenderer is IBanmaoKingRenderer {
         return string.concat(accessoryLib.render(id), id == 12 || id == 18 ? artUpgrade.render(id + 20) : '');
     }
 
-    function _sceneUpgrade(BanmaoKingTraits calldata t) private view returns (string memory) {
+    function _sceneUpgrade(BanmaoKingTraits memory t) private view returns (string memory) {
         return string.concat(t.background == 0 || t.background == 5 ? artUpgrade.render(t.background) : '',
-            t.body >= 8 && t.body <= 16 && t.body == t.background ? artUpgrade.render(48) : '');
+            t.body >= 5 && t.body <= 13 && t.body + 3 == t.background ? artUpgrade.render(48) : '');
     }
 
-    function _svgOpen(uint256 tokenId, BanmaoKingTraits calldata traits_) private pure returns (string memory) {
+    function _svgOpen(uint256 tokenId, BanmaoKingTraits memory traits_) private pure returns (string memory) {
         return string.concat(
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Banmao King #',
             tokenId.toString(), '" class="king-art" data-animated="true" data-expression="', uint256(traits_.expression).toString(), '">'
@@ -127,7 +163,7 @@ contract BanmaoKingRenderer is IBanmaoKingRenderer {
         return '<ellipse id="action-shadow" cx="256" cy="477" rx="101" ry="13" fill="#625b52" opacity=".18"/>';
     }
 
-    function _motionStyle(BanmaoKingTraits calldata traits_) private view returns (string memory) {
+    function _motionStyle(BanmaoKingTraits memory traits_) private view returns (string memory) {
         return string.concat(motionPart0.contentFor(traits_.expression), motionPart1.contentFor(traits_.expression), motionPart0.accessory(traits_.accessory < 12 ? traits_.accessory : 0), motionPart0.background(traits_.background < 8 ? traits_.background : 0));
     }
 

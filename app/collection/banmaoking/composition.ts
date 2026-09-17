@@ -1,6 +1,6 @@
 import { BODY_TRAITS, EXPRESSION_TRAITS, ACCESSORY_TRAITS, BACKGROUND_TRAITS, type BanmaoKingTraitSelection } from './traits';
 import { WATERMARK_OPEN, WATERMARK_FONT, identityInk, identityOutline } from './contract-identity';
-// Public IDs are append-only: never reorder catalogue entries.
+// Body catalog v2 removes old IDs 4–6; no minted-token compatibility is required.
 const groups = [BODY_TRAITS.map(t => t.name), EXPRESSION_TRAITS, ACCESSORY_TRAITS, BACKGROUND_TRAITS.map(t => t.name)] as const;
 const keys = ['body', 'expression', 'accessory', 'background'] as const;
 export function compositionCode(traits: BanmaoKingTraitSelection): string {

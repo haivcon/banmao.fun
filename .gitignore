@@ -1,5 +1,6 @@
 
 
+
 # Dependencies and package-manager state
 /node_modules/
 yarn.lock
@@ -156,3 +157,36 @@ BanmaoRPS_ABI.json
 docs/BANMAOBOX_MANUAL_DEPLOY.md
 # Generated flattened sources for manual Explorer verification
 /contracts/BanmaoBox/flatten/
+
+# Reproducible wizard artwork generation and regression coverage
+!/tools/sync-king-wizard.cjs
+!/__tests__/banmaoKingWizard.test.ts
+
+# Bubble Blaster canonical sync and regression coverage
+!/tools/sync-king-bubble-blaster.cjs
+!/tools/bake-king-bubble-launch.cjs
+!/tools/sync-king-bubble-flight.cjs
+!/tools/test-king-bubble-browser.cjs
+!/__tests__/banmaoKingBubbleBlaster.test.ts
+
+# Sakura canonical export and playback regression coverage
+!/tools/sync-king-sakura-garden.cjs
+!/tools/test-king-sakura-browser.cjs
+
+# Canonical artwork ownership and relocation checks
+!/__tests__/banmaoKingArtLayout.test.ts
+!/tools/king-canonical-sections.cjs
+!/tools/check-king-art-layout.cjs
+!/tools/check-king-accessory-layout.cjs
+!/tools/sync-king-body-tips.cjs
+!/tools/sync-king-cosmic-suit.cjs
+!/tools/sync-king-titan-suit.cjs
+!/tools/sync-king-new-accessories.cjs
+!/__tests__/banmaoKingSakuraGarden.test.ts
+
+!/tools/sync-king-frost-suit.cjs
+!/tools/sync-king-shell.cjs
+!/__tests__/banmaoKingFrostSuit.test.ts
+!/__tests__/banmaoKingCatalogV2.test.ts
+!/tools/test-king-frost.cjs
+!/__tests__/banmaoKingMiniCompanions.test.ts

@@ -27,7 +27,6 @@ export function accessoryLabEffects(id: number): string {
     case 16: return `<g stroke="#60efc4">${path('M278 384h9','#60efc4',loop('opacity','1;0;1',1.1),3)}${[0,1,2].map(i=>path(`M201 ${338+i*4}h${15+i*8}`,'#60efc4',loop('opacity','.15;.6;.15',2.3,-i*.5),1)).join('')}</g>`;
     case 17: return path('M380 322c-9-8 9-16 0-25','#fff9ec',move('translate','0 0;3 -9;0 -18',4.7)+loop('opacity','0;.7;0',4.7),2);
     case 18: return `<g fill="#fff1ad">${[185,220,256,292,327].map((x,i)=>`<g>${move('rotate',`0 ${x} 118;${i%2 ? -25 : 25} ${x} 118;0 ${x} 118`,4+i*.4)}<path d="M${x} 103q-7-12 0-14q7 2 0 14M${x-15} 118q-12-7-14 0q2 7 14 0"/></g>`).join('')}</g>`;
-    case 19: return `<g>${move('rotate','0 380 188;360 380 188',12)}${star(350,188,0)}${star(410,188,-2)}</g>` + path('M380 238v150','#fff6c4',loop('stroke-dashoffset','0;-120',3.9),2).replace('fill="none"','stroke-dasharray="12 108" fill="none"');
     default: return '';
   }
 }

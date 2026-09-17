@@ -12,7 +12,7 @@ describe('expression-owned choreography', () => {
   });
   test.each(profiles.map((p,i) => [i,p.name] as const))('%i: %s owns its joints for every accessory', (expression) => {
     for(let accessory=0; accessory<21; accessory++) {
-      const traits = { body:16, expression, accessory, background:16 };
+      const traits = { body: 13, expression, accessory, background:16 };
       const scene = previewSvg(traits,1,'check');
       for(const joint of ['king-arm-left','king-arm-right','king-leg-left','king-leg-right','king-tail','king-character-motion']) {
         expect((scene.match(new RegExp(`id="check-smil-${joint}"`, 'g')) || []).length).toBe(1);

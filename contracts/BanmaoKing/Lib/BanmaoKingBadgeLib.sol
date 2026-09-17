@@ -35,7 +35,7 @@ library BanmaoKingBadgeLib {
         return string.concat(opening, '<title>Token #', string(text), '</title><g class="king-token-cells">', cells[0], '</g></g>');
     }
     function compositionCode(BanmaoKingTraits memory traits_) internal pure returns (string memory) {
-        require(traits_.body < 17 && traits_.expression < 21 && traits_.accessory < 21 && traits_.background < 17, "Invalid traits");
+        require(traits_.body < 14 && traits_.expression < 21 && traits_.accessory < 24 && traits_.background < 17, "Invalid traits");
         return string.concat("banmao-", _ordinal(traits_.body), _ordinal(traits_.expression), _ordinal(traits_.accessory), _ordinal(traits_.background));
     }
     function _ordinal(uint8 id) private pure returns (string memory) {
@@ -57,22 +57,32 @@ library BanmaoKingBadgeLib {
             }
             lit = isLit ? '1' : '0';
         }
-        bool bar = glyph == 0 && (cell / 3 == 1 || cell / 3 == 3);
-        string memory w = bar ? '6' : glyph == 0 ? '3' : '4';
-        uint256 x = glyph == 0 ? 386 + (bar ? cell % 3 * 6 : 3 + cell % 3 * 3) : 386 + glyph * 22 + cell % 3 * 5;
-        uint256 y = 25 + cell / 3 * 5;
+        return _cellShape(id, i, lit);
+    }
+    function _cellShape(uint256 id, uint256 i, string memory lit) private pure returns (string memory) {
+        bool bar = (i / 15) == 0 && ((i % 15) / 3 == 1 || (i % 15) / 3 == 3);
+        string memory w = bar ? '6' : (i / 15) == 0 ? '3' : '4';
+        uint256 x = (i / 15) == 0 ? 386 + (bar ? (i % 15) % 3 * 6 : 3 + (i % 15) % 3 * 3) : 386 + (i / 15) * 22 + (i % 15) % 3 * 5;
+        uint256 y = 25 + (i % 15) / 3 * 5;
         string memory part;
         {
-            uint256[5] memory cx = [uint256(386),446,416,386,446];
-            uint256[5] memory cy = [uint256(14),14,44,74,74];
-            string memory logoTx = _logoDelta(cx[glyph] + cell % 3 * 10, x, Identity.LOGO_CENTER_X);
-            string memory logoTy = _logoDelta(cy[glyph] + cell % 9 / 3 * 10, y, Identity.LOGO_CENTER_Y);
+            string memory logoTx;
+            string memory logoTy;
+            {
+                uint256[5] memory cx = [uint256(386),446,416,386,446];
+                uint256[5] memory cy = [uint256(14),14,44,74,74];
+                logoTx = _logoDelta(cx[(i / 15)] + (i % 15) % 3 * 10, x, Identity.LOGO_CENTER_X);
+                logoTy = _logoDelta(cy[(i / 15)] + (i % 15) % 9 / 3 * 10, y, Identity.LOGO_CENTER_Y);
+            }
             part = string.concat('" style="--tx:', logoTx, 'px;--ty:', logoTy, 'px;--sx:');
-            part = string.concat(part, _delta(384 + (id % 97 + i * 17) % 111, x), 'px;--sy:', _delta(14 + (i * 13 + id % 31) % 43, y));
-            part = string.concat(part, 'px;--lit:', lit, ';--cell-width:', w, 'px;--logo-lit:', cell < 9 ? '1' : '0', '">');
+            part = string.concat(part, _scatterStyle(id, i, x, y));
+            part = string.concat(part, 'px;--lit:', lit, ';--cell-width:', w, 'px;--logo-lit:', (i % 15) < 9 ? '1' : '0', '">');
             part = string.concat(part, _motion(id, i, x, y, lit, w, logoTx, logoTy), '</rect>');
         }
         return string.concat('<rect x="', x.toString(), '" y="', y.toString(), '" width="', w, '" height="4" opacity="', lit, part);
+    }
+    function _scatterStyle(uint256 id, uint256 i, uint256 x, uint256 y) private pure returns (string memory) {
+        return string.concat(_delta(384 + (id % 97 + i * 17) % 111, x), 'px;--sy:', _delta(14 + (i * 13 + id % 31) % 43, y));
     }
     function _motion(uint256 id, uint256 i, uint256 x, uint256 y, string memory lit, string memory width, string memory logoTx, string memory logoTy) private pure returns (string memory) {
         string memory motion;

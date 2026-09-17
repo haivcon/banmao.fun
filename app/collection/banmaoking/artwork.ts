@@ -22,6 +22,7 @@ function peelHighlight(peel: string) {
     case "#50658c": return "#b8c6dc";
     case "#ffb7ce": return "#ffe5ef";
     case "#ca4262": return "#f0a0b8";
+    case "#b4efff": return "#f0ffff";
     default: return "#fff9a8";
   }
 }
@@ -89,10 +90,18 @@ export function actionShadowSvg(_expression: number) {
   return '<ellipse id="action-shadow" cx="256" cy="477" rx="101" ry="13" fill="#625b52" opacity=".18"/>';
 }
 
+import bodyTips from './body-tips-contract.json';
+import bodyShells from './body-shell-contract.json';
+
 export function bodySvg(peel: string, shade: string, tokenId = 0) {
   const id = BODY_TRAITS.findIndex(body => body.color === peel);
-  const base = baseBodySvg(id === 7 ? '#ffe53b' : peel, id === 7 ? '#d9ad14' : shade, tokenId);
-  const styled = id === 7 ? cyborgBody(base) : base;
+  // Cyborg retains a natural half; its shell reflections use the cool suit palette.
+  const raw = baseBodySvg(id === 4 ? '#ffe53b' : peel, id === 4 ? '#d9ad14' : shade, tokenId);
+  const base = id >= 0 ? raw.replace(/<g id="banana-shell">[\s\S]*?<\/g>/, bodyShells[id]) : raw;
+  // Replace the legacy tip with exact contract-emitted artwork (badge bodies emit empty).
+  const costume = id >= 0 ? base.replace(/<path d="M258 462[^>]*\/>|<path d="M264 468[^>]*\/>/g, '')
+    .replace(/<\/g><\/g>$/, (bodyTips[id] ?? '') + '</g></g>') : base;
+  const styled = id === 4 ? cyborgBody(costume) : costume;
   return styled.replace(/<\/g>$/, (id >= 0 ? bodyEffects(id) : '') + '</g>');
 }
 
@@ -102,5 +111,5 @@ export function baseBodySvg(peel: string, shade: string, tokenId = 0) {
 
 <g id="face-rim"><path d="M165 194c17-42 49-64 91-64s76 22 91 64c6 53-26 91-91 94-65-3-97-41-91-94z" fill="none" stroke="#62462b" stroke-width="3.5" opacity=".58"/><path class="king-rim-light" d="M170 238c12 32 42 50 86 52 43-2 74-20 86-52" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity=".38"/></g>
 <g id="cat"><path d="M171 198c9-39 40-63 85-64 45 1 76 25 85 64 8 51-23 86-85 89-62-3-93-38-85-89z" fill="url(#bk-fur)"/><g class="king-ear king-ear-left"><g class="king-ear-shape" transform="translate(205 153) scale(.85 .82) translate(-205 -153)"><path d="M180 160Q180 123 193 94Q218 112 230 151Z" fill="url(#bk-fur)" stroke="#87502d" stroke-width="3" stroke-linejoin="round"/><path d="M189 145L195 109L219 145Z" fill="#f4b16c"/><path d="M195 119l8 23" stroke="#ffd5a0" stroke-width="3" stroke-linecap="round"/></g></g><g class="king-ear king-ear-right"><g class="king-ear-shape" transform="translate(307 153) scale(.85 .82) translate(-307 -153)"><path d="M332 160Q332 123 319 94Q294 112 282 151Z" fill="url(#bk-fur)" stroke="#87502d" stroke-width="3" stroke-linejoin="round"/><path d="M323 145L317 109L293 145Z" fill="#f4b16c"/><path d="M317 119l-8 23" stroke="#ffd5a0" stroke-width="3" stroke-linecap="round"/></g></g><path d="M216 143q13 17 16 42M256 135v48M296 143q-13 17-16 42" fill="none" stroke="#a95d31" stroke-width="6" stroke-linecap="round"/><path d="M179 230q19 9 37 5M333 230q-19 9-37 5" fill="none" stroke="#c3733d" stroke-width="4" stroke-linecap="round"/><ellipse cx="236" cy="258" rx="27" ry="20" fill="url(#bk-muzzle)"/><ellipse cx="276" cy="258" rx="27" ry="20" fill="url(#bk-muzzle)"/></g>
-<g id="costume-details"><path d="M158 412c10 31 36 50 70 58 15 4 30 5 44 3-31-12-55-34-69-65z" fill="#fff37a" opacity=".28"/><path d="M258 462c7 5 19 7 28 1-2 8-7 15-15 17-7-2-12-9-13-18z" fill="#79512f"/><path d="M258 462c1 9 6 16 13 18 8-2 13-9 15-17" fill="none" stroke="#65503a" stroke-width="1.8" stroke-linecap="round"/><path d="M264 468q7 4 15 1" fill="none" stroke="#c39b71" stroke-width="1.5" stroke-linecap="round"/></g></g>`;
+<g id="costume-details"><path d="M258 462c7 5 19 7 28 1-2 8-7 15-15 17-7-2-12-9-13-18z" fill="#79512f"/><path d="M258 462c1 9 6 16 13 18 8-2 13-9 15-17" fill="none" stroke="#65503a" stroke-width="1.8" stroke-linecap="round"/><path d="M264 468q7 4 15 1" fill="none" stroke="#c39b71" stroke-width="1.5" stroke-linecap="round"/></g></g>`;
 }

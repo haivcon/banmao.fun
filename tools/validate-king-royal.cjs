@@ -19,9 +19,9 @@ async function main(){
  assert.equal(await accessory.renderRear(18),flower.rearSvg);
  assert.equal(await accessory.render(18),flower.svg);
  assert.equal(await accessory.render(20),royal.REGALIA);assert.equal(await accessory.renderRear(20),royal.REAR);assert.equal(await bg.render(16),royal.THRONE);
- assert.equal(await accessory.traitName(20),'Imperial Regalia');assert.equal(await bg.traitName(16),royal.BACKGROUND_NAME);assert.equal(await body.traitName(16),royal.BODY_NAME);
- for(let pose=0;pose<6;pose++){const svg=await body.render(16,pose);assert(svg.includes(royal.PEEL));assert.equal((svg.match(/id="bk-peel"/g)||[]).length,1);}
- await assert.rejects(accessory.render(21));await assert.rejects(accessory.renderRear(21));await assert.rejects(bg.render(17));await assert.rejects(body.render(17,0));
+ assert.equal(await accessory.traitName(20),'Imperial Regalia');assert.equal(await bg.traitName(16),royal.BACKGROUND_NAME);assert.equal(await body.traitName(13),royal.BODY_NAME);
+ for(let pose=0;pose<6;pose++){const svg=await body.render(13,pose);assert(svg.includes(royal.PEEL));assert.equal((svg.match(/id="bk-peel"/g)||[]).length,1);}
+ await assert.rejects(accessory.render(24));await assert.rejects(accessory.renderRear(24));await assert.rejects(bg.render(17));await assert.rejects(body.render(14,0));
  console.log('PASS: compile, bytecode limits, local deployment, exact royal layer parity, six body poses, invalid IDs');
  }finally{await rpc.disconnect();}
 }

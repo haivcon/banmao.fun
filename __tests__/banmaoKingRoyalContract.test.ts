@@ -15,17 +15,17 @@ test('royal artwork and identity are generated downstream from Solidity', () => 
   const source = fs.readFileSync(path.join(root, 'app/collection/banmaoking/smil-preview.ts'), 'utf8');
   expect(source).not.toContain("from './king-solar'");
   expect(source).not.toContain("from './king-regalia'");
-  expect(BODY_TRAITS[16].name).toBe(royal.BODY_NAME);
+  expect(BODY_TRAITS[13].name).toBe(royal.BODY_NAME);
   expect(BACKGROUND_TRAITS[16].name).toBe(royal.BACKGROUND_NAME);
 });
 test.each([0, 1, 2, 3, 4, 5])('royal composition retains its layers and unique gradient in pose %i', pose => {
-  const svg = previewSvg({ body: 16, expression: 20, accessory: 20, background: 16 }, pose, 'royal');
+  const svg = previewSvg({ body: 13, expression: 20, accessory: 20, background: 16 }, pose, 'royal');
   expect(svg).toContain('king-imperial-mantle');
   expect(svg).toContain('king-imperial-regalia');
   expect(svg).toContain('king-solar-emblem');
   expect(svg.match(/id="royal-bk-peel"/g)).toHaveLength(1);
   expect(svg.indexOf('king-imperial-mantle')).toBeLessThan(svg.indexOf('id="royal-body"'));
-  expect(svg).toContain('banmao-17212117');
+  expect(svg).toContain('banmao-14212117');
   expect(svg).toContain('<animate');
 });
 test.each(Array.from({ length: 17 }, (_, i) => i))('watermark is compact, inset and contrasting on background %i', background => {

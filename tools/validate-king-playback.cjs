@@ -17,7 +17,7 @@ const profiles=require(path.join(root,'app/collection/banmaoking/choreography.js
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'king-playback-'));
 const css=['banmaoking.css','experience.css'].map(f=>fs.readFileSync(path.join(root,'app/collection/banmaoking',f),'utf8')).join('\n');
 const artEffects=process.env.KING_ART_EFFECTS==='1';
-const scenes=profiles.map((_,expression)=>previewSvg({body:process.env.KING_SUIT?Number(process.env.KING_SUIT):artEffects?7:16,expression,accessory:process.env.KING_SUIT?expression:process.env.KING_COFFEE==='1'?17:process.env.KING_STAFF?Number(process.env.KING_STAFF):process.env.KING_SHIELD==='1'?15:artEffects?0:20,background:artEffects?expression%17:16},1,`e${expression}`));
+const scenes=profiles.map((_,expression)=>previewSvg({body:process.env.KING_SUIT?Number(process.env.KING_SUIT):artEffects?4:13,expression,accessory:process.env.KING_SUIT?expression:process.env.KING_COFFEE==='1'?17:process.env.KING_STAFF?Number(process.env.KING_STAFF):process.env.KING_SHIELD==='1'?15:artEffects?0:20,background:artEffects?expression%17:16},1,`e${expression}`));
 const html=`<!doctype html><style>${css}</style><div class="king-experience" id="host"></div><pre id="result">WAIT</pre><script>
 const scenes=${JSON.stringify(scenes)},profiles=${JSON.stringify(profiles)};
 const host=document.getElementById('host');

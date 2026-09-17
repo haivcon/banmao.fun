@@ -146,7 +146,7 @@ describe("Banmao King development frontend", () => {
         "function _backgroundName",
       ),
     );
-    expect(TOTAL_COMBINATIONS).toBe(127449);
+    expect(TOTAL_COMBINATIONS).toBe(123165);
   });
 
   test("uses a synchronized SVG-only chibi banana cat", () => {

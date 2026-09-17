@@ -64,7 +64,7 @@ library BanmaoKingChoreography {
         }
         string memory beats = left ? D.wristLeft(id) : D.wrist(id);
         string memory t = directed(id, left, duration);
-        result = string.concat(rotate(string.concat('king-wrist-', side), beats, '0 -12', t), result);
+        result = string.concat(rotate(string.concat('king-prop-wrist-', side), beats, '0 -12', t), rotate(string.concat('king-wrist-', side), beats, '0 -12', t), result);
         if (!left) result = string.concat(staffBob(beats, t), rotate('king-held-wrist', inverse(profile(id).right), '0 -12', t), rotateMode('king-held-wrist', inverse(profile(id).lean), '0 -12', duration, ' additive="sum"'), rotate('king-shield-counter-wrist', inverse(beats), '369 357', t), result);
         return result;
     }
@@ -72,7 +72,7 @@ library BanmaoKingChoreography {
         Profile memory p = profile(id);
         string memory l = directed(id, true, p.duration);
         string memory r = directed(id, false, p.duration);
-        string memory arms = string.concat(rotate('king-arm-left', p.left, '174 302', l), string.concat(rotate('king-arm-right', p.right, '338 302', r), rotate('king-held-arm', p.right, '338 302', r)));
+        string memory arms = string.concat(rotate('king-held-arm-left', p.left, '174 302', l), rotate('king-arm-left', p.left, '174 302', l), string.concat(rotate('king-arm-right', p.right, '338 302', r), rotate('king-held-arm', p.right, '338 302', r)));
         string memory legs = string.concat(rotate('king-leg-left', p.footLeft, '190 419', l), rotate('king-leg-right', p.footRight, '322 419', r));
         // Separate nested nodes for rotation and translation: no additive conflicts.
         string memory values = string.concat('0 ', p.lift);

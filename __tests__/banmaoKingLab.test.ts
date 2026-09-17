@@ -6,8 +6,8 @@ import { compositionCode, parseCompositionCode } from '../app/collection/banmaok
 import { TOTAL_COMBINATIONS } from '../app/collection/banmaoking/traits';
 
 test('King is an append-only, shareable four-layer preset', () => {
-  expect(parseCompositionCode(compositionCode(KING_PRESET))).toEqual({body:16,expression:20,accessory:20,background:16});
-  expect(TOTAL_COMBINATIONS).toBe(127449);
+  expect(parseCompositionCode(compositionCode(KING_PRESET))).toEqual({body: 13,expression:20,accessory:20,background:16});
+  expect(TOTAL_COMBINATIONS).toBe(123165);
   const svg = previewSvg(KING_PRESET, 0, 'king');
   expect(svg.indexOf('class="king-imperial-mantle"')).toBeLessThan(svg.indexOf('id="king-body"'));
   expect(svg).toContain('king-imperial-regalia');

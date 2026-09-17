@@ -23,12 +23,23 @@ async function main(){
  async function deploy(name,args=[]){const a=artifacts[name],factory=new ethers.ContractFactory(a.abi,a.evm.bytecode.object,provider.getSigner());const tx=factory.getDeployTransaction(...args);assert((tx.data.length-2)/2<=49152, name+' init + arguments');const deployed=await(await factory.deploy(...args,{gasLimit:90000000})).deployed();console.log('DEPLOY GAS',name,(await deployed.deployTransaction.wait()).gasUsed.toString());return deployed;}
  const {nodes,expression}=await require('./deploy-king-graph.cjs').deployKingGraph(deploy);
  console.log('PASS: complete renderer dependency graph deployed under EIP-170/EIP-3860 limits');
+ const accessories=nodes.BanmaoKingAccessoryLib,accessoryExpansion=nodes.BanmaoKingAccessoryExpansion;
+ const newAccessories=load('new-accessories-contract.json');
+ for(let id=21;id<=22;id++){
+  assert.equal(await accessories.render(id),newAccessories[id-21]);
+  assert.equal(await accessoryExpansion.render(id),newAccessories[id-21]);
+  assert.equal(await accessories.traitName(id),['Mini Companions','Boxing Gloves'][id-21]);
+  assert.equal(await accessories.renderRear(id),'');
+ }
+ for(const id of [23,24,255]){await assert.rejects(accessories.render(id));await assert.rejects(accessories.traitName(id));}
+ assert.equal(await accessories.traitName(19),'Bubble Blaster');assert.equal(await accessories.traitName(20),'Imperial Regalia');
+ console.log('PASS: migrated accessory routing, SVG bytes, names, rear layers and invalid IDs');
  for(let id=0;id<21;id++)assert.equal(await expression.render(id),targets(animatedExpressionSvg(id)),`expression ${id}`);
  await assert.rejects(expression.render(21));
  const body=await deploy('BanmaoKingBodyEffects'),bg=nodes.BanmaoKingBackgroundEffects,cyborg=await deploy('BanmaoKingCyborgBody');
- for(let id=0;id<17;id++){assert.equal(await body.render(id),bodyEffects(id));assert.equal(await bg.render(id),backgroundEffects(id));}
- assert.equal(await cyborg.render(7),targets(bodySvg('#d8d8d8','#777777')));
- await assert.rejects(body.render(17));await assert.rejects(bg.render(17));await assert.rejects(cyborg.render(0));
+ for(let id=0;id<15;id++)assert.equal(await body.render(id),bodyEffects(id)); for(let id=0;id<17;id++)assert.equal(await bg.render(id),backgroundEffects(id));
+ assert.equal(await cyborg.render(4),targets(bodySvg('#d8d8d8','#777777')));
+ await assert.rejects(body.render(15));await assert.rejects(bg.render(17));await assert.rejects(cyborg.render(0));
  const secondaryParts=[];for(let i=0;i<21;i++)secondaryParts.push((await deploy('BanmaoKingSecondaryMotion'+i)).address);
  const secondary=await deploy('BanmaoKingSecondaryMotion',[secondaryParts]);
  for(let id=0;id<21;id++)assert.equal(await secondary.render(id),load('secondary-motion.ts').secondaryMotionSvg(id));
@@ -43,7 +54,7 @@ async function main(){
  for(let id=8;id<=16;id++) assert.equal(await upgrade.render(48),themeUpgrade(id));
  await assert.rejects(upgrade.render(255));
  console.log('PASS: upgrade EVM parity, staff anchor and renderer bytecode limits');
- console.log('PASS: local EVM exact parity for 21 expressions, 17 body effects, 17 backgrounds, Cyborg; deployment bytecode and invalid IDs');
+ console.log('PASS: local EVM exact parity for 21 expressions, 14 body effects, 17 backgrounds, Cyborg; deployment bytecode and invalid IDs');
  }finally{await rpc.disconnect();}
 }
 main().catch(e=>{console.error(e);process.exitCode=1;});

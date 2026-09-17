@@ -1,3 +1,5 @@
+import { WIZARD_FRONT_SVG, WIZARD_HAT_BADGE_SVG } from './wizard-outfit';
+
 import { PARTY_HAT_SVG } from './accessory-polish';
 import { AK_SVG, flyingSwordSvg, WAND_SVG } from './accessory-action';
 const FLYING_SWORD_SVG = flyingSwordSvg();
@@ -17,7 +19,7 @@ const BASE_ACCESSORY_SVGS = [
   "<g id=\"accessory\"><g class=\"king-cape-wing king-cape-left\"><path d=\"M180 289c-20 17-37 75-26 115 11 14 34 7 46-7l9-83z\" fill=\"#aa294b\" stroke=\"#702b40\" stroke-width=\"4\"/><path d=\"M180 306q-24 56-16 94 13 7 27-7l9-65z\" fill=\"#df4f69\"/><path d=\"M163 404q19 9 35-10l7-57q-17 46-42 67z\" fill=\"#fff0ce\"/><path d=\"M181 295q-28 64-24 107 14 15 41-6\" fill=\"none\" stroke=\"#e9ba57\" stroke-width=\"4\" stroke-linecap=\"round\"/><path d=\"M185 328q-10 29-9 52\" fill=\"none\" stroke=\"#80233e\" stroke-width=\"4\" stroke-linecap=\"round\"/></g><g class=\"king-cape-wing king-cape-right\"><path d=\"M332 289c20 17 37 75 26 115-11 14-34 7-46-7l-9-83z\" fill=\"#aa294b\" stroke=\"#702b40\" stroke-width=\"4\"/><path d=\"M332 306q24 56 16 94-13 7-27-7l-9-65z\" fill=\"#df4f69\"/><path d=\"M349 404q-19 9-35-10l-7-57q17 46 42 67z\" fill=\"#fff0ce\"/><path d=\"M331 295q28 64 24 107-14 15-41-6\" fill=\"none\" stroke=\"#e9ba57\" stroke-width=\"4\" stroke-linecap=\"round\"/><path d=\"M327 328q10 29 9 52\" fill=\"none\" stroke=\"#80233e\" stroke-width=\"4\" stroke-linecap=\"round\"/></g><path class=\"king-cape-collar\" d=\"M179 286q13-4 29 10l-12 22q-21-7-23-16zM333 286q-13-4-29 10l12 22q21-7 23-16z\" fill=\"#c83b59\" stroke=\"#702b40\" stroke-width=\"3\"/><path d=\"M180 291q12 1 22 8M332 291q-12 1-22 8\" stroke=\"#ffb5b2\" stroke-width=\"3\" stroke-linecap=\"round\"/><path d=\"M200 307q56 20 112 0\" fill=\"none\" stroke=\"#e9ba57\" stroke-width=\"3\"/><g class=\"king-cape-clasp\"><path d=\"M256 306l12 10-12 14-12-14z\" fill=\"#f6cb65\" stroke=\"#88532e\" stroke-width=\"2\"/><path d=\"M256 311l7 5-7 9-7-9z\" fill=\"#a62649\"/><path class=\"king-jewel\" d=\"M256 312l5 4-5 2-4-2z\" fill=\"#ff9caf\"/></g><path class=\"king-detail king-cape-shimmer\" d=\"M164 349q-4 18-3 31M348 349q4 18 3 31\" fill=\"none\" stroke=\"#fff0ba\" stroke-width=\"2\" stroke-linecap=\"round\" opacity=\".5\"/></g>"
 ] as const;
 
-export const ACCESSORY_SVGS = BASE_ACCESSORY_SVGS.map((svg, id) => id === 9 ? svg + WAND_SVG : svg);
+export const ACCESSORY_SVGS = BASE_ACCESSORY_SVGS.map((svg, id) => id === 9 ? svg + WIZARD_HAT_BADGE_SVG + WIZARD_FRONT_SVG + WAND_SVG : svg);
 
 export const BACKGROUND_SVGS = [
   "<rect width=\"512\" height=\"512\" fill=\"#f4efe7\"/><ellipse cx=\"256\" cy=\"260\" rx=\"210\" ry=\"225\" fill=\"#fffaf0\" opacity=\".45\"/><path d=\"M48 444q208 35 416 0\" fill=\"none\" stroke=\"#dbcdb7\" stroke-width=\"2\" opacity=\".4\"/>",

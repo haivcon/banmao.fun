@@ -7,7 +7,8 @@ import { previewSvg } from '../app/collection/banmaoking/smil-preview';
 describe('expanded animated backgrounds', () => {
   test.each(expansion.backgrounds.map((bg, i) => [i, bg] as const))('renders background %i with scoped references and Solidity parity', async (i, bg) => {
     const source = readFileSync(join(process.cwd(), 'contracts/BanmaoKing/Lib/BanmaoKingBackgroundExpansion.sol'), 'utf8');
-    expect(source).toContain(`if(id==${i + 8}) return ${JSON.stringify(bg.svg)};`);
+    const { generate, sceneGroups } = require('../tools/king-background-codegen.cjs');
+    expect(source).toContain(generate('BanmaoKingBackgroundExpansion', expansion.backgrounds.map((entry, index) => [index + 8, entry.svg]), sceneGroups, true));
     expect(bg.svg).toContain('<animate');
     const fragment = previewSvg({ body: 0, expression: 0, accessory: 0, background: i + 8 }, 0, 'bg-test');
     const ids = [...fragment.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
@@ -35,7 +36,10 @@ describe('expanded animated backgrounds', () => {
   test.each([1, 2, 3])('crypto accessory %i is self-contained on every background with Solidity parity', async i => {
     const accessory = expansion.accessories[i];
     const source = readFileSync(join(process.cwd(), 'contracts/BanmaoKing/Lib/BanmaoKingAccessoryExpansion.sol'), 'utf8');
-    expect(source).toContain(`if(id==${i + 12}) return ${JSON.stringify(accessory.svg)};`);
+    const { contract } = require('../tools/king-svg-codegen.cjs');
+    const generated = contract('BanmaoKingAccessoryExpansion', expansion.accessories.map((entry, index) => [index + 12, entry.svg]));
+    // Ownership adds a child dispatch before these unchanged authored branches.
+    for (const line of generated.split('\n').filter(line => /^        if\(id==|^    function _s/.test(line))) expect(source).toContain(line);
     expect(accessory.svg).not.toMatch(/<text|<script|<foreignObject|<image|\bon\w+=|href="(?!#)/i);
     for (let background = 0; background < 16; background++) {
       const fragment = previewSvg({ body: 8 + i, expression: 0, accessory: 12 + i, background }, 0, 'crypto-test');

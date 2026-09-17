@@ -42,7 +42,7 @@ contract BanmaoKingNFT is ERC721, ERC2981, IERC4906, ReentrancyGuard {
     bytes32 public immutable collectionSeed;
 
     // Each four-layer combination can be issued only once in this collection.
-    uint256 public constant TOTAL_COMBINATIONS = 17 * 21 * 21 * 17;
+    uint256 public constant TOTAL_COMBINATIONS = 15 * 21 * 23 * 17;
     // Sparse Fisher-Yates pool; zero means the slot still contains its own index.
     mapping(uint256 slot => uint256 valuePlusOne) private _traitPool;
     uint256 public totalSupply;
@@ -160,12 +160,12 @@ contract BanmaoKingNFT is ERC721, ERC2981, IERC4906, ReentrancyGuard {
         }
         delete _traitPool[last];
 
-        uint32 packed = uint32(combination % 17);
-        combination /= 17;
+        uint32 packed = uint32(combination % 15);
+        combination /= 15;
         packed |= uint32(combination % 21) << 8;
         combination /= 21;
-        packed |= uint32(combination % 21) << 16;
-        combination /= 21;
+        packed |= uint32(combination % 23) << 16;
+        combination /= 23;
         return packed | (uint32(combination) << 24);
     }
 

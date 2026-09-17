@@ -12,7 +12,7 @@ test('NFT runtime has no reduced-motion branch, hook, freeze utility or override
 
 test.each(Array.from({ length: 21 }, (_, i) => i))('expression %i always exports looping animation', expression => {
   expect(previewSvg).toHaveLength(3);
-  const svg = previewSvg({ body: 16, expression, accessory: 20, background: 16 }, 1, 'animated');
+  const svg = previewSvg({ body: 13, expression, accessory: 20, background: 16 }, 1, 'animated');
   expect(svg).toContain('<animateTransform');
   expect(svg).toContain('repeatCount="indefinite"');
   expect(svg).not.toContain('prefers-reduced-motion');

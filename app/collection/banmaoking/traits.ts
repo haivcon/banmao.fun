@@ -7,12 +7,10 @@ export const BODY_TRAITS = [
   { name: "Ripe Sunshine", color: "#fff36b", shade: "#efbe28" },
   { name: "Lime Banana", color: "#bde33b", shade: "#75a51e" },
   { name: "Peach Banana", color: "#ffad6b", shade: "#e06b45" },
-  { name: "Blue Banana", color: "#72d8e8", shade: "#3288b4" },
-  { name: "Royal Purple", color: "#a985e8", shade: "#6540a9" },
-  { name: "Pink Banana", color: "#ff8fc6", shade: "#d64f91" },
   { name: "Cyborg Suit", color: "#d8d8d8", shade: "#777777" },
   ...expansion.bodies,
   KING_BODY,
+  { name: "Frost Suit", color: "#b4efff", shade: "#4e9fc9" },
 ] as const;
 
 export const EXPRESSION_TRAITS = [
@@ -46,6 +44,8 @@ export const ACCESSORY_TRAITS = [
   "Tiny Cape",
   ...expansion.accessories.map(v => v.name),
   'Imperial Regalia',
+  'Mini Companions',
+  'Boxing Gloves',
 ] as const;
 
 export const BACKGROUND_TRAITS = [

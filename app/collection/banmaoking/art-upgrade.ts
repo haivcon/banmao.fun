@@ -22,7 +22,6 @@ export function accessoryUpgrade(id: number): string {
   if (id === 12) return `<g data-accessory-upgrade="12"><path d="M177 170q16-44 55-51" fill="none" stroke="#ffffff" stroke-width="3" pathLength="100" stroke-dasharray="18 100" opacity=".25"><animate attributeName="stroke-dashoffset" values="118;0" dur="7s" repeatCount="indefinite"/>${pulse(7,'.5')}</path><circle cx="324" cy="302" r="3" fill="#8de9d6">${pulse(4,'.8')}</circle></g>`;
   if (id === 18) return fallingPetalsSvg() + `<g data-accessory-upgrade="18" fill="#ffe6f3">${[0,1].map(i=>`<g><path d="M${174+i*164} 140q-6-9 3-10q8 6-3 10Z"/><animateTransform attributeName="transform" type="translate" values="0 0;${i ? 9 : -9} 18;${i ? 4 : -4} 38" dur="${7+i}s" begin="-${i*3}s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;.6;0" dur="${7+i}s" begin="-${i*3}s" repeatCount="indefinite"/></g>`).join('')}</g>`;
   // Stay inside the existing upright staff transform; added by the caller there.
-  if (id === 19) return `<g data-accessory-upgrade="19"><path d="M380 172l-12 16 12 19 12-19Z" fill="#ffe4f0" opacity=".12">${pulse(5,'.6')}</path><path d="M380 231v164" fill="none" stroke="#fff1bd" stroke-width="2" stroke-dasharray="9 155"><animate attributeName="stroke-dashoffset" values="164;0" dur="8s" repeatCount="indefinite"/></path></g>`;
   return '';
 }
 

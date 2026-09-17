@@ -20,7 +20,7 @@ test('all actions own distinct tail shapes and preserve their intended signature
 test.each(Array.from({length:21},(_,i)=>i))('secondary motion %i uses closed loops and existing unique targets', expression => {
   const motion = secondaryMotionSvg(expression);
   // Use a staff so the action-8 accessory-specific counter-rotation has a target.
-  const svg = previewSvg({body:16,expression,accessory:19,background:16},1,'secondary');
+  const svg = previewSvg({body: 13,expression,accessory:14,background:16},1,'secondary');
   const ids = [...svg.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
   expect(new Set(ids).size).toBe(ids.length);
   for(const match of motion.matchAll(/href="#([^"]+)"/g)) expect(ids).toContain('secondary-'+match[1]);
@@ -39,14 +39,14 @@ test.each(Array.from({length:21},(_,i)=>i))('secondary motion %i uses closed loo
   expect(svg).not.toContain('undefined');
 });
 test.each(Array.from({length:21},(_,i)=>i))('full-turn targets match accessory %i', accessory => {
-  const svg = previewSvg({body:16,expression:8,accessory,background:16},1,'turn');
+  const svg = previewSvg({body: 13,expression:8,accessory,background:16},1,'turn');
   const ids = [...svg.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
   expect(new Set(ids).size).toBe(ids.length);
   expect(ids).toContain('turn-king-full-turn');
-  // The two staff entries and Imperial Regalia own a counter-turn group. A shared
+  // The remaining staff entry and Imperial Regalia own a counter-turn group. A shared
   // SMIL href without that optional accessory target is deliberately inert.
   const target = 'turn-smil-king-staff-counter-turn';
-  expect(ids.filter(id => id === target)).toHaveLength([14,19,20].includes(accessory) ? 1 : 0);
+  expect(ids.filter(id => id === target)).toHaveLength([14,20].includes(accessory) ? 1 : 0);
   for (const match of secondaryMotionSvg(8).matchAll(/href="#([^"]+)"/g)) {
     if (match[1] !== 'smil-king-staff-counter-turn') expect(ids).toContain('turn-'+match[1]);
   }
