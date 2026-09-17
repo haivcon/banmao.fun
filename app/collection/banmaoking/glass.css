@@ -1,0 +1,126 @@
+/* Scoped presentation only. NFT SVGs and their animation remain untouched. */
+.king-experience {
+  --king-gold: #f5d79a;
+  --king-jade: #a7e7d9;
+  --king-glass: rgba(24, 32, 48, .82);
+  --king-glass-line: rgba(225, 235, 255, .16);
+  --king-glass-shadow: inset 0 1px 0 #ffffff14, 0 16px 48px #03081630;
+  background: radial-gradient(ellipse at 5% 4%, #35516c70, transparent 34rem), radial-gradient(ellipse at 95% 18%, #69517845, transparent 42rem), radial-gradient(ellipse at 12% 65%, #255e6040, transparent 36rem), #0b1120;
+  color: #f4f6fb;
+}
+.king-experience .king-shell { width: min(1240px, calc(100% - 64px)); padding-top: 20px; }
+.king-experience .king-header,
+.king-experience .king-theme-library,
+.king-experience .king-studio-grid,
+.king-experience .king-metrics,
+.king-experience .king-mint-box,
+.king-experience .king-info-card,
+.king-experience .king-contract-card {
+  border: 1px solid var(--king-glass-line);
+  border-radius: 24px;
+  background: var(--king-glass);
+  box-shadow: var(--king-glass-shadow);
+}
+@supports ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
+  .king-experience .king-header, .king-experience .king-theme-library, .king-experience .king-studio-grid, .king-experience .king-metrics, .king-experience .king-mint-box {
+    background: linear-gradient(135deg, #ffffff09, #ffffff02), rgba(20, 29, 45, .65);
+    -webkit-backdrop-filter: blur(22px) saturate(135%);
+    backdrop-filter: blur(22px) saturate(135%);
+  }
+}
+.king-experience .king-header { padding: 16px 20px; gap: 18px; }
+.king-experience .king-wordmark { letter-spacing: .08em; font-size: 14px; }
+.king-experience .king-wordmark small { font-size: 10px; margin-top: 5px; color: #b5c0d2; }
+.king-experience .king-sigil { border-radius: 15px; background: #f5d79a12; box-shadow: inset 0 1px 0 #fff2; }
+.king-experience .king-nav { gap: 8px; }
+.king-experience .king-nav a { padding: 10px 14px; border-radius: 100px; }
+.king-experience .king-nav a:hover { background: #ffffff0c; }
+.king-experience .king-hero { padding: 64px 24px 48px; grid-template-columns: 1fr 210px; }
+.king-experience .king-hero h1 { font-size: clamp(36px, 5vw, 64px); font-weight: 600; }
+.king-experience .king-hero p { color: #bdc7d7; }
+.king-experience .king-hero-seal { background: linear-gradient(135deg, #ffffff10, #ffffff02); box-shadow: inset 0 2px 0 #ffffff18, 0 24px 70px #0003; border-color: #f5d79a30; outline-color: #ffffff0c; }
+.king-experience .king-primary-link { border-radius: 100px; background: linear-gradient(140deg, #f9e7bd, #e7bf78); box-shadow: inset 0 1px 0 #fff8, 0 6px 20px #d2b78018; }
+.king-experience .king-secondary-link { text-decoration: none; border: 1px solid var(--king-glass-line); border-radius: 100px; padding: 12px 22px; }
+.king-experience .king-section { margin: 64px 0; }
+.king-experience .king-section-heading h2 { font-weight: 600; }
+.king-experience .king-chip { border-radius: 100px; background: #a7e7d909; }
+.king-experience .king-metrics { padding: 22px 0; }
+.king-experience .king-metrics strong { font-size: clamp(18px, 2vw, 25px); }
+.king-experience .king-metrics span { color: #bac5d6; }
+.king-experience .king-studio-grid { gap: 28px; padding: 24px; margin-top: 14px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+.king-experience .king-preview-card { border: 1px solid #ffffff12; background: #ffffff04; border-radius: 20px; padding: 12px; }
+.king-experience .king-art-frame { width: 100%; max-width: 440px; border-radius: 14px; }
+.king-experience .king-trait-tabs { background: #070f1c60; border-radius: 16px; padding: 5px; gap: 4px; }
+.king-experience .king-trait-tabs button { border-color: transparent; background: transparent; min-height: 60px; border-radius: 12px; }
+.king-experience .king-trait-tabs button[aria-selected="true"] { border-color: #ffffff20; background: #ffffff12; color: #f5d79a; box-shadow: 0 3px 10px #0002; }
+.king-experience .king-trait-options button { border-radius: 12px; background: #ffffff05; color: #d0d8e4; min-height: 48px; }
+.king-experience .king-trait-options button[aria-pressed="true"] { background: #f5d79a14; border-color: #f5d79a90; color: #ffe8b9; }
+.king-experience .king-notice { background: #ffffff04; color: #b8c4d5; border-color: #ffffff15; font-size: 12px; }
+.king-experience .king-editor-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 30px; }
+.king-experience .king-editor-heading p { margin: 0; color: #b6c2d3; font-size: 12px; }
+
+
+.king-experience .king-theme-library { padding: 26px; }
+.king-library-heading { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+.king-library-heading h3 { font-size: 23px; letter-spacing: -.025em; font-weight: 600; margin: 12px 0 8px; }
+.king-library-heading p { color: #b8c4d5; font-size: 13px; line-height: 1.7; margin: 0; max-width: 540px; }
+.king-theme-search { display: flex; align-items: center; gap: 10px; border: 1px solid var(--king-glass-line); background: #060e1c40; padding: 0 14px; border-radius: 14px; color: #c6d2e4; min-width: 240px; }
+.king-theme-search input { border: 0; background: transparent; color: #f4f6fb; min-height: 46px; width: 100%; min-width: 0; font: inherit; font-size: 13px; }
+.king-theme-search input::placeholder { color: #abb8cb; }
+.king-theme-search:focus-within { outline: 2px solid var(--king-jade); outline-offset: 3px; }
+.king-library-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 24px 0 18px; }
+.king-library-toolbar > span { color: #b8c4d5; font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.king-category-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.king-category-filters button, .king-theme-empty button { padding: 10px 16px; min-height: 44px; border-radius: 100px; border: 1px solid transparent; color: #c1cddd; background: transparent; cursor: pointer; font-size: 12px; }
+.king-category-filters button[aria-pressed="true"] { background: #ffffff12; border-color: #ffffff20; color: #fff; }
+.king-preset-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; max-height: 340px; overflow-y: auto; padding: 4px; scrollbar-width: thin; scrollbar-color: #748298 #101a29; }
+.king-experience .king-preset-card { text-align: start; min-width: 0; padding: 16px; border: 1px solid #ffffff15; border-radius: 16px; background: linear-gradient(145deg, #ffffff09, #ffffff02); color: #f1f5fc; cursor: pointer; }
+.king-experience .king-preset-card[aria-pressed="true"] { border-color: var(--king-gold); background: #f5d79a0c; box-shadow: inset 0 0 0 1px #f5d79a22; }
+.king-preset-palette { display: flex; align-items: center; height: 28px; margin-bottom: 16px; }
+.king-preset-palette i { width: 25px; height: 25px; border-radius: 50%; border: 2px solid #b9cde333; background: var(--preset-background); }
+.king-preset-palette i + i { margin-left: -6px; background: var(--preset-body); }
+.king-preset-palette i:last-of-type { background: linear-gradient(135deg, var(--preset-body), var(--preset-background)); }
+.king-preset-palette svg { margin-left: auto; color: var(--king-gold); }
+.king-preset-name { display: block; font-size: 14px; font-weight: 600; margin-bottom: 7px; }
+.king-preset-detail { display: block; font-size: 11px; line-height: 1.6; color: #b8c4d5; }
+.king-catalogue-note { font-size: 11px; line-height: 1.8; margin: 18px 0 0; color: #b8c4d5; }
+.king-theme-empty { padding: 28px; text-align: center; color: #c1cddd; }
+.king-theme-empty button { border-color: #ffffff30; }
+.king-experience :is(button, a, input, select, summary):focus-visible { outline: 2px solid var(--king-jade); outline-offset: 4px; }
+.king-experience .king-theme-search input:focus-visible { outline: none; }
+.king-experience :is(.king-preset-card, .king-category-filters button, .king-primary-link, .king-secondary-link, .king-trait-options button) { transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease; }
+@media (hover: hover) {
+  .king-experience .king-preset-card:hover, .king-experience .king-trait-options button:hover { border-color: #ffffff60; background-color: #ffffff0d; }
+}
+@media (max-width: 1000px) {
+  .king-experience .king-header { gap: 14px; }
+  .king-experience .king-nav { justify-content: center; border-top: 1px solid #ffffff10; padding-top: 6px; }
+  .king-preset-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .king-library-heading { align-items: flex-start; flex-direction: column; }
+  .king-theme-search { width: 100%; }
+}
+@media (max-width: 760px) {
+  .king-experience .king-shell { width: calc(100% - 28px); padding-top: 14px; }
+  .king-experience .king-header { padding: 14px; border-radius: 20px; }
+  .king-experience .king-hero { grid-template-columns: 1fr; padding: 38px 6px 30px; gap: 0; }
+  .king-experience .king-hero-seal { display: none; }
+  .king-experience .king-section { margin: 40px 0; }
+  .king-experience .king-theme-library { padding: 18px 14px; }
+  .king-library-toolbar { align-items: flex-start; }
+  .king-category-filters { gap: 3px; }
+  .king-category-filters button { padding: 9px 11px; }
+  .king-preset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 330px; gap: 8px; }
+  .king-experience .king-preset-card { padding: 12px; }
+  .king-experience .king-studio-grid { grid-template-columns: 1fr; padding: 12px; gap: 20px; }
+  .king-experience .king-art-frame { width: min(100%, 340px); }
+  .king-experience .king-trait-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .king-experience .king-studio-grid .king-trait-options { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 280px; }
+  .king-experience .king-metrics > div { padding: 12px 16px; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .king-experience { --king-glass: #182030; }
+  .king-experience :is(.king-header, .king-theme-library, .king-studio-grid, .king-metrics, .king-mint-box) { background: #182030; backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .king-experience :is(.king-preset-card, .king-category-filters button, .king-primary-link, .king-secondary-link, .king-trait-options button) { transition: none; }
+}

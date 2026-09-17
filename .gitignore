@@ -118,6 +118,7 @@ tools
 !/__tests__/
 /__tests__/*
 !/__tests__/banmaoKingCodegen.test.ts
+!/__tests__/banmaoKingThemePresets.test.ts
 !/__tests__/banmaoKingDeployGraph.test.ts
 !/__tests__/banmaoKingSecondaryMotion.test.ts
 !/__tests__/banmaoKingSoftWrists.test.ts
