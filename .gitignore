@@ -130,3 +130,18 @@ BanmaoRPS_ABI.json
 docs/BANMAOBOX_MANUAL_DEPLOY.md
 # Generated flattened sources for manual Explorer verification
 /contracts/BanmaoBox/flatten/
+
+# Local-only verification material: never unignore or force-add.
+/__tests__/
+/tests/
+/test/
+/tools/
+/scripts/
+/.tmp/
+/test-results/
+**/*.test.*
+**/*.spec.*
+*.log
+*.err
+*.out
+*.exit
