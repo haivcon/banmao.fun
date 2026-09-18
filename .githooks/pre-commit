@@ -1,0 +1,7 @@
+#!/bin/sh
+# Inspect the entire index, including force-added ignored files.
+forbidden=$(git ls-files | grep -Ei '^(__tests__|tests|test|test-results|tools|scripts|\.tmp|coverage|playwright-report)/|\.(test|spec)\.|\.(log|err|out|exit)$' || true)
+if [ -n "$forbidden" ]; then
+  printf 'Commit blocked: local-only files are tracked:\n%s\n' "$forbidden" >&2
+  exit 1
+fi

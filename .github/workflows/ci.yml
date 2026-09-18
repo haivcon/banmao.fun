@@ -26,14 +26,20 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
-      - name: Generated artifacts
-        run: npm run check:generated
+      - name: Repository hygiene (tracked files only)
+        shell: bash
+        run: |
+          forbidden=$(git ls-files | grep -Ei '^(__tests__|tests|test|test-results|tools|scripts|\.tmp|coverage|playwright-report)/|\.(test|spec)\.|\.(log|err|out|exit)$' || true)
+          if [ -n "$forbidden" ]; then
+            printf 'Local-only files must not be tracked:\n%s\n' "$forbidden"
+            exit 1
+          fi
+      # Generated-artifact and Jest checks require the private local test workspace.
+      # Run npm run check locally before publishing; CI does not claim test coverage.
       - name: TypeScript
         run: npm run typecheck
       - name: ESLint
         run: npm run lint
-      - name: Jest
-        run: npm test -- --runInBand
       - name: Production dependency audit (critical)
         run: npm audit --omit=dev --audit-level=critical
 

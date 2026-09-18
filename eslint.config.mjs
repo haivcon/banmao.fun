@@ -4,6 +4,11 @@ const config = [
   {
     ignores: [
       ".next/**",
+      ".tmp/**",
+      "__tests__/**",
+      "scripts/**",
+      "tools/**",
+      "test-results/**",
       "out/**",
       "dist/**",
       "build/**",
