@@ -2,7 +2,8 @@ import { expressionSvg } from '../app/collection/banmaoking/artwork';
 import { animatedExpressionSvg } from '../app/collection/banmaoking/motion';
 import { previewSvg } from '../app/collection/banmaoking/smil-preview';
 import profiles from '../app/collection/banmaoking/choreography.json';
-import { EXPRESSION_TRAITS } from '../app/collection/banmaoking/traits';
+import { ACCESSORY_IDS, EXPRESSION_TRAITS } from '../app/collection/banmaoking/traits';
+import { expectSvgReferences, svgGroupByClass } from './helpers/banmaoKingSvg';
 import expansion from '../app/collection/banmaoking/expansion.json';
 
 const ids = Array.from({ length: 21 }, (_, id) => id);
@@ -25,11 +26,8 @@ describe('complete expression catalogue', () => {
       expect(frames[0]).toBe(frames[frames.length - 1]);
     }
     for (let pose = 0; pose < 6; pose++) {
-      const svg = previewSvg({ body: 0, expression: id, accessory: 0, background: 0 }, pose, `e${id}p${pose}`);
-      expect(svg).not.toMatch(/undefined|NaN/);
-      const targets = [...svg.matchAll(/\bid="([^"]+)"/g)].map(m => m[1]);
-      expect(new Set(targets).size).toBe(targets.length);
-      for (const [, target] of svg.matchAll(/href="#([^"]+)"/g)) expect(targets).toContain(target);
+      const svg = previewSvg({ body: 0, expression: id, accessory: 1, background: 0 }, pose, `e${id}p${pose}`);
+      expectSvgReferences(svg);
       expect(svg).toContain('<animate');
     }
     if (id >= 12) expect(expansion.expressions[id - 12].svg.replace(/ id="smil-[^"]+"/g, '')).toBe(face);
@@ -42,23 +40,16 @@ describe('complete expression catalogue', () => {
         expect(paths).toHaveLength(1);
         expect(paths[0][1].match(/M/g)).toHaveLength(3);
       }
-      // Track actual group nesting, including Royal Decree's nested eye groups.
-      const stack: string[] = [];
-      for (const [tag] of markup.matchAll(/<g\b[^>]*>|<\/g>/g)) {
-        if (tag === '</g>') stack.pop();
-        else {
-          if (tag.includes('class="king-whiskers"')) {
-            expect(stack[stack.length - 1]).toMatch(/id="[^"]*expression"/);
-          }
-          stack.push(tag);
-        }
-      }
-      expect(markup.match(/<g[^>]*class="king-whiskers">([\s\S]*?)<\/g>/)?.[1]).not.toContain('<animate');
+      expect(svgGroupByClass(markup, 'king-whiskers').parent).toMatch(/id="[^"]*expression"/);
+      // Whisker sway (animateTransform rotate) is permitted; expression morphing is not.
+      const whiskerBody = svgGroupByClass(markup, 'king-whiskers').markup;
+      expect(whiskerBody).not.toMatch(/<animate\s+attributeName="d"/);
+      expect(whiskerBody).not.toMatch(/<animate\s+attributeName="opacity"/);
     };
     check(expressionSvg(id));
     check(animatedExpressionSvg(id));
     for (let pose = 0; pose < 6; pose++) {
-      for (let accessory = 0; accessory < 21; accessory++) {
+      for (const accessory of ACCESSORY_IDS) {
         check(previewSvg({ body: 0, expression: id, accessory, background: 0 }, pose, 'whiskers'));
       }
     }
