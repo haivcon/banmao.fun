@@ -127,6 +127,12 @@ ehthumbs.db
 /app/defi/launchpad/
 /app/api/launchpad/
 
+# Local-only agent instructions (all directories and filename casing)
+[Aa][Gg][Ee][Nn][Tt][Ss].[Mm][Dd]
+.[Aa][Gg][Ee][Nn][Tt][Ss].[Mm][Dd]
+[Hh][Ee][Rr][Mm][Ee][Ss].[Mm][Dd]
+.[Hh][Ee][Rr][Mm][Ee][Ss].[Mm][Dd]
+
 # Local-only planning and internal review material
 .hermes.md
 BANMAOBOX_DETAILED_PLAN_VN.md
