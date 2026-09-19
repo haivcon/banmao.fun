@@ -1,3 +1,4 @@
+import { cyborgFinish } from './cyborg';
 import profiles from './choreography.json';
 import { BODY_TRAITS } from './traits';
 import { bodyEffects, cyborgBody } from './body-effects';
@@ -8,7 +9,7 @@ export { actionPoseSvg, frontPawsSvg } from "./anatomy";
 function peelHighlight(peel: string) {
   switch (peel) {
     case "#fff36b": return "#fffac5";
-    case "#bde33b": return "#edf9be";
+    case "#b9e44a": return "#edf9be";
     case "#ffad6b": return "#ffe3c4";
     case "#72d8e8": return "#d8faff";
     case "#a985e8": return "#eee3ff";
@@ -18,8 +19,8 @@ function peelHighlight(peel: string) {
     case "#f7931a": return "#ffe2a0";
     case "#8198ef": return "#d8e3ff";
     case "#eeeeee": return "#ffffff";
-    case "#46d5b0": return "#c0f5e8";
-    case "#50658c": return "#b8c6dc";
+    case "#203b3a": return "#355652";
+    case "#343d4c": return "#505d70";
     case "#ffb7ce": return "#ffe5ef";
     case "#ca4262": return "#f0a0b8";
     case "#b4efff": return "#f0ffff";
@@ -102,7 +103,8 @@ export function bodySvg(peel: string, shade: string, tokenId = 0) {
   const costume = id >= 0 ? base.replace(/<path d="M258 462[^>]*\/>|<path d="M264 468[^>]*\/>/g, '')
     .replace(/<\/g><\/g>$/, (bodyTips[id] ?? '') + '</g></g>') : base;
   const styled = id === 4 ? cyborgBody(costume) : costume;
-  return styled.replace(/<\/g>$/, (id >= 0 ? bodyEffects(id) : '') + '</g>');
+  const finished = styled.replace(/<\/g>$/, (id >= 0 ? bodyEffects(id) : '') + '</g>');
+  return id === 4 ? cyborgFinish(finished, tokenId) : finished;
 }
 
 export function baseBodySvg(peel: string, shade: string, tokenId = 0) {

@@ -19,7 +19,7 @@ export function accessoryLabEffects(id: number): string {
     case 8: return `<g stroke="#9ae8ff" stroke-width="3">${[0,1,2,3].map(i=>path(`M${151+i*5} 208v10m${190-i*10} -10v10`,'#9ae8ff',loop('stroke-width','1;4;1;2;1',1.7,-i*.21))).join('')}</g>`;
     case 9: return `<g>${move('rotate','0 256 95;360 256 95',18)}${star(256,57,0)}${star(288,95,-2)}${star(256,133,-1)}</g>`;
     case 10: return `<g opacity=".3">${path('M204 73l-8 12M230 81l-4 15M282 81l4 15M308 73l8 12','#ffe8a0',loop('opacity','.15;.65;.15',6.6))}</g>`;
-    case 11: return path('M181 333Q159 367 157 394M331 333Q353 367 355 394','#ffd6a0',loop('d','M181 333Q159 367 157 394M331 333Q353 367 355 394;M181 333Q172 367 151 390M331 333Q340 367 361 390;M181 333Q159 367 157 394M331 333Q353 367 355 394',4.9));
+    case 11: return ''; // Star Lantern includes all effects in the canonical Solidity export.
     case 12: return `<g fill="none" stroke="#85e9ff">${path('M159 214A98 98 0 0 1 353 214','#85e9ff',loop('stroke-dashoffset','0;160',8)).replace('fill="none"','stroke-dasharray="6 14" fill="none"')}<circle cx="316" cy="292" r="4" fill="#85e9ff">${loop('opacity','.25;1;.25',2.8)}</circle></g>`;
     case 13: return `<g>${move('rotate','0 256 364;360 256 364',22)}${path('M224 364a32 32 0 0 1 32-32','#fff2b2','',2)}${star(286,364,-1)}</g>`;
     case 14: return `<ellipse cx="357" cy="244" rx="27" ry="9" fill="none" stroke="#b9caff" stroke-dasharray="5 8">${move('rotate','-20 357 244;340 357 244',9)}</ellipse>`;

@@ -1,6 +1,8 @@
 export const BANMAO_KING_DEPLOYMENT = Object.freeze({
   status: "verified" as const,
   chainId: 196,
+  // Enable only after verifying a new deployment implementing mintBatchTo.
+  supportsBatchMint: false as boolean,
   contractAddress: "0xc96f95cC3496b9fF2e45855c86BCd6340360eeee",
   rendererAddress: "0x6001081d2B3431feEfa5d2451057b8cf4918e520",
   explorerUrl: "https://www.oklink.com/xlayer/address/0xc96f95cC3496b9fF2e45855c86BCd6340360eeee",

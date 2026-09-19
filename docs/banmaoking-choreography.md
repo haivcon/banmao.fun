@@ -1,5 +1,11 @@
 # Expression-owned choreography
 
+## Angry cartoon-rage effects (ID 17)
+
+The 4.8-second loop uses a left-foot contact at normalized time `.43` (2.064s): staggered temple steam, two forehead-symbol bounces, layered cheek heat, short mouth/whisker tremble and tail lash. Fangs morph with the upper mouth edge. Four dust particles and a flattened shock ring are emitted in the secondary scene layer, outside character transforms. Effects fade before the loop resets. No trait IDs or expression count change.
+
+Authoring: `angry-motion.ts`, `angry-effects.ts` and the ID 17 step track in `secondary-motion.ts`. Regenerate with the existing choreography/art-effects sync tools. `tools/test-king-angry-browser.cjs` checks Chrome SMIL playback, steam offsets, impact timing, double bounce, loop repetition and five accessory compositions; artifacts are written under `test-results/angry`. This does not replace reviewing every accessory or deploying the updated contracts.
+
 The live renderer and preview no longer route through tokenId % 6. The 21 expression ordinals own their full-body tracks. Trait packing and catalogue size are unchanged.
 
 Canonical profiles: `contracts/BanmaoKing/Lib/BanmaoKingChoreography.sol`.
@@ -27,7 +33,7 @@ Seven beats describe rest, preparation, accent, follow-through, hold, recovery, 
 | Focused Coder | Focused Typing |
 | Monday Mood | Monday Sigh |
 | Suspicious | Suspicious Scan |
-| Blushing | Shy Sway |
+| Angry | Furious Stomp |
 | Determined Grin | Victory Pump |
 | Dreaming | Dream Drift |
 | Royal Decree | Royal Command |

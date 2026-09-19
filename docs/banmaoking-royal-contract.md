@@ -6,7 +6,7 @@ Current source adds body 16 (King's Gold), accessory 20 (Imperial Regalia), and 
 
 Run `node tools/sync-king-royal.cjs` and `node tools/sync-king-identity.cjs` after editing the Solidity sources. Their `--check` modes reject stale frontend output. These tools are outside the ignored legacy scripts directory. Legacy frontend-to-Solidity generators must not overwrite these contract-authored additions. Older expression and scene pipelines are not yet entirely contract-first; this migration makes royal artwork and corner identity contract-first, not all existing artwork.
 
-The token badge retains its original 8-unit inset. Only the assembled X logo moves: its internal top-left is (386,25), aligned with the token digits; scatter positions and digit geometry remain unchanged. The composition watermark changes from (490,497), size 13 to (506,505), size 11. The contract-defined light/dark palette covers all 17 backgrounds; opposite-color outlines improve legibility over local background details.
+The token badge is anchored at an equal 8-unit inset from the top and left edges. Its assembled X logo shares the token digits' internal top-left at (386,25) and 24-unit height; scatter positions and digit geometry remain unchanged. The composition watermark is at (506,505), size 11. The contract-defined light/dark palette covers all 17 backgrounds; opposite-color outlines improve legibility over local background details.
 
 ## Deployment boundary
 

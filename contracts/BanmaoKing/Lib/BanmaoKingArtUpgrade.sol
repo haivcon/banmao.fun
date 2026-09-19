@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: MIT
+// Author: haivcon
+// Telegram: t.me/haivcon | X: x.com/haivcon | GitHub: github.com/haivcon
+// All for the advancement of Web3.
 pragma solidity ^0.8.30;
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 // Bubble Blaster branch is canonical. Other branches retain their existing generator.

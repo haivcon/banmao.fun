@@ -19,11 +19,11 @@ export function backgroundEffects(id:number): string {
     flow('M30 70h70v105h-40v100h40v130M420 35v110h60v130h-65v180','#ffd781'),
     flow('M20 210L78 108 200 56 426 165 495 92M20 400L72 346 180 420 431 408 495 275','#d2daff'),
     orbit(225,36,'#dff9e4')+orbit(196,51,'#eff8ff'),
-    [0,1,2,3].map(i=>`<path d="M24 ${100+i*22}h${28+i*9}m355 170h${30+i*3}" stroke="#62e6b7" stroke-width="2" pathLength="1" stroke-dasharray="1"><animate attributeName="stroke-dashoffset" values="1;0;0;1" dur="${5+i*.7}s" begin="${-i}s" repeatCount="indefinite"/></path>`).join(''),
+    `<g data-terminal-overlay="static"/>`,
     [0,1,2].map(i=>`<rect x="${37+i*13}" y="${215+i*35}" width="6" height="10" fill="#ffe9a9" opacity=".3">${pulse(9+i*3,-i*2)}</rect>`).join('')+`<g fill="#d2e8ff" opacity=".12"><ellipse cx="422" cy="106" rx="62" ry="8"/>${drift(-30,0,28)}</g>`,
     [0,1,2,3,4].map(i=>`<g><path d="M${36+i*101} ${48+i*35}q-8-15 5-14q13 8-5 14Z" fill="#ffd6e9" opacity=".6"/><animateTransform attributeName="transform" type="translate" values="0 -90;${i%2?30:-25} 140;0 360" dur="${13+i*2}s" begin="${-i*3}s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;.7;.7;0" dur="${13+i*2}s" begin="${-i*3}s" repeatCount="indefinite"/></g>`).join(''),
     `<path d="M100 0L32 480h100L150 0ZM362 0l18 480h100L412 0Z" fill="#ffe5a0" opacity=".06">${pulse(16)}</path>`+flow('M40 65h432M40 447h432','#ffe1a2'),
-    orbit(233,72,'#ffe6a5')+`<path d="M76 0l-30 480h75L146 0M366 0l25 480h75L436 0" fill="#ffeab1" opacity=".05">${pulse(18)}</path>`,
+    orbit(233,72,'#ffe6a5'),
   ];
   if(!Number.isInteger(id)||!motifs[id]) throw new RangeError('Invalid background');
   return `<g data-background-tier="${BACKGROUND_EFFECT_TIERS[id]}" data-background-effect="${id}">${motifs[id]}${backgroundLife(id)}</g>`;

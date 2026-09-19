@@ -1,5 +1,5 @@
 // New Theme Lab entries are append-only and preview-only, not mint traits.
-export const KING_PRESET = { name: 'King', body: 13, expression: 20, accessory: 20, background: 16 };
+export const KING_PRESET = { name: 'King', body: 13, expression: 20, accessory: 21, background: 16 };
 export const KING_BODY = { name: "King's Gold", color: '#ffd700', shade: '#b8860b' };
 export const KING_BACKGROUND = { name: 'Throne Room', color: '#24102f', accent: '#ffe7a3' };
 const pulse = (duration: number, delay = 0) => `<animate attributeName="opacity" values=".2;.85;.2" dur="${duration}s" begin="${delay}s" repeatCount="indefinite"/>`;

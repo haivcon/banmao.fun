@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: MIT
+// Author: haivcon
+// Telegram: t.me/haivcon | X: x.com/haivcon | GitHub: github.com/haivcon
+// All for the advancement of Web3.
 pragma solidity ^0.8.30;
 import {BanmaoKingRoyalLib} from "./BanmaoKingRoyalLib.sol";
+import {BanmaoKingCyborg} from "./BanmaoKingCyborg.sol";
 import {BanmaoKingBodyEffects, BanmaoKingCyborgBody} from "./BanmaoKingBodyEffects.sol";
 
 import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
@@ -14,7 +18,7 @@ library BanmaoKingBodyTips {
     function render(uint8 id) internal pure returns (string memory) {
         string memory shape;
         if (id == 0) shape = '<path d="M-10-5Q0-1 10-5Q8 5 0 9Q-8 5-10-5Z" fill="#95612f" stroke="#704927" stroke-width="1.2"/><path d="M-6-2Q0 1 6-2" fill="none" stroke="#e2b46e" stroke-width="1.3"/>';
-        else if (id == 2) shape = '<path d="M-10-5L-3-3 0-8 3-3 10-5Q7 4 0 10Q-7 4-10-5Z" fill="#65822d" stroke="#435f24" stroke-width="1.2"/><path d="M0-4V6M-5-1L0 3 5-1" fill="none" stroke="#b8d675" stroke-width="1.1"/>';
+        else if (id == 2) shape = '<path d="M-10-5L-3-3 0-8 3-3 10-5Q7 4 0 10Q-7 4-10-5Z" fill="#416C32" stroke="#435f24" stroke-width="1.2"/><path d="M0-4V6M-5-1L0 3 5-1" fill="none" stroke="#b8d675" stroke-width="1.1"/>';
         else if (id == 3) shape = '<path d="M-10-4Q-5-8 0-4Q5-8 10-4Q9 5 0 9Q-9 5-10-4Z" fill="#b96e64" stroke="#894a48" stroke-width="1.2"/><path d="M-6-2Q-2-4 1-1" fill="none" stroke="#ffd2ae" stroke-width="1.5" stroke-linecap="round"/>';
         else if (id == 4) shape = '<path d="M-8-7H8L11-3V5L7 8H-7L-11 5V-3Z" fill="#647789" stroke="#324653" stroke-width="1.2"/><path d="M-7-5H7M-8 5H8" stroke="#d4e4eb" stroke-width="1.2"/><rect x="-6" y="-1" width="12" height="3" rx="1" fill="#81f5ed"><animate attributeName="opacity" values=".55;1;.55" dur="4s" repeatCount="indefinite"/></rect>';
         else if (id == 5) shape = '<path d="M-6-8H6L11-1 0 10-11-1Z" fill="#593783" stroke="#b99ae9" stroke-width="1.1"/><path d="M-6-8L0-1 6-8M-11-1H11M0-1V10" fill="none" stroke="#9675c3" stroke-width=".9"/><path d="M2-6L3-3 6-2 3-1 2 2 1-1-2-2 1-3Z" fill="#f6e6ff"><animate attributeName="opacity" values=".4;1;.4" dur="5s" repeatCount="indefinite"/></path>';
@@ -78,13 +82,13 @@ contract BanmaoKingBodyLib is IBanmaoKingBodyLib {
 
     function render(uint8 traitId, uint256 tokenId) external view returns (string memory) {
         (string memory peel, string memory shade) = traitId == 13 ? (BanmaoKingRoyalLib.BODY_COLOR, BanmaoKingRoyalLib.BODY_SHADE) : _colors(traitId);
-        if (traitId == 4) return cyborg.render(4);
+        if (traitId == 4) return BanmaoKingCyborg.finish(cyborg.render(4), tokenId);
         return string.concat('<g id="body">', _defs(peel, shade), anatomyPart.actionPose(tokenId), _catBehind(), _bananaShell(shade, _peelHighlight(peel)), _faceRim(), _cat(), _costumeDetails(traitId), effects.render(traitId), '</g>');
     }
 
     function _peelHighlight(string memory peel) private pure returns (string memory) {
         if (bytes7(bytes(peel)) == bytes7("#fff36b")) return "#fffac5";
-        if (bytes7(bytes(peel)) == bytes7("#bde33b")) return "#edf9be";
+        if (bytes7(bytes(peel)) == bytes7("#b9e44a")) return "#edf9be";
         if (bytes7(bytes(peel)) == bytes7("#ffad6b")) return "#ffe3c4";
         if (bytes7(bytes(peel)) == bytes7("#72d8e8")) return "#d8faff";
         if (bytes7(bytes(peel)) == bytes7("#a985e8")) return "#eee3ff";
@@ -94,8 +98,8 @@ contract BanmaoKingBodyLib is IBanmaoKingBodyLib {
         if (bytes7(bytes(peel)) == bytes7("#f7931a")) return "#ffe2a0";
         if (bytes7(bytes(peel)) == bytes7("#8198ef")) return "#d8e3ff";
         if (bytes7(bytes(peel)) == bytes7("#eeeeee")) return "#ffffff";
-        if (bytes7(bytes(peel)) == bytes7("#46d5b0")) return "#c0f5e8";
-        if (bytes7(bytes(peel)) == bytes7("#50658c")) return "#b8c6dc";
+        if (bytes7(bytes(peel)) == bytes7("#203b3a")) return "#355652";
+        if (bytes7(bytes(peel)) == bytes7("#343d4c")) return "#505d70";
         if (bytes7(bytes(peel)) == bytes7("#ffb7ce")) return "#ffe5ef";
         if (bytes7(bytes(peel)) == bytes7("#ca4262")) return "#f0a0b8";
         if (bytes7(bytes(peel)) == bytes7("#b4efff")) return "#f0ffff";
@@ -129,15 +133,15 @@ contract BanmaoKingBodyLib is IBanmaoKingBodyLib {
     function _colors(uint8 traitId) private pure returns (string memory peel, string memory shade) {
         if (traitId == 0) return ("#ffe53b", "#d9ad14");
         if (traitId == 1) return ("#fff36b", "#efbe28");
-        if (traitId == 2) return ("#bde33b", "#75a51e");
+        if (traitId == 2) return ("#b9e44a", "#76b83d");
         if (traitId == 3) return ("#ffad6b", "#e06b45");
         if (traitId == 4) return ("#d8d8d8", "#777777");
         if (traitId == 5) return ("#49318c", "#201342");
         if (traitId == 6) return ("#f7931a", "#994609");
         if (traitId == 7) return ("#8198ef", "#39468b");
         if (traitId == 8) return ("#eeeeee", "#454545");
-        if (traitId == 9) return ("#46d5b0", "#147663");
-        if (traitId == 10) return ("#50658c", "#202f4b");
+        if (traitId == 9) return ("#203b3a", "#142b2b");
+        if (traitId == 10) return ("#343d4c", "#222a36");
         if (traitId == 11) return ("#ffb7ce", "#ae5477");
         if (traitId == 12) return ("#ca4262", "#76213d");
         if (traitId == 14) return ("#b4efff", "#4e9fc9");

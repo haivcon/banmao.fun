@@ -1,7 +1,7 @@
 "use client";
 import { useState, type CSSProperties } from 'react';
 import { Check, Search, Palette } from 'lucide-react';
-import { BODY_TRAITS, EXPRESSION_TRAITS, ACCESSORY_TRAITS, BACKGROUND_TRAITS, type BanmaoKingTraitSelection } from './traits';
+import { accessoryName, BODY_TRAITS, EXPRESSION_TRAITS, ACCESSORY_TRAITS, BACKGROUND_TRAITS, type BanmaoKingTraitSelection } from './traits';
 import { KING_THEME_PRESETS, THEME_CATEGORIES, filterKingPresets, type ThemeCategory } from './theme-presets';
 
 export default function KingThemeLab({ traits, onSelect, vi }: {
@@ -25,7 +25,9 @@ export default function KingThemeLab({ traits, onSelect, vi }: {
       const selected = p.body === traits.body && p.expression === traits.expression && p.accessory === traits.accessory && p.background === traits.background;
       return <button className="king-preset-card" type="button" key={p.name} aria-pressed={selected} onClick={() => onSelect({ body: p.body, expression: p.expression, accessory: p.accessory, background: p.background })} style={{ '--preset-body': BODY_TRAITS[p.body].color, '--preset-background': BACKGROUND_TRAITS[p.background].color } as CSSProperties}>
         <span className="king-preset-palette" aria-hidden="true"><i /><i /><i />{selected && <Check size={16} />}</span>
-        <span className="king-preset-name">{p.name}</span><span className="king-preset-detail">{BODY_TRAITS[p.body].name} · {ACCESSORY_TRAITS[p.accessory]}</span>
+        <span className="king-preset-name">{p.name}{selected && <span className="king-sr-only"> · {vi ? 'Đang chọn' : 'Selected'}</span>}</span>
+        <span className="king-preset-detail">{BODY_TRAITS[p.body].name} · {accessoryName(p.accessory)} #{p.accessory}</span>
+        <span className="king-preset-detail">{EXPRESSION_TRAITS[p.expression]} · {BACKGROUND_TRAITS[p.background].name}</span>
       </button>;
     })}</div>
     {presets.length === 0 && <div className="king-theme-empty"><p>{vi ? 'Không tìm thấy bộ phối phù hợp.' : 'No themes match your search.'}</p><button type="button" onClick={() => { setCategory('all'); setQuery(''); }}>{vi ? 'Xóa bộ lọc' : 'Clear filters'}</button></div>}

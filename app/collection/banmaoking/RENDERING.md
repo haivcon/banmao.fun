@@ -164,10 +164,10 @@ Joy/Silly: 7). Contrast follows the background. The badge is painted outside the
 character shadow/motion group at the top left, scaled to 80%, not as an HTML overlay.
 The X follows BanmaoBoxRenderer._logo's symmetric five-cluster layout, adapted
 from its 5x5 grids to 3x3 grids: 45 visible 9-unit tiles on a 10-unit pitch.
-Each 29-unit cluster sits on a 30-unit diagonal step, keeping corners close.
-The logo is 89 units wide (71.2 after scaling); 30 hidden reserve cells split
-from the grid during scatter to supply the full 75-cell token-ID geometry.
-The outer badge transform anchors the animation at (8, 8) in the 512-unit artwork.
+The quarter-scaled clusters overlap into a compact 24-by-24-unit X whose tiles
+match the 4-unit digit cells; 30 hidden reserve cells split from the grid during
+scatter to supply the full 75-cell token-ID geometry. The outer badge transform
+anchors both the digits and logo at (8, 8) in the 512-unit artwork.
 There is no badge backplate: the artwork background remains visible. The hash
 uses extended crossbars and inset stems to distinguish it from a ladder.
 The unanimated geometry is the readable token ID; reduced motion and static

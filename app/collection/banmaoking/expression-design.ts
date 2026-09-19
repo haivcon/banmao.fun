@@ -1,5 +1,9 @@
 import { determinedGrin } from './determined-grin';
+import { whistlingExpression } from './whistling-motion';
+import { suspiciousExpression } from './suspicious-motion';
+import { angryExpression } from './angry-motion';
 import { dreamingBubbles, specialEye } from './expression-effects';
+import { loveFloatingHearts } from './love-motion';
 // Shared authored geometry: the Solidity generator consumes these same shapes.
 const line = 'fill="none" stroke="#633c25" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"';
 const path = (d: string, fill = 'none') => `<path d="${d}" ${line.replace('fill="none"', `fill="${fill}"`)}/>`;
@@ -8,7 +12,7 @@ const pair = (draw: (x: number) => string) => [218, 294].map(draw).join('');
 const heart = (x: number, y: number) => path(`M${x} ${y + 8}c-20-12-8-23 0-13c8-10 20 1 0 13Z`, '#f58ba3');
 // Layered gold rather than a filter/gradient: identical in standalone on-chain SVG.
 const royalEye = (x: number) => `<g data-royal-eye="${x}"><ellipse cx="${x}" cy="214" rx="23" ry="28" fill="#fff4cf" stroke="#633c25" stroke-width="3"/><ellipse cx="${x}" cy="214" rx="18" ry="24" fill="#b97516"/><ellipse cx="${x}" cy="212" rx="15" ry="21" fill="#f7cf6c"/><ellipse cx="${x}" cy="214" rx="10" ry="17" fill="#e8a52b"/><ellipse cx="${x}" cy="213" rx="7" ry="15" fill="#34202c"/><path d="M${x-12} 224q12 11 24 0" fill="none" stroke="#ffeaa0" stroke-width="3" stroke-linecap="round"/><circle data-eye-glint="primary" cx="${x-7}" cy="202" r="5" fill="#fffdf1"/><path data-eye-glint="gold" d="M${x+9} 211l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="#fff3ad"/>${path(`M${x-23} 191q23-13 46 0`)}</g>`;
-export const expressionDurations = [4,2,3.2,2.8,7,2.2,5,6,2.4,7,2.6,8,6.4,4.6,3.6,9,5.4,4.8,3.4,10,7.3];
+export const expressionDurations = [4,2,4.6,5.2,8,4.8,5,6,2.4,7,4.8,8,6.4,4.6,3.6,9,5.4,4.8,3.4,10,7.3];
 
 // Shared by core and expansion faces; keep outside eye/blink and mouth wrappers.
 export function whiskersSvg(): string {
@@ -69,6 +73,9 @@ export function refinedCore(svg: string, id: number): string {
 
 export function expansionFace(id: number): string {
   if (id === 18) return determinedGrin(whiskersSvg());
+  if (id === 15) return whistlingExpression(whiskersSvg());
+  if (id === 16) return suspiciousExpression(whiskersSvg());
+  if (id === 17) return angryExpression(whiskersSvg());
   const eyes = [12,13,14,18].includes(id) ? pair(x => specialEye(id,x)) : [
     pair(x => eye(x) + path(`M${x-9} 217c-8-18 22-20 20-3c-1 12-18 10-12 0q5-5 7 1`, '#b99aef')),
     pair(x => path(`M${x} 192l18 20-18 24-18-24Z`, '#93eaff') + path(`M${x-18} 212h36m-18-20 7 20-7 24-7-24Z`)),
@@ -85,6 +92,7 @@ export function expansionFace(id: number): string {
 }
 
 export function detailMotion(svg: string, id: number): string {
+  if (id === 3) return svg.replace(/(<g class="king-expression-detail" data-detail="3">)[\s\S]*?<\/g>/, `$1${loveFloatingHearts()}</g>`);
   const dx = [0,0,2,-2,1,0,0,0,3,2,0,-1,3,2,0,0,1,0,0,2,0][id];
   const dy = [1,-2,-2,-8,-7,6,-1,2,-2,0,-5,-2,-3,-2,0,2,-2,1,-2,-4,-1][id];
   const dur = expressionDurations[id];
