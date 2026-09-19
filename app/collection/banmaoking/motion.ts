@@ -1,9 +1,10 @@
+import { determinedGrin } from './determined-grin';
 import { expressionSvg } from './artwork';
 import { wateryTears } from './expression-effects';
 import { eyeMotion, eyeProfiles } from './eye-motion';
 
 // Canonical face SMIL, compiled into Solidity by generate-king-smil.cjs.
-import { expressionDurations as durations, detailMotion } from './expression-design';
+import { expressionDurations as durations, detailMotion, whiskersSvg } from './expression-design';
 const splines = '.4 0 .6 1;.4 0 .6 1;.2 0 .2 1;.4 0 .6 1;.4 0 .6 1';
 function morph(attribute: string, base: string, peak: string, dur: number) {
   return `<animate attributeName="${attribute}" values="${base};${peak};${base};${peak};${base};${base}" keyTimes="0;.38;.5;.62;.78;1" calcMode="spline" keySplines="${splines}" dur="${dur}s" repeatCount="indefinite"/>`;
@@ -35,6 +36,7 @@ function mouthMotion(svg: string, id: number) {
 }
 
 export function animatedExpressionSvg(id: number) {
+  if (id === 18) return determinedGrin(whiskersSvg(), true);
   // Pulse only authored blush ellipses; preserve their neutral opacity and geometry.
   const svg = mouthMotion(expressionSvg(id), id).replace(/<ellipse\b[^>]*fill="#ef8b8b"[^>]*opacity=".3"[^>]*\/>/g, tag =>
     tag.slice(0, -2) + ' class="king-blush"><animate attributeName="opacity" values=".3;.44;.3" keyTimes="0;.5;1" calcMode="spline" keySplines=".4 0 .6 1;.4 0 .6 1" dur="5.2s" repeatCount="indefinite"/></ellipse>');

@@ -1,3 +1,4 @@
+import { determinedGrin } from './determined-grin';
 import { dreamingBubbles, specialEye } from './expression-effects';
 // Shared authored geometry: the Solidity generator consumes these same shapes.
 const line = 'fill="none" stroke="#633c25" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"';
@@ -67,6 +68,7 @@ export function refinedCore(svg: string, id: number): string {
 }
 
 export function expansionFace(id: number): string {
+  if (id === 18) return determinedGrin(whiskersSvg());
   const eyes = [12,13,14,18].includes(id) ? pair(x => specialEye(id,x)) : [
     pair(x => eye(x) + path(`M${x-9} 217c-8-18 22-20 20-3c-1 12-18 10-12 0q5-5 7 1`, '#b99aef')),
     pair(x => path(`M${x} 192l18 20-18 24-18-24Z`, '#93eaff') + path(`M${x-18} 212h36m-18-20 7 20-7 24-7-24Z`)),
