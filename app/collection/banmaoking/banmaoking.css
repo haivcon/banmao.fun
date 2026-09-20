@@ -5,7 +5,9 @@
 .king-contract-card { min-width: 0; padding: 20px; border: 1px solid rgba(242, 200, 91, .24); border-radius: 16px; background: #111619; }
 .king-contract-card h3 { margin: 0 0 8px; font-size: 1rem; overflow-wrap: anywhere; }
 .king-contract-label { color: var(--king-jade); font-size: .8rem; }
-.king-contract-card p { color: #d7d5cc; margin: 12px 0; }
+.king-contract-card p { color: #d7d5cc; margin: 12px 0; overflow-wrap: anywhere; }
+.king-contract-card p a { display: inline; padding: 0; min-height: auto; }
+.king-contract-card { scroll-margin-top: 100px; }
 .king-contracts a { color: var(--king-gold); overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: 3px; }
 .king-contract-card a { display: block; padding: 10px 0; min-height: 44px; }
 .king-contracts a:focus-visible { outline: 2px solid var(--king-jade); outline-offset: 4px; }

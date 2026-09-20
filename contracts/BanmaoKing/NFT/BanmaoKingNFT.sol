@@ -74,7 +74,7 @@ contract BanmaoKingNFT is ERC721, ERC2981, IERC4906, ReentrancyGuard {
         address royaltyReceiver_,
         uint96 royaltyFeeNumerator_,
         bytes32 collectionSeed_
-    ) ERC721("Banmao King", "banmaoKING") {
+    ) ERC721("Banmao King", "banmao-KING") {
         if (treasury_ == address(0) || royaltyReceiver_ == address(0)) revert ZeroAddress();
         if (maxSupply_ == 0 || maxSupply_ > TOTAL_COMBINATIONS) revert InvalidSupply();
         if (!renderer_.supportsInterface(type(IBanmaoKingRenderer).interfaceId)) revert InvalidRenderer(renderer_);
