@@ -4,6 +4,7 @@
 // All for the advancement of Web3.
 pragma solidity ^0.8.30;
 
+
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {ERC2981} from "@openzeppelin/contracts/token/common/ERC2981.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -16,6 +17,11 @@ import {BanmaoKingTraits, IBanmaoKingRenderer} from "../IBanmaoKingRenderer.sol"
 
 /// @notice Immutable-config ERC-721 for fully on-chain Hybrid Compose artwork.
 /// @dev The seed is public and deterministic; it is not a claim of unbiasable randomness.
+/// @author haivcon
+/// @custom:telegram https://t.me/haivcon
+/// @custom:x https://x.com/haivcon
+/// @custom:github https://github.com/haivcon
+/// @custom:mission Dedicated to advancing Web3.
 contract BanmaoKingNFT is ERC721, ERC2981, IERC4906, ReentrancyGuard {
     using SafeERC20 for IERC20;
     using ERC165Checker for address;
