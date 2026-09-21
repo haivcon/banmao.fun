@@ -1013,7 +1013,7 @@ export default function GameFiHubPage() {
                                                 donationHistory.map((d, idx) => (
                                                     <a
                                                         key={d.txHash}
-                                                        href={`https://web3.okx.com/explorer/x-layer/tx/${d.txHash}`}
+                                                        href={`https://web3.okx.com/explorer/x-layer/evm/tx/${d.txHash}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         onClick={() => playSound('click')}

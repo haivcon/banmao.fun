@@ -209,7 +209,7 @@ export default function TipModal({ t, postId, creatorAddress, creatorName, tippe
                             </div>
                             <h4>{t.tipSuccess}</h4>
                             {txHash && (
-                                <a href={`https://www.okx.com/web3/explorer/xlayer/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="hub-tip-tx-link">
+                                <a href={`https://web3.okx.com/explorer/x-layer/evm/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="hub-tip-tx-link">
                                     {t.viewTransaction}
                                 </a>
                             )}

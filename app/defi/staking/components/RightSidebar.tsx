@@ -503,7 +503,7 @@ export function RightSidebar({
 
                         {/* Explorer Button */}
                         <ExplorerButton
-                            href={`https://www.okx.com/web3/explorer/xlayer/address/${STAKING_CONTRACT_ADDRESS}?tab=Transactions`}
+                            href={`https://web3.okx.com/explorer/x-layer/evm/address/${STAKING_CONTRACT_ADDRESS}?tab=Transactions`}
                             label={t('searchOnExplorer')}
                         />
                     </div>
@@ -583,7 +583,7 @@ export function RightSidebar({
 
                         <div className="donate-detail-address">
                             <a
-                                href={`https://www.okx.com/web3/explorer/xlayer/address/${selectedDonator.address}`}
+                                href={`https://web3.okx.com/explorer/x-layer/evm/address/${selectedDonator.address}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{ flex: 1, color: '#a855f7', textDecoration: 'none', wordBreak: 'break-all' }}
@@ -835,7 +835,7 @@ export function RightSidebar({
                                             ⏳ Đang tải từ blockchain...
                                             <br />
                                             <a
-                                                href={`https://www.okx.com/web3/explorer/xlayer/address/0xa553f61F2a4fa61f6DDC8bf2b0B66F65c7eAA172`}
+                                                href={`https://web3.okx.com/explorer/x-layer/evm/address/0xa553f61F2a4fa61f6DDC8bf2b0B66F65c7eAA172`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 style={{ color: '#a855f7', textDecoration: 'underline' }}
@@ -853,7 +853,7 @@ export function RightSidebar({
                                 donationHistory.map((tx, idx) => (
                                     <div key={idx} className="donate-tx-item">
                                         <a
-                                            href={`https://www.okx.com/web3/explorer/xlayer/tx/${tx.txHash}`}
+                                            href={`https://web3.okx.com/explorer/x-layer/evm/tx/${tx.txHash}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="donate-tx-hash"
@@ -903,7 +903,7 @@ export function RightSidebar({
 
                             {/* Explorer Button */}
                             <ExplorerButton
-                                href={`https://www.okx.com/web3/explorer/xlayer/address/${STAKING_CONTRACT_ADDRESS}?tab=Transactions`}
+                                href={`https://web3.okx.com/explorer/x-layer/evm/address/${STAKING_CONTRACT_ADDRESS}?tab=Transactions`}
                                 label={t('searchOnExplorer')}
                             />
                         </div>

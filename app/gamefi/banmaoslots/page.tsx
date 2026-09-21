@@ -2418,7 +2418,7 @@ export default function BanmaoSlotsStreetPage() {
                                 >📋</button>
                                 {manualVerifyTxHash && (
                                     <a
-                                        href={`https://web3.okx.com/explorer/x-layer/tx/${manualVerifyTxHash}`}
+                                        href={`https://web3.okx.com/explorer/x-layer/evm/tx/${manualVerifyTxHash}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         title={t.openExplorer || 'Open in Explorer'}
@@ -2593,7 +2593,7 @@ export default function BanmaoSlotsStreetPage() {
                                     </div>
                                 )}
                                 <a
-                                    href={`https://web3.okx.com/explorer/x-layer/tx/${manualVerifyTxHash}`}
+                                    href={`https://web3.okx.com/explorer/x-layer/evm/tx/${manualVerifyTxHash}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     style={{
@@ -3239,7 +3239,7 @@ export default function BanmaoSlotsStreetPage() {
                                                 <div style={{ color: 'rgba(200, 180, 255, 0.6)', fontSize: 10 }}>🔗 TxHash</div>
                                                 <div style={{ display: 'flex', gap: 6 }}>
                                                     <a
-                                                        href={`https://web3.okx.com/explorer/x-layer/tx/${spin.txHash}`}
+                                                        href={`https://web3.okx.com/explorer/x-layer/evm/tx/${spin.txHash}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         style={{ background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)', border: 'none', borderRadius: 4, color: '#fff', cursor: 'pointer', padding: '2px 8px', fontSize: 9, textDecoration: 'none' }}

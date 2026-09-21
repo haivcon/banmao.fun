@@ -5,7 +5,9 @@
 .king-contract-card { min-width: 0; padding: 20px; border: 1px solid rgba(242, 200, 91, .24); border-radius: 16px; background: #111619; }
 .king-contract-card h3 { margin: 0 0 8px; font-size: 1rem; overflow-wrap: anywhere; }
 .king-contract-label { color: var(--king-jade); font-size: .8rem; }
-.king-contract-card p { color: #d7d5cc; margin: 12px 0; }
+.king-contract-card p { color: #d7d5cc; margin: 12px 0; overflow-wrap: anywhere; }
+.king-contract-card p a { display: inline; padding: 0; min-height: auto; }
+.king-contract-card { scroll-margin-top: 100px; }
 .king-contracts a { color: var(--king-gold); overflow-wrap: anywhere; text-decoration: underline; text-underline-offset: 3px; }
 .king-contract-card a { display: block; padding: 10px 0; min-height: 44px; }
 .king-contracts a:focus-visible { outline: 2px solid var(--king-jade); outline-offset: 4px; }
@@ -528,27 +530,10 @@ a:focus-visible {
 }
 /* Animate wrappers, never the pose transform or canonical SVG paths. */
 .king-panel-tools { flex-wrap: wrap; }
-.king-motion-toggle {
-  min-height: 44px;
-  padding: 8px 12px;
-  border: 1px solid #82764e;
-  border-radius: 12px;
-  background: #fff8df;
-  color: #443920;
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-}
-.king-motion-toggle[aria-pressed="true"] { background: #ffe76a; }
-.king-motion-toggle:focus-visible { outline: 3px solid #7766cc; outline-offset: 3px; }
 .king-motion-note { font-size: 12px; line-height: 1.5; color: #746d60; }
-.king-art[data-animated="false"] + .king-art-glint { display: none; }
 .king-particles { pointer-events: none; color: #ffe76a; }
 .king-token-badge { pointer-events: none; }
 /* Only page chrome uses CSS motion; NFT artwork uses SMIL. */
-@media (prefers-reduced-motion: reduce) {
-  .king-art-glint { animation: none !important; display: none; }
-}
 /* Transaction panel: large touch targets and readable contract details. */
 .king-mint-box h2 { font-size: 1.1rem; margin: 0; }
 .king-mint-box button { min-height: 48px; padding: 12px 16px; border-radius: 12px; border: 1px solid #d7b765; background: #ebca7b; color: #14120c; font: inherit; font-weight: 700; cursor: pointer; }

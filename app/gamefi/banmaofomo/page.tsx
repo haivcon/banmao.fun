@@ -1822,7 +1822,7 @@ function BanMaoFomoGame() {
 
                 <div>
                     <a
-                        href={`https://www.okx.com/web3/explorer/x-layer/address/${BANMAOFOMO_ADDRESS}`}
+                        href={`https://web3.okx.com/explorer/x-layer/evm/address/${BANMAOFOMO_ADDRESS}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="contract-link"

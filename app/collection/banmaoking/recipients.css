@@ -1,0 +1,113 @@
+
+.king-page .king-mint-guidance { margin-top: 16px; padding: 14px; border-left: 3px solid #a7e7d9; border-radius: 8px; background: #a7e7d90a; font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; }
+.king-page .king-mint-guidance p { margin: 4px 0; }
+.king-page .king-mint-progress strong { color: #f5d79a; }
+.king-page .king-mint-results { margin-top: 24px; padding: 20px; border: 1px solid #a7e7d944; border-radius: 18px; background: #a7e7d908; }
+.king-page .king-mint-results h3 { color: #a7e7d9; }
+.king-page .king-mint-result-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; padding: 0; list-style: none; max-height: 420px; overflow-y: auto; }
+.king-page .king-mint-result-grid li { padding: 14px; border: 1px solid #ffffff24; border-radius: 12px; min-width: 0; }
+.king-page .king-mint-result-grid code { display: block; margin: 8px 0; overflow-wrap: anywhere; font-size: 12px; }
+.king-page .king-mint-result-grid a, .king-page .king-mint-result-grid button { display: inline-flex; align-items: center; min-height: 44px; margin-right: 12px; }
+.king-page .king-mint-result-grid button[aria-pressed="true"] { border-color: #a7e7d9; color: #a7e7d9; }
+.king-page .king-mint-detail { margin-top: 20px; padding: 16px; border: 1px solid #ffffff24; border-radius: 14px; overflow-wrap: anywhere; }
+.king-page .king-mint-detail img { display: block; margin: 16px auto; border-radius: 12px; }
+.king-page .king-mint-result-grid :focus-visible { outline: 2px solid #a7e7d9; outline-offset: 3px; }
+
+.king-page .king-recipients { min-width: 0; margin: 28px 0; padding: 24px; border: 1px solid #ffffff20; border-radius: 20px; background: #0b132280; }
+.king-page .king-recipients legend { padding: 0 10px; color: #f5d79a; font-size: 18px; font-weight: 600; }
+.king-page .king-recipient-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+.king-page .king-recipient-heading p { margin: 0; color: #bdc7d7; }
+.king-page .king-recipient-heading > span { border: 1px solid #a7e7d933; border-radius: 20px; padding: 6px 10px; color: #a7e7d9; font-size: 10px; letter-spacing: .08em; }
+.king-page .king-recipient-modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.king-page .king-recipient-mode { position: relative; min-width: 0; cursor: pointer; }
+.king-page .king-recipient-mode > input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.king-page .king-recipient-mode-card { position: relative; display: flex; flex-direction: column; gap: 10px; height: 100%; box-sizing: border-box; padding: 18px; border: 1px solid #ffffff20; border-radius: 14px; background: #ffffff04; color: #bdc7d7; }
+.king-page .king-recipient-mode-card strong { color: #f4f6fb; font-size: 14px; padding-inline-end: 16px; }
+.king-page .king-recipient-mode-card small { font-size: 12px; line-height: 1.6; }
+.king-page .king-recipient-selected { position: absolute; top: 18px; right: 16px; visibility: hidden; }
+.king-page .king-recipient-mode input:checked + span { border-color: #f5d79a; background: #f5d79a0c; color: #f5d79a; }
+.king-page .king-recipient-mode input:checked + span .king-recipient-selected { visibility: visible; }
+.king-page .king-recipient-mode input:focus-visible + span { outline: 2px solid #a7e7d9; outline-offset: 4px; }
+.king-page .king-recipient-mode input:disabled + span { opacity: .5; cursor: not-allowed; }
+.king-page .king-recipient-inputs { display: flex; flex-wrap: wrap; gap: 20px; margin: 24px 0; }
+.king-page .king-recipient-field, .king-page .king-recipient-wallet { display: flex; flex: 1 1 260px; flex-direction: column; gap: 10px; min-width: 0; color: #f4f6fb; font-size: 13px; }
+.king-page .king-recipient-quantity { flex: 0 1 160px; }
+.king-page .king-recipient-field :is(input, textarea) { box-sizing: border-box; width: 100%; min-width: 0; min-height: 48px; padding: 12px 14px; border: 1px solid #ffffff30; border-radius: 12px; background: #09111f; color: #f4f6fb; font-size: 16px; color-scheme: dark; }
+.king-page .king-recipient-field textarea { resize: vertical; font-family: monospace; line-height: 1.8; }
+.king-page .king-recipient-field small { color: #bdc7d7; line-height: 1.6; }
+.king-page .king-recipient-wallet > span { display: flex; align-items: center; gap: 8px; }
+.king-page .king-recipient-wallet code { padding: 14px; border: 1px dashed #a7e7d940; border-radius: 12px; color: #a7e7d9; overflow-wrap: anywhere; }
+.king-page .king-recipient-error { padding: 12px 16px; border-left: 3px solid #f5a7a7; background: #f5a7a70c; color: #ffcaca; border-radius: 8px; }
+.king-page .king-recipient-review { padding: 20px; border: 1px solid #ffffff15; border-radius: 16px; background: #ffffff04; }
+.king-page .king-recipient-review h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; color: #a7e7d9; font-size: 15px; }
+.king-page .king-recipient-payer { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; }
+.king-page .king-recipient-review code { overflow-wrap: anywhere; min-width: 0; font-size: 12px; }
+.king-page .king-recipient-list { list-style: none; padding: 0; margin: 16px 0; max-height: 280px; overflow-y: auto; }
+.king-page .king-recipient-list li { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #ffffff10; }
+.king-page .king-recipient-number { color: #bdc7d7; font-size: 11px; }
+.king-page .king-recipient-list strong { color: #f5d79a; font-size: 12px; }
+.king-page .king-recipient-total { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px 0; }
+.king-page .king-recipient-total > span > small { display: block; margin-top: 6px; color: #bdc7d7; font-size: 12px; }
+.king-page .king-recipient-total > strong { font-size: 24px; color: #f5d79a; overflow-wrap: anywhere; }
+.king-page .king-recipient-total strong small { font-size: 12px; }
+.king-page .king-recipient-confirm { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 12px; border-radius: 12px; background: #a7e7d909; color: #e3eee9; font-size: 13px; line-height: 1.6; cursor: pointer; }
+.king-page .king-recipient-confirm input { width: 20px; height: 20px; flex-shrink: 0; accent-color: #a7e7d9; }
+@media (max-width: 600px) {
+  .king-page .king-recipients { padding: 16px; }
+  .king-page .king-recipient-modes { grid-template-columns: 1fr; }
+  .king-page .king-recipient-mode-card { padding: 14px 42px 14px 48px; gap: 4px; }
+  .king-page .king-recipient-mode-card > svg:first-child { position: absolute; left: 14px; top: 16px; }
+  .king-page .king-recipient-review { padding: 14px; }
+  .king-page .king-recipient-quantity { flex-basis: 100%; }
+}
+
+/* Recipient editor and checkout share one disabled fieldset. */
+.king-page .king-mint-workspace { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); align-items: start; gap: 24px; margin-top: 24px; }
+.king-page .king-mint-config, .king-page .king-mint-checkout, .king-page .king-recipient-editor { min-width: 0; }
+.king-page .king-mint-config .king-recipient-inputs { margin-top: 0; }
+.king-page .king-recipient-editor { width: 100%; }
+.king-page .king-recipient-editor-toolbar { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; font-size: 13px; }
+.king-page .king-recipient-editor-toolbar span { color: #a7e7d9; font-variant-numeric: tabular-nums; }
+.king-page .king-recipient-tool { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-width: 44px; min-height: 44px; padding: 10px 12px; border: 1px solid #ffffff30; border-radius: 10px; background: #ffffff08; color: #f5d79a; font: inherit; font-size: 12px; cursor: pointer; }
+.king-page .king-recipient-tool:disabled { opacity: .45; cursor: not-allowed; }
+.king-page .king-recipient-edit-rows { margin: 16px 0; display: grid; gap: 12px; }
+.king-page .king-recipient-edit-row { display: grid; grid-template-columns: minmax(0, 1fr) 76px 44px; align-items: start; gap: 10px; padding: 14px; border: 1px solid #ffffff18; border-radius: 14px; background: #ffffff03; }
+.king-page .king-recipient-edit-row > button { margin-top: 26px; }
+.king-page .king-recipient-row-help { grid-column: 1 / -1; color: #bdc7d7; line-height: 1.6; }
+.king-page .king-recipient-field input[aria-invalid="true"] { border-color: #f5a7a7; }
+.king-page .king-recipient-bulk { margin-top: 16px; padding: 16px; border: 1px dashed #f5d79a60; border-radius: 14px; }
+.king-page .king-recipient-bulk p { font-size: 12px; line-height: 1.6; }
+.king-page .king-mint-checkout .king-wallet-row { margin-top: 16px; display: flex; flex-direction: column; align-items: stretch; }
+.king-page .king-mint-checkout .king-recipient-list { max-height: 200px; }
+.king-page .king-recipient-empty { min-height: 180px; color: #bdc7d7; }
+.king-page .king-recipient-empty > svg { margin-bottom: 12px; color: #a7e7d9; }
+@media (max-width: 900px) {
+  .king-page .king-mint-workspace { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 420px) {
+  .king-page .king-recipient-edit-row { grid-template-columns: minmax(0, 1fr) 44px; padding: 10px; }
+  .king-page .king-recipient-edit-row > label:first-child { grid-column: 1 / -1; }
+}
+
+
+/* In-flow checkout navigation never overlays the keyboard or wallet controls. */
+.king-page .king-mobile-summary, .king-page .king-mobile-disclosure { display: none; }
+.king-page .king-mint-checkout { scroll-margin-top: 24px; }
+@media (max-width: 600px) {
+  .king-page.king-experience .king-mint-box { padding: 14px; }
+  .king-page .king-recipients { padding: 12px 0; border: 0; background: transparent; margin: 20px 0; }
+  .king-page .king-recipient-inputs { gap: 14px; }
+  .king-page .king-recipient-edit-row { grid-template-columns: minmax(0, 1fr) 44px; padding: 10px; }
+  .king-page .king-recipient-edit-row > label:first-child { grid-column: 1 / -1; }
+  .king-page .king-recipient-field :is(input, textarea) { font-size: 16px; min-height: 48px; scroll-margin-block: 24px; }
+  .king-page .king-recipient-review, .king-page .king-mint-results, .king-page .king-mint-detail { padding: 12px; }
+  .king-page .king-mint-workspace { gap: 16px; }
+  .king-page .king-mint-checkout .king-recipient-list, .king-page .king-mint-result-grid { max-height: none; overflow: visible; }
+  .king-page .king-expandable-list[data-expanded="false"] > ul > li:nth-child(n+4) { display: none; }
+  .king-page .king-mobile-disclosure { display: inline-flex; margin-bottom: 12px; }
+  .king-page .king-mobile-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 16px 0; padding: 12px; border: 1px solid #a7e7d944; border-radius: 12px; background: #a7e7d908; }
+  .king-page .king-mobile-summary strong { display: block; color: #f5d79a; overflow-wrap: anywhere; }
+  .king-page .king-mobile-summary small { display: block; color: #bdc7d7; margin-top: 4px; }
+  .king-page .king-mint-box :is(button, summary) { min-height: 44px; }
+  .king-page .king-mint-box :is(button, a):focus-visible { outline: 2px solid #a7e7d9; outline-offset: 3px; }
+}

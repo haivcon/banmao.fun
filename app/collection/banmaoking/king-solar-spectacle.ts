@@ -1,0 +1,15 @@
+// Deterministic, bounded particles; no filters or external resources.
+// These background effects sit behind the character and never cross its face.
+export const SOLAR_STAGE = `<g class="king-solar-spectacle" aria-hidden="true">
+<g transform="translate(256 184)"><g opacity=".18" fill="#ffd573"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="36s" repeatCount="indefinite"/>${Array.from({length:12}, (_,i) => `<path d="M-5-110L-15-171Q0-180 15-171L5-110Z" transform="rotate(${i*30})"/>`).join('')}</g><g fill="none" stroke="#ffe7a6" stroke-width="2" opacity=".55"><animateTransform attributeName="transform" type="rotate" from="360" to="0" dur="24s" repeatCount="indefinite"/><circle r="146" stroke-dasharray="32 44"/><circle r="155" stroke-dasharray="2 23"/></g></g>
+<g class="king-golden-rain">${Array.from({length:18}, (_,i) => {
+  const x = i % 2 ? 403 + (i*13)%65 : 40 + (i*17)%66;
+  const duration = 5 + (i%4);
+  return `<g transform="translate(${x} 55)"><g opacity="0"><animateTransform attributeName="transform" type="translate" values="0 -20;${i%2 ? -12 : 12} 175;0 350" dur="${duration}s" begin="-${i*.61}s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;.8;.65;0" keyTimes="0;.15;.8;1" dur="${duration}s" begin="-${i*.61}s" repeatCount="indefinite"/><path d="M0-5L3 0 0 5-3 0Z" fill="${i%3 ? '#ffdf85' : '#fff5d6'}"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="${2+i%3}s" repeatCount="indefinite"/></path></g></g>`;
+}).join('')}</g>
+<g transform="translate(256 451) scale(1 .22)" fill="none" stroke="#eec675"><g opacity=".55"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="18s" repeatCount="indefinite"/><circle r="154" stroke-width="2" stroke-dasharray="24 16"/><circle r="140" stroke-width="1"/>${Array.from({length:8},(_,i)=>`<path d="M0-153l5 12-5 12-5-12Z" transform="rotate(${i*45})"/>`).join('')}</g></g></g>`;
+
+export const SOLAR_SCEPTER = `<g class="king-scepter-vortex" aria-hidden="true">
+${[0,1].map(i=>`<circle cx="385" cy="207" r="18" fill="none" stroke="${i ? '#ff96ba' : '#ffdf87'}" stroke-width="2" opacity="0"><animate attributeName="r" values="18;42" dur="3.6s" begin="-${i*1.8}s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;.65;0" keyTimes="0;.25;1" dur="3.6s" begin="-${i*1.8}s" repeatCount="indefinite"/></circle>`).join('')}
+${Array.from({length:7},(_,i)=>`<circle cx="0" cy="0" r="${i%2 ? 2 : 3}" fill="#fff0b2" opacity="0"><animateMotion path="M385 404C353 375 416 346 385 318S354 261 385 239S413 207 385 175" dur="4.8s" begin="-${i*.68}s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;.9;.9;0" keyTimes="0;.1;.8;1" dur="4.8s" begin="-${i*.68}s" repeatCount="indefinite"/></circle>`).join('')}
+<g transform="translate(256 91)"><g fill="none" stroke="#fff0b2" stroke-width="1.5" opacity=".65"><animateTransform attributeName="transform" type="rotate" values="-12;12;-12" dur="4s" repeatCount="indefinite"/><path d="M-61 0q61-61 122 0" stroke-dasharray="3 11"/></g></g></g>`;

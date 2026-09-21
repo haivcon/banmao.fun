@@ -434,7 +434,7 @@ export function CommunitySupportSection({
                     <span>💰</span> {t.donateOrSendDirectly || t.communityPoolInstructions || 'Or send $BANMAO directly:'}
                 </div>
                 <a
-                    href={`https://www.okx.com/web3/explorer/xlayer/address/${donateAddress}`}
+                    href={`https://web3.okx.com/explorer/x-layer/evm/address/${donateAddress}`}
                     target="_blank" rel="noopener noreferrer"
                     style={{
                         display: 'block', padding: '6px 8px', marginBottom: 6,

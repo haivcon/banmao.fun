@@ -1,0 +1,13 @@
+# Repository hygiene — mandatory
+
+- GitHub contains production source, required assets, dependency lockfiles, configuration, documentation and repository policy only. Tests, local maintenance/deployment tools and generated debug artifacts stay local.
+- Jest tests and their fixtures/helpers belong only in /__tests__/. Do not create /tests/ or /test/ or scatter tests beside production code.
+- ALL agent-created logs, reports, screenshots, temporary scripts and browser profiles belong under /.tmp/ (logs under /.tmp/logs/). Never redirect command output into the repository root. Framework-managed .next/node_modules caches are exempt; never delete their internal logs arbitrarily.
+- Existing /scripts/ and /tools/ contain legacy local tooling with relative-path dependencies. Keep them ignored. New one-off scripts belong in /.tmp/scripts/. Do not scatter new tooling directories.
+- NEVER remove ignore rules, add negated exceptions, use git add -f, or force-track tests/tools/logs to publish them. .gitignore does not untrack existing files; use narrowly scoped git rm --cached only with authorization, preserving local changes.
+- Do not bypass hygiene hooks or CI. Stage explicit paths, inspect git diff --cached and verify no forbidden files are tracked before committing.
+- Never delete test source, fixtures, deployment provenance, secrets, databases, references, or another task's changes during log cleanup. Delete only confirmed disposable outputs; preserve currently active files.
+- Local tests are not present in a GitHub checkout. Report missing or failed validation honestly; never use --passWithNoTests to claim tests passed. Local test commands must remain usable.
+- Do not rewrite history, force-push, or publish unrelated local commits. Verify the target branch first. Removing files in a new commit does NOT remove them from historical commits.
+- At task end report validation results and remove disposable task logs, retaining only useful latest diagnostics under /.tmp/.
+- Preserve existing domain/contract rules. Repository hygiene does not authorize changing production behavior.

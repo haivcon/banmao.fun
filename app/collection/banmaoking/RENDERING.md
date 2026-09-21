@@ -1,3 +1,9 @@
+# Current playback policy: animated NFT only
+
+BanmaoKing has no reduced-motion mode or static-preview API. All previews and downloads retain SMIL loops regardless of OS motion preferences. `previewSvg(traits, tokenId, prefix)` accepts three arguments. The hook, freeze utility, motion toggle and override attributes have been removed. `particleStyle` only sets particle colors/base opacity. Chrome playback is tested under both OS preferences by `tools/validate-king-playback.cjs`.
+
+The sections below include historical rendering notes. Any mention of reduced-motion resets, playback opt-in or disabling previews is obsolete and does not describe the current runtime.
+
 > Maintenance note: deployment, artwork-generation, and browser-audit scripts have been removed from this repository. Commands referencing `scripts/` below are historical release notes, not runnable checkout instructions. The committed artwork remains unchanged; contract security tests remain available under `__tests__/contracts/`.
 
 
@@ -158,10 +164,10 @@ Joy/Silly: 7). Contrast follows the background. The badge is painted outside the
 character shadow/motion group at the top left, scaled to 80%, not as an HTML overlay.
 The X follows BanmaoBoxRenderer._logo's symmetric five-cluster layout, adapted
 from its 5x5 grids to 3x3 grids: 45 visible 9-unit tiles on a 10-unit pitch.
-Each 29-unit cluster sits on a 30-unit diagonal step, keeping corners close.
-The logo is 89 units wide (71.2 after scaling); 30 hidden reserve cells split
-from the grid during scatter to supply the full 75-cell token-ID geometry.
-The outer badge transform anchors the animation at (8, 8) in the 512-unit artwork.
+The quarter-scaled clusters overlap into a compact 24-by-24-unit X whose tiles
+match the 4-unit digit cells; 30 hidden reserve cells split from the grid during
+scatter to supply the full 75-cell token-ID geometry. The outer badge transform
+anchors both the digits and logo at (8, 8) in the 512-unit artwork.
 There is no badge backplate: the artwork background remains visible. The hash
 uses extended crossbars and inset stems to distinguish it from a ladder.
 The unanimated geometry is the readable token ID; reduced motion and static
@@ -181,7 +187,7 @@ artwork or pass traits to mint(address,address). Mint remains disabled here.
 The NFT now draws four-layer combinations without replacement using a sparse
 Fisher-Yates pool (constant work per mint), bounded to 9,216 combinations.
 A reverted payment/receiver transaction also reverts the pool mutation.
-Poses remain tokenId % 6; uniqueness does not rely on pose or token ID labels.
+Actions now follow the 21 expression ordinals, not token IDs. Solidity profiles and the neutral rig synchronize via tools/sync-king-choreography.cjs.
 This guarantees distinct trait tuples within this collection, not global
 copyright/exclusivity, or pixel distinction under every accessory occlusion,
 animation frame and rasterizer. The public renderer can still render examples.

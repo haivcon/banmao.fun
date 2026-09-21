@@ -27,7 +27,8 @@ const config = {
     },
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
     collectCoverage: false,
-    coverageDirectory: 'coverage',
+    cacheDirectory: '<rootDir>/.tmp/jest-cache',
+    coverageDirectory: '.tmp/coverage',
     coverageReporters: ['text', 'lcov'],
 };
 

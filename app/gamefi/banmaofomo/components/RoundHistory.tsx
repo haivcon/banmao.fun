@@ -771,7 +771,7 @@ export default function RoundHistory({ currentRound, t }: RoundHistoryProps) {
                                                         </span>
                                                         {round.txHash && (
                                                             <a
-                                                                href={`https://web3.okx.com/explorer/x-layer/tx/${round.txHash}`}
+                                                                href={`https://web3.okx.com/explorer/x-layer/evm/tx/${round.txHash}`}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 onClick={(e) => e.stopPropagation()}

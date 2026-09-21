@@ -1,4 +1,4 @@
-import { parseAbi } from "viem";
+import { parseAbi, getAddress, isAddress, zeroAddress } from "viem";
 import { BANMAO_KING_DEPLOYMENT as deployment } from "./deployment";
 
 export const kingAddress = deployment.contractAddress as `0x${string}`;
@@ -9,10 +9,30 @@ export const kingAbi = parseAbi([
   "function mintPrice(address) view returns (uint256)",
   "function isPaymentToken(address) view returns (bool)",
   "function mint(address to, address paymentToken) payable returns (uint256)",
+  "function mintBatchTo(address[] recipients, uint256[] quantities, address paymentToken) payable returns (uint256)",
+  "event BatchMinted(address indexed payer, address indexed paymentToken, uint256 firstTokenId, uint256 quantity, uint256 totalPaid)",
   "function tokenURI(uint256) view returns (string)",
   "function refreshMetadata(uint256 tokenId)",
   "event KingMinted(address indexed payer, address indexed to, uint256 indexed tokenId, address paymentToken, uint256 price, uint32 packedTraits)",
 ]);
+// Deployment capability is deliberately opt-in: the current immutable collection is mint-only.
+export function parseKingRecipients(input: string) {
+  const rows = input.trim().split(/\r?\n/);
+  if (!input.trim() || rows.length > 50) throw new Error("Enter 1–50 recipient rows / Nhập 1–50 dòng người nhận");
+  const recipients: `0x${string}`[] = [];
+  const quantities: bigint[] = [];
+  let total = 0n;
+  rows.forEach((row, index) => {
+    const parts = row.trim().split(/[,\s]+/);
+    if (parts.length !== 2 || !isAddress(parts[0]) || parts[0].toLowerCase() === zeroAddress || !/^[1-9]\d*$/.test(parts[1])) throw new Error(`Invalid recipient or quantity / Ví hoặc số lượng không hợp lệ: ${index + 1}`);
+    const quantity = BigInt(parts[1]);
+    total += quantity;
+    if (total > 50n) throw new Error("Maximum 50 NFTs / Tối đa 50 NFT");
+    recipients.push(getAddress(parts[0])); quantities.push(quantity);
+  });
+  return { recipients, quantities, total };
+}
+
 export function validateMintState(price: bigint, accepted: boolean, supply: bigint, max: bigint) {
   if (!accepted || price !== BigInt(deployment.mintPrice) || max !== BigInt(deployment.maxSupply)) throw new Error("Contract configuration mismatch");
   if (supply >= max) throw new Error("Sold out");

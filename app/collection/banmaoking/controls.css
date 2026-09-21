@@ -1,0 +1,24 @@
+/* Scoped King controls; no artwork or transaction behavior overrides. */
+.king-page.king-experience .king-contract-badge { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; width: 100%; min-width: 0; padding: 16px; margin-top: 16px; border: 1px solid var(--king-glass-line); border-radius: 16px; background: #182030; box-sizing: border-box; }
+.king-experience .king-contract-badge-label { color: var(--king-gold); font-size: 12px; font-weight: 600; }
+.king-experience .king-contract-badge-label small { display: block; color: #bdc7d7; margin-top: 4px; font-size: 10px; }
+.king-experience .king-contract-badge code { overflow-wrap: anywhere; min-width: 0; color: #f4f6fb; font-size: 12px; user-select: all; }
+.king-experience .king-contract-badge-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-inline-start: auto; }
+.king-page.king-experience .king-contract-badge-actions :is(button, a) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 14px; border: 1px solid var(--king-glass-line); border-radius: 12px; background: #ffffff08; color: #f5d79a; font: inherit; font-size: 12px; text-decoration: none; cursor: pointer; }
+.king-page.king-experience .king-language-label { display: inline-flex; align-items: center; gap: 8px; padding-inline-start: 12px; border: 1px solid var(--king-glass-line); border-radius: 12px; background: #182030; color: var(--king-gold); }
+.king-page.king-experience .king-language-label select { min-height: 44px; max-width: 160px; border: 0; border-radius: 12px; background: #182030; color: #f4f6fb; font: inherit; cursor: pointer; color-scheme: dark; }
+.king-page.king-experience .king-footer { flex-wrap: wrap; gap: 20px; }
+.king-page.king-experience :is(.king-copy-button, .king-reset, .king-random, .king-nav a) { min-height: 44px; }
+.king-page.king-experience .king-reset { min-width: 44px; }
+.king-page.king-experience .king-nav a { display: inline-flex; align-items: center; justify-content: center; }
+.king-experience button:disabled { cursor: not-allowed; }
+@media (hover: hover) {
+  .king-page.king-experience .king-contract-badge-actions :is(button, a):hover { background: #ffffff16; border-color: var(--king-gold); }
+}
+@media (max-width: 600px) {
+  .king-page.king-experience .king-contract-badge { align-items: flex-start; gap: 12px; }
+  .king-experience .king-contract-badge code { flex-basis: 100%; }
+  .king-experience .king-contract-badge-actions { margin-inline-start: 0; }
+  .king-page.king-experience .king-nav { flex-wrap: wrap; }
+  .king-page.king-experience .king-actions { flex-wrap: wrap; }
+}

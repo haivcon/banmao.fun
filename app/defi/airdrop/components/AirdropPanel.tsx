@@ -21,10 +21,10 @@ const GAS_PRICE_GWEI = 0.1; // XLayer default gas price
 
 // Preset popular tokens on XLayer
 const PRESET_TOKENS: {address: string; symbol: string; name: string; decimals: number; logo: string}[] = [
-    { address: "0x16d91d1615fc55b76d5f92365bd60c069b46ef78", symbol: "banmao", name: "banmao", decimals: 18, logo: "https://static.oklink.com/cdn/web3/currency/token/large/196-0x16d91d1615fc55b76d5f92365bd60c069b46ef78-110/type=default_90_0?v=1767692192564" },
-    { address: "0x87669801a1fad6dad9db70d27ac752f452989667", symbol: "NIUMA", name: "Niuma", decimals: 18, logo: "https://static.oklink.com/cdn/web3/currency/token/large/196-0x87669801a1fad6dad9db70d27ac752f452989667-110/type=default_90_0?v=1764921295782" },
-    { address: "0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e", symbol: "XDOG", name: "Xdog", decimals: 18, logo: "https://static.oklink.com/cdn/web3/currency/token/large/196-0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e-110/type=default_90_0?v=1764839073713" },
-    { address: "0xdcc83b32b6b4e95a61951bfcc9d71967515c0fca", symbol: "Xwizard", name: "Xwizard", decimals: 18, logo: "https://static.oklink.com/cdn/web3/currency/token/large/196-0xdcc83b32b6b4e95a61951bfcc9d71967515c0fca-107/type=default_90_0?v=1775024553859" },
+    { address: "0x16d91d1615fc55b76d5f92365bd60c069b46ef78", symbol: "banmao", name: "banmao", decimals: 18, logo: "/tokens/0x16d91d1615fc55b76d5f92365bd60c069b46ef78.png" },
+    { address: "0x87669801a1fad6dad9db70d27ac752f452989667", symbol: "NIUMA", name: "Niuma", decimals: 18, logo: "/tokens/0x87669801a1fad6dad9db70d27ac752f452989667.png" },
+    { address: "0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e", symbol: "XDOG", name: "Xdog", decimals: 18, logo: "/tokens/0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e.png" },
+    { address: "0xdcc83b32b6b4e95a61951bfcc9d71967515c0fca", symbol: "Xwizard", name: "Xwizard", decimals: 18, logo: "/tokens/0xdcc83b32b6b4e95a61951bfcc9d71967515c0fca.png" },
 ];
 const STORAGE_HISTORY = "banmao_airdrop_history";
 const STORAGE_BOOK = "banmao_address_book";
@@ -3472,7 +3472,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                                     <div className="holder-token-addr-full">
                                                         {tok.tokenContractAddress}
                                                         <button className="holder-addr-copy" onClick={(e) => { e.stopPropagation(); copyText(tok.tokenContractAddress); showToast(t("airdropAddressCopied")); }}><AIcon name="copy" size={11} /></button>
-                                                        <a className="holder-addr-copy" href={`https://www.okx.com/web3/explorer/xlayer/address/${tok.tokenContractAddress}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}><AIcon name="link" size={11} /></a>
+                                                        <a className="holder-addr-copy" href={`https://web3.okx.com/explorer/x-layer/evm/token/${tok.tokenContractAddress.toLowerCase()}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}><AIcon name="link" size={11} /></a>
                                                     </div>
                                                     <div className="holder-token-stats-row">
                                                         {tok.holders && parseFloat(tok.holders) > 0 && <span className="holder-stat-chip">👛 {parseInt(tok.holders).toLocaleString()} holders</span>}
@@ -3497,7 +3497,7 @@ export default function AirdropPanel({ t, lang, playClick, playHover, playSucces
                                                 <div className="holder-token-addr-full">
                                                     {selectedHotToken}
                                                     <button className="holder-addr-copy" onClick={(e) => { e.stopPropagation(); copyText(selectedHotToken); showToast(t("airdropAddressCopied")); }}><AIcon name="copy" size={11} /></button>
-                                                    <a className="holder-addr-copy" href={`https://www.okx.com/web3/explorer/xlayer/address/${selectedHotToken}`} target="_blank" rel="noopener noreferrer"><AIcon name="link" size={11} /></a>
+                                                    <a className="holder-addr-copy" href={`https://web3.okx.com/explorer/x-layer/evm/token/${selectedHotToken.toLowerCase()}`} target="_blank" rel="noopener noreferrer"><AIcon name="link" size={11} /></a>
                                                 </div>
                                                 <div className="holder-token-stats-row">
                                                     {tok.holders && parseFloat(tok.holders) > 0 && <span className="holder-stat-chip">👛 {parseInt(tok.holders).toLocaleString()} holders</span>}

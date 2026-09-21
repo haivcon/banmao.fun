@@ -1514,7 +1514,7 @@ export default function RoundInfoPanel({
                                                                         <span style={{ color: '#888' }}>📝 {t.recentGiftTx}</span>
                                                                         {entry.txHash ? (
                                                                             <a
-                                                                                href={`https://web3.okx.com/explorer/x-layer/tx/${entry.txHash}`}
+                                                                                href={`https://web3.okx.com/explorer/x-layer/evm/tx/${entry.txHash}`}
                                                                                 target="_blank"
                                                                                 rel="noopener noreferrer"
                                                                                 onClick={(e) => e.stopPropagation()}
@@ -1808,7 +1808,7 @@ export default function RoundInfoPanel({
                                                     })}
                                                     {round.ended && round.txHash && (
                                                         <a
-                                                            href={`https://web3.okx.com/explorer/x-layer/tx/${round.txHash}`}
+                                                            href={`https://web3.okx.com/explorer/x-layer/evm/tx/${round.txHash}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             onClick={(e) => e.stopPropagation()}
@@ -1968,7 +1968,7 @@ export default function RoundInfoPanel({
                                                                         </span>
                                                                         {round.txHash && (
                                                                             <a
-                                                                                href={`https://web3.okx.com/explorer/x-layer/tx/${round.txHash}`}
+                                                                                href={`https://web3.okx.com/explorer/x-layer/evm/tx/${round.txHash}`}
                                                                                 target="_blank"
                                                                                 rel="noopener noreferrer"
                                                                                 onClick={(e) => e.stopPropagation()}
