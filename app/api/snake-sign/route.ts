@@ -103,7 +103,7 @@ async function verifyNonceOnChain(player: string, clientNonce: string): Promise<
             name: "X Layer",
             nativeCurrency: { name: "OKB", symbol: "OKB", decimals: 18 },
             rpcUrls: { default: { http: ["https://xlayerrpc.okx.com"] } },
-            blockExplorers: { default: { name: "OKLink", url: "https://web3.okx.com/explorer/x-layer" } },
+            blockExplorers: { default: { name: "OKX Explorer", url: "https://web3.okx.com/explorer/x-layer" } },
         });
 
         const publicClient = createPublicClient({ chain: xlayer, transport: http() });
@@ -455,7 +455,7 @@ export async function POST(req: NextRequest) {
             name: "X Layer",
             nativeCurrency: { name: "OKB", symbol: "OKB", decimals: 18 },
             rpcUrls: { default: { http: ["https://xlayerrpc.okx.com"] } },
-            blockExplorers: { default: { name: "OKLink", url: "https://web3.okx.com/explorer/x-layer" } },
+            blockExplorers: { default: { name: "OKX Explorer", url: "https://web3.okx.com/explorer/x-layer" } },
         });
 
         const account = privateKeyToAccount(SIGNER_PRIVATE_KEY as `0x${string}`);

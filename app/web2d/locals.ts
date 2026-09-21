@@ -159,10 +159,10 @@ export const web2dFallbackCopies: Record<Language, Web2DFallbackCopy> = {
             { href: "/", label: "Open App", desc: "Return to the PWA-ready lightweight web app.", icon: "download", status: "Live", statusType: "live", meta: "PWA" },
         ],
         token: [
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Token Stats", desc: "Verified BANMAO supply, holders and transfers on the X Layer explorer.", icon: "chart-bar", status: "Live", statusType: "live", meta: "Stats" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Token Stats", desc: "Verified BANMAO supply, holders and transfers on the X Layer explorer.", icon: "chart-bar", status: "Live", statusType: "live", meta: "Stats" },
             { href: "https://app.uniswap.org/swap?outputCurrency=0x16d91d1615fc55b76d5f92365bd60c069b46ef78&chain=xlayer", label: "Buy BANMAO", desc: "Open the BANMAO swap route on X Layer.", icon: "trending-up", status: "Live", statusType: "live", meta: "Swap" },
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Holder Distribution", desc: "Review holders, transfers and distribution from explorer data.", icon: "pie", status: "Live", statusType: "live", meta: "Holders" },
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Contract Info", desc: "Open the verified BANMAO token contract on OKX Explorer.", icon: "search", status: "Live", statusType: "live", meta: "Contract" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Holder Distribution", desc: "Review holders, transfers and distribution from explorer data.", icon: "pie", status: "Live", statusType: "live", meta: "Holders" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Contract Info", desc: "Open the verified BANMAO token contract on OKX Explorer.", icon: "search", status: "Live", statusType: "live", meta: "Contract" },
         ],
     }),
     vi: makeCopy({
@@ -248,10 +248,10 @@ export const web2dFallbackCopies: Record<Language, Web2DFallbackCopy> = {
             { href: "/", label: "Mở ứng dụng", desc: "Quay về web app nhẹ hỗ trợ PWA.", icon: "download", status: "Hoạt động", statusType: "live", meta: "PWA" },
         ],
         token: [
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Thống kê token", desc: "Nguồn cung, holder và giao dịch BANMAO đã xác minh trên explorer X Layer.", icon: "chart-bar", status: "Hoạt động", statusType: "live", meta: "Thống kê" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Thống kê token", desc: "Nguồn cung, holder và giao dịch BANMAO đã xác minh trên explorer X Layer.", icon: "chart-bar", status: "Hoạt động", statusType: "live", meta: "Thống kê" },
             { href: "https://app.uniswap.org/swap?outputCurrency=0x16d91d1615fc55b76d5f92365bd60c069b46ef78&chain=xlayer", label: "Mua BANMAO", desc: "Mở tuyến swap BANMAO trên X Layer.", icon: "trending-up", status: "Hoạt động", statusType: "live", meta: "Swap" },
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Phân bổ holder", desc: "Xem holder, giao dịch và phân bổ từ dữ liệu explorer.", icon: "pie", status: "Hoạt động", statusType: "live", meta: "Holder" },
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Thông tin hợp đồng", desc: "Mở contract token BANMAO đã xác minh trên OKX Explorer.", icon: "search", status: "Hoạt động", statusType: "live", meta: "Contract" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Phân bổ holder", desc: "Xem holder, giao dịch và phân bổ từ dữ liệu explorer.", icon: "pie", status: "Hoạt động", statusType: "live", meta: "Holder" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Thông tin hợp đồng", desc: "Mở contract token BANMAO đã xác minh trên OKX Explorer.", icon: "search", status: "Hoạt động", statusType: "live", meta: "Contract" },
         ],
     }),
     zh: makeCopy({
@@ -337,10 +337,10 @@ export const web2dFallbackCopies: Record<Language, Web2DFallbackCopy> = {
             { href: "/", label: "打开应用", desc: "返回支持 PWA 的轻量 web app。", icon: "download", status: "运行中", statusType: "live", meta: "PWA" },
         ],
         token: [
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Token 统计", desc: "在 X Layer explorer 查看已验证的 BANMAO 供应量、持有人和转账。", icon: "chart-bar", status: "运行中", statusType: "live", meta: "统计" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Token 统计", desc: "在 X Layer explorer 查看已验证的 BANMAO 供应量、持有人和转账。", icon: "chart-bar", status: "运行中", statusType: "live", meta: "统计" },
             { href: "https://app.uniswap.org/swap?outputCurrency=0x16d91d1615fc55b76d5f92365bd60c069b46ef78&chain=xlayer", label: "购买 BANMAO", desc: "打开 X Layer 上的 BANMAO swap 路由。", icon: "trending-up", status: "运行中", statusType: "live", meta: "Swap" },
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "持有人分布", desc: "通过 explorer 数据查看持有人、转账和分布。", icon: "pie", status: "运行中", statusType: "live", meta: "持有人" },
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "合约信息", desc: "在 OKX Explorer 打开已验证的 BANMAO token 合约。", icon: "search", status: "运行中", statusType: "live", meta: "合约" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "持有人分布", desc: "通过 explorer 数据查看持有人、转账和分布。", icon: "pie", status: "运行中", statusType: "live", meta: "持有人" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "合约信息", desc: "在 OKX Explorer 打开已验证的 BANMAO token 合约。", icon: "search", status: "运行中", statusType: "live", meta: "合约" },
         ],
     }),
     ko: makeCopy({
@@ -426,10 +426,10 @@ export const web2dFallbackCopies: Record<Language, Web2DFallbackCopy> = {
             { href: "/", label: "앱 열기", desc: "PWA 친화적인 가벼운 web app으로 돌아갑니다.", icon: "download", status: "라이브", statusType: "live", meta: "PWA" },
         ],
         token: [
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Token 통계", desc: "X Layer explorer에서 검증된 BANMAO 공급량, holder 및 전송을 확인합니다.", icon: "chart-bar", status: "라이브", statusType: "live", meta: "통계" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Token 통계", desc: "X Layer explorer에서 검증된 BANMAO 공급량, holder 및 전송을 확인합니다.", icon: "chart-bar", status: "라이브", statusType: "live", meta: "통계" },
             { href: "https://app.uniswap.org/swap?outputCurrency=0x16d91d1615fc55b76d5f92365bd60c069b46ef78&chain=xlayer", label: "BANMAO 구매", desc: "X Layer에서 BANMAO swap route를 엽니다.", icon: "trending-up", status: "라이브", statusType: "live", meta: "Swap" },
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Holder 분배", desc: "Explorer 데이터로 holder, 전송 및 분배를 확인합니다.", icon: "pie", status: "라이브", statusType: "live", meta: "Holder" },
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "컨트랙트 정보", desc: "OKX Explorer에서 검증된 BANMAO token contract를 엽니다.", icon: "search", status: "라이브", statusType: "live", meta: "Contract" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Holder 분배", desc: "Explorer 데이터로 holder, 전송 및 분배를 확인합니다.", icon: "pie", status: "라이브", statusType: "live", meta: "Holder" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "컨트랙트 정보", desc: "OKX Explorer에서 검증된 BANMAO token contract를 엽니다.", icon: "search", status: "라이브", statusType: "live", meta: "Contract" },
         ],
     }),
     ru: makeCopy({
@@ -515,10 +515,10 @@ export const web2dFallbackCopies: Record<Language, Web2DFallbackCopy> = {
             { href: "/", label: "Открыть приложение", desc: "Вернуться в лёгкое PWA-ready web app.", icon: "download", status: "Активно", statusType: "live", meta: "PWA" },
         ],
         token: [
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Статистика token", desc: "Проверенные supply, holders и transfers BANMAO в X Layer explorer.", icon: "chart-bar", status: "Активно", statusType: "live", meta: "Статистика" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Статистика token", desc: "Проверенные supply, holders и transfers BANMAO в X Layer explorer.", icon: "chart-bar", status: "Активно", statusType: "live", meta: "Статистика" },
             { href: "https://app.uniswap.org/swap?outputCurrency=0x16d91d1615fc55b76d5f92365bd60c069b46ef78&chain=xlayer", label: "Купить BANMAO", desc: "Открыть swap route BANMAO на X Layer.", icon: "trending-up", status: "Активно", statusType: "live", meta: "Swap" },
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Распределение holders", desc: "Проверьте holders, transfers и распределение по данным explorer.", icon: "pie", status: "Активно", statusType: "live", meta: "Holders" },
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Информация о контракте", desc: "Открыть verified token contract BANMAO в OKX Explorer.", icon: "search", status: "Активно", statusType: "live", meta: "Контракт" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Распределение holders", desc: "Проверьте holders, transfers и распределение по данным explorer.", icon: "pie", status: "Активно", statusType: "live", meta: "Holders" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Информация о контракте", desc: "Открыть verified token contract BANMAO в OKX Explorer.", icon: "search", status: "Активно", statusType: "live", meta: "Контракт" },
         ],
     }),
     id: makeCopy({
@@ -604,10 +604,10 @@ export const web2dFallbackCopies: Record<Language, Web2DFallbackCopy> = {
             { href: "/", label: "Buka aplikasi", desc: "Kembali ke web app ringan yang ramah PWA.", icon: "download", status: "Live", statusType: "live", meta: "PWA" },
         ],
         token: [
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Statistik token", desc: "Supply, holder dan transfer BANMAO terverifikasi di explorer X Layer.", icon: "chart-bar", status: "Live", statusType: "live", meta: "Statistik" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Statistik token", desc: "Supply, holder dan transfer BANMAO terverifikasi di explorer X Layer.", icon: "chart-bar", status: "Live", statusType: "live", meta: "Statistik" },
             { href: "https://app.uniswap.org/swap?outputCurrency=0x16d91d1615fc55b76d5f92365bd60c069b46ef78&chain=xlayer", label: "Beli BANMAO", desc: "Buka rute swap BANMAO di X Layer.", icon: "trending-up", status: "Live", statusType: "live", meta: "Swap" },
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Distribusi holder", desc: "Tinjau holder, transfer dan distribusi dari data explorer.", icon: "pie", status: "Live", statusType: "live", meta: "Holder" },
-            { href: "https://www.okx.com/web3/explorer/xlayer/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Info kontrak", desc: "Buka contract token BANMAO terverifikasi di OKX Explorer.", icon: "search", status: "Live", statusType: "live", meta: "Contract" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Distribusi holder", desc: "Tinjau holder, transfer dan distribusi dari data explorer.", icon: "pie", status: "Live", statusType: "live", meta: "Holder" },
+            { href: "https://web3.okx.com/explorer/x-layer/evm/token/0x16d91d1615fc55b76d5f92365bd60c069b46ef78", label: "Info kontrak", desc: "Buka contract token BANMAO terverifikasi di OKX Explorer.", icon: "search", status: "Live", statusType: "live", meta: "Contract" },
         ],
     }),
 };
