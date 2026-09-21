@@ -147,3 +147,20 @@ BanmaoRPS_ABI.json
 docs/BANMAOBOX_MANUAL_DEPLOY.md
 # Generated flattened sources for manual Explorer verification
 /contracts/BanmaoBox/flatten/
+
+# Local-only tests and maintenance artifacts: never publish.
+/__tests__/
+/tests/
+/test/
+/tools/
+/scripts/
+/.tmp/
+/coverage/
+/test-results/
+/playwright-report/
+**/*.test.*
+**/*.spec.*
+*.log
+*.err
+*.out
+*.exit

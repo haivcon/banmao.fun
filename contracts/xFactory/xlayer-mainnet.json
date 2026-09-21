@@ -1,0 +1,25 @@
+{
+  "contractName": "xFactory",
+  "chainId": 196,
+  "network": "X Layer mainnet",
+  "nativeCurrency": "OKB",
+  "address": "0x3348ccD25887E8d5e82C098ff03647d8D94cc44d",
+  "initialOwner": "0x92809f2837f708163d375960063C8A3156fCeACb",
+  "deployer": "0x92809f2837f708163d375960063C8A3156fCeACb",
+  "transactionHash": "0x4273c53c8cbbbde6d7345a3bb97e6c4b1570529171ad119ea8961fa8fbc25f98",
+  "blockNumber": 70675519,
+  "runtimeHash": "0x556c897763c4ef223db2140ae3265bc7b1c6fa14611f7dd17b4ee8ccef15e5b4",
+  "compilerInputHash": "0xe35de23216b1a089e24d2b9c48cc71091fc51da52410d5919ae709aa7f8d0187",
+  "compilerVersion": "0.8.30+commit.73712a01",
+  "optimizer": { "enabled": true, "runs": 200 },
+  "evmVersion": "shanghai",
+  "upgradeable": false,
+  "sourceVerification": { "status": "verified", "guid": "26e61b67ff9c46f1ae3de63b138874e4" },
+  "explorerUrl": "https://web3.okx.com/explorer/x-layer/evm/address/0x3348ccD25887E8d5e82C098ff03647d8D94cc44d",
+  "create2": {
+    "effectiveSalt": "keccak256(abi.encode(actualCaller, userSalt))",
+    "initCodeHash": "keccak256(creationBytecode ++ abiEncodedConstructorArguments)",
+    "prediction": "last20bytes(keccak256(0xff ++ factoryAddress ++ effectiveSalt ++ initCodeHash))",
+    "userSaltType": "bytes32"
+  }
+}
