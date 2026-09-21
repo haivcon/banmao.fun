@@ -414,7 +414,7 @@ export default function BurnPage() {
                                                 {t("fromAddress")}: {tx.fromShort}
                                             </div>
                                             <a
-                                                href={`https://web3.okx.com/explorer/x-layer/tx/${tx.txHash}`}
+                                                href={`https://web3.okx.com/explorer/x-layer/evm/tx/${tx.txHash}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 style={{
@@ -2025,7 +2025,7 @@ export default function BurnPage() {
                                                         {formatAmount(d.amount)} $BANMAO
                                                     </div>
                                                     <a
-                                                        href={`https://web3.okx.com/explorer/x-layer/tx/${d.txHash}`}
+                                                        href={`https://web3.okx.com/explorer/x-layer/evm/tx/${d.txHash}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         style={{ color: "#60a5fa", wordBreak: "break-all", display: "block", marginBottom: "4px", fontSize: "11px", textDecoration: "none" }}
@@ -2628,7 +2628,7 @@ function ContributorModal({
                                     </div>
                                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                                         <a
-                                            href={`https://web3.okx.com/explorer/x-layer/tx/${d.txHash}`}
+                                            href={`https://web3.okx.com/explorer/x-layer/evm/tx/${d.txHash}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="burn-modal-tx-hash"

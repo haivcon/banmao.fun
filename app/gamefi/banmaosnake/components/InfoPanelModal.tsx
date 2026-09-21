@@ -97,7 +97,7 @@ export function InfoPanelModal({
                 {/* Links */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
                     <a
-                        href="https://www.okx.com/web3/explorer/xlayer/address/0x986dE458302005890d708B3930ce57cD1E1E3BaF"
+                        href="https://web3.okx.com/explorer/x-layer/evm/address/0x986dE458302005890d708B3930ce57cD1E1E3BaF"
                         target="_blank" rel="noopener noreferrer" className="info-item"
                         style={{ fontSize: 11, color: '#22d3ee', textDecoration: 'none', padding: '8px 14px', borderRadius: 8, background: 'rgba(34,211,238,0.1)', transition: 'all 0.2s' }}
                     >🔍 {t.communityOpenSource}</a>

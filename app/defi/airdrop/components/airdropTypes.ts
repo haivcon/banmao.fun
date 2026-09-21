@@ -23,10 +23,10 @@ export const STORAGE_PROGRESS = "banmao_airdrop_progress";
 
 // Preset popular tokens on XLayer
 export const PRESET_TOKENS: {address: string; symbol: string; name: string; decimals: number; logo: string}[] = [
-    { address: "0x16d91d1615fc55b76d5f92365bd60c069b46ef78", symbol: "banmao", name: "banmao", decimals: 18, logo: "https://static.oklink.com/cdn/web3/currency/token/large/196-0x16d91d1615fc55b76d5f92365bd60c069b46ef78-110/type=default_90_0?v=1767692192564" },
-    { address: "0x87669801a1fad6dad9db70d27ac752f452989667", symbol: "NIUMA", name: "Niuma", decimals: 18, logo: "https://static.oklink.com/cdn/web3/currency/token/large/196-0x87669801a1fad6dad9db70d27ac752f452989667-110/type=default_90_0?v=1764921295782" },
-    { address: "0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e", symbol: "XDOG", name: "Xdog", decimals: 18, logo: "https://static.oklink.com/cdn/web3/currency/token/large/196-0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e-110/type=default_90_0?v=1764839073713" },
-    { address: "0xdcc83b32b6b4e95a61951bfcc9d71967515c0fca", symbol: "Xwizard", name: "Xwizard", decimals: 18, logo: "https://static.oklink.com/cdn/web3/currency/token/large/196-0xdcc83b32b6b4e95a61951bfcc9d71967515c0fca-107/type=default_90_0?v=1775024553859" },
+    { address: "0x16d91d1615fc55b76d5f92365bd60c069b46ef78", symbol: "banmao", name: "banmao", decimals: 18, logo: "/tokens/0x16d91d1615fc55b76d5f92365bd60c069b46ef78.png" },
+    { address: "0x87669801a1fad6dad9db70d27ac752f452989667", symbol: "NIUMA", name: "Niuma", decimals: 18, logo: "/tokens/0x87669801a1fad6dad9db70d27ac752f452989667.png" },
+    { address: "0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e", symbol: "XDOG", name: "Xdog", decimals: 18, logo: "/tokens/0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e.png" },
+    { address: "0xdcc83b32b6b4e95a61951bfcc9d71967515c0fca", symbol: "Xwizard", name: "Xwizard", decimals: 18, logo: "/tokens/0xdcc83b32b6b4e95a61951bfcc9d71967515c0fca.png" },
 ];
 
 export const SCAN_CHAINS = [

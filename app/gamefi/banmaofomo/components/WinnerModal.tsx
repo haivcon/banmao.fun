@@ -106,7 +106,7 @@ export default function WinnerModal({ isVisible, winnerInfo, onClose, t }: Winne
     };
 
     const explorerUrl = winnerInfo.txHash
-        ? `https://web3.okx.com/explorer/x-layer/tx/${winnerInfo.txHash}`
+        ? `https://web3.okx.com/explorer/x-layer/evm/tx/${winnerInfo.txHash}`
         : null;
 
     return (

@@ -119,5 +119,5 @@ export function tokenExplorerUrl(address: Address): string {
 
 export function tokenExplorerUrlForBase(explorerBaseUrl: string, address: Address): string {
   const checksum = getAddress(address);
-  return `${explorerBaseUrl.replace(/\/+$/, "")}/token/${checksum.toLowerCase()}?address=${checksum}`;
+  return `${explorerBaseUrl.replace(/\/+$/, "")}/token/${checksum.toLowerCase()}`;
 }

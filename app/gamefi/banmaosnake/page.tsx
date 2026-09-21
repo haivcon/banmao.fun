@@ -2641,7 +2641,7 @@ export default function SnakeGame() {
                                                     donationHistory.map((d, idx) => (
                                                         <a
                                                             key={d.txHash}
-                                                            href={`https://web3.okx.com/explorer/x-layer/tx/${d.txHash}`}
+                                                            href={`https://web3.okx.com/explorer/x-layer/evm/tx/${d.txHash}`}
                                                             target="_blank" rel="noopener noreferrer"
                                                             onClick={() => sounds.click()}
                                                             onMouseEnter={() => sounds.hover()}
@@ -2721,7 +2721,7 @@ export default function SnakeGame() {
 
                                     {/* View on Explorer Button */}
                                     <a
-                                        href={`https://www.okx.com/web3/explorer/xlayer/address/${viewDonor.address}`}
+                                        href={`https://web3.okx.com/explorer/x-layer/evm/address/${viewDonor.address}`}
                                         target="_blank" rel="noopener noreferrer"
                                         onClick={() => sounds.click()}
                                         onMouseEnter={() => sounds.hover()}

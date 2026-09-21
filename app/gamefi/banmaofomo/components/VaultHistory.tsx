@@ -974,7 +974,7 @@ export default function VaultHistory({ t, currentVault }: VaultHistoryProps) {
                                 {tx.txHash.slice(0, 10)}...{tx.txHash.slice(-8)}
                             </span>
                             <a
-                                href={`https://web3.okx.com/explorer/x-layer/tx/${tx.txHash}`}
+                                href={`https://web3.okx.com/explorer/x-layer/evm/tx/${tx.txHash}`}
                                 target="_blank" rel="noopener noreferrer"
                                 onClick={e => e.stopPropagation()}
                                 style={{ color: '#22d3ee', textDecoration: 'none', fontSize: '0.55rem', fontWeight: 600 }}
