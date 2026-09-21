@@ -1,3 +1,5 @@
+> Current royal-source revision: Solidity and new mint source now include 17 bodies × 21 expressions × 21 accessories × 17 backgrounds (127,449). Royal artwork and corner identity sync from contracts to frontend. Older preview-only/count statements below describe the preceding revision. No public deployment is confirmed. See [royal contract migration](docs/banmaoking-royal-contract.md).
+
 <div align="center">
 
 # Banmao Fun
@@ -65,6 +67,12 @@ Availability depends on the active deployment, network, server configuration, ex
 | `/gamefi/banmaopk` | Experimental/testnet challenge and voting experience |
 
 Administrative routes also exist for maintainers. Their presence is not proof of authorization, production readiness, or public availability.
+
+## BanmaoKing source status
+
+The current BanmaoKing Solidity catalogue has **21 expressions (IDs 0–20)** and 107,520 four-trait combinations; Theme Lab includes preview-only royal body/accessory/background choices for 127,449 combinations. These are design counts, not minted supply. Royal Decree is shared by preview and current contract source. All expressions include both whisker sides and standalone facial SMIL.
+
+The current renderer requires six constructor dependencies. Source updates do not modify immutable deployments or historical mint assignments, and this revision is not a confirmed production release. See the maintained [catalogue/deployment guide](docs/banmaoking-theme-expansion.md), [expression checks and release gates](docs/banmaoking-expressions-21.md), [composition codes](docs/banmaoking-identity.md), and [King preview scope](docs/banmaoking-king-lab.md).
 
 ## Architecture
 

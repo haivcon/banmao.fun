@@ -194,7 +194,7 @@ export function HouseDashboardPanel({ onClose, lang: propLang, onOpenCreatePool,
                             <p style={{ color: '#fef08a', fontWeight: 600, marginBottom: 10 }}>{texts.handbookContractSecurity}</p>
                             <p style={{ color: '#94a3b8', marginBottom: 10 }}>{texts.handbookContractOwnerNote}</p>
                             <a
-                                href="https://www.okx.com/web3/explorer/xlayer/address/0x9c64c18d792eab435d1d921efac978f6a62da2d2"
+                                href="https://web3.okx.com/explorer/x-layer/evm/address/0x9c64c18d792eab435d1d921efac978f6a62da2d2"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}

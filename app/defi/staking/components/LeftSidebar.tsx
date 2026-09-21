@@ -385,7 +385,7 @@ export function LeftSidebar({ formatNumber, address, LOCK_OPTIONS_INFO }: LeftSi
 
                         {/* Explorer Button */}
                         <ExplorerButton
-                            href={`https://www.okx.com/web3/explorer/xlayer/address/${STAKING_CONTRACT_ADDRESS}?tab=Transactions`}
+                            href={`https://web3.okx.com/explorer/x-layer/evm/address/${STAKING_CONTRACT_ADDRESS}?tab=Transactions`}
                             label={t('searchOnExplorer')}
                         />
                     </div>
@@ -420,7 +420,7 @@ export function LeftSidebar({ formatNumber, address, LOCK_OPTIONS_INFO }: LeftSi
                         {/* Address with copy */}
                         <div className="staker-detail-address">
                             <a
-                                href={`https://www.okx.com/web3/explorer/xlayer/address/${selectedStaker.address}`}
+                                href={`https://web3.okx.com/explorer/x-layer/evm/address/${selectedStaker.address}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style={{ flex: 1, color: '#22c55e', textDecoration: 'none', wordBreak: 'break-all', fontSize: '11px' }}
@@ -452,7 +452,7 @@ export function LeftSidebar({ formatNumber, address, LOCK_OPTIONS_INFO }: LeftSi
                                             {t('loadingBlockchain')}
                                             <div style={{ marginTop: '6px' }}>
                                                 <a
-                                                    href={`https://www.okx.com/web3/explorer/xlayer/address/${STAKING_CONTRACT_ADDRESS}`}
+                                                    href={`https://web3.okx.com/explorer/x-layer/evm/address/${STAKING_CONTRACT_ADDRESS}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     style={{
@@ -482,7 +482,7 @@ export function LeftSidebar({ formatNumber, address, LOCK_OPTIONS_INFO }: LeftSi
                                     <div style={{ marginBottom: '10px' }}>{t('noTransactions')}</div>
                                     <div style={{ fontSize: '11px', color: 'rgba(34, 197, 94, 0.8)' }}>
                                         <a
-                                            href={`https://www.okx.com/web3/explorer/xlayer/address/${selectedStaker.address}`}
+                                            href={`https://web3.okx.com/explorer/x-layer/evm/address/${selectedStaker.address}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             style={{
@@ -523,7 +523,7 @@ export function LeftSidebar({ formatNumber, address, LOCK_OPTIONS_INFO }: LeftSi
                                                             {getTypeEmoji(tx.type)}
                                                         </span>
                                                         <a
-                                                            href={`https://www.okx.com/web3/explorer/xlayer/tx/${tx.txHash}`}
+                                                            href={`https://web3.okx.com/explorer/x-layer/evm/tx/${tx.txHash}`}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="tx-hash"
@@ -562,7 +562,7 @@ export function LeftSidebar({ formatNumber, address, LOCK_OPTIONS_INFO }: LeftSi
                                                     {getTypeEmoji(tx.type)}
                                                 </span>
                                                 <a
-                                                    href={`https://www.okx.com/web3/explorer/xlayer/tx/${tx.txHash}`}
+                                                    href={`https://web3.okx.com/explorer/x-layer/evm/tx/${tx.txHash}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="tx-hash"

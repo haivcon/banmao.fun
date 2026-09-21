@@ -1,0 +1,4 @@
+import { WIZARD_BOOK_SVG } from './wizard-details';
+// Canonical wizard neck scarf and hat badge; no cloak or body-covering fabric.
+export const WIZARD_FRONT_SVG = `<g data-wizard-collar="true" stroke="#e8c477" stroke-width="2" stroke-linejoin="round"><path d="M210 277L202 260Q227 266 250 291L240 310Z" fill="#594080"/><path d="M302 277L310 260Q285 266 262 291L272 310Z" fill="#594080"/><path d="M241 296Q256 304 271 296" fill="none"/><path d="M258 290a9 9 0 1 0 6 15 9 9 0 0 1-6-15Z" fill="#f7dda0"/><path d="M260 294l4 6-4 6-4-6Z" fill="#74eddb"/></g>` + WIZARD_BOOK_SVG;
+export const WIZARD_HAT_BADGE_SVG = `<g data-wizard-hat-badge="true"><path d="M212 119Q253 106 293 119L297 129Q253 118 209 131Z" fill="#a18ac9"/><path d="M258 115a9 9 0 1 0 6 15 9 9 0 0 1-6-15Z" fill="#f7dda0"/><path d="M260 119l4 5-4 5-4-5Z" fill="#74eddb"/></g>`;

@@ -5,10 +5,10 @@ import { useEffect, useState } from "react";
 import type { Address } from "viem";
 
 const PRESET_TOKEN_LOGOS: Record<string, string> = {
-  "0x16d91d1615fc55b76d5f92365bd60c069b46ef78": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x16d91d1615fc55b76d5f92365bd60c069b46ef78-110/type=default_90_0?v=1767692192564",
-  "0x87669801a1fad6dad9db70d27ac752f452989667": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x87669801a1fad6dad9db70d27ac752f452989667-110/type=default_90_0?v=1764921295782",
-  "0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e": "https://static.oklink.com/cdn/web3/currency/token/large/196-0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e-110/type=default_90_0?v=1764839073713",
-  "0xdcc83b32b6b4e95a61951bfcc9d71967515c0fca": "https://static.oklink.com/cdn/web3/currency/token/large/196-0xdcc83b32b6b4e95a61951bfcc9d71967515c0fca-107/type=default_90_0?v=1775024553859",
+  "0x16d91d1615fc55b76d5f92365bd60c069b46ef78": "/tokens/0x16d91d1615fc55b76d5f92365bd60c069b46ef78.png",
+  "0x87669801a1fad6dad9db70d27ac752f452989667": "/tokens/0x87669801a1fad6dad9db70d27ac752f452989667.png",
+  "0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e": "/tokens/0x0cc24c51bf89c00c5affbfcf5e856c25ecbdb48e.png",
+  "0xdcc83b32b6b4e95a61951bfcc9d71967515c0fca": "/tokens/0xdcc83b32b6b4e95a61951bfcc9d71967515c0fca.png",
 };
 
 const logoCache = new Map<string, string>();

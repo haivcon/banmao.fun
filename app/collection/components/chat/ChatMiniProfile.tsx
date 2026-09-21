@@ -31,7 +31,7 @@ export default function ChatMiniProfile({ address, onClose, nickname, t }: Props
                 <h3 style={{ margin: '0 0 4px 0', fontSize: '1.2rem', color: 'var(--hub-text)' }}>{nickname || shortAddr}</h3>
                 <p style={{ margin: '0 0 16px 0', fontSize: '0.9rem', color: 'var(--hub-text-muted)' }}>
                     {shortAddr}
-                    <a href={`https://www.okx.com/web3/explorer/xlayer/address/${address}`} target="_blank" rel="noreferrer" style={{ marginLeft: 8, color: '#0084ff', display: 'inline-block' }}><ExternalLink size={14} /></a>
+                    <a href={`https://web3.okx.com/explorer/x-layer/evm/address/${address}`} target="_blank" rel="noreferrer" style={{ marginLeft: 8, color: '#0084ff', display: 'inline-block' }}><ExternalLink size={14} /></a>
                 </p>
 
                 <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left', border: '1px solid rgba(255,255,255,0.1)' }}>

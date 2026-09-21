@@ -3,10 +3,14 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import dynamic from "next/dynamic";
 import JSZip from "jszip";
+import { saveCollectionTheme } from "./CollectionPreferences";
+import { createHubRequestGate, appendUniqueHubPosts } from "./hubRequestGate";
 import { useRouter, useSearchParams } from "next/navigation";
 import "./collection.css";
 import "./hub-redesign.css";
-import { T, Lang, LANG_LIST } from "./i18n";
+import { T, Lang } from "./i18n";
+import CollectionLanguageSelector from "./CollectionLanguageSelector";
+import CollectionNavigation from "./CollectionNavigation";
 import { translateName, reverseTranslate, translateFolder, detectBrowserLang } from "./i18n/nameDict";
 import { saveBgImage, getBgImage, deleteBgImage, entryToUrl } from "./bgStore";
 import { ConnectButton } from "../components/wallet/WalletConnection";
@@ -415,6 +419,8 @@ const ImageCard = memo(function ImageCard({ img, index, gridCols, unloadOffscree
         >
             <div className="col-card-img-wrap">
                 {!img.isVideo && <div className="col-checker-bg" />}
+                {/* Cloudinary supplies responsive srcSet; visibility controls thumbnail unloading. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                     src={isVisible ? img.thumb : blurThumb}
                     srcSet={isVisible && !img.isVideo ? toCloudinarySrcSet(img.src) || undefined : undefined}
@@ -462,9 +468,13 @@ const ImageCard = memo(function ImageCard({ img, index, gridCols, unloadOffscree
 
 /* ===================== MAIN PAGE ===================== */
 
-export default function CollectionPage() {
+export default function CollectionPage({ initialViewMode = "gallery" }: { initialViewMode?: "gallery" | "hub" }) {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const viewMode = initialViewMode;
+    const setViewMode = useCallback((next: "gallery" | "hub") => {
+        if (next !== viewMode) router.push(`/collection/${next}`);
+    }, [router, viewMode]);
     const isMobile = useIsMobile();
     const itemsPerPage = isMobile ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE_DESKTOP;
 
@@ -474,7 +484,6 @@ export default function CollectionPage() {
         activeTab, setActiveTab,
         currentPage, setCurrentPage,
         searchQuery, setSearchQuery,
-        showLangMenu, setShowLangMenu,
         showChatInbox, setShowChatInbox,
         allImages, setAllImages,
         folders, setFolders,
@@ -519,7 +528,7 @@ export default function CollectionPage() {
         showTeleGuide, setShowTeleGuide,
 
         // Hub Social
-        viewMode, setViewMode,
+        // View selection belongs to the route, not the shared Zustand store.
         hubPosts, setHubPosts,
         hubLoading, setHubLoading,
         showCreatePost, setShowCreatePost,
@@ -694,11 +703,16 @@ export default function CollectionPage() {
         }
     };
 
+    const [hubRequestGate] = useState(createHubRequestGate);
+    const hubOffsetRef = useRef(0);
+
     // Fetch hub posts (with pagination)
     const fetchHubPosts = useCallback(async (reset = true) => {
-        if (reset) setHubLoading(true);
+        const request = hubRequestGate.begin(reset);
+        if (!request) return;
+        setHubLoading(true);
         try {
-            const offset = reset ? 0 : hubPosts.length;
+            const offset = reset ? 0 : hubOffsetRef.current;
             const params = new URLSearchParams({ limit: "24", offset: String(offset) });
 
             if (hubFeedTab === "mine" && address) {
@@ -722,18 +736,25 @@ export default function CollectionPage() {
                 params.set("sort", hubFeedTab);
             }
 
-            const res = await fetch(`/api/hub/posts?${params}`);
+            const res = await fetch(`/api/hub/posts?${params}`, { signal: request.signal });
+            if (!res.ok) throw new Error(`Hub fetch failed: ${res.status}`);
             const data = await res.json();
+            if (!request.isCurrent()) return;
+            if (!Array.isArray(data.posts)) throw new Error("Invalid Hub feed response");
+            hubOffsetRef.current = offset + data.posts.length;
             if (data.posts) {
-                if (reset) setHubPosts(data.posts);
-                else setHubPosts(prev => [...prev, ...data.posts]);
+                if (reset) setHubPosts(appendUniqueHubPosts([], data.posts));
+                else setHubPosts(prev => appendUniqueHubPosts(prev, data.posts));
                 setHubHasMore(data.posts.length >= 24);
             }
             if (reset) setHubPage(1);
             else setHubPage(p => p + 1);
-        } catch (e) { console.error("Hub fetch error:", e); }
-        finally { setHubLoading(false); }
-    }, [hubFeedTab, address, hubProfileFilter, hubProfileTab, hubPosts.length]);
+        } catch (e) {
+            if (request.isCurrent()) console.error("Hub fetch error:", e);
+        } finally {
+            if (request.isCurrent()) { setHubLoading(false); request.finish(); }
+        }
+    }, [hubRequestGate, hubFeedTab, address, hubProfileFilter, hubProfileTab, setHubHasMore, setHubLoading, setHubPage, setHubPosts]);
 
     // Fetch top creators
     const fetchTopCreators = useCallback(async () => {
@@ -742,13 +763,13 @@ export default function CollectionPage() {
             const data = await res.json();
             if (data.creators) setTopCreators(data.creators);
         } catch { /* ignore */ }
-    }, []);
+    }, [setTopCreators]);
 
     // Auto-fetch when switching to hub
     useEffect(() => {
         if (viewMode === "hub") { fetchHubPosts(true); fetchTopCreators(); }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [viewMode, hubFeedTab, hubProfileFilter, fetchHubPosts, fetchTopCreators]);
+        return () => { hubRequestGate.cancel(); setHubLoading(false); };
+    }, [viewMode, fetchHubPosts, fetchTopCreators, hubRequestGate, setHubLoading]);
 
     // Infinite scroll observer
     useEffect(() => {
@@ -758,7 +779,7 @@ export default function CollectionPage() {
         }, { rootMargin: '200px' });
         obs.observe(hubLoadMoreRef.current);
         return () => obs.disconnect();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
     }, [viewMode, hubHasMore, hubLoading, fetchHubPosts]);
 
     const handleLike = useCallback(async (postId: number) => {
@@ -772,7 +793,7 @@ export default function CollectionPage() {
             // Rollback on failure
             setHubPosts(prev => prev.map(p => p.id === postId ? { ...p, liked: !p.liked, like_count: p.liked ? Math.max(0, (p.like_count || 0) - 1) : (p.like_count || 0) + 1 } : p));
         }
-    }, [address]);
+    }, [address, setHubPosts]);
 
     // Double-tap to like
     const handleDoubleTap = useCallback((postId: number) => {
@@ -781,7 +802,7 @@ export default function CollectionPage() {
         if (post && !post.liked) handleLike(postId);
         setHubLikeAnim(postId);
         setTimeout(() => setHubLikeAnim(null), 800);
-    }, [address, hubPosts, handleLike]);
+    }, [address, hubPosts, handleLike, setHubLikeAnim]);
 
     // Fetch user bookmarks
     const fetchBookmarks = useCallback(async () => {
@@ -791,7 +812,7 @@ export default function CollectionPage() {
             const data = await res.json();
             if (data.bookmarks) setHubBookmarks(new Set(data.bookmarks));
         } catch { /* ignore */ }
-    }, [address]);
+    }, [address, setHubBookmarks]);
 
     useEffect(() => { fetchBookmarks(); }, [fetchBookmarks]);
 
@@ -803,7 +824,7 @@ export default function CollectionPage() {
             return next;
         });
         await fetch("/api/hub/bookmarks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ postId, address }) });
-    }, [address]);
+    }, [address, setHubBookmarks]);
 
     const handleReport = useCallback(async (postId: number) => {
         if (!address) return;
@@ -860,7 +881,7 @@ export default function CollectionPage() {
             if (data.likers) setLikeListData(data.likers);
             setShowLikeList(postId);
         } catch { /* ignore */ }
-    }, []);
+    }, [setLikeListData, setShowLikeList]);
 
     const shortAddr = useCallback((addr: string) => addr ? addr.slice(0, 6) + "..." + addr.slice(-4) : "", []);
     const timeAgo = useCallback((ts: number) => {
@@ -1031,6 +1052,7 @@ export default function CollectionPage() {
     }, [appendCollectionPage, applyCollectionInventory, requestCollectionPage, setAllImages, setLoading, setTotalBytes]);
 
     useEffect(() => {
+        if (initialViewMode !== "gallery") return;
         const generation = collectionGenerationRef.current + 1;
         collectionGenerationRef.current = generation;
         nextCursorRef.current = null;
@@ -1069,7 +1091,7 @@ export default function CollectionPage() {
         return () => {
             if (collectionGenerationRef.current === generation) collectionGenerationRef.current += 1;
         };
-    }, [applyCollectionInventory, loadCompleteCollection, setFolders, sortFolders]);
+    }, [initialViewMode, applyCollectionInventory, loadCompleteCollection, setFolders, sortFolders, setAllImages, setTotalBytes]);
 
 
 
@@ -1079,7 +1101,7 @@ export default function CollectionPage() {
         const params = new URLSearchParams(searchParams.toString());
         const postParam = params.get("post");
         const profileParam = params.get("profile");
-        const vParam = params.get("v") as typeof viewMode;
+        // Ignore legacy view hints: the route determines the displayed experience.
         const folderParam = params.get("folder");
         const tabParam = params.get("tab") || folderParam;
         const ptabParam = params.get("ptab") as typeof hubProfileTab;
@@ -1090,11 +1112,7 @@ export default function CollectionPage() {
         const colsParam = Number(params.get("cols"));
 
         // 1. Set View Mode
-        let currentView = viewMode;
-        if (vParam === "hub" || vParam === "gallery") {
-            setViewMode(vParam);
-            currentView = vParam;
-        }
+        const currentView = initialViewMode;
 
         // 2. Set Tabs
         if (tabParam) {
@@ -1214,7 +1232,7 @@ export default function CollectionPage() {
             const params = new URLSearchParams(window.location.search);
             const profileParam = params.get('profile');
             const postParam = params.get('post');
-            const vParam = params.get('v');
+            const vParam = initialViewMode;
             const tabParam = params.get('tab') || params.get('folder');
             const ptabParam = params.get('ptab');
             const qParam = params.get('q');
@@ -1262,7 +1280,7 @@ export default function CollectionPage() {
 
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
-    }, [hubProfileFilter, hubDetailPost]);
+    }, [hubProfileFilter, hubDetailPost, initialViewMode, setViewMode, setSearchQuery, setHubSearch, setHubProfileTab, setHubFeedTab, setActiveTab, setHubProfileFilter, setSortBy, setCurrentPage, setGridCols, setTypeFilter, setHubDetailPost]);
 
     // ——— Favorites from localStorage or URL Hash ———
     useEffect(() => {
@@ -1298,7 +1316,7 @@ export default function CollectionPage() {
         // Load download counts
         const counts = localStorage.getItem("banmao_dl_counts");
         if (counts) { try { setDownloadCounts(JSON.parse(counts)); } catch { /* ignore */ } }
-    }, []);
+    }, [setActiveTab, setDownloadCounts, setFavorites, setFavoritesOrder]);
 
     const incrementDownloadCount = useCallback((name: string) => {
         setDownloadCounts(prev => {
@@ -1306,7 +1324,7 @@ export default function CollectionPage() {
             localStorage.setItem("banmao_dl_counts", JSON.stringify(updated));
             return updated;
         });
-    }, []);
+    }, [setDownloadCounts]);
 
     // ——— Download Toast Helper ———
     const showToast = useCallback((message: string, type: "" | "col-toast-success" | "col-toast-error" = "") => {
@@ -1314,7 +1332,7 @@ export default function CollectionPage() {
         setToast(message);
         setToastType(type);
         toastTimer.current = setTimeout(() => { setToast(null); setToastType(""); }, 2800);
-    }, []);
+    }, [setToast, setToastType]);
 
     const handleDownloadToast = useCallback((success: boolean) => {
         showToast(success ? t.downloadSuccess : t.downloadFailed, success ? "col-toast-success" : "col-toast-error");
@@ -1337,14 +1355,14 @@ export default function CollectionPage() {
         window.addEventListener("beforeinstallprompt", handler);
 
         return () => window.removeEventListener("beforeinstallprompt", handler);
-    }, []);
+    }, [setDeferredPrompt]);
 
     const installPwa = useCallback(async () => {
         if (!deferredPrompt) return;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         (deferredPrompt as any).prompt();
         setDeferredPrompt(null);
-    }, [deferredPrompt]);
+    }, [deferredPrompt, setDeferredPrompt]);
 
     // ——— Translate image names when language changes (offline dictionary) ———
     useEffect(() => {
@@ -1363,7 +1381,7 @@ export default function CollectionPage() {
         }
         translationCache.current[lang] = result;
         setTranslatedNames(result);
-    }, [lang, allImages]);
+    }, [lang, allImages, setTranslatedNames]);
 
 
     const isFavorite = useCallback((img: { publicId?: string; src: string }) => (
@@ -1479,7 +1497,7 @@ export default function CollectionPage() {
             setImgLoading(true);
             hasOpenedDeepLink.current = true; // Prevent re-triggering when grid sorts/filters
         }
-    }, [filteredImages]);
+    }, [filteredImages, setImgLoading, setLightboxIndex]);
 
     // ——— Pagination / Infinite Scroll ———
     const hasClientFilters = activeTab !== "all" || Boolean(searchQuery.trim()) || typeFilter !== "all";
@@ -1551,7 +1569,7 @@ export default function CollectionPage() {
         setActiveTab(tab);
         setCurrentPage(1);
         setShowTabsMenu(false);
-    }, []);
+    }, [setActiveTab, setCurrentPage, setShowTabsMenu]);
 
     // ——— Share Favorites ———
     const handleShareFavorites = useCallback(() => {
@@ -1580,7 +1598,7 @@ export default function CollectionPage() {
         } catch (e) {
             console.error("Failed to generate share link", e);
         }
-    }, [favorites, favoritesOrder, t]);
+    }, [favorites, favoritesOrder, setToast, t.copyLinkFailed, t.favoritesLinkCopied, t.noFavoritesToShare]);
 
     useEffect(() => {
         try {
@@ -1637,28 +1655,13 @@ export default function CollectionPage() {
             if (saveTimer) clearTimeout(saveTimer);
             sessionStorage.setItem(storageKey, String(window.scrollY));
         };
-    }, [searchParams]);
+    }, [searchParams, setHeaderHidden, setShowScrollTop]);
 
     const scrollToTop = useCallback(() => {
         window.scrollTo({ top: 0, behavior: "smooth" });
     }, []);
 
-    // ——— Language ———
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        const saved = localStorage.getItem("banmao_language") as Lang | null;
-        if (saved && T[saved]) { setLang(saved); return; }
-        const browserLang = navigator.language.split("-")[0].toLowerCase();
-        if (T[browserLang as Lang]) setLang(browserLang as Lang);
-    }, []);
-
-    // ——— Theme ———
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        const saved = localStorage.getItem("banmao_theme") as "dark" | "light" | null;
-        if (saved) { setTheme(saved); return; }
-        if (window.matchMedia("(prefers-color-scheme: light)").matches) setTheme("light");
-    }, []);
+    // Preferences are initialized once by the shared Collection layout.
 
     const toggleTheme = useCallback((e?: React.MouseEvent) => {
         // Ripple effect
@@ -1673,18 +1676,9 @@ export default function CollectionPage() {
             document.body.appendChild(ripple);
             setTimeout(() => ripple.remove(), 800);
         }
-        setTheme((prev) => {
-            const next = prev === "dark" ? "light" : "dark";
-            localStorage.setItem("banmao_theme", next);
-            return next;
-        });
+        saveCollectionTheme(useHubStore.getState().theme === "dark" ? "light" : "dark");
     }, []);
 
-    const handleLangChange = useCallback((newLang: Lang) => {
-        setLang(newLang);
-        localStorage.setItem("banmao_language", newLang);
-        setShowLangMenu(false);
-    }, []);
 
     // ——— Lightbox ———
     const openLightbox = useCallback((img: ImageItem) => {
@@ -1701,7 +1695,7 @@ export default function CollectionPage() {
         const url = new URL(window.location.href);
         url.searchParams.set("img", img.publicId);
         window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
-    }, [filteredImages]);
+    }, [filteredImages, setDragY, setEditor, setImgLoading, setLightboxIndex, setShowEditor, setShowQr, setShowSharePanel]);
 
     const closeLightbox = useCallback(() => {
         setLightboxIndex(null); setDragY(0); setImgLoading(false);
@@ -1719,7 +1713,7 @@ export default function CollectionPage() {
         url.searchParams.delete("img");
         window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
         window.setTimeout(() => lightboxReturnFocusRef.current?.focus(), 0);
-    }, []);
+    }, [setBgRemovedName, setBgRemovedUrl, setDragY, setEditor, setEditorTab, setHubEditorOverride, setImgLoading, setIsSlideshow, setLightboxIndex, setShowEditor, setShowQr, setShowSharePanel]);
 
     useEffect(() => {
         if (lightboxIndex === null && !hubEditorOverride) return;
@@ -1741,12 +1735,12 @@ export default function CollectionPage() {
     const lightboxPrev = useCallback(() => {
         setImgLoading(true);
         setLightboxIndex((i) => (i !== null && i > 0 ? i - 1 : i));
-    }, []);
+    }, [setImgLoading, setLightboxIndex]);
 
     const lightboxNext = useCallback(() => {
         setImgLoading(true);
         setLightboxIndex((i) => (i !== null && i < filteredImages.length - 1 ? i + 1 : i));
-    }, [filteredImages.length]);
+    }, [filteredImages.length, setImgLoading, setLightboxIndex]);
 
     // Keyboard
     useEffect(() => {
@@ -1814,7 +1808,7 @@ export default function CollectionPage() {
     const handleTouchMove = useCallback((e: React.TouchEvent) => {
         const dy = e.touches[0].clientY - touchStartY.current;
         if (dy > 10) { isDragging.current = true; setDragY(dy); }
-    }, []);
+    }, [setDragY]);
 
     const handleTouchEnd = useCallback((e: React.TouchEvent) => {
         const dx = e.changedTouches[0].clientX - touchStartX.current;
@@ -1830,7 +1824,7 @@ export default function CollectionPage() {
             if (dx > 0) lightboxPrev();
             else lightboxNext();
         }
-    }, [lightboxPrev, lightboxNext, closeLightbox]);
+    }, [setDragY, closeLightbox, lightboxPrev, lightboxNext]);
 
     const currentLightboxImage = hubEditorOverride
         ? hubEditorOverride
@@ -1887,7 +1881,7 @@ export default function CollectionPage() {
                 setBgRemovedName(entry.name);
             }
         }).catch(err => console.error("Failed to load saved BG:", err));
-        
+
         // Reset prompt logic
         setCurrentPrompt(null);
         setCurrentShareLink(null);
@@ -1902,19 +1896,19 @@ export default function CollectionPage() {
                 console.log("No prompts or sharelinks found in cacheData");
                 return;
             }
-            
+
             // Try to extract the first number from the name as the prompt ID
             const nameMatch = currentLightboxImage.name.match(/(\d+)/);
             const promptId = nameMatch ? parseInt(nameMatch[1], 10) : (lightboxIndex !== null ? lightboxIndex + 1 : 1);
             console.log("Extracted promptId=", promptId, "from name=", currentLightboxImage.name);
-            
+
             let matchedPrompt = null;
             if (cacheData.prompts && cacheData.prompts.length > 0) {
                 matchedPrompt = cacheData.prompts.find((p: any) => p.id === promptId) || cacheData.prompts[Math.min(promptId - 1, cacheData.prompts.length - 1)];
                 setCurrentPrompt(matchedPrompt);
                 console.log("Matched prompt:", matchedPrompt);
             }
-            
+
             // Check share links
             let sl = matchedPrompt?.share_link;
             if (!sl && cacheData.shareLinks) {
@@ -1960,7 +1954,7 @@ export default function CollectionPage() {
             setToast(successMessage);
         }
         setTimeout(() => setToast(null), 2500);
-    }, [t.copied]);
+    }, [setToast, t.copied]);
 
     // ——— Social Share ———
     const getShareUrl = useCallback(() => {
@@ -2011,7 +2005,7 @@ export default function CollectionPage() {
         } catch (err) {
             console.error("QR generation failed:", err);
         }
-    }, [getShareUrl]);
+    }, [getShareUrl, setShowQr]);
 
     const downloadQr = useCallback(() => {
         const canvas = qrCanvasRef.current;
@@ -2070,7 +2064,7 @@ export default function CollectionPage() {
     const goToPage = useCallback((page: number) => {
         setCurrentPage(page);
         window.scrollTo({ top: 300, behavior: "smooth" });
-    }, []);
+    }, [setCurrentPage]);
 
     // ——— Remove Background ———
     const handleRemoveBg = useCallback(async (imgSrc: string, imgName: string) => {
@@ -2161,7 +2155,7 @@ export default function CollectionPage() {
                 setRemovingBg(false);
             }
         }
-    }, [removingBg, t.removeBgDone]);
+    }, [removingBg, setBgFailed, setBgRemovedName, setBgRemovedUrl, setRemovingBg, setToast, t.removeBgDone]);
 
     const handleDeleteBg = useCallback(async () => {
         if (!currentLightboxImage) return;
@@ -2174,7 +2168,7 @@ export default function CollectionPage() {
         } catch (err) {
             console.error("Failed to delete BG:", err);
         }
-    }, [currentLightboxImage, t.deleteBgConfirm]);
+    }, [currentLightboxImage, setBgRemovedName, setBgRemovedUrl, setToast, t.deleteBgConfirm]);
 
     const downloadBgRemoved = useCallback(async () => {
         if (!bgRemovedUrl) return;
@@ -2241,13 +2235,9 @@ export default function CollectionPage() {
                     <div className="col-bg-gradient" />
 
                     {/* Sticky Header */}
-                    <header className={`col-header col-header-sticky ${headerHidden ? "col-header-hidden" : ""}`}>
+                    <header className={`col-header col-header-sticky collection-compact-header ${headerHidden ? "col-header-hidden" : ""}`}>
                         <div className="col-header-left">
-                            <a href="/" className="col-back-btn">{t.home}</a>
-                        </div>
-                        <div className="hub-view-toggle">
-                            <button className={`hub-toggle-btn ${viewMode === "gallery" ? "active" : ""}`} onClick={() => setViewMode("gallery")}>🖼 {t.galleryView}</button>
-                            <button className={`hub-toggle-btn ${viewMode === "hub" ? "active" : ""}`} onClick={() => setViewMode("hub")}>🐱 {t.hub}</button>
+                            <CollectionNavigation />
                         </div>
                         <div className="col-header-right">
                             <div className="hub-wallet-btn">
@@ -2273,22 +2263,7 @@ export default function CollectionPage() {
                                     />
                                 </>
                             )}
-                            <div className="col-lang-wrap">
-                                <button className="col-pill-btn col-pill-pink" onClick={() => setShowLangMenu(!showLangMenu)}>
-                                    {LANG_LIST.find((l) => l.code === lang)?.flag} {t.language}
-                                </button>
-                                {showLangMenu && (
-                                    <div className="col-lang-dropdown">
-                                        {LANG_LIST.map((l) => (
-                                            <button
-                                                key={l.code}
-                                                className={`col-lang-option ${lang === l.code ? "active" : ""}`}
-                                                onClick={() => handleLangChange(l.code)}
-                                            >{l.flag} {l.name}</button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                            <CollectionLanguageSelector />
                             <button className="col-pill-btn col-pill-pink" onClick={toggleTheme}>
                                 {theme === "dark" ? "☀️" : "🌙"}
                             </button>
@@ -2982,6 +2957,8 @@ export default function CollectionPage() {
                                             onLoadedData={() => setImgLoading(false)}
                                         />
                                     ) : (
+                                        // Preserve cached blob URLs and anonymous CORS for the image editor.
+                                        // eslint-disable-next-line @next/next/no-img-element
                                         <img
                                             src={lightboxMediaUrl || currentLightboxImage.src}
                                             alt={lang === "en" ? currentLightboxImage.name : translateName(currentLightboxImage.name, lang as "vi" | "zh" | "ko" | "ru" | "id")}

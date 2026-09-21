@@ -1,0 +1,55 @@
+/* Presentation only: do not override the contract-generated SVG or its SMIL. */
+.king-page.king-experience {
+  --king-header-offset: 180px;
+  background: radial-gradient(ellipse at 85% 8%, #a8792720, transparent 38rem), radial-gradient(ellipse at 5% 30%, #234d4c24, transparent 42rem), #0b1018;
+}
+.king-page.king-experience .king-header {
+  position: sticky;
+  top: 12px;
+  z-index: 40;
+  border-radius: 18px;
+  background: #101824f2;
+  box-shadow: 0 12px 40px #0004, inset 0 1px 0 #ffffff0a;
+}
+.king-page.king-experience .king-nav a { white-space: nowrap; font-size: 12px; transition: color .18s, background-color .18s; }
+.king-page.king-experience .king-nav a[aria-current="location"] { color: var(--king-gold); background: #f5d79a12; box-shadow: inset 0 -2px var(--king-gold); }
+.king-page.king-experience .king-nav .king-nav-mint { border: 1px solid #f5d79a50; color: var(--king-gold); }
+.king-page.king-experience :is(.king-section, .king-contract-card) { scroll-margin-top: var(--king-header-offset); }
+.king-page.king-experience .king-hero { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: clamp(24px, 5vw, 72px); padding: 52px 0 44px; }
+.king-page.king-experience .king-hero h1 { font-size: clamp(42px, 5.5vw, 76px); line-height: 1.06; letter-spacing: -.045em; }
+.king-page.king-experience .king-hero > div > p { max-width: 480px; font-size: 15px; }
+.king-hero-artwork { min-width: 0; margin: 0; padding: 16px; border: 1px solid #f5d79a30; border-radius: 24px; background: linear-gradient(145deg, #28303c, #101722); box-shadow: 0 28px 80px #0005, inset 0 1px 0 #ffffff12; }
+.king-showcase-label { display: flex; justify-content: space-between; gap: 12px; padding: 2px 4px 14px; font-size: 10px; letter-spacing: .14em; color: #e9cd96; }
+.king-showcase-label span:last-child { color: #aab5c5; }
+.king-showcase-frame { aspect-ratio: 1; overflow: hidden; border-radius: 14px; background: #141c28; }
+.king-showcase-frame > svg { display: block; width: 100%; height: 100%; }
+.king-hero-artwork figcaption { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 4px 0; }
+.king-hero-artwork figcaption strong { display: block; font-size: 14px; }
+.king-hero-artwork figcaption span { display: block; margin-top: 5px; color: #aebbc9; font-size: 12px; }
+.king-hero-artwork figcaption a { display: inline-flex; align-items: center; min-height: 44px; color: var(--king-gold); font-size: 13px; text-decoration: none; }
+.king-page.king-experience .king-hero .king-showcase-note { margin: 12px 4px 0; font-size: 11px; line-height: 1.6; color: #aebbc9; }
+.king-page.king-experience .king-metrics { background: #111a25; border-radius: 16px; box-shadow: none; }
+.king-page.king-experience .king-section-heading { padding-top: 24px; border-top: 1px solid #ffffff16; }
+@media (max-width: 1100px) {
+  .king-page.king-experience .king-nav { justify-content: center; gap: 8px; }
+}
+@media (max-width: 760px) {
+  .king-page.king-experience .king-header { top: 8px; padding: 12px; gap: 10px; }
+  .king-page.king-experience .king-hero { grid-template-columns: 1fr; gap: 28px; padding: 32px 0; }
+  .king-page.king-experience .king-hero h1 { font-size: clamp(38px, 9vw, 60px); }
+  .king-hero-artwork { width: 100%; max-width: 440px; box-sizing: border-box; justify-self: center; }
+  .king-page.king-experience .king-nav { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; }
+  .king-page.king-experience .king-nav a { padding: 8px 12px; }
+}
+@media (max-width: 480px) {
+  .king-page.king-experience .king-header { position: static; }
+  .king-page.king-experience { --king-header-offset: 24px !important; }
+  .king-page.king-experience .king-actions { gap: 8px; }
+  .king-page.king-experience .king-hero-actions { gap: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .king-page.king-experience .king-nav a { transition: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .king-page.king-experience .king-header { background: #101824; backdrop-filter: none; -webkit-backdrop-filter: none; }
+}

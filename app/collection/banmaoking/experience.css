@@ -1,4 +1,18 @@
 
+.king-preview-token-control { display: grid; gap: 8px; margin-bottom: 16px; }
+.king-preview-token-control label { color: #f5dba2; font-size: 13px; font-weight: 600; }
+.king-preview-token-control input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid #ffffff38; border-radius: 9px; background: #171923; color: #fff; font: inherit; font-variant-numeric: tabular-nums; }
+.king-preview-token-control input:focus-visible { outline: 2px solid #ebca7b; outline-offset: 3px; }
+.king-preview-token-control input[aria-invalid="true"] { border-color: #ffaaa0; }
+.king-preview-token-control small { color: #c4c9ca; font-size: 12px; line-height: 1.5; }
+
+
+/* NFT lookup follows the mint panel and remains usable on narrow screens. */
+#king-token-input, #king-composition-input { min-width: 0; width: min(100%, 220px); min-height: 48px; padding: 10px 14px; border: 1px solid #d7b765; border-radius: 12px; background: #171923; color: #fff; font: inherit; }
+#king-token-input:focus-visible, #king-composition-input:focus-visible { outline: 2px solid #ebca7b; outline-offset: 3px; }
+#king-lookup .king-wallet-row { flex-wrap: wrap; }
+
+
 .king-notice { border: 1px solid #f1cc792a; border-left: 3px solid #f1cc7980; border-radius: 10px; padding: 16px; margin-top: 22px; background: #f1cc7908; font-size: 12px; line-height: 1.8; color: #c8c1b0; }
 .king-notice strong { font-size: 10px; color: var(--king-gold); letter-spacing: .04em; }
 .king-notice p { margin-bottom: 0; }
@@ -79,5 +93,37 @@
 @media (max-width: 1100px) { .king-nav { order: 3; width: 100%; } .king-step-grid { grid-template-columns: repeat(2, 1fr); } .king-hero { grid-template-columns: 1fr 190px; } .king-metrics > div { padding: 0 16px; } }
 @media (max-width: 760px) { .king-experience .king-shell { width: calc(100% - 32px); } .king-experience .king-header { gap: 18px; } .king-experience .king-wordmark { font-size: 16px; } .king-hero { grid-template-columns: 1fr; padding: 40px 0 28px; } .king-hero-seal { display: none; } .king-hero h1 { font-size: clamp(35px, 8vw, 55px); } .king-metrics { grid-template-columns: repeat(2, 1fr); row-gap: 24px; } .king-metrics > div:nth-child(2) { border: 0; } .king-studio-grid, .king-feature-grid { grid-template-columns: 1fr; } .king-experience .king-preview-card { position: static; max-width: 520px; width: 100%; margin: auto; } .king-section { margin: 44px 0; } .king-section-heading { align-items: flex-start; flex-direction: column; gap: 12px; } .king-experience .king-mint-box { padding: 22px; } .king-experience .king-mint-title h2 { font-size: 24px; } }
 @media (max-width: 480px) { .king-experience .king-actions { width: 100%; justify-content: space-between; flex-wrap: wrap; } .king-step-grid { grid-template-columns: 1fr; } .king-trait-options { grid-template-columns: repeat(2, 1fr); } .king-nav { gap: 22px; } .king-info-card { padding: 22px; } }
-@media (prefers-reduced-motion: reduce) { .king-experience *, .king-experience *::before, .king-experience *::after { scroll-behavior: auto !important; transition: none !important; } }
+
+
+/* Compact studio: one shared surface, four persistent selection summaries. */
+.king-experience .king-studio-grid { grid-template-columns: minmax(0,.85fr) minmax(0,1.15fr); gap: 20px; padding: 20px; border: 1px solid #ffffff24; border-radius: 20px; background: #121719; margin-top: 16px; }
+.king-studio-grid .king-preview-card { position: static; box-shadow: none; padding: 8px; }
+.king-studio-grid .king-art-frame { max-width: 440px; margin: auto; }
+.king-trait-tabs { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; margin-bottom: 16px; }
+.king-trait-tabs button { min-width: 0; padding: 10px 7px; border: 1px solid #ffffff24; border-radius: 10px; background: #1b2225; color: #ced5d1; cursor: pointer; text-align: start; }
+.king-trait-tabs button[aria-selected="true"] { color: #f5dba2; border-color: var(--king-gold); background: #f1cc7912; }
+.king-trait-tabs strong, .king-trait-tabs small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.king-trait-tabs strong { font-size: 12px; }.king-trait-tabs small { font-size: 10px; margin-top: 6px; }
+.king-selectors [hidden] { display: none; }
+.king-studio-grid .king-trait-options { grid-template-columns: repeat(3,minmax(0,1fr)); max-height: 340px; overflow-y: auto; padding: 3px; scrollbar-width: thin; }
+.king-studio-grid .king-notice { margin-top: 12px; padding: 10px; }
+.king-composition-drawer { grid-column: 1 / -1; border-top: 1px solid #ffffff20; }
+.king-zoom-trigger, .king-svg-dialog button, .king-svg-dialog a { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 12px; border: 1px solid #ffffff38; border-radius: 9px; background: #20282b; color: #f5dba2; cursor: pointer; text-decoration: none; }
+.king-svg-dialog { width: min(94vw,900px); max-width: 94vw; max-height: 94dvh; padding: 16px; border: 1px solid #f1cc7970; border-radius: 18px; background: #101618; color: #f8f4e8; }
+.king-svg-dialog::backdrop { background: #000c; }
+.king-svg-dialog header, .king-svg-dialog footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.king-svg-dialog small { display: block; margin-top: 5px; color: #adb5b6; }
+.king-svg-dialog footer { justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+.king-svg-dialog button:disabled { opacity: .4; cursor: not-allowed; }
+.king-zoom-scroll { overflow: auto; height: min(68dvh,700px); margin-top: 12px; border-radius: 10px; background: #080b0c; touch-action: pan-x pan-y pinch-zoom; }
+.king-zoom-scroll svg { display: block; min-height: 100%; }
+@media (max-width:760px) {
+ .king-experience .king-studio-grid { grid-template-columns: 1fr; padding: 10px; gap: 12px; }
+ .king-studio-grid .king-art-frame { width: min(100%,30dvh); }
+ .king-studio-grid .king-preview-meta { padding: 8px 4px 0; }
+ .king-studio-grid .king-panel-tools { margin-bottom: 10px; }
+ .king-studio-grid .king-trait-options { max-height: 230px; }
+ .king-trait-tabs { margin-bottom: 10px; }
+ .king-svg-dialog { padding: 10px; }
+}
 
