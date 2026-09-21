@@ -1,0 +1,23 @@
+.collection-switcher { --switch-panel: #161b25; --switch-line: #8993a32e; --switch-hover: #ffffff0a; position: relative; display: flex; align-items: center; gap: 4px; color: #e4e8ef; font: 500 13px system-ui, sans-serif; }
+.collection-switcher[data-theme="light"] { --switch-panel: #fff; --switch-line: #64748b30; --switch-hover: #18203408; color: #243047; }
+.collection-switcher a { color: inherit; text-decoration: none; }
+.collection-switcher__back, .collection-switcher__trigger { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 10px; }
+.collection-switcher__back { width: 44px; flex-shrink: 0; }
+.collection-switcher__trigger { gap: 8px; padding: 0 10px; border: 1px solid var(--switch-line); background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.collection-switcher__trigger > svg:last-child { opacity: .6; transition: transform .15s; }
+.collection-switcher__trigger[aria-expanded="true"] > svg:last-child { transform: rotate(180deg); }
+.collection-switcher__back:hover, .collection-switcher__trigger:hover, .collection-switcher__panel a:hover { background: var(--switch-hover); }
+.collection-switcher__panel { position: absolute; top: calc(100% + 8px); left: 0; z-index: 110; width: 220px; max-width: calc(100vw - 24px); padding: 6px; border: 1px solid var(--switch-line); border-radius: 14px; background: var(--switch-panel); box-shadow: 0 12px 32px #00000026; text-align: left; }
+.collection-switcher__panel a { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 10px; border-radius: 8px; }
+.collection-switcher__panel a[aria-current="page"] { background: var(--switch-hover); font-weight: 650; }
+.collection-switcher__check { margin-left: auto; color: #7897d8; }
+.collection-switcher__panel .collection-switcher__overview { margin-top: 6px; border-top: 1px solid var(--switch-line); border-radius: 0 0 8px 8px; }
+.collection-switcher a:focus-visible, .collection-switcher button:focus-visible { outline: 2px solid #7897d8; outline-offset: 2px; }
+/* Height is measured from the header so wrapped mobile controls never cover content. */
+.collection-page .collection-compact-header + .col-header-spacer { height: var(--collection-header-height, 60px); }
+/* Keep navigation inside the existing header, never as a second global bar. */
+.collection-page .collection-compact-header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; transform: none; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; padding: calc(8px + env(safe-area-inset-top, 0px)) 16px 8px; }
+.collection-compact-header .col-header-left { flex-shrink: 0; }
+.collection-compact-header .col-header-right { position: static; min-width: 0; flex-shrink: 1; flex-wrap: wrap; justify-content: flex-end; margin-left: auto; }
+@media (max-width: 600px) { .collection-page .collection-compact-header { padding-right: 12px; padding-left: 12px; gap: 6px; } .collection-switcher { gap: 2px; } .collection-switcher__trigger { gap: 6px; padding: 0 8px; } }
+@media (prefers-reduced-motion: reduce) { .collection-switcher__trigger > svg:last-child { transition: none; } }

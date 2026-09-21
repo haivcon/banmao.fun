@@ -17,7 +17,7 @@ export default function KingThemeLab({ traits, onSelect, vi }: {
     <div className="king-library-heading">
       <div><span className="king-eyebrow"><Palette size={14} aria-hidden="true" />01 · THEME LIBRARY</span>
         <h3>{vi ? 'Một bộ phối. Một cá tính.' : 'A collection of personalities.'}</h3>
-        <p>{vi ? 'Chọn bộ phối để xem ở studio bên dưới, sau đó tùy chỉnh từng layer.' : 'Choose a curated look to preview in the studio below, then make it yours.'}</p></div>
+        <p>{vi ? 'Chọn mẫu để cập nhật ảnh xem trước, sau đó tùy chỉnh từng lớp.' : 'Choose a look to update the preview, then customize each layer.'}</p></div>
       <label className="king-theme-search"><Search size={17} aria-hidden="true" /><span className="king-sr-only">{vi ? 'Tìm bộ phối' : 'Search themes'}</span><input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder={vi ? 'Tìm bộ phối, trang phục…' : 'Search themes, traits…'} /></label>
     </div>
     <div className="king-library-toolbar"><div className="king-category-filters" role="group" aria-label={vi ? 'Nhóm bộ phối' : 'Theme categories'}>{THEME_CATEGORIES.map((key, i) => <button key={key} type="button" aria-pressed={category === key} onClick={() => setCategory(key)}>{labels[i]}</button>)}</div><span role="status">{presets.length} / {KING_THEME_PRESETS.length}</span></div>

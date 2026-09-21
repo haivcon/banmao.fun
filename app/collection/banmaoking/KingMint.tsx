@@ -1,4 +1,5 @@
 "use client";
+import { xLayerExplorerUrl } from "../../../lib/explorer";
 import { metadataTraits } from "./composition";
 import { useEffect, useRef, useState } from "react";
 import { useAccount, usePublicClient, useSwitchChain, useWalletClient } from "wagmi";
@@ -9,6 +10,11 @@ import { kingAbi, kingAddress, paymentAddress, validateMintState, decodeKingMeta
 import { KING_T, kingError, type Lang } from "./i18n";
 import { identifiedKingImage, kingSharePath } from "./identity";
 import { animatedKingImage } from "./animated-image";
+import KingMetadataRefresh from "./KingMetadataRefresh";
+import { Wallet, Gift, Users, Check, ShieldCheck } from "lucide-react";
+import "./recipients.css";
+import KingRecipientEditor from './KingRecipientEditor';
+import KingExpandableList from './KingExpandableList';
 
 export default function KingMint({ lang }: { lang: Lang }) {
   const { address, chainId } = useAccount();
@@ -17,10 +23,17 @@ export default function KingMint({ lang }: { lang: Lang }) {
   const { switchChainAsync } = useSwitchChain();
   const [state, setState] = useState<{ supply: bigint; max: bigint; balance: bigint; allowance: bigint }>();
   const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState<'idle' | 'checking' | 'signing' | 'confirmed' | 'failed'>('idle');
+  const [operation, setOperation] = useState<'approve' | 'reset' | 'mint'>();
   const [pending, setPending] = useState(false);
   const [readFailed, setReadFailed] = useState(false);
   const [readRetry, setReadRetry] = useState(0);
   const lock = useRef(false);
+  const checkout = useRef<HTMLDivElement>(null);
+  function reviewCheckout() {
+    checkout.current?.focus({ preventScroll: true });
+    checkout.current?.scrollIntoView({ block: 'start', behavior: 'instant' });
+  }
   const [message, setMessage] = useState("");
   const [hash, setHash] = useState<Hash>();
   const [tokenId, setTokenId] = useState<bigint>();
@@ -51,7 +64,7 @@ export default function KingMint({ lang }: { lang: Lang }) {
   }, [address, chainId]);
   useEffect(() => {
     let active = true;
-    setMinted([]); setDisplayImage(undefined);
+    setMinted([]); setDisplayImage(undefined); setPhase('idle'); setOperation(undefined);
     setPending(false); setState(undefined); setHash(undefined); setTokenId(undefined); setMetadata(undefined); setMessage("");
     try { const saved = localStorage.getItem(storageKey); if (saved && /^0x[0-9a-f]{64}$/i.test(saved)) { setHash(saved as Hash); setPending(true); } } catch { /* Storage is optional. */ }
     async function refresh() {
@@ -98,7 +111,8 @@ export default function KingMint({ lang }: { lang: Lang }) {
         ]).then(([supply, max, balance, allowance]) => {
           if (active) setState({ supply, max, balance, allowance });
         }).catch(() => { /* Regular balance polling retries failed reads. */ });
-        if (receipt.status === "reverted") { setMessage(t.reverted); return; }
+        if (receipt.status === "reverted") { setPhase('failed'); setMessage(t.reverted); return; }
+        setPhase('confirmed');
         const results: { to: string; id: bigint }[] = [];
         for (const log of receipt.logs) {
           if (log.address.toLowerCase() !== kingAddress.toLowerCase()) continue;
@@ -129,7 +143,7 @@ export default function KingMint({ lang }: { lang: Lang }) {
   }, [tokenId, client, t, reload]);
   async function transact() {
     if (pending || lock.current || !client || !wallet || !address || !plan || !confirmed || !banmaoKingMintReady()) return;
-    lock.current = true; setBusy(true); setMessage("");
+    lock.current = true; setBusy(true); setMessage(""); setPhase('checking'); setOperation(undefined);
     let sent: Hash | undefined;
     const started = session.current;
     const isCurrent = () => session.current === started;
@@ -171,17 +185,20 @@ export default function KingMint({ lang }: { lang: Lang }) {
       if (allowance < price) {
         const simulation = await client.simulateContract({ account: address, address: paymentAddress, abi: erc20Abi, functionName: "approve", args: [kingAddress, allowance > 0n ? 0n : price] });
         await verifyWallet();
+        setOperation(allowance > 0n ? 'reset' : 'approve'); setPhase('signing');
         sent = await wallet.writeContract(simulation.request);
       } else {
         setTokenId(undefined); setMetadata(undefined); setMinted([]);
         if (plan.total === 1n) {
           const simulation = await client.simulateContract({ account: address, address: kingAddress, abi: kingAbi, functionName: "mint", args: [plan.recipients[0], paymentAddress], value: 0n });
           await verifyWallet();
+          setOperation('mint'); setPhase('signing');
           sent = await wallet.writeContract(simulation.request);
         } else {
           if (!deployment.supportsBatchMint) throw new Error("Batch deployment not verified");
           const simulation = await client.simulateContract({ account: address, address: kingAddress, abi: kingAbi, functionName: "mintBatchTo", args: [plan.recipients, plan.quantities, paymentAddress], value: 0n });
           await verifyWallet();
+          setOperation('mint'); setPhase('signing');
           sent = await wallet.writeContract(simulation.request);
         }
       }
@@ -190,43 +207,85 @@ export default function KingMint({ lang }: { lang: Lang }) {
       // One receipt watcher owns terminal state, including restored transactions.
       setHash(sent); setPending(true); setMessage(t.submitted);
     } catch (error) {
-      if (isCurrent()) setMessage(sent ? t.pendingWarning : kingError(error, t));
+      if (isCurrent()) { if (!sent) setPhase('failed'); setMessage(sent ? t.pendingWarning : kingError(error, t)); }
     } finally { setBusy(false); lock.current = false; }
   }
-  return <section className="king-mint-box" aria-label={t.mint}>
+  const vi = lang === 'vi';
+  const nextAction = !address ? t.connect : chainId !== 196 ? t.switchNetwork : readFailed ? t.readError : !state ? t.waiting : !plan ? (vi ? 'Hoàn tất địa chỉ và số lượng người nhận hợp lệ.' : 'Complete valid recipient addresses and quantities.') : state.supply + plan.total > state.max ? (vi ? 'Không đủ NFT còn lại cho số lượng đã chọn.' : 'Not enough remaining NFTs for this quantity.') : state.balance < price ? `${t.insufficient} · ${vi ? 'Còn thiếu' : 'Shortfall'}: ${formatUnits(price - state.balance, 18)} BANMAO` : !confirmed ? (vi ? 'Kiểm tra và đánh dấu xác nhận người nhận bên trên.' : 'Review and confirm the recipient details above.') : state.allowance < price ? (vi ? 'Cấp quyền BANMAO trước. Sau khi xác nhận, bấm tiếp để mint NFT.' : 'Authorize BANMAO first. After confirmation, continue to mint your NFT.') : (vi ? 'Sẵn sàng mint. Ví sẽ hiển thị phí OKB trước khi ký.' : 'Ready to mint. Your wallet will show the OKB fee before signing.');
+  const operationLabel = operation === 'mint' ? t.mintAction : operation === 'reset' ? t.resetAllowance : operation === 'approve' ? t.approve : t.transaction;
+  const progressText = pending ? (vi ? 'Đang chờ blockchain xác nhận. Không cần gửi lại.' : 'Waiting for blockchain confirmation. Do not resubmit.') : busy ? phase === 'signing' ? (vi ? 'Chờ bạn ký trong ví.' : 'Waiting for your signature in the wallet.') : (vi ? 'Đang kiểm tra số dư, quyền chi tiêu và phí gas.' : 'Checking balances, spending permission and gas.') : phase === 'confirmed' ? minted.length ? t.success : (vi ? 'Giao dịch đã xác nhận. Chưa ghi nhận NFT mới; kiểm tra bước tiếp theo bên dưới.' : 'Transaction confirmed. No new NFT recorded; review the next step below.') : phase === 'failed' ? (vi ? 'Chưa hoàn tất. Xem thông báo lỗi và thử lại khi sẵn sàng.' : 'Not completed. Review the error and retry when ready.') : '';
+  const checkoutStep = !address || chainId !== 196 ? 0 : !plan || !confirmed ? 1 : !state || state.allowance < price ? 2 : 3;
+  return <section className="king-mint-box king-mint-premium" aria-label={t.mint}>
+    <span className="king-eyebrow">02 · X LAYER / ERC-721</span>
+    <ol className="king-checkout-steps" aria-label={t.guide}>{[t.connect, vi ? 'Kiểm tra người nhận' : 'Review recipients', t.approve, t.mintAction].map((label, index) => <li key={index} aria-current={index === checkoutStep ? 'step' : undefined}><span aria-hidden="true">0{index + 1}</span>{label}</li>)}</ol>
     <div className="king-mint-title"><h2>{t.mint} · Banmao King</h2><span className="king-preview-badge">{t.verified}</span></div>
     <p><strong>{new Intl.NumberFormat(lang).format(6666)} BANMAO / NFT</strong> · {state ? `${new Intl.NumberFormat(lang).format(state.supply)} / ${new Intl.NumberFormat(lang).format(state.max)}` : t.loading}</p>
     <p>{t.mintNote}</p><p className="king-chip">{t.gas}</p>{state && <progress aria-label={t.supply} value={Number(state.supply)} max={Number(state.max)} />}
     {address && <p>{t.balance} · BANMAO: {state ? formatUnits(state.balance, 18) : "—"}</p>}
-    <fieldset disabled={busy || pending}>
+    <fieldset className="king-recipients" disabled={busy || pending}>
       <legend>{lang === "vi" ? "Người nhận NFT" : "NFT recipients"}</legend>
-      <label>{lang === "vi" ? "Chế độ " : "Mode "}<select value={mode} onChange={e => setMode(e.target.value)}>
-        <option value="self">{lang === "vi" ? "Mint cho tôi" : "Mint for me"}</option>
-        <option value="gift">{lang === "vi" ? "Tặng một ví" : "Gift to a wallet"}</option>
-        <option value="multi" disabled={!deployment.supportsBatchMint}>{lang === "vi" ? "Nhiều ví" : "Multiple wallets"}</option>
-      </select></label>
+      <div className="king-recipient-heading"><p>{lang === "vi" ? "Chọn nơi bộ sưu tập của bạn sẽ đến." : "Choose where your collection goes."}</p><span>X LAYER · 196</span></div>
+      <div className="king-recipient-modes">
+        {[
+          { value: "self", icon: Wallet, title: lang === "vi" ? "Mint cho tôi" : "Mint for me", description: lang === "vi" ? "Nhận NFT vào ví đang kết nối" : "Receive in your connected wallet" },
+          { value: "gift", icon: Gift, title: lang === "vi" ? "Tặng một ví" : "Gift to a wallet", description: lang === "vi" ? "Gửi bộ sưu tập đến một người" : "Send the collection to someone" },
+          { value: "multi", icon: Users, title: lang === "vi" ? "Nhiều ví" : "Multiple wallets", description: lang === "vi" ? "Phân phối trong một giao dịch" : "Distribute in one transaction" },
+        ].map(({ value, icon: Icon, title, description }) => <label className="king-recipient-mode" key={value}>
+          <input type="radio" name="king-recipient-mode" value={value} checked={mode === value} disabled={value === "multi" && !deployment.supportsBatchMint} onChange={() => setMode(value)} />
+          <span className="king-recipient-mode-card"><Icon size={22} aria-hidden="true" /><strong>{title}</strong><small>{description}</small><Check className="king-recipient-selected" size={16} aria-hidden="true" /></span>
+        </label>)}
+      </div>
       {!deployment.supportsBatchMint && <p>{lang === "vi" ? "Collection hiện tại chỉ mint 1 NFT/lần. Batch cần deployment mới đã xác minh." : "Current collection supports one NFT per transaction. Batch requires a verified new deployment."}</p>}
-      {mode === "gift" && <label>{lang === "vi" ? "Ví nhận " : "Recipient "}<input value={recipient} onChange={e => setRecipient(e.target.value)} spellCheck={false} /></label>}
-      {mode !== "multi" ? <label>{lang === "vi" ? "Số lượng " : "Quantity "}<input type="number" min="1" max={deployment.supportsBatchMint ? 50 : 1} value={quantity} onChange={e => setQuantity(e.target.value)} /></label> : <label>{lang === "vi" ? "Mỗi dòng: địa chỉ, số lượng" : "One row per recipient: address, quantity"}<textarea rows={5} value={rows} onChange={e => setRows(e.target.value)} spellCheck={false} /></label>}
-      {address && inputError && <p role="alert">{inputError}</p>}
-      {plan && <div>
-        <p>X Layer · {lang === "vi" ? "Ví trả tiền" : "Payer"}: {address}</p>
-        <ul>{plan.recipients.map((to, i) => <li key={i} style={{ overflowWrap: "anywhere" }}>{to} · {plan!.quantities[i].toString()} NFT</li>)}</ul>
-        <p>{plan.total.toString()} NFT · {formatUnits(price, 18)} BANMAO</p>
-        <p>{lang === "vi" ? "Gas OKB tính riêng, ví sẽ hiển thị trước khi ký. NFT tặng không thể tự thu hồi." : "OKB gas is separate and shown by your wallet before signing. Gifts cannot be recalled."}</p>
-        <label><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} />{lang === "vi" ? "Tôi đã kiểm tra người nhận, mạng và tổng tiền" : "I verified recipients, network and total payment"}</label>
+      {plan && <div className="king-mobile-summary">
+        <div><strong>{plan.total.toString()} NFT · {formatUnits(price, 18)} BANMAO</strong><small>{vi ? 'Gas OKB tính riêng' : 'OKB gas is separate'}</small></div>
+        <button type="button" className="king-recipient-tool" onClick={reviewCheckout}>{vi ? 'Xem & xác nhận' : 'Review & confirm'}</button>
       </div>}
-    </fieldset>
-    {minted.length > 0 && <ul>{minted.map(item => <li key={item.id.toString()} style={{ overflowWrap: "anywhere" }}>{item.to}: <a href={kingSharePath(item.id)}>#{item.id.toString()}</a></li>)}</ul>}
+      <div className="king-mint-workspace"><div className="king-mint-config">
+      <div className="king-recipient-inputs">
+        {mode === "self" && <div className="king-recipient-wallet"><span><Wallet size={16} aria-hidden="true" />{lang === "vi" ? "Ví nhận của bạn" : "Your receiving wallet"}</span><code>{address || t.connect}</code></div>}
+        {mode === "gift" && <label className="king-recipient-field">{lang === "vi" ? "Địa chỉ ví nhận" : "Recipient wallet address"}<input value={recipient} onChange={e => setRecipient(e.target.value)} placeholder="0x…" autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} aria-describedby="king-recipient-help" /><small id="king-recipient-help">{lang === "vi" ? "Nhập địa chỉ EVM đầy đủ của người nhận trên X Layer." : "Enter the recipient’s full EVM address on X Layer."}</small></label>}
+        {mode !== "multi" ? <label className="king-recipient-field king-recipient-quantity">{lang === "vi" ? "Số lượng NFT" : "NFT quantity"}<input type="number" inputMode="numeric" min="1" max={deployment.supportsBatchMint ? 50 : 1} value={quantity} onChange={e => setQuantity(e.target.value)} /><small>{lang === "vi" ? "Tối đa" : "Maximum"} {deployment.supportsBatchMint ? 50 : 1} NFT</small></label> : <KingRecipientEditor value={rows} onChange={setRows} lang={lang} />}
+      </div>
+      {address && inputError && mode !== 'multi' && (mode === 'self' || recipient) && <p className="king-recipient-error" role="alert">{inputError}</p>}
+      {mode === 'multi' && plan && <button type="button" className="king-recipient-tool king-mobile-disclosure" onClick={reviewCheckout}>{vi ? 'Đến bảng xác nhận' : 'Go to review'}</button>}
+      </div><div className="king-mint-checkout" ref={checkout} tabIndex={-1} role="region" aria-label={vi ? 'Kiểm tra trước khi mint' : 'Review before minting'}>
+      {plan ? <div className="king-recipient-review">
+        <h3><ShieldCheck size={18} aria-hidden="true" />{lang === "vi" ? "Kiểm tra trước khi mint" : "Review before minting"}</h3>
+        <p className="king-recipient-payer">{lang === "vi" ? "Ví trả tiền" : "Payer"}<code>{address || t.connect}</code></p>
+        <KingExpandableList key={`${mode}:${rows}:${recipient}:${quantity}`} count={plan.recipients.length} className="king-recipient-list" vi={vi}>{plan.recipients.map((to, i) => <li key={i}><span className="king-recipient-number">{i + 1}</span><code>{to}</code><strong>{plan!.quantities[i].toString()} NFT</strong></li>)}</KingExpandableList>
+        <div className="king-recipient-total"><span>{lang === "vi" ? "Tổng cộng" : "Total"}<small>{plan.total.toString()} NFT · X Layer</small></span><strong>{formatUnits(price, 18)} <small>BANMAO</small></strong></div>
+        <p>{lang === "vi" ? "Gas OKB tính riêng, ví sẽ hiển thị trước khi ký. NFT tặng không thể tự thu hồi." : "OKB gas is separate and shown by your wallet before signing. Gifts cannot be recalled."}</p>
+        <label className="king-recipient-confirm"><input type="checkbox" checked={confirmed} onChange={e => setConfirmed(e.target.checked)} />{lang === "vi" ? "Tôi đã kiểm tra người nhận, mạng và tổng tiền" : "I verified recipients, network and total payment"}</label>
+      </div> : <div className="king-recipient-review king-recipient-empty"><ShieldCheck size={28} aria-hidden="true" /><h3>{lang === 'vi' ? 'Tóm tắt đơn mint' : 'Mint summary'}</h3><p>{!address && mode === 'self' ? t.connect : lang === 'vi' ? 'Hoàn tất thông tin người nhận để xem số NFT và tổng thanh toán.' : 'Complete the recipient details to review NFT quantity and total payment.'}</p><strong>— BANMAO</strong></div>}
+    <div className="king-mint-guidance" role="status" aria-live="polite">
+      {progressText && <div className="king-mint-progress"><strong>{operationLabel}</strong><p>{progressText}</p></div>}
+      {!busy && !pending && <p>{nextAction}</p>}
+    </div>
     <div className="king-wallet-row"><ConnectButton accountStatus="address" chainStatus="none" showBalance={false} label={t.connect} />
       {address && chainId !== 196 ? <button type="button" onClick={() => void switchChainAsync({ chainId: 196 }).catch(() => setMessage(t.switchHelp))}>{t.switchNetwork}</button> : <button type="button" disabled={!address || !state || !plan || !confirmed || busy || pending || state.balance < price || state.supply + (plan?.total ?? 1n) > state.max} onClick={() => void transact()}>{busy || pending ? t.processing : !state ? t.waiting : state.supply >= state.max ? t.soldOut : state.balance < price ? t.insufficient : state.allowance >= price ? t.mintAction : state.allowance > 0n ? t.resetAllowance : t.approve}</button>}
     </div>
+    </div></div>
+    </fieldset>
+    {minted.length > 0 && <section className="king-mint-results" aria-label={t.success}>
+      <h3><Check size={20} aria-hidden="true" /> {t.success} · {minted.length} NFT</h3>
+      <p>{vi ? 'NFT đã được ghi nhận trên blockchain. Chọn một NFT để xem ảnh và tải SVG bên dưới.' : 'NFTs recorded on-chain. Select an NFT to view its image and download SVG below.'}</p>
+      <KingExpandableList key={minted.map(item => item.id.toString()).join(',')} count={minted.length} className="king-mint-result-grid" vi={vi}>{minted.map(item => <li key={item.id.toString()}>
+        <strong>Banmao King #{item.id.toString()}</strong>
+        <code>{item.to}</code>
+        <button type="button" aria-pressed={tokenId === item.id} onClick={() => { if (tokenId !== item.id) { setMetadata(undefined); setDisplayImage(undefined); setTokenId(item.id); } }}>{vi ? 'Xem NFT' : 'View NFT'}</button>
+        <a href={kingSharePath(item.id)}>{vi ? 'Tra cứu / chia sẻ' : 'Look up / share'}</a>
+      </li>)}</KingExpandableList>
+      {hash && <a href={xLayerExplorerUrl('tx', hash, lang)} target="_blank" rel="noopener noreferrer">{t.transaction} ↗</a>}
+    </section>}
     {readFailed && <div role="status"><p>{t.readError}</p><button type="button" disabled={busy || pending} onClick={() => { setReadFailed(false); setReadRetry(n => n + 1); }}>{t.retry}</button></div>}
     <p role="status" aria-live="polite">{message}</p>
-    {hash && <a href={`https://www.oklink.com/xlayer/tx/${hash}`} target="_blank" rel="noopener noreferrer">{t.transaction}</a>}
+    {hash && <a href={xLayerExplorerUrl("tx", hash, lang)} target="_blank" rel="noopener noreferrer">{t.transaction}</a>}
     {tokenId !== undefined && (
-      <div>
-        <h3>{t.success} #{tokenId.toString()}</h3>
+      <div className="king-mint-detail">
+        <h3>{metadata?.name || `Banmao King #${tokenId.toString()}`}</h3>
+        {!metadata && <p role="status">{vi ? 'NFT đã mint thành công. Ảnh chưa sẵn sàng; bạn có thể tải lại metadata mà không cần mint lại.' : 'NFT minted successfully. Image not ready; reload metadata without minting again.'}</p>}
+        <KingMetadataRefresh tokenId={tokenId} isVi={lang === "vi"} />
+        <button type="button" onClick={() => setReload(n => n + 1)}>{lang === "vi" ? "Tải lại metadata (miễn phí)" : "Reload metadata (free)"}</button>
         <p><a href={kingSharePath(tokenId)}>{lang === "vi" ? "Tra cứu / chia sẻ NFT" : "Look up / share NFT"}</a></p>
         {displayImage && <a href={displayImage} download={`BanmaoKing-${tokenId}-preview.svg`}>{lang === "vi" ? "Tải bản xem thử có mã số" : "Download preview with ID"}</a>}
         {metadata ? (

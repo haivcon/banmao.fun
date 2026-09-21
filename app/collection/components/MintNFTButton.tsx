@@ -117,7 +117,7 @@ const MintNFTButton = memo(function MintNFTButton({
                                 <div className="mint-success">
                                     <span className="mint-success-icon">✅</span>
                                     <p>{t.mintSuccess || 'Successfully minted!'}</p>
-                                    <a href={`https://www.okx.com/web3/explorer/xlayer/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="mint-tx-link">
+                                    <a href={`https://web3.okx.com/explorer/x-layer/evm/tx/${txHash}`} target="_blank" rel="noopener noreferrer" className="mint-tx-link">
                                         {t.viewTx || 'View Transaction'} →
                                     </a>
                                 </div>

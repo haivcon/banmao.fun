@@ -1,9 +1,15 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import KingHeroArtwork from './KingHeroArtwork';
+import { useKingNavigation } from './useKingNavigation';
 import { Crown, Shuffle, RotateCcw } from "lucide-react";
+import KingLanguageSelector from './KingLanguageSelector';
+import { Toaster } from "react-hot-toast";
+import KingContractBadge from "./KingContractBadge";
+import './controls.css';
 import { ConnectButton } from "../../components/wallet/WalletConnection";
-import { KING_T, LANG_LIST, kingLanguage, type Lang } from "./i18n";
+import { KING_T, kingLanguage, type Lang } from "./i18n";
 import { ACCESSORY_IDS, accessoryIndex, BODY_TRAITS, EXPRESSION_TRAITS, ACCESSORY_TRAITS, BACKGROUND_TRAITS, type BanmaoKingTraitSelection } from "./traits";
 // Theme Lab intentionally plays the animated NFT, independent of OS motion settings.
 import KingAnimatedSvg from './KingAnimatedSvg';
@@ -21,8 +27,12 @@ import "./banmaoking.css";
 import "./experience.css";
 import KingThemeLab from './KingThemeLab';
 import './glass.css';
+import './showcase.css';
+import './workspace.css';
 const initial: BanmaoKingTraitSelection = { body: 0, expression: 0, accessory: 1, background: 0 };
 export default function KingExperience() {
+  const header = useRef<HTMLElement>(null);
+  const activeSection = useKingNavigation(header);
 
   const [lang, setLang] = useState<Lang>("en");
   const [traits, setTraits] = useState(initial);
@@ -57,16 +67,18 @@ export default function KingExperience() {
     selectTokenId((tokenId + 1) % 1000000);
   }
   return <main className="king-page king-experience" lang={lang}><div className="king-shell">
-    <header className="king-header"><Link className="king-brand" href="/collection"><span className="king-sigil"><Crown size={23} aria-hidden="true" /></span><span className="king-wordmark">BANMAO KING<small>{t.collection}</small></span></Link>
-      <nav className="king-nav" aria-label={t.explore}><a href="#king-studio">{t.explore}</a><a href="#king-guide">{t.guide}</a><a href="#king-contracts">{t.contracts}</a></nav>
-      <div className="king-actions"><label className="king-language-label"><span className="king-sr-only">{t.language}</span><select value={lang} onChange={e => changeLanguage(e.target.value)}>{LANG_LIST.map(l => <option key={l.code} value={l.code}>{l.name}</option>)}</select></label><ConnectButton label={t.connect} accountStatus="address" chainStatus="none" showBalance={false} /></div>
+    <header ref={header} className="king-header"><Link className="king-brand" href="/collection"><span className="king-sigil"><Crown size={23} aria-hidden="true" /></span><span className="king-wordmark">BANMAO KING<small>{t.collection}</small></span></Link>
+      <nav className="king-nav" aria-label={t.explore}>{[['king-studio', t.explore], ['king-mint', t.mint], ['king-guide', t.guide], ['king-contracts', t.contracts]].map(([id, label]) => <a key={id} href={`#${id}`} className={id === 'king-mint' ? 'king-nav-mint' : undefined} aria-current={activeSection === id ? 'location' : undefined}>{label}</a>)}</nav>
+      <div className="king-actions"><KingLanguageSelector lang={lang} onChange={changeLanguage} /><ConnectButton label={t.connect} accountStatus="address" chainStatus="none" showBalance={false} /></div>
     </header>
-    <section className="king-hero"><div><span className="king-eyebrow"><span className="king-live-dot" />{t.kicker}</span><h1>{t.title}<br /><em>{t.titleAccent}</em></h1><p>{lang === "vi" ? `${new Intl.NumberFormat(lang).format(TOTAL_COMBINATIONS)} tổ hợp trong Theme Lab. Nguồn cung mint thực tế được đọc từ blockchain bên dưới.` : `${new Intl.NumberFormat(lang).format(TOTAL_COMBINATIONS)} Theme Lab combinations. Live mint supply is read from the blockchain below.`}</p><div className="king-hero-actions"><a className="king-primary-link" href="#king-mint">{t.mint} ↗</a><a className="king-secondary-link" href="#king-guide">{t.guide} ↓</a></div></div><div className="king-hero-seal" aria-hidden="true"><Crown size={72} strokeWidth={1} /><span>BANMAO KING</span><small>X LAYER</small></div></section>
+    <Toaster toasterId="king" position="bottom-center" toastOptions={{ ariaProps: { role: 'status', 'aria-live': 'polite' }, style: { background: '#182030', color: '#f4f6fb', border: '1px solid #748298', maxWidth: 'min(420px, calc(100vw - 32px))' } }} />
+    <KingContractBadge lang={lang} />
+    <section className="king-hero"><div><span className="king-eyebrow"><span className="king-live-dot" />{t.kicker}</span><h1>{t.title}<br /><em>{t.titleAccent}</em></h1><p>{lang === "vi" ? `${new Intl.NumberFormat(lang).format(TOTAL_COMBINATIONS)} tổ hợp trong Theme Lab. Nguồn cung mint thực tế được đọc từ blockchain bên dưới.` : `${new Intl.NumberFormat(lang).format(TOTAL_COMBINATIONS)} Theme Lab combinations. Live mint supply is read from the blockchain below.`}</p><div className="king-hero-actions"><a className="king-primary-link" href="#king-mint">{t.mint} ↗</a><a className="king-secondary-link" href="#king-guide">{t.guide} ↓</a></div></div><KingHeroArtwork lang={lang} /></section>
     <div className="king-metrics">{[[new Intl.NumberFormat(lang).format(TOTAL_COMBINATIONS), t.combinations], ["4", t.layers], ["100%", t.onchain], [`${new Intl.NumberFormat(lang).format(6666)} BANMAO`, t.price]].map(([value, label]) => <div key={label}><strong>{value}</strong><span>{label}</span></div>)}</div>
     <section id="king-studio" className="king-section"><div className="king-section-heading"><div><span className="king-eyebrow">{t.explore}</span><h2>{t.studio}</h2><p>{t.studioDesc}</p></div><span className="king-chip">{t.animated}</span></div>
-      <KingThemeLab traits={traits} vi={lang === 'vi'} onSelect={selection => { setTraits(selection); selectTokenId((tokenId + 1) % 1000000); }} />
+
       <div className="king-editor-heading"><span className="king-eyebrow">02 · {lang === 'vi' ? 'STUDIO CÁ NHÂN' : 'MAKE IT YOURS'}</span><p>{lang === 'vi' ? 'Xem trước bên trái · Tùy chỉnh bên phải' : 'Live preview · Layer controls'}</p></div><div className="king-studio-grid"><div className="king-preview-card"><div className="king-art-frame"><KingAnimatedSvg key={`${traits.body}-${traits.expression}-${traits.accessory}-${traits.background}-${tokenId}`} className="king-art" data-animated="true" viewBox="0 0 512 512" role="img" aria-label={`${t.preview} · Banmao King #${tokenId}`} markup={previewSvg(traits, tokenId, prefix)} /></div><div className="king-preview-meta" aria-live="polite"><div><strong>Banmao King</strong><br /><span>{t.preview} #{tokenId}{traits.body === 4 ? ` · ${cyborgFormName(tokenId)}` : ''}</span></div><KingSvgViewer traits={traits} tokenId={tokenId} vi={lang === 'vi'} /></div></div>
-        <div className="king-trait-panel"><div className="king-panel-tools"><button type="button" className="king-random" onClick={randomize}><Shuffle size={16} />{t.randomize}</button><button type="button" className="king-reset" title={t.reset} aria-label={t.reset} onClick={() => { setTraits(initial); selectTokenId(0); }}><RotateCcw size={17} /></button></div>
+        <div className="king-trait-panel"><details className="king-studio-presets" open><summary>{lang === 'vi' ? 'Bộ phối có sẵn' : 'Curated looks'}</summary><KingThemeLab traits={traits} vi={lang === 'vi'} onSelect={selection => { setTraits(selection); selectTokenId((tokenId + 1) % 1000000); }} /></details><div className="king-panel-tools"><button type="button" className="king-random" onClick={randomize}><Shuffle size={16} />{t.randomize}</button><button type="button" className="king-reset" title={t.reset} aria-label={t.reset} onClick={() => { setTraits(initial); selectTokenId(0); }}><RotateCcw size={17} /></button></div>
           <div className="king-preview-token-control">
             <label htmlFor="king-preview-token-id">Token ID · {lang === 'vi' ? 'Xem trước SVG' : 'SVG preview'}</label>
             <input id="king-preview-token-id" type="text" inputMode="numeric" autoComplete="off" spellCheck={false} value={tokenInput} aria-invalid={!tokenInputValid} aria-describedby="king-preview-token-help" onChange={event => {
@@ -88,9 +100,9 @@ export default function KingExperience() {
           <div id="king-preview-only-note" className="king-notice"><strong>{t.previewTitle}</strong><p>{t.previewNote}</p></div>
         </div><details className="king-composition-drawer"><summary>{lang === 'vi' ? 'Mã tổ hợp · Chia sẻ · Tải SVG' : 'Composition code · Share · Download SVG'}</summary><KingComposition traits={traits} onSelect={setTraits} lang={lang} /></details></div>
     </section>
-    <KingLookup lang={lang} />
     <div id="king-mint" className="king-section"><KingMint lang={lang} /></div>
+    <KingLookup lang={lang} />
     <KingSections t={t} /><KingContracts lang={lang} />
-    <footer className="king-footer"><span>© BANMAO KING · {t.footer}</span><Link href="/collection">← {t.collection}</Link><span>X LAYER · 196</span></footer>
+    <footer className="king-footer"><KingContractBadge lang={lang} /><span>© BANMAO KING · {t.footer}</span><Link href="/collection">← {t.collection}</Link><span>X LAYER · 196</span></footer>
   </div></main>;
 }
