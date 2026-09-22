@@ -43,6 +43,22 @@ export const KING_THEME_PRESETS: KingThemePreset[] = [
   preset('Peach Blossom', 'nature', 'Peach Banana', 'Love Eyes', 'Red Bow', 'Sakura Garden'),
   preset('Green Rally', 'lifestyle', 'Bitcoin Suit', 'Diamond Gaze', 'Green Candles', 'Bitcoin Blocks'),
   preset('Ruby Toast', 'royal', 'Royal Suit', 'Wink', 'Ruby Wine Glass', 'Royal Hall'),
+  preset('Solar Sovereign', 'royal', 'Golden Banana', 'Royal Decree', 'Imperial Regalia', 'Mango Burst'),
+  preset('Ice Regent', 'royal', 'Frost Suit', 'Zen', 'Ethereum Scepter', 'Royal Hall'),
+  preset('Peach Princess', 'royal', 'Peach Banana', 'Happy Smile', 'King Crown', 'Candy Ring'),
+  preset('Emerald Court', 'royal', 'Lime Banana', 'Determined', 'Ruby Wine Glass', 'Throne Room'),
+  preset('Orbital Pilot', 'cosmic', 'Cyborg Suit', 'Cosmic Wonder', 'Astronaut Helmet', 'OKB Orbit'),
+  preset('Ether Oracle', 'cosmic', 'Ethereum Suit', 'Starstruck', 'Wizard Hat', 'Deep Cosmos'),
+  preset('Neon Frequency', 'cosmic', 'Cyborg Suit', 'Cool Gaze', 'Headphones', 'Midnight Grid'),
+  preset('Galaxy Companion', 'cosmic', 'Cosmic Suit', 'Dreaming', 'Mini Banmao', 'Ethereum Network'),
+  preset('Sakura Serenade', 'nature', 'Peach Banana', 'Whistling', 'Headphones', 'Sakura Garden'),
+  preset('Lime Daydream', 'nature', 'Lime Banana', 'Dreaming', 'Flower Crown', 'Cloud Blue'),
+  preset('Golden Orchard', 'nature', 'Golden Banana', 'Joy', 'Red Bow', 'Mango Burst'),
+  preset('Winter Halo', 'nature', 'Frost Suit', 'Zen', 'Halo', 'Mint Bubbles'),
+  preset('After Hours', 'lifestyle', 'Office Suit', 'Cool Gaze', 'Ruby Wine Glass', 'Midnight Grid'),
+  preset('Weekend Gamer', 'lifestyle', 'Developer Suit', 'Joy', 'Headphones', 'Cyberpunk Nexus'),
+  preset('Bull Party', 'lifestyle', 'Bitcoin Suit', 'Wink', 'Party Hat', 'Bitcoin Blocks'),
+  preset('Cloud Cafe', 'lifestyle', 'Peach Banana', 'Sleepy', 'Coffee Break', 'Cloud Blue'),
 ];
 
 export function filterKingPresets(category: ThemeCategory, query: string) {

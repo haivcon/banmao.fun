@@ -11,17 +11,20 @@ export default function KingThemeLab({ traits, onSelect, vi }: {
 }) {
   const [category, setCategory] = useState<ThemeCategory>('all');
   const [query, setQuery] = useState('');
+  const [expanded, setExpanded] = useState(false);
+  const browsingAll = category === 'all' && !query.trim();
+  const selectedPreset = KING_THEME_PRESETS.find(p => p.body === traits.body && p.expression === traits.expression && p.accessory === traits.accessory && p.background === traits.background);
   const presets = filterKingPresets(category, query);
   const labels = vi ? ['Tất cả', 'Hoàng gia', 'Vũ trụ', 'Thiên nhiên', 'Đời sống'] : ['All themes', 'Royal', 'Cosmic', 'Nature', 'Lifestyle'];
   return <div className="king-theme-library">
     <div className="king-library-heading">
-      <div><span className="king-eyebrow"><Palette size={14} aria-hidden="true" />01 · THEME LIBRARY</span>
-        <h3>{vi ? 'Một bộ phối. Một cá tính.' : 'A collection of personalities.'}</h3>
+      <div><h3><Palette size={14} aria-hidden="true" /> Theme Lab <small>{KING_THEME_PRESETS.length} {vi ? 'bộ phối' : 'looks'}</small></h3>
         <p>{vi ? 'Chọn mẫu để cập nhật ảnh xem trước, sau đó tùy chỉnh từng lớp.' : 'Choose a look to update the preview, then customize each layer.'}</p></div>
       <label className="king-theme-search"><Search size={17} aria-hidden="true" /><span className="king-sr-only">{vi ? 'Tìm bộ phối' : 'Search themes'}</span><input type="search" value={query} onChange={e => setQuery(e.target.value)} placeholder={vi ? 'Tìm bộ phối, trang phục…' : 'Search themes, traits…'} /></label>
     </div>
     <div className="king-library-toolbar"><div className="king-category-filters" role="group" aria-label={vi ? 'Nhóm bộ phối' : 'Theme categories'}>{THEME_CATEGORIES.map((key, i) => <button key={key} type="button" aria-pressed={category === key} onClick={() => setCategory(key)}>{labels[i]}</button>)}</div><span role="status">{presets.length} / {KING_THEME_PRESETS.length}</span></div>
-    <div className="king-preset-grid">{presets.map(p => {
+    <p className="king-current-look" aria-live="polite">{vi ? 'Đang xem: ' : 'Previewing: '}{selectedPreset?.name ?? (vi ? 'Tùy chỉnh' : 'Custom look')}</p>
+    <div className="king-preset-grid" data-collapsed={browsingAll && !expanded}>{presets.map(p => {
       const selected = p.body === traits.body && p.expression === traits.expression && p.accessory === traits.accessory && p.background === traits.background;
       return <button className="king-preset-card" type="button" key={p.name} aria-pressed={selected} onClick={() => onSelect({ body: p.body, expression: p.expression, accessory: p.accessory, background: p.background })} style={{ '--preset-body': BODY_TRAITS[p.body].color, '--preset-background': BACKGROUND_TRAITS[p.background].color } as CSSProperties}>
         <span className="king-preset-palette" aria-hidden="true"><i /><i /><i />{selected && <Check size={16} />}</span>
@@ -30,6 +33,7 @@ export default function KingThemeLab({ traits, onSelect, vi }: {
         <span className="king-preset-detail">{EXPRESSION_TRAITS[p.expression]} · {BACKGROUND_TRAITS[p.background].name}</span>
       </button>;
     })}</div>
+    <div className="king-library-actions">{browsingAll && <button type="button" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? (vi ? 'Thu gọn' : 'Show fewer') : (vi ? 'Xem thêm bộ phối' : 'Show more looks')}</button>}<a href="#king-studio">{vi ? 'Xem bản phối ↑' : 'View preview ↑'}</a></div>
     {presets.length === 0 && <div className="king-theme-empty"><p>{vi ? 'Không tìm thấy bộ phối phù hợp.' : 'No themes match your search.'}</p><button type="button" onClick={() => { setCategory('all'); setQuery(''); }}>{vi ? 'Xóa bộ lọc' : 'Clear filters'}</button></div>}
     <p className="king-catalogue-note">{BODY_TRAITS.length} {vi ? 'trang phục' : 'bodies'} · {EXPRESSION_TRAITS.length} {vi ? 'biểu cảm' : 'expressions'} · {ACCESSORY_TRAITS.length} {vi ? 'phụ kiện' : 'accessories'} · {BACKGROUND_TRAITS.length} {vi ? 'phông nền' : 'backgrounds'}. {vi ? 'Bộ phối chỉ dùng để xem trước, không quyết định NFT khi mint. Chưa xác nhận triển khai catalogue lên mạng.' : 'Presets are previews, not mint selections. Catalogue network deployment is not confirmed.'}</p>
   </div>;
