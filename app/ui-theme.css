@@ -1,0 +1,45 @@
+/* UI appearance is independent of body[data-theme] game palettes.
+   Opt in audited surfaces only; never cascade palette changes into NFT SVGs. */
+.ui-theme-toggle { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 44px; width: 44px; min-height: 44px; padding: 10px; border: 1px solid #7b879780; border-radius: 12px; background: #182030; color: #f4f6fb; cursor: pointer; }
+.ui-theme-toggle:focus-visible { outline: 3px solid #a77917; outline-offset: 3px; }
+.ui-theme-toggle .ui-theme-moon { display: none; }
+html[data-ui-theme="light"] .ui-theme-toggle { background: #fff; color: #263348; }
+html[data-ui-theme="light"] .ui-theme-toggle .ui-theme-sun { display: none; }
+html[data-ui-theme="light"] .ui-theme-toggle .ui-theme-moon { display: block; }
+html[data-ui-theme="light"] .web2d {
+  color-scheme: light;
+  --bm-surface-deep: #eef0f6; --bm-surface-base: #f7f8fc;
+  --bm-surface-raised: #fff; --bm-surface-card: #edf0f7; --bm-surface-overlay: #fff;
+  --bm-text-strong: #202838; --bm-text-soft: #526078; --bm-text-muted: #526078;
+  --bm-text: #202838; --bm-text-faint: #657087; --bm-text-disabled: #697386;
+  --bm-border: #c9cfdb; --bm-border-subtle: #dde1ea; --bm-border-strong: #a6afbf;
+  --bm-secondary: #7e22ce; --bm-accent-light: #0e7490; --bm-success: #187347; --bm-warning: #805d00; --bm-error: #b42332;
+  --web2d-brand: #805d00; --web2d-brand-light: #735300; --web2d-brand-ink: #fff;
+  --web2d-line: #c9cfdb; --web2d-line-strong: #7b8797;
+  --web2d-brand-soft: #f4e8c9; --web2d-brand-glow: #805d0014;
+  --bm-secondary-border: #9875bb; --bm-accent-border: #558c99;
+  --bm-shadow-lg: 0 12px 32px #26334814;
+}
+html[data-ui-theme="light"] .web2d-header { background: #ffffffed; }
+html[data-ui-theme="light"] .web2d-hero__visual { --web2d-brand: #f5c842; color: #fff; }
+html[data-ui-theme="light"] .web2d-language__menu { background: #fff; color: #202838; }
+.web2d-header__inner > .ui-theme-toggle { margin-left: auto; }
+@media (max-width: 760px) { .web2d-header__inner { gap: 8px; flex-wrap: wrap; } }
+/* Explicit CTA specificity beats the shared link/button inheritance rule. */
+.web2d .web2d-button--primary { color: var(--web2d-brand-ink); }
+html[data-ui-theme="light"] .web2d .web2d-button--primary { color: #171400; background: #f5c842; border-color: #9b782d; }
+html[data-ui-theme="light"] .web2d .web2d-button--primary:hover { background: #e9b92e; }
+html[data-ui-theme="light"] .web2d .web2d-button--secondary { color: #62229b; background: #f1e9fa; border-color: #9875bb; }
+html[data-ui-theme="light"] .web2d .web2d-button--secondary:hover { background: #e6d8f4; }
+html[data-ui-theme="light"] .web2d :is(.web2d-card,.web2d-values,.web2d-tabs) { box-shadow: 0 3px 12px #26334808; }
+html[data-ui-theme="light"] .web2d :is(.web2d-language__trigger,.web2d-tabs button) { background: #fff; border-color: var(--web2d-line-strong); }
+html[data-ui-theme="light"] .web2d :is(.web2d-language__trigger,.web2d-header__nav button) { min-height: 44px; }
+html[data-ui-theme="light"] .web2d :is(.web2d-tabs button,.web2d-language__trigger,.web2d-language__menu button,.web2d-header__nav button,.web2d-footer nav a):hover { background: #e6ecf4; color: var(--web2d-text); }
+html[data-ui-theme="light"] .web2d :is(.web2d-tabs button.is-active,.web2d-language__menu button.is-active,.web2d-header__nav button.is-active) { color: #674900; background: var(--web2d-brand-soft); border-color: #9b782d; }
+html[data-ui-theme="light"] .web2d .web2d-hero__notice { background: #fff4d6; color: #674900; }
+html[data-ui-theme="light"] .web2d :is(.web2d-card__body > small,.web2d-values small,.web2d-footer p) { font-size: .875rem; line-height: 1.6; }
+html[data-ui-theme="light"] .web2d .web2d-values small { white-space: normal; }
+html[data-ui-theme="light"] .web2d .web2d-card__status i { box-shadow: none; }
+html[data-ui-theme="light"] .web2d button:disabled { opacity: 1; background: #e5e9ef; color: #596579; cursor: not-allowed; }
+html[data-ui-theme="light"] :is(.web2d,.king-page.king-experience) .ui-theme-toggle { color: #263348; background: #fff; border-color: #7b8797; }
+html[data-ui-theme="light"] :is(.web2d,.king-page.king-experience) .ui-theme-toggle:hover { background: #e6ecf4; }

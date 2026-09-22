@@ -1,0 +1,66 @@
+
+/* Explicit UI surfaces only: no SVG, image, filter or artwork palette rules. */
+html[data-ui-theme="light"] .king-page.king-experience {
+  color-scheme: light;
+  --king-gold: #805b12; --king-jade: #176957;
+  --king-ui-text: #263348; --king-ui-control-border: #7b8797;
+  --king-ui-hover: #e6ecf4; --king-ui-selected: #f4e8c9;
+  --king-ui-error: #a52835; --king-ui-error-bg: #fff0f1;
+  --king-ui-success-bg: #eaf5ef; --king-ui-warning-bg: #fff4d6;
+  --king-surface-1: #fff; --king-surface-2: #edf1f6;
+  --king-text-muted: #526078; --king-border-subtle: #ccd3df;
+  --king-glass: #ffffffed; --king-glass-line: #ccd3df;
+  --king-glass-shadow: 0 12px 36px #26334812;
+  background: radial-gradient(ellipse at 5% 4%, #dce9f4, transparent 34rem), radial-gradient(ellipse at 95% 18%, #ede1f0, transparent 42rem), #f5f7fb;
+  color: #263348;
+}
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-header,.king-studio-grid,.king-theme-library,.king-metrics,.king-mint-box,.king-info-card,.king-contract-card,.king-language-panel,.king-contract-badge,.king-svg-dialog) {
+  background: var(--king-glass); color: #263348; border-color: #ccd3df;
+}
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-trait-tabs,.king-theme-search,.king-preview-card,.king-recipient-review,.king-mint-premium,.king-zoom-scroll) { background: var(--king-surface-2); border-color: #ccd3df; }
+/* Target UI components rather than HTML tags that can occur inside artwork. */
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-hero p,.king-section-heading p,.king-info-card p,.king-contract-card p,.king-contracts > p,.king-faq p,.king-mint-box p,.king-library-heading p,.king-catalogue-note,.king-preset-detail,.king-theme-empty,.king-preview-token-control small,.king-preview-meta,.king-preview-meta span,.king-trait-tabs small,.king-recipient-field small,.king-recipient-heading p,.king-recipient-number,.king-recipient-total small,.king-recipient-row-help,.king-recipient-empty,.king-mobile-summary small,.king-svg-dialog small,.king-contract-badge-label small) { color: var(--king-text-muted); }
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-hero h1,.king-section h2,.king-info-card h3,.king-contract-card h3,.king-library-heading h3,.king-customize-title,.king-metrics strong,.king-mint-box p strong,.king-recipient-mode-card strong,.king-recipient-total strong,.king-recipient-list strong,.king-mobile-summary strong,.king-mint-progress strong,.king-preset-name,.king-contract-badge code,.king-recipient-review code,.king-preview-token-control label,.king-recipients legend) { color: var(--king-ui-text); }
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-wordmark small,.king-metrics span,.king-library-toolbar > span,.king-language-heading,.king-language-code,.king-language-chevron,.king-footer,.king-notice,.king-recipient-field,.king-recipient-wallet,.king-recipient-confirm,.king-recipient-mode span) { color: #526078; }
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-ghost,.king-random,.king-reset,.king-copy-button,.king-trait-tabs button,.king-trait-options button,.king-category-filters button,.king-preset-card,.king-language-trigger,.king-language-option,.king-zoom-trigger,.king-svg-dialog button,.king-svg-dialog a,.king-secondary-link,.king-recipient-tool,.king-mobile-disclosure,.king-contract-disclosure,.king-contract-actions button,.king-contract-actions a,.king-contract-badge-actions button,.king-contract-badge-actions a,.king-directory-pagination button,.king-contract-footer button,.king-directory-toggle,.king-library-actions button,.king-library-actions a,.king-lookup-actions button,.king-theme-empty button,.king-mint-result-grid button) {
+  color: var(--king-ui-text); background: var(--king-surface-1); border-color: var(--king-ui-control-border); box-shadow: none;
+}
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-trait-options button,.king-preset-card,.king-language-trigger,.king-zoom-trigger,.king-svg-dialog button) { background: #fff; }
+html[data-ui-theme="light"] .king-page.king-experience :is(button[aria-pressed="true"],button[aria-selected="true"],.king-task-nav button[aria-selected="true"],.king-checkout-steps li[aria-current="step"]) { color: #674900; background: #f4e8c9; border-color: #9b782d; }
+html[data-ui-theme="light"] .king-page.king-experience :is(input,textarea,select) { background: #fff; color: #263348; border-color: #a9b5c7; color-scheme: light; }
+html[data-ui-theme="light"] .king-page.king-experience :is(input,textarea)::placeholder { color: #657087; }
+html[data-ui-theme="light"] .king-page.king-experience .king-recipient-error { color: var(--king-ui-error); background: var(--king-ui-error-bg); border-color: var(--king-ui-error); }
+html[data-ui-theme="light"] .king-page.king-experience .king-recipient-error p { color: inherit; }
+html[data-ui-theme="light"] .king-page.king-experience [aria-invalid="true"] { border-color: #b42332; }
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-payment-warning,.king-payment-gas) { color: #805b12; }
+html[data-ui-theme="light"] .king-page.king-experience :is(button,input,textarea,select,a):focus-visible { outline: 2px solid #805b12; outline-offset: 3px; }
+html[data-ui-theme="light"] .king-page.king-experience button:disabled { color: #657087; cursor: not-allowed; }
+.king-page.king-experience .king-actions > .ui-theme-toggle { min-width: 44px; min-height: 44px; }
+@media (max-width: 600px) { .king-page.king-experience .king-actions { flex-wrap: wrap; gap: 8px; } }
+
+/* Solid paper panels: readable independently of background gradients. */
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-studio-grid,.king-theme-library,.king-mint-box,.king-info-card,.king-contract-card,.king-language-panel) { border: 1px solid var(--king-border-subtle); box-shadow: 0 4px 18px #2633480a; }
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-recipient-mode-card,.king-recipient-edit-row,.king-recipient-review,.king-contract-primary,.king-contract-list,.king-lookup-empty,.king-mint-detail,.king-mint-result-grid li) { background: var(--king-surface-2); color: var(--king-ui-text); border-color: var(--king-ui-control-border); }
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-section-heading,.king-footer,.king-metrics > div,.king-composition-drawer,.king-language-heading,.king-language-code,.king-recipient-list li,.king-faq details) { border-color: var(--king-border-subtle); }
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-language-trigger > svg:first-child,.king-language-chevron,.king-step-top,.king-nav,.king-recipient-field,.king-recipient-wallet) { color: var(--king-text-muted); }
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-chip,.king-recipient-review h3,.king-recipient-heading > span,.king-recipient-editor-toolbar span,.king-recipient-wallet code,.king-mint-results h3) { color: var(--king-jade); border-color: var(--king-jade); }
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-mint-guidance,.king-mint-results,.king-recipient-confirm,.king-mobile-summary) { color: var(--king-jade); background: var(--king-ui-success-bg); border-color: var(--king-jade); }
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-notice,.king-payment-warning,.king-payment-gas) { background: var(--king-ui-warning-bg); color: var(--king-gold); border-color: var(--king-gold); }
+html[data-ui-theme="light"] .king-page.king-experience .king-notice p { color: inherit; }
+html[data-ui-theme="light"] .king-page.king-experience :is(input,textarea,select) { border-color: var(--king-ui-control-border); accent-color: var(--king-jade); }
+html[data-ui-theme="light"] .king-page.king-experience :is(#king-token-input,#king-composition-input) { background: var(--king-surface-1); color: var(--king-ui-text); border-color: var(--king-ui-control-border); }
+html[data-ui-theme="light"] .king-page.king-experience .king-theme-search { background: var(--king-surface-1); border-color: var(--king-ui-control-border); }
+html[data-ui-theme="light"] .king-page.king-experience .king-theme-search:focus-within { outline: 2px solid var(--king-gold); outline-offset: 3px; }
+/* Hover precedes selected and disabled states so neither loses its meaning. */
+@media (hover: hover) {
+  html[data-ui-theme="light"] .king-page.king-experience :is(.king-ghost,.king-random,.king-reset,.king-copy-button,.king-trait-tabs button,.king-trait-options button,.king-category-filters button,.king-preset-card,.king-language-trigger,.king-language-option,.king-recipient-tool,.king-zoom-trigger,.king-svg-dialog button,.king-library-actions button,.king-contract-actions button,.king-directory-pagination button,.king-nav a):hover:not(:disabled) { background: var(--king-ui-hover); color: var(--king-ui-text); border-color: var(--king-ui-control-border); }
+}
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-nav [role="tab"][aria-selected="true"],.king-trait-tabs button[aria-selected="true"],.king-trait-options button[aria-pressed="true"],.king-preset-card[aria-pressed="true"],.king-category-filters button[aria-pressed="true"],.king-language-option[aria-pressed="true"],.king-language-trigger[aria-expanded="true"],.king-checkout-steps li[aria-current="step"],.king-recipient-mode input:checked + span) { background: var(--king-ui-selected); color: #674900; border-color: #9b782d; }
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-primary-link,.king-wallet-row > button,.king-lookup-search button) { background: #f5c842; color: #171400; border: 1px solid #9b782d; box-shadow: none; }
+html[data-ui-theme="light"] .king-page.king-experience :is(.king-primary-link,.king-wallet-row > button,.king-lookup-search button):hover:not(:disabled) { background: #e9b92e; color: #171400; }
+html[data-ui-theme="light"] .king-page.king-experience :is(button:disabled,input:disabled,textarea:disabled,select:disabled,.king-recipient-mode input:disabled + span) { opacity: 1; color: #596579; background: #e5e9ef; border-color: #a9b5c7; box-shadow: none; cursor: not-allowed; }
+html[data-ui-theme="light"] .king-page.king-experience .king-recipient-mode input:focus-visible + span { outline: 2px solid var(--king-gold); outline-offset: 3px; }
+html[data-ui-theme="light"] .king-page.king-experience [aria-invalid="true"] { border-color: var(--king-ui-error); }
+html[data-ui-theme="light"] .king-page.king-experience .king-studio-presets :is(.king-preset-detail,.king-catalogue-note,.king-library-heading p) { font-size: 13px; line-height: 1.6; }
+html[data-ui-theme="light"] .king-page.king-experience .king-studio-presets .king-preset-name { font-size: 14px; }
+html[data-ui-theme="light"] .king-page.king-experience .king-trait-tabs small { font-size: 12px; }
