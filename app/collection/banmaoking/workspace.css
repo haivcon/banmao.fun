@@ -10,7 +10,22 @@
 .king-page.king-experience .king-studio-presets .king-theme-search { width: 100%; box-sizing: border-box; }
 .king-page.king-experience .king-studio-presets .king-library-toolbar { flex-wrap: wrap; gap: 12px; }
 .king-page.king-experience .king-studio-presets .king-preset-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 270px; overflow-y: auto; overscroll-behavior: contain; padding: 4px; }
-.king-page.king-experience .king-studio-presets .king-preset-card { padding: 12px; }
+.king-page.king-experience .king-studio-presets .king-preset-card { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: center; gap: 4px 8px; padding: 10px; min-height: 64px; text-align: left; }
+.king-page.king-experience .king-studio-presets .king-preset-palette { position: relative; grid-row: 1 / 3; width: 24px; height: 32px; margin: 0; }
+.king-page.king-experience .king-studio-presets .king-preset-palette i { flex-shrink: 0; width: 14px; height: 14px; box-sizing: border-box; }
+.king-page.king-experience .king-studio-presets .king-preset-palette i:last-of-type { display: none; }
+.king-page.king-experience .king-studio-presets .king-preset-palette svg { position: absolute; bottom: -2px; left: 4px; }
+.king-page.king-experience .king-studio-presets .king-preset-name { font-size: 12px; line-height: 1.4; margin: 0; overflow-wrap: anywhere; }
+.king-page.king-experience .king-studio-presets .king-preset-detail { grid-column: 2; font-size: 10px; line-height: 1.4; margin: 0; }
+.king-page.king-experience .king-studio-presets .king-preset-detail:last-child { display: none; }
+.king-page.king-experience .king-studio-presets .king-library-heading h3 { display: flex; align-items: center; gap: 8px; font-size: 16px; margin: 0; }
+.king-page.king-experience .king-studio-presets .king-library-heading h3 small { margin-left: auto; color: var(--king-text-muted); font-size: 11px; font-weight: 400; }
+.king-page.king-experience .king-studio-presets .king-library-heading p { font-size: 12px; margin: 6px 0 0; }
+.king-page.king-experience .king-studio-presets .king-category-filters { flex-wrap: wrap; gap: 4px; }
+.king-page.king-experience .king-studio-presets .king-category-filters button { min-height: 36px; padding: 6px 9px; font-size: 11px; }
+.king-page.king-experience .king-studio-presets .king-library-toolbar { margin: 10px 0; }
+.king-page.king-experience .king-studio-presets .king-theme-search input { min-width: 0; }
+.king-page.king-experience .king-studio-presets .king-preset-card:focus-visible { outline: 2px solid var(--king-gold); outline-offset: 2px; }
 .king-page.king-experience .king-studio-presets .king-catalogue-note { font-size: 11px; }
 .king-page.king-experience .king-editor-heading { margin-top: 16px; }
 .king-page.king-experience .king-mint-premium { border: 1px solid #f5d79a60; background: radial-gradient(ellipse at 100% 0, #a879271c, transparent 60%), var(--king-surface-1); box-shadow: 0 20px 60px #0003; }
@@ -108,4 +123,159 @@
   .king-contract-disclosure { grid-column: 1 / -1; }
   .king-contract-short { font-size: 11px; }
   .king-contract-detail { padding: 12px; }
+}
+
+/* Task-focused layout: shared preview, compact search and supporting information. */
+.king-page.king-experience #king-preview-only-note { grid-column: 1 / -1; margin: 0; }
+.king-page.king-experience .king-trait-panel > .king-panel-tools { margin: 20px 0 0; justify-content: flex-start; }
+.king-page.king-experience .king-composition-drawer .king-preview-token-control { max-width: 420px; margin: 12px 0 24px; }
+.king-page.king-experience .king-lookup-bar { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); align-items: center; gap: 32px; }
+.king-page.king-experience .king-lookup-bar > * { min-width: 0; }
+.king-page.king-experience .king-lookup-bar .king-lookup-form { margin: 0; max-width: none; }
+.king-page.king-experience .king-lookup-heading p { margin-bottom: 0; }
+.king-page.king-experience .king-help-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 48px; margin: 48px 0; }
+.king-page.king-experience .king-help-grid > .king-section { margin: 0; min-width: 0; }
+.king-page.king-experience .king-help-grid .king-section-heading { display: block; }
+.king-page.king-experience .king-help-grid .king-secondary-link { display: inline-flex; margin-top: 12px; padding: 8px 0; border: 0; }
+.king-page.king-experience .king-help-grid .king-step-grid { grid-template-columns: 1fr; gap: 0; }
+.king-page.king-experience .king-help-grid .king-info-card { display: grid; grid-template-columns: 36px minmax(0,1fr); gap: 12px; border: 0; border-bottom: 1px solid var(--king-border-subtle); padding: 8px 0; }
+.king-page.king-experience .king-help-grid .king-step-top { align-items: flex-start; padding-top: 14px; }
+.king-page.king-experience .king-help-grid .king-step-top > span { font-family: inherit; font-size: 13px; color: var(--king-gold); }
+.king-page.king-experience .king-help-grid .king-step-top > svg { display: none; }
+.king-page.king-experience .king-help-grid .king-info-card p { padding-bottom: 12px; }
+@media (max-width: 760px) {
+  .king-page.king-experience .king-lookup-bar, .king-page.king-experience .king-help-grid { grid-template-columns: minmax(0,1fr); gap: 24px; }
+}
+
+/* Quiet collection layout: one surface per task, gold reserved for emphasis. */
+.king-page.king-experience {
+  --king-gap-sm: 16px;
+  --king-gap-md: 28px;
+  --king-gap-lg: 56px;
+  --king-surface-1: #111519;
+  --king-surface-2: #191e23;
+  --king-text-muted: #aeb7bf;
+  --king-border-subtle: #ffffff14;
+  --king-glass-line: #ffffff18;
+  background: #0b0e11;
+}
+.king-page.king-experience .king-shell { width: min(1160px, calc(100% - 48px)); }
+.king-page.king-experience .king-header {
+  top: 0; padding: 12px 0; border: 0; border-bottom: 1px solid var(--king-border-subtle);
+  border-radius: 0; background: #0b0e11f5; box-shadow: none; backdrop-filter: blur(12px);
+}
+.king-page.king-experience .king-nav { gap: 4px; }
+.king-page.king-experience .king-nav a { border-radius: 6px; padding: 8px 12px; }
+.king-page.king-experience .king-hero { display: block; padding: 28px 0; }
+.king-page.king-experience .king-hero > div { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); column-gap: 48px; align-items: start; }
+.king-page.king-experience .king-hero .king-eyebrow { grid-column: 1; }
+.king-page.king-experience .king-hero h1 { grid-column: 1; grid-row: 2 / 4; font-size: clamp(32px,4vw,48px); margin: 12px 0 0; }
+.king-page.king-experience .king-hero > div > p { grid-column: 2; grid-row: 1 / 3; max-width: none; margin: 0; font-size: 14px; }
+.king-page.king-experience .king-hero-actions { grid-column: 2; margin-top: 16px; gap: 12px; }
+.king-page.king-experience .king-hero-artwork { padding: 10px; border-radius: 16px; background: var(--king-surface-1); box-shadow: none; }
+.king-page.king-experience .king-showcase-label { padding: 4px 4px 10px; }
+.king-page.king-experience .king-hero-artwork figcaption { padding-top: 10px; }
+.king-page.king-experience .king-metrics {
+  padding: 20px 0; background: transparent; border: 0; border-block: 1px solid var(--king-border-subtle);
+  border-radius: 0; box-shadow: none; backdrop-filter: none;
+}
+.king-page.king-experience .king-metrics strong { font-size: clamp(18px,2vw,24px); }
+.king-page.king-experience .king-section { margin: var(--king-gap-lg) 0; }
+.king-page.king-experience .king-section-heading { padding-top: 0; border: 0; margin-bottom: 20px; }
+.king-page.king-experience .king-section h2 { font-size: clamp(24px,3vw,30px); }
+.king-page.king-experience .king-studio-grid {
+  padding: 24px; gap: 28px; border: 1px solid var(--king-border-subtle); border-radius: 16px;
+  background: var(--king-surface-1); box-shadow: none; backdrop-filter: none;
+}
+.king-page.king-experience .king-studio-grid .king-preview-card { border: 0; padding: 0; background: transparent; box-shadow: none; }
+.king-page.king-experience .king-studio-presets { margin-bottom: 12px; }
+.king-page.king-experience .king-panel-tools { margin-bottom: 12px; }
+.king-page.king-experience .king-preview-settings { margin: 0 0 16px; border-bottom: 1px solid var(--king-border-subtle); }
+.king-page.king-experience .king-preview-settings summary { color: var(--king-text-muted); font-size: 12px; }
+.king-page.king-experience .king-trait-tabs { padding: 0; gap: 4px; border-radius: 0; background: transparent; }
+.king-page.king-experience .king-trait-tabs button { border-radius: 8px; padding: 12px 8px; }
+.king-page.king-experience .king-trait-tabs small { font-size: 11px; }
+.king-page.king-experience .king-trait-options button { background: transparent; box-shadow: none; font-size: 12px; }
+.king-page.king-experience .king-trait-options button[aria-pressed="true"] { background: #f5d79a10; }
+.king-page.king-experience .king-notice { border: 0; border-left: 2px solid #f5d79a66; border-radius: 0; background: transparent; }
+.king-page.king-experience .king-composition-drawer > summary { font-size: 13px; color: var(--king-text-muted); }
+.king-page.king-experience .king-mint-box {
+  padding: 28px; border-radius: 16px; background: var(--king-surface-1);
+  border-color: var(--king-border-subtle); box-shadow: none; backdrop-filter: none;
+}
+.king-page.king-experience .king-composition-drawer .king-mint-box { border: 0; padding: 8px 0 0; }
+.king-page.king-experience .king-mint-premium { border-color: #f5d79a40; }
+.king-page.king-experience .king-recipients { padding: 20px 0; border: 0; border-top: 1px solid var(--king-border-subtle); border-radius: 0; background: transparent; }
+.king-page.king-experience .king-recipient-mode-card { padding: 14px; background: transparent; border-radius: 10px; }
+.king-page.king-experience .king-checkout-steps { gap: 0; margin: 20px 0; }
+.king-page.king-experience .king-checkout-steps li { border: 0; border-bottom: 2px solid var(--king-border-subtle); border-radius: 0; background: transparent; }
+.king-page.king-experience .king-checkout-steps li[aria-current="step"] { border-color: var(--king-gold); }
+.king-page.king-experience .king-info-card { padding: 20px; border: 0; border-left: 1px solid var(--king-border-subtle); border-radius: 0; background: transparent; box-shadow: none; }
+.king-page.king-experience .king-info-card h3 { margin-top: 12px; }
+.king-page.king-experience .king-step-grid summary { font-size: 14px; }
+.king-page.king-experience .king-contract-badge { background: transparent; border: 0; padding: 0 0 20px; border-bottom: 1px solid var(--king-border-subtle); border-radius: 0; }
+.king-page.king-experience .king-footer { font-size: 12px; }
+@media (max-width: 760px) {
+  .king-page.king-experience { --king-gap-lg: 36px; }
+  .king-page.king-experience .king-shell { width: calc(100% - 28px); }
+  .king-page.king-experience .king-header { gap: 10px; }
+  .king-page.king-experience .king-hero { padding: 24px 0; }
+  .king-page.king-experience .king-hero > div { display: block; }
+  .king-page.king-experience .king-hero > div > p { margin-top: 16px; }
+  .king-page.king-experience .king-hero-artwork { max-width: 360px; }
+  .king-page.king-experience .king-studio-grid { grid-template-columns: minmax(0,1fr); padding: 14px; gap: 20px; }
+  .king-page.king-experience .king-studio-grid .king-preview-card { position: static; }
+  .king-page.king-experience .king-studio-grid .king-art-frame { width: min(100%,320px); }
+  .king-page.king-experience .king-trait-tabs { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .king-page.king-experience .king-mint-box { padding: 16px; }
+  .king-page.king-experience .king-checkout-steps { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+  .king-page.king-experience .king-info-card { padding: 12px 16px; }
+  .king-page.king-experience .king-nav { flex-wrap: nowrap; overflow-x: auto; }
+}
+@media (max-width: 480px) {
+  .king-page.king-experience .king-header { position: static; }
+  .king-page.king-experience .king-actions { width: 100%; justify-content: space-between; }
+  .king-page.king-experience .king-metrics > div { padding: 8px 12px; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .king-page.king-experience .king-header { background: #0b0e11; backdrop-filter: none; }
+}
+
+
+/* Compact mint: recipient inputs left, one checkout action right. */
+.king-page.king-experience .king-mint-premium .king-wallet-row { flex-direction: row; align-items: center; margin: 16px 0 12px; }
+.king-page.king-experience .king-mint-premium .king-wallet-row > button { flex: 0 1 auto; width: auto; min-height: 44px; padding: 10px 20px; border-radius: 8px; font-size: 14px; line-height: 1.4; box-shadow: none; }
+.king-page.king-experience .king-mint-premium .king-wallet-row > button:hover:not(:disabled) { background: #f5d79a; }
+
+.king-page.king-experience .king-mint-facts { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin: 12px 0; font-size: 13px; }
+.king-page.king-experience .king-mint-facts > span { color: var(--king-text-muted); }
+.king-page.king-experience .king-mint-premium .king-checkout-steps { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 8px; margin: 20px 0; }
+.king-page.king-experience .king-mint-premium .king-checkout-steps li { display: flex; align-items: center; gap: 8px; padding: 10px 4px; font-size: 12px; }
+.king-page.king-experience .king-mint-premium .king-checkout-steps li > span { margin: 0; }
+.king-page.king-experience .king-mint-premium .king-recipients { padding: 0; margin: 24px 0 16px; border: 0; background: transparent; }
+.king-page.king-experience .king-mint-premium .king-recipients legend { padding: 0; font-size: 14px; }
+.king-page.king-experience .king-mint-premium .king-mint-workspace { margin-top: 12px; gap: 28px; }
+.king-page.king-experience .king-mint-premium .king-recipient-modes { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; margin-bottom: 20px; }
+.king-page.king-experience .king-mint-premium .king-recipient-mode-card { padding: 10px 8px; gap: 6px; min-height: 64px; justify-content: center; align-items: center; text-align: center; }
+.king-page.king-experience .king-mint-premium .king-recipient-mode-card > svg:first-child { position: static; width: 16px; height: 16px; }
+.king-page.king-experience .king-mint-premium .king-recipient-mode-card strong { padding: 0; font-size: 12px; }
+.king-page.king-experience .king-mint-premium .king-recipient-selected { top: 6px; right: 6px; width: 12px; }
+.king-page.king-experience .king-mint-premium .king-mode-description { display: none; }
+.king-page.king-experience .king-mint-premium .king-recipient-review { padding: 0; background: transparent; border: 0; }
+.king-page.king-experience .king-mint-premium .king-mint-checkout { padding-left: 24px; border-left: 1px solid var(--king-border-subtle); }
+.king-page.king-experience .king-mint-premium .king-recipient-empty { min-height: 0; }
+.king-page.king-experience .king-mint-premium .king-recipient-empty > svg { display: none; }
+.king-page.king-experience .king-mint-premium .king-payment-recipients { font-size: 12px; }
+.king-page.king-experience .king-mint-premium .king-payment-recipients summary { min-height: 44px; cursor: pointer; }
+.king-page.king-experience .king-mint-premium :is(.king-payment-balance,.king-payment-warning,.king-payment-gas,.king-mint-note) { font-size: 12px; line-height: 1.6; color: var(--king-text-muted); }
+.king-page.king-experience .king-mint-premium .king-payment-warning { color: #f5d79a; }
+.king-page.king-experience .king-mint-premium .king-mint-guidance { padding: 0; border: 0; background: transparent; margin-top: 8px; }
+.king-page.king-experience .king-mint-premium .king-mint-checkout > p:empty { margin: 0; }
+.king-page.king-experience .king-mint-premium .king-metadata-tools { margin: 12px 0; }
+@media (max-width: 900px) {
+  .king-page.king-experience .king-mint-premium .king-mint-checkout { padding: 20px 0 0; border-left: 0; border-top: 1px solid var(--king-border-subtle); }
+}
+@media (max-width: 600px) {
+  .king-page.king-experience .king-mint-premium .king-checkout-steps { grid-template-columns: minmax(0,1fr); }
+  .king-page.king-experience .king-mint-premium .king-checkout-steps li:not([aria-current="step"]) { display: none; }
 }

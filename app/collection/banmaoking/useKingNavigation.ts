@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState, type RefObject } from 'react';
 
-const sectionIds = ['king-studio', 'king-mint', 'king-guide', 'king-contracts'];
+const sectionIds = ['king-studio', 'king-mint', 'king-lookup', 'king-guide', 'king-contracts'];
 
 export function useKingNavigation(header: RefObject<HTMLElement | null>) {
   const [activeSection, setActiveSection] = useState('');
