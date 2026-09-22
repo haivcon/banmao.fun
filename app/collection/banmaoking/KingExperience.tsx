@@ -6,6 +6,7 @@ import { useKingNavigation } from './useKingNavigation';
 import { kingTaskIds } from './king-task-navigation';
 import { Crown, Shuffle, RotateCcw } from "lucide-react";
 import KingLanguageSelector from './KingLanguageSelector';
+import ThemeToggle from '../../components/theme/ThemeToggle';
 import { Toaster } from "react-hot-toast";
 
 import './controls.css';
@@ -30,6 +31,7 @@ import KingThemeLab from './KingThemeLab';
 import './glass.css';
 import './showcase.css';
 import './workspace.css';
+import './appearance.css';
 const initial: BanmaoKingTraitSelection = { body: 0, expression: 0, accessory: 1, background: 0 };
 export default function KingExperience() {
   const header = useRef<HTMLElement>(null);
@@ -75,7 +77,7 @@ export default function KingExperience() {
         if (next >= 0) { event.preventDefault(); const tab = document.getElementById(`task-${kingTaskIds[next]}`); tab?.focus(); tab?.click(); }
         if (event.key === ' ') { event.preventDefault(); event.currentTarget.click(); }
       }}>{[t.explore, t.mint, { en: 'Lookup', vi: 'Tra cứu', zh: '查询', ko: '조회', ru: 'Поиск', id: 'Cari NFT' }[lang]][index]}{id === 'king-mint' && mintBusy && <span className="king-task-pending" role="status" aria-label={t.processing} title={t.processing} />}</a>)}</nav>
-      <div className="king-actions"><KingLanguageSelector lang={lang} onChange={changeLanguage} /><ConnectButton label={t.connect} accountStatus="address" chainStatus="none" showBalance={false} /></div>
+      <div className="king-actions"><ThemeToggle vi={lang === 'vi'} /><KingLanguageSelector lang={lang} onChange={changeLanguage} /><ConnectButton label={t.connect} accountStatus="address" chainStatus="none" showBalance={false} /></div>
     </header>
     <Toaster toasterId="king" position="bottom-center" toastOptions={{ ariaProps: { role: 'status', 'aria-live': 'polite' }, style: { background: '#182030', color: '#f4f6fb', border: '1px solid #748298', maxWidth: 'min(420px, calc(100vw - 32px))' } }} />
     <div id="panel-king-studio" className="king-task-panel" role="tabpanel" aria-labelledby="task-king-studio" tabIndex={0} hidden={activeSection !== 'king-studio'}>

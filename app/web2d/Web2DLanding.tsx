@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import ThemeToggle from '../components/theme/ThemeToggle';
 import Link from "next/link";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Web2DIcon } from "./icons";
@@ -189,6 +190,7 @@ export function Web2DLanding({
                         ))}
                     </nav>
 
+                    <ThemeToggle vi={lang === 'vi'} />
                     <div className="web2d-language" ref={languageMenuRef}>
                         <button
                             type="button"

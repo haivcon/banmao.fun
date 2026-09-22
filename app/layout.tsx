@@ -3,6 +3,8 @@ import "./landing.css";
 import "./web2d/web2d.css";
 import "./design-tokens.css";
 import "./responsive-standard.css";
+import "./ui-theme.css";
+import { themeInitScript } from './components/theme/theme-init';
 import type { Metadata, Viewport } from "next";
 import { Orbitron, Rajdhani, Share_Tech_Mono, Space_Mono } from "next/font/google";
 
@@ -121,8 +123,9 @@ const spaceMono = Space_Mono({
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${orbitron.variable} ${rajdhani.variable} ${shareTech.variable} ${spaceMono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${orbitron.variable} ${rajdhani.variable} ${shareTech.variable} ${spaceMono.variable}`}>
       <head>
+        <script id="banmao-ui-theme-init" dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {/* Early PWA: inject manifest and capture install prompt BEFORE browser checks */}
         <Script
           id="pwa-manifest-script"
