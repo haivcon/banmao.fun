@@ -1,51 +1,53 @@
 'use client';
 import { useEffect, useState, type RefObject } from 'react';
-
-const sectionIds = ['king-studio', 'king-mint', 'king-lookup', 'king-guide', 'king-contracts'];
+import { kingTaskFromLocation, type KingTask } from './king-task-navigation';
 
 export function useKingNavigation(header: RefObject<HTMLElement | null>) {
-  const [activeSection, setActiveSection] = useState('');
+  const [activeSection, setActiveSection] = useState<KingTask>('king-studio');
   useEffect(() => {
     const page = header.current?.closest<HTMLElement>('.king-page');
     if (!page) return;
     let frame = 0;
-    let headerHeight = header.current?.offsetHeight ?? 100;
-    const update = () => {
-      frame = 0;
-      const sections = sectionIds.map(id => document.getElementById(id)).filter((node): node is HTMLElement => node !== null);
-      const offset = header.current && getComputedStyle(header.current).position === 'sticky' ? headerHeight + 40 : 40;
-      const current = sections.filter(node => node.getBoundingClientRect().top <= offset)
-        .sort((a, b) => b.getBoundingClientRect().top - a.getBoundingClientRect().top)[0];
-      setActiveSection(current?.id ?? '');
+    const sync = (reveal = false) => {
+      const hash = window.location.hash;
+      const task = kingTaskFromLocation(hash, window.location.search);
+      setActiveSection(task);
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const target = document.getElementById(hash.slice(1));
+        let parent: HTMLElement | null = target;
+        while (parent && parent !== page) {
+          if (parent instanceof HTMLDetailsElement) parent.open = true;
+          parent = parent.parentElement;
+        }
+        if (reveal) (target ?? document.getElementById(`panel-${task}`))?.scrollIntoView({ block: 'start', behavior: 'instant' });
+      });
     };
-    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    const onLocation = () => sync(true);
+    const onClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const anchor = (event.target as Element).closest<HTMLAnchorElement>('a[href^="#king-"]');
+      if (!anchor) return;
+      const hash = anchor.getAttribute('href')!;
+      if (!['#king-studio', '#king-mint', '#king-lookup', '#king-guide', '#king-faq', '#king-contracts'].includes(hash)) return;
+      event.preventDefault();
+      if (window.location.hash !== hash) window.history.pushState(null, '', hash);
+      sync(true);
+    };
     const resize = new ResizeObserver(() => {
-      headerHeight = header.current?.offsetHeight ?? 100;
-      page.style.setProperty('--king-header-offset', `${headerHeight + 32}px`);
-      schedule();
+      page.style.setProperty('--king-header-offset', `${(header.current?.offsetHeight ?? 100) + 24}px`);
     });
     if (header.current) resize.observe(header.current);
-    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const reveal = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-        if (!motion.matches) entry.target.animate(
-          [{ opacity: .65, transform: 'translateY(14px)' }, { opacity: 1, transform: 'translateY(0)' }],
-          { duration: 420, easing: 'ease-out' },
-        );
-        reveal.unobserve(entry.target);
-      });
-    }, { threshold: .08 });
-    page.querySelectorAll('.king-section-heading, .king-info-card, .king-metrics').forEach(node => reveal.observe(node));
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
-    schedule();
+    page.addEventListener('click', onClick);
+    window.addEventListener('hashchange', onLocation);
+    window.addEventListener('popstate', onLocation);
+    sync(Boolean(window.location.hash));
     return () => {
       cancelAnimationFrame(frame);
       resize.disconnect();
-      reveal.disconnect();
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
+      page.removeEventListener('click', onClick);
+      window.removeEventListener('hashchange', onLocation);
+      window.removeEventListener('popstate', onLocation);
       page.style.removeProperty('--king-header-offset');
     };
   }, [header]);

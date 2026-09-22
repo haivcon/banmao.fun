@@ -242,6 +242,20 @@
 }
 
 
+/* Task panels stay mounted to preserve wallet, form and preview state. */
+.king-page.king-experience .king-task-panel[hidden] { display: none; }
+.king-page.king-experience .king-task-panel { scroll-margin-top: var(--king-header-offset, 120px); }
+.king-page.king-experience .king-nav [role="tab"] { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid transparent; border-radius: 8px; padding: 10px 14px; }
+.king-page.king-experience .king-nav [role="tab"][aria-selected="true"] { color: #f5d79a; background: #f5d79a12; border-color: #f5d79a50; }
+.king-page.king-experience .king-nav [role="tab"]:focus-visible { outline: 2px solid var(--king-gold); outline-offset: 3px; }
+.king-page.king-experience .king-task-pending { width: 7px; height: 7px; border-radius: 50%; background: #f5d79a; }
+.king-page.king-experience .king-task-help, .king-page.king-experience .king-task-contracts { margin: 20px 0; border-top: 1px solid var(--king-border-subtle); }
+.king-page.king-experience :is(.king-task-help,.king-task-contracts) > summary { min-height: 44px; padding: 14px 0; cursor: pointer; color: var(--king-text-muted); font-size: 13px; }
+@media (max-width: 900px) {
+  .king-page.king-experience .king-header { flex-wrap: wrap; }
+  .king-page.king-experience .king-nav { order: 3; width: 100%; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; }
+  .king-page.king-experience .king-nav [role="tab"] { padding: 10px 6px; font-size: 12px; }
+}
 /* Compact mint: recipient inputs left, one checkout action right. */
 .king-page.king-experience .king-mint-premium .king-wallet-row { flex-direction: row; align-items: center; margin: 16px 0 12px; }
 .king-page.king-experience .king-mint-premium .king-wallet-row > button { flex: 0 1 auto; width: auto; min-height: 44px; padding: 10px 20px; border-radius: 8px; font-size: 14px; line-height: 1.4; box-shadow: none; }
@@ -275,6 +289,41 @@
 @media (max-width: 900px) {
   .king-page.king-experience .king-mint-premium .king-mint-checkout { padding: 20px 0 0; border-left: 0; border-top: 1px solid var(--king-border-subtle); }
 }
+/* Studio: edit beside the artwork, browse presets below the workspace. */
+.king-page.king-experience .king-studio-grid { grid-template-columns: minmax(0,.84fr) minmax(0,1.16fr); gap: 20px 24px; }
+.king-page.king-experience .king-studio-grid .king-preview-card { position: static; min-width: 0; }
+.king-page.king-experience .king-trait-panel { min-width: 0; }
+.king-page.king-experience .king-customize-title { margin: 0 0 14px; font-size: 16px; }
+.king-page.king-experience .king-studio-grid .king-trait-options { max-height: none; overflow: visible; }
+.king-page.king-experience .king-trait-options button[aria-pressed="true"]::after { content: '✓'; margin-left: auto; flex-shrink: 0; }
+.king-page.king-experience .king-studio-grid .king-notice { grid-column: 1 / -1; margin: 0; }
+.king-page.king-experience .king-studio-presets { margin: 24px 0 0; }
+.king-page.king-experience .king-studio-presets .king-theme-library { padding: 20px; border: 1px solid var(--king-border-subtle); border-radius: 16px; }
+.king-page.king-experience .king-studio-presets .king-library-heading { grid-template-columns: minmax(0,1fr) minmax(200px,300px); align-items: center; }
+.king-page.king-experience .king-studio-presets .king-library-heading h3 small { margin-left: 4px; }
+.king-page.king-experience .king-studio-presets .king-preset-grid { grid-template-columns: repeat(4,minmax(0,1fr)); max-height: none; overflow: visible; }
+.king-page.king-experience .king-studio-presets .king-preset-grid[data-collapsed="true"] > :nth-child(n+9) { display: none; }
+.king-page.king-experience .king-current-look { font-size: 12px; color: var(--king-text-muted); margin: 8px 0; }
+.king-page.king-experience .king-library-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+.king-page.king-experience .king-library-actions :is(button,a) { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 14px; border: 1px solid var(--king-border-subtle); border-radius: 8px; background: transparent; color: var(--king-gold); font-size: 13px; cursor: pointer; }
+@media (max-width: 760px) {
+  .king-page.king-experience .king-studio-grid { grid-template-columns: minmax(0,1fr); gap: 18px; }
+  .king-page.king-experience .king-studio-grid .king-art-frame { width: min(100%,300px); }
+  .king-page.king-experience .king-studio-grid .king-trait-options { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .king-page.king-experience .king-studio-presets .king-theme-library { padding: 14px; }
+  .king-page.king-experience .king-studio-presets .king-library-heading { grid-template-columns: minmax(0,1fr); }
+  .king-page.king-experience .king-studio-presets .king-preset-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .king-page.king-experience .king-studio-presets .king-preset-grid[data-collapsed="true"] > :nth-child(n+5) { display: none; }
+}
+/* A fixed-height dialog reserves room for controls; 100% zoom fits BOTH axes. */
+.king-page.king-experience .king-svg-dialog { position: fixed; inset: 0; margin: auto; box-sizing: border-box; width: min(94vw,900px); height: 94dvh; max-height: 94dvh; overflow: hidden; }
+.king-page.king-experience .king-svg-dialog[open] { display: grid; grid-template-rows: auto minmax(0,1fr) auto; gap: 12px; }
+.king-page.king-experience .king-svg-dialog header { min-width: 0; }
+.king-page.king-experience .king-svg-dialog header > div { min-width: 0; overflow-wrap: anywhere; }
+.king-page.king-experience .king-svg-dialog footer { margin: 0; gap: 6px; }
+.king-page.king-experience .king-svg-dialog .king-zoom-scroll { height: auto; min-height: 0; min-width: 0; margin: 0; overscroll-behavior: contain; }
+.king-page.king-experience .king-svg-dialog .king-zoom-scroll svg { display: block; min-height: 0; margin-inline: auto; }
+
 @media (max-width: 600px) {
   .king-page.king-experience .king-mint-premium .king-checkout-steps { grid-template-columns: minmax(0,1fr); }
   .king-page.king-experience .king-mint-premium .king-checkout-steps li:not([aria-current="step"]) { display: none; }

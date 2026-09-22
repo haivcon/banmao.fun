@@ -16,7 +16,7 @@ import "./recipients.css";
 import KingRecipientEditor from './KingRecipientEditor';
 import KingExpandableList from './KingExpandableList';
 
-export default function KingMint({ lang }: { lang: Lang }) {
+export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyChange?: (busy: boolean) => void }) {
   const { address, chainId } = useAccount();
   const client = usePublicClient({ chainId: 196 }) as PublicClient | undefined;
   const { data: wallet } = useWalletClient();
@@ -26,6 +26,7 @@ export default function KingMint({ lang }: { lang: Lang }) {
   const [phase, setPhase] = useState<'idle' | 'checking' | 'signing' | 'confirmed' | 'failed'>('idle');
   const [operation, setOperation] = useState<'approve' | 'reset' | 'mint'>();
   const [pending, setPending] = useState(false);
+  useEffect(() => { onBusyChange?.(busy || pending); }, [busy, pending, onBusyChange]);
   const [readFailed, setReadFailed] = useState(false);
   const [readRetry, setReadRetry] = useState(0);
   const lock = useRef(false);
