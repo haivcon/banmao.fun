@@ -20,6 +20,7 @@ import { MINT_RESULT_COPY } from './i18n/mint-result';
 import "./recipients.css";
 import KingRecipientEditor from './KingRecipientEditor';
 import KingExpandableList from './KingExpandableList';
+import KingBanmaoGuide from './KingBanmaoGuide';
 import { notifyKingSound } from './king-sound';
 
 export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyChange?: (busy: boolean) => void }) {
@@ -308,6 +309,7 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
     </div></div>
     </fieldset>
     <p className="king-mint-note">{t.mintNote}</p>
+    <KingBanmaoGuide t={t} />
     {(phase !== 'idle' || pending || message) && <KingMintResult key={hash ?? phase} lang={lang} status={resultStatus} minted={minted} hash={hash} message={message} tokenId={tokenId} onSelect={id => {
       if (tokenId !== id) { setMetadata(undefined); setDisplayImage(undefined); setTokenId(id); }
     }} />}

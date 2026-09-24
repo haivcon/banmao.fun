@@ -32,7 +32,7 @@ const SOCIAL_LINKS = [
     {
         id: 'okx',
         icon: '◈',
-        label: 'OKX DEX',
+        label: 'OKX Wallet',
         url: 'https://web3.okx.com/token/x-layer/0x16d91d1615fc55b76d5f92365bd60c069b46ef78',
         color: '#facc15',
         innerColor: '#b8860b',
