@@ -1,7 +1,7 @@
 import type { KingCopy } from "./en";
 export const vi: KingCopy = {
 collection: "Bộ sưu tập", explore: "Khám phá", mint: "Mint NFT", guide: "Cách mint", contracts: "Hợp đồng", language: "Ngôn ngữ", connect: "Kết nối ví",
-kicker: "X LAYER · BỘ SƯU TẬP HOÀN TOÀN ON-CHAIN", title: "Chuối nhỏ bé.", titleAccent: "Khí chất nhà vua.", description: "Khám phá 9.216 tổ hợp nghệ thuật chuyển động độc đáo. Banmao King của bạn được lưu trữ hoàn toàn trên X Layer.",
+kicker: "X LAYER · BỘ SƯU TẬP HOÀN TOÀN ON-CHAIN", title: "Một chú mèo chuối nhỏ.", titleAccent: "Sinh ra để làm vua.", description: "Khám phá 9.216 tổ hợp nghệ thuật chuyển động độc đáo. Banmao King của bạn được lưu trữ hoàn toàn trên X Layer.",
 combinations: "Tổ hợp độc đáo", layers: "Lớp nghệ thuật", onchain: "Nghệ thuật on-chain", price: "Giá mint", supply: "Đã mint", balance: "Số dư của bạn", gas: "Phí mạng thanh toán bằng OKB",
 studio: "Khám phá bộ sưu tập", studioDesc: "Phối màu sắc, biểu cảm và phụ kiện. Tìm diện mạo bạn yêu thích.", preview: "Bản phối thử", randomize: "Ngẫu nhiên", reset: "Đặt lại đặc điểm", body: "Thân", expression: "Biểu cảm", accessory: "Phụ kiện", background: "Phông nền", animated: "SVG động · Luôn bật",
 previewTitle: "CHỈ XEM TRƯỚC — KHÔNG CHỌN ĐỂ MINT", previewNote: "Các nút này không đặt giữ hay quyết định NFT nhận được. Hợp đồng cấp tổ hợp chưa từng mint. Seed công khai nên kết quả có thể tính trước, không phải ngẫu nhiên chống thao túng.",

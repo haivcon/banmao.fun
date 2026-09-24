@@ -1,6 +1,6 @@
 export const en = {
   collection: "Collection", explore: "Explore", mint: "Mint NFT", guide: "How to mint", contracts: "Contracts", language: "Language", connect: "Connect wallet",
-  kicker: "X LAYER · FULLY ON-CHAIN COLLECTION", title: "A little banana.", titleAccent: "A born king.", description: "Discover 9,216 unique combinations of animated, on-chain art. Your next Banmao King lives entirely on X Layer.",
+  kicker: "X LAYER · FULLY ON-CHAIN COLLECTION", title: "A little banana cat.", titleAccent: "A born king.", description: "Discover 9,216 unique combinations of animated, on-chain art. Your next Banmao King lives entirely on X Layer.",
   combinations: "Unique combinations", layers: "Art layers", onchain: "On-chain artwork", price: "Mint price", supply: "Minted", balance: "Your balance", gas: "Network fees paid in OKB",
   studio: "Explore the collection", studioDesc: "Mix colors, expressions and accessories. Discover a look you love.", preview: "Composition preview", randomize: "Randomize", reset: "Reset traits", body: "Body", expression: "Expression", accessory: "Accessory", background: "Background", animated: "Animated SVG · Always on",
   previewTitle: "PREVIEW ONLY — NOT A MINT SELECTION", previewNote: "These controls do not reserve or determine your NFT. The contract assigns an unused combination at mint. The public seed makes results predictable, not manipulation-resistant randomness.",

@@ -1,3 +1,20 @@
+
+/* Full-width, two-part slogan; long translations may wrap without clipping. */
+.king-page.king-experience .king-hero > div { grid-template-columns: minmax(0, 1fr); }
+.king-page.king-experience .king-hero h1 {
+  grid-column: 1 / -1; grid-row: 2; min-width: 0;
+  margin: 12px 0 0; font-size: clamp(26px, 3.4vw, 40px);
+  line-height: 1.2; letter-spacing: -.025em; font-weight: 500;
+  text-align: left; white-space: normal; overflow-wrap: anywhere;
+}
+.king-page.king-experience .king-hero h1 > br { display: none; }
+.king-page.king-experience .king-hero h1 > em {
+  display: block; margin-top: 6px;
+  font-size: clamp(32px, 4.6vw, 56px); line-height: 1.15;
+  font-weight: 600; color: var(--king-gold);
+}
+.king-page.king-experience .king-hero .king-hero-actions { grid-column: 1 / -1; grid-row: 3; margin-top: 20px; }
+
 /* Final route-scoped geometry. Theme colors and NFT artwork remain untouched. */
 .king-page.king-experience {
   --king-radius-panel: 20px;
@@ -31,7 +48,8 @@
   .king-page.king-experience .king-nav { grid-column: 1 / -1; width: 100%; gap: 4px; overflow: visible; }
   .king-page.king-experience .king-nav [role="tab"] { min-width: 0; min-height: 44px; padding: 6px; font-size: 12px; text-align: center; }
   .king-page.king-experience .king-hero { padding: 18px 0; }
-  .king-page.king-experience .king-hero h1 { font-size: clamp(26px,7vw,34px); line-height: 1.15; margin: 10px 0; }
+  .king-page.king-experience .king-hero h1 { font-size: clamp(26px, 6vw, 32px); margin: 10px 0 0; }
+  .king-page.king-experience .king-hero h1 > em { font-size: clamp(32px, 7.5vw, 40px); }
   .king-page.king-experience .king-hero > div > p { font-size: 13px; line-height: 1.6; margin-top: 10px; }
   .king-page.king-experience .king-hero-actions { margin-top: 12px; gap: 8px; flex-wrap: wrap; }
   .king-page.king-experience :is(.king-primary-link,.king-secondary-link) { min-height: 44px; padding: 10px 14px; font-size: 13px; }
