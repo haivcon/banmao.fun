@@ -12,7 +12,7 @@ import { diamondRays } from './expression-effects';
 import { choreographySvg } from './choreography';
 import { secondaryMotionSvg } from './secondary-motion';
 import { backgroundEffects } from './background-effects';
-import { compositionWatermark } from "./composition";
+import { compositionCode, compositionWatermark } from "./composition";
 import { actionShadowSvg, actionTransform, bodySvg } from './artwork';
 import { animatedExpressionSvg } from './motion';
 import { tokenBadgeSvg } from './badge';
@@ -32,6 +32,11 @@ import natureSuit from './nature-suit-contract.json';
 
 // Scoped IDs prevent multiple preview SVGs from targeting one another.
 export function previewSvg(traits: BanmaoKingTraitSelection, tokenId: number, prefix: string, mini = false): string {
+  // Validate before interpolating into trusted inline SVG. In particular, a
+  // prefix must never be able to close an attribute or introduce markup.
+  compositionCode(traits);
+  if (!Number.isSafeInteger(tokenId) || tokenId < 0) throw new RangeError('Invalid preview token ID');
+  if (!/^[A-Za-z0-9_-]+$/.test(prefix)) throw new Error('Invalid SVG prefix');
   const publicTraits = traits;
   traits = { ...traits, accessory: accessoryArtworkIndex(traits.accessory) };
   const body = BODY_TRAITS[traits.body];
