@@ -1,4 +1,8 @@
 /* Scoped King controls; no artwork or transaction behavior overrides. */
+.king-page.king-experience .king-sound-toggle { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 44px; min-height: 44px; border: 1px solid var(--king-border-subtle); border-radius: 12px; background: var(--king-surface-2); color: var(--king-gold); cursor: pointer; }
+.king-page.king-experience .king-sound-toggle[aria-pressed="true"] { border-color: var(--king-gold); }
+.king-page.king-experience .king-actions { flex-wrap: wrap; min-width: 0; }
+
 .king-page.king-experience .king-contract-badge { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; width: 100%; min-width: 0; padding: 16px; margin-top: 16px; border: 1px solid var(--king-glass-line); border-radius: 16px; background: #182030; box-sizing: border-box; }
 .king-experience .king-contract-badge-label { color: var(--king-gold); font-size: 12px; font-weight: 600; }
 .king-experience .king-contract-badge-label small { display: block; color: #bdc7d7; margin-top: 4px; font-size: 10px; }

@@ -15,6 +15,7 @@ import { Wallet, Gift, Users, Check, ShieldCheck } from "lucide-react";
 import "./recipients.css";
 import KingRecipientEditor from './KingRecipientEditor';
 import KingExpandableList from './KingExpandableList';
+import { notifyKingSound } from './king-sound';
 
 export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyChange?: (busy: boolean) => void }) {
   const { address, chainId } = useAccount();
@@ -24,6 +25,10 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
   const [state, setState] = useState<{ supply: bigint; max: bigint; balance: bigint; allowance: bigint }>();
   const [busy, setBusy] = useState(false);
   const [phase, setPhase] = useState<'idle' | 'checking' | 'signing' | 'confirmed' | 'failed'>('idle');
+  useEffect(() => {
+    if (phase === 'confirmed') notifyKingSound('success');
+    if (phase === 'failed') notifyKingSound('error');
+  }, [phase]);
   const [operation, setOperation] = useState<'approve' | 'reset' | 'mint'>();
   const [pending, setPending] = useState(false);
   useEffect(() => { onBusyChange?.(busy || pending); }, [busy, pending, onBusyChange]);
@@ -40,6 +45,7 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
   const [tokenId, setTokenId] = useState<bigint>();
   const [metadata, setMetadata] = useState<ReturnType<typeof decodeKingMetadata>>();
   const [displayImage, setDisplayImage] = useState<string>();
+  const [imageStatus, setImageStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [reload, setReload] = useState(0);
   const t = KING_T[lang];
   const [mode, setMode] = useState("self");
@@ -132,15 +138,26 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
     let active = true;
     setMetadata(undefined);
     setDisplayImage(undefined);
-    if (tokenId !== undefined && client) client.readContract({ authorizationList: undefined, address: kingAddress, abi: kingAbi, functionName: "tokenURI", args: [tokenId] }).then(uri => {
+    setImageStatus('loading');
+    if (tokenId === undefined) return;
+    if (!client) { setImageStatus('error'); return; }
+    // Bound metadata loading; late responses cannot revive a timed-out request.
+    const timeout = setTimeout(() => { active = false; setImageStatus('error'); }, 30000);
+    void client.readContract({ authorizationList: undefined, address: kingAddress, abi: kingAbi, functionName: "tokenURI", args: [tokenId] }).then(uri => {
       if (!active) return;
       const decoded = decodeKingMetadata(uri);
       const image = identifiedKingImage(animatedKingImage(decoded.image), metadataTraits(decoded.attributes));
       setMetadata(decoded);
       setDisplayImage(image);
-    }).catch(() => { if (active) setMessage(t.imageError); });
-    return () => { active = false; };
+      clearTimeout(timeout);
+    }).catch(() => { if (active) { clearTimeout(timeout); setImageStatus('error'); } });
+    return () => { active = false; clearTimeout(timeout); };
   }, [tokenId, client, t, reload]);
+  useEffect(() => {
+    if (!displayImage || imageStatus !== 'loading') return;
+    const timer = setTimeout(() => setImageStatus('error'), 20000);
+    return () => clearTimeout(timer);
+  }, [displayImage, imageStatus]);
   async function transact() {
     if (pending || lock.current || !client || !wallet || !address || !plan || !banmaoKingMintReady()) return;
     lock.current = true; setBusy(true); setMessage(""); setPhase('checking'); setOperation(undefined);
@@ -214,11 +231,11 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
   const nextAction = !address ? t.connect : chainId !== 196 ? t.switchNetwork : readFailed ? t.readError : !state ? t.waiting : !plan ? (vi ? 'Hoàn tất địa chỉ và số lượng người nhận hợp lệ.' : 'Complete valid recipient addresses and quantities.') : state.supply + plan.total > state.max ? (vi ? 'Không đủ NFT còn lại cho số lượng đã chọn.' : 'Not enough remaining NFTs for this quantity.') : state.balance < price ? `${t.insufficient} · ${vi ? 'Còn thiếu' : 'Shortfall'}: ${formatUnits(price - state.balance, 18)} BANMAO` : state.allowance < price ? (vi ? 'Cấp quyền BANMAO trước. Sau khi xác nhận, bấm tiếp để mint NFT.' : 'Authorize BANMAO first. After confirmation, continue to mint your NFT.') : (vi ? 'Sẵn sàng mint. Ví sẽ hiển thị phí OKB trước khi ký.' : 'Ready to mint. Your wallet will show the OKB fee before signing.');
   const operationLabel = operation === 'mint' ? t.mintAction : operation === 'reset' ? t.resetAllowance : operation === 'approve' ? t.approve : t.transaction;
   const progressText = pending ? (vi ? 'Đang chờ blockchain xác nhận. Không cần gửi lại.' : 'Waiting for blockchain confirmation. Do not resubmit.') : busy ? phase === 'signing' ? (vi ? 'Chờ bạn ký trong ví.' : 'Waiting for your signature in the wallet.') : (vi ? 'Đang kiểm tra số dư, quyền chi tiêu và phí gas.' : 'Checking balances, spending permission and gas.') : phase === 'confirmed' ? minted.length ? t.success : (vi ? 'Giao dịch đã xác nhận. Chưa ghi nhận NFT mới; kiểm tra bước tiếp theo bên dưới.' : 'Transaction confirmed. No new NFT recorded; review the next step below.') : phase === 'failed' ? (vi ? 'Chưa hoàn tất. Xem thông báo lỗi và thử lại khi sẵn sàng.' : 'Not completed. Review the error and retry when ready.') : '';
-  const checkoutStep = !address || chainId !== 196 ? 0 : !plan ? 1 : !state || state.allowance < price ? 2 : 3;
+  const checkoutStep = phase === 'confirmed' && !pending && !busy ? 2 : pending ? 1 : 0;
   return <section className="king-mint-box king-mint-premium" aria-label={t.mint}>
-    <div className="king-mint-title"><h2>{t.mint} · Banmao King</h2><span className="king-preview-badge">X Layer · {t.verified}</span></div>
+    <div className="king-mint-title"><h2>{t.mint} · Banmao King</h2><span className="king-preview-badge">X Layer</span></div>
     <div className="king-mint-facts"><strong>{formatUnits(BigInt(deployment.mintPrice), 18)} BANMAO / NFT</strong><span>{t.supply}: {state ? `${new Intl.NumberFormat(lang).format(state.supply)} / ${new Intl.NumberFormat(lang).format(state.max)}` : t.loading}</span></div>
-    <ol className="king-checkout-steps" aria-label={t.guide}>{[t.connect, vi ? 'Kiểm tra người nhận' : 'Review recipients', t.approve, t.mintAction].map((label, index) => <li key={index} aria-current={index === checkoutStep ? 'step' : undefined}><span aria-hidden="true">0{index + 1}</span>{label}</li>)}</ol>
+    {(busy || pending || phase === 'confirmed') && <ol className="king-checkout-steps" aria-label={vi ? 'Tiến trình giao dịch' : 'Transaction progress'}>{[vi ? 'Xác nhận trong ví' : 'Wallet confirmation', vi ? 'Chờ blockchain' : 'Blockchain confirmation', vi ? 'Giao dịch hoàn tất' : 'Transaction complete'].map((label, index) => <li key={index} aria-current={index === checkoutStep ? 'step' : undefined}><span aria-hidden="true">0{index + 1}</span>{label}</li>)}</ol>}
     <fieldset className="king-recipients" disabled={busy || pending}>
       <legend>{lang === "vi" ? "Người nhận NFT" : "NFT recipients"}</legend>
       <div className="king-mint-workspace"><div className="king-mint-config">
@@ -247,7 +264,8 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
       </div><div className="king-mint-checkout" ref={checkout} tabIndex={-1} role="region" aria-label={vi ? 'Kiểm tra trước khi mint' : 'Review before minting'}>
       {plan ? <div className="king-recipient-review">
         <h3><ShieldCheck size={18} aria-hidden="true" />{lang === "vi" ? "Kiểm tra trước khi mint" : "Review before minting"}</h3>
-        <details className="king-payment-recipients"><summary>{vi ? 'Kiểm tra người nhận & ví trả tiền' : 'Review recipients & payer'}</summary><p className="king-recipient-payer">{lang === "vi" ? "Ví trả tiền" : "Payer"}<code>{address || t.connect}</code></p>
+        <dl className="king-checkout-summary"><div><dt>{vi ? 'Số lượng' : 'Quantity'}</dt><dd>{plan.total.toString()} NFT</dd></div><div><dt>{vi ? 'Người nhận' : 'Recipients'}</dt><dd>{mode === 'self' ? (vi ? 'Ví của bạn' : 'Your wallet') : `${plan.recipients.length} ${vi ? 'ví' : 'wallet(s)'}`}</dd></div><div><dt>{vi ? 'Thanh toán bằng' : 'Payment token'}</dt><dd>BANMAO</dd></div></dl>
+        <details className="king-payment-recipients" open={mode !== 'self'}><summary>{vi ? 'Kiểm tra người nhận & ví trả tiền' : 'Review recipients & payer'}</summary><p className="king-recipient-payer">{lang === "vi" ? "Ví trả tiền" : "Payer"}<code>{address || t.connect}</code></p>
         <KingExpandableList key={`${mode}:${rows}:${recipient}:${quantity}`} count={plan.recipients.length} className="king-recipient-list" vi={vi}>{plan.recipients.map((to, i) => <li key={i}><span className="king-recipient-number">{i + 1}</span><code>{to}</code><strong>{plan!.quantities[i].toString()} NFT</strong></li>)}</KingExpandableList></details>
         <div className="king-recipient-total"><span>{lang === "vi" ? "Tổng cộng" : "Total"}<small>{plan.total.toString()} NFT · X Layer</small></span><strong>{formatUnits(price, 18)} <small>BANMAO</small></strong></div>
         {address && <p className="king-payment-balance">{t.balance}: {state ? formatUnits(state.balance, 18) : '—'} BANMAO</p>}
@@ -257,17 +275,17 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
       {address && (chainId !== 196 ? <button type="button" onClick={() => void switchChainAsync({ chainId: 196 }).catch(() => setMessage(t.switchHelp))}>{t.switchNetwork}</button> : <button type="button" disabled={!address || !state || !plan || busy || pending || state.balance < price || state.supply + (plan?.total ?? 1n) > state.max} onClick={() => void transact()}>{busy || pending ? t.processing : !state ? t.waiting : state.supply >= state.max ? t.soldOut : state.balance < price ? t.insufficient : state.allowance >= price ? t.mintAction : state.allowance > 0n ? t.resetAllowance : t.approve}</button>)}
     </div>
     <p className="king-payment-gas">{t.gas}</p>
-    <div className="king-mint-guidance" role="status" aria-live="polite">
-      {progressText && <div className="king-mint-progress"><strong>{operationLabel}</strong><p>{progressText}</p></div>}
+    <div className="king-mint-guidance" role="status" aria-live="polite" data-state={pending ? 'pending' : busy ? 'working' : phase}>
+      {progressText && <div className="king-mint-progress"><strong><span className="king-status-dot" aria-hidden="true" />{operationLabel}</strong><p>{progressText}</p></div>}
       {!busy && !pending && <p>{nextAction}</p>}
     </div>
     {readFailed && <div role="status"><p>{t.readError}</p><button type="button" disabled={busy || pending} onClick={() => { setReadFailed(false); setReadRetry(n => n + 1); }}>{t.retry}</button></div>}
-    <p role="status" aria-live="polite">{message}</p>
-    {hash && <a href={xLayerExplorerUrl("tx", hash, lang)} target="_blank" rel="noopener noreferrer">{t.transaction}</a>}
+    {message && <p className="king-transaction-message" role="status" aria-live="polite">{message}</p>}
+    {hash && <a className="king-transaction-receipt" href={xLayerExplorerUrl("tx", hash, lang)} target="_blank" rel="noopener noreferrer"><span>{t.transaction} ↗<small>{pending ? (vi ? 'Đã gửi · Chờ xác nhận' : 'Submitted · Awaiting confirmation') : phase === 'confirmed' ? t.confirmed : t.transaction}</small></span><code>{hash.slice(0, 10)}…{hash.slice(-8)}</code></a>}
     </div></div>
     </fieldset>
     <p className="king-mint-note">{t.mintNote}</p>
-    {minted.length > 0 && <section className="king-mint-results" aria-label={t.success}>
+    {minted.length > 1 && <section className="king-mint-results" aria-label={t.success}>
       <h3><Check size={20} aria-hidden="true" /> {t.success} · {minted.length} NFT</h3>
       <p>{vi ? 'NFT đã được ghi nhận trên blockchain. Chọn một NFT để xem ảnh và tải SVG bên dưới.' : 'NFTs recorded on-chain. Select an NFT to view its image and download SVG below.'}</p>
       <KingExpandableList key={minted.map(item => item.id.toString()).join(',')} count={minted.length} className="king-mint-result-grid" vi={vi}>{minted.map(item => <li key={item.id.toString()}>
@@ -279,28 +297,34 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
     </section>}
     {tokenId !== undefined && (
       <div className="king-mint-detail">
+        <p className="king-result-success"><Check size={18} aria-hidden="true" />{t.success}</p>
         <h3>{metadata?.name || `Banmao King #${tokenId.toString()}`}</h3>
-        {!metadata && <p role="status">{vi ? 'NFT đã mint thành công. Ảnh chưa sẵn sàng; bạn có thể tải lại metadata mà không cần mint lại.' : 'NFT minted successfully. Image not ready; reload metadata without minting again.'}</p>}
+        {minted.length === 1 && <p className="king-result-recipient">{vi ? 'Ví nhận' : 'Recipient'}: <code>{minted[0].to}</code></p>}
+        <div className="king-mint-artwork" aria-busy={imageStatus === 'loading'}>
+          {imageStatus !== 'ready' && <div className="king-image-placeholder" role="status" aria-live="polite">
+            <ShieldCheck size={36} aria-hidden="true" />
+            <strong>{vi ? 'NFT đã được mint thành công' : 'Your NFT is minted'}</strong>
+            <span>{imageStatus === 'loading' ? (vi ? 'Đang chuẩn bị ảnh từ dữ liệu on-chain…' : 'Preparing artwork from on-chain data…') : (vi ? 'Chưa tải được ảnh. NFT vẫn an toàn trong ví người nhận.' : 'Artwork unavailable. Your NFT is safe in the recipient wallet.')}</span>
+            {imageStatus === 'loading' ? <span className="king-image-progress" aria-hidden="true" /> : <button type="button" onClick={() => { setImageStatus('loading'); setReload(n => n + 1); }}>{t.reloadImage}</button>}
+            <small>{vi ? 'Không cần mint lại hoặc trả thêm phí.' : 'No need to mint again or pay another fee.'}</small>
+          </div>}
+          {displayImage && imageStatus !== 'error' && <>
+            {/* On-chain SVG data URI: no image optimization proxy. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img key={`${tokenId}:${reload}:${displayImage}`} src={displayImage} onLoad={() => setImageStatus('ready')} onError={() => setImageStatus('error')} alt={metadata?.name || `Banmao King #${tokenId}`} width={320} height={320} style={{ visibility: imageStatus === 'ready' ? 'visible' : 'hidden' }} />
+          </>}
+        </div>
         <details className="king-metadata-tools"><summary>{vi ? 'Metadata & tùy chọn bổ sung' : 'Metadata & additional options'}</summary><KingMetadataRefresh tokenId={tokenId} isVi={lang === "vi"} />
         <button type="button" onClick={() => setReload(n => n + 1)}>{lang === "vi" ? "Tải lại metadata (miễn phí)" : "Reload metadata (free)"}</button></details>
         <p><a href={kingSharePath(tokenId)}>{lang === "vi" ? "Tra cứu / chia sẻ NFT" : "Look up / share NFT"}</a></p>
         {displayImage && <a href={displayImage} download={`BanmaoKing-${tokenId}-preview.svg`}>{lang === "vi" ? "Tải bản xem thử có mã số" : "Download preview with ID"}</a>}
         {metadata && <a href={metadata.image} download={`BanmaoKing-${tokenId}.svg`}>{t.download}</a>}
-        {metadata ? (
-          <>
-            {/* On-chain SVG data URI: render the original without an image optimization proxy. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={displayImage} onError={() => { setMetadata(undefined); setDisplayImage(undefined); setMessage(t.imageError); }} alt={metadata.name} width={320} height={320} style={{ maxWidth: "100%", height: "auto" }} />
-            <p>{metadata.attributes.map(a => `${a.trait_type}: ${a.value}`).join(" · ")}</p>
-          </>
-        ) : (
-          <button type="button" onClick={() => setReload(n => n + 1)}>{t.reloadImage}</button>
-        )}
+        {metadata && <details className="king-metadata-tools"><summary>{vi ? 'Thuộc tính NFT' : 'NFT traits'}</summary><p>{metadata.attributes.map(a => `${a.trait_type}: ${a.value}`).join(" · ")}</p></details>}
       </div>
     )}
     {tokenId !== undefined && <p>{t.postMint}</p>}
     <details><summary>{t.details}</summary>
-      <p>{t.step2Desc}</p>
+      <p>{vi ? 'Cấp quyền và mint là các giao dịch riêng. Nếu quyền cũ chưa đủ, cần đặt về 0 trước khi cấp quyền mới. Chỉ cấp quyền cho tổng thanh toán đã chọn.' : 'Approval and mint are separate transactions. An insufficient existing allowance must be reset to zero before a new approval. Authorize only the selected payment total.'}</p>
       <p>{t.faq1Answer}</p>
       <p>{t.payment} {paymentAddress}</p>
       <a href={deployment.explorerUrl} target="_blank" rel="noopener noreferrer">NFT: {kingAddress} ↗</a>

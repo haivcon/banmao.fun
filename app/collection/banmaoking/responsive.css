@@ -1,0 +1,84 @@
+/* Final route-scoped geometry. Theme colors and NFT artwork remain untouched. */
+.king-page.king-experience {
+  --king-radius-panel: 20px;
+  --king-radius-card: 14px;
+  --king-radius-control: 12px;
+}
+.king-page.king-experience :is(.king-studio-grid,.king-mint-box,.king-preview-card,.king-svg-dialog,.king-metrics) { border-radius: var(--king-radius-panel); }
+.king-page.king-experience .king-studio-presets .king-theme-library { border-radius: var(--king-radius-panel); }
+.king-page.king-experience :is(.king-info-card,.king-contract-card,.king-contract-badge,.king-notice,.king-recipient-review,.king-lookup-traits > div,.king-mint-result-grid > li,.king-checkout-steps li,.king-recipient-mode-card) { border-radius: var(--king-radius-card); }
+.king-page.king-experience :is(.king-info-card,.king-contract-badge) { border: 1px solid var(--king-border-subtle); padding: 16px; }
+.king-page.king-experience .king-studio-presets .king-preset-card { border-radius: var(--king-radius-card); }
+.king-page.king-experience :is(.king-trait-tabs,.king-trait-tabs button,.king-trait-options button,.king-category-filters button,.king-primary-link,.king-secondary-link,.king-random,.king-reset,.king-nav [role="tab"],.king-theme-search) { border-radius: var(--king-radius-control); }
+.king-page.king-experience .king-art-frame { border-radius: 16px; }
+
+@media (max-width: 600px) {
+  .king-page.king-experience { --king-gap-lg: 24px; --king-gap-md: 16px; }
+  .king-page.king-experience .king-shell { width: calc(100% - 24px); }
+  .king-page.king-experience .king-header { display: grid; grid-template-columns: 32px minmax(0,1fr); gap: 6px; padding: 8px 0; position: relative; }
+  .king-page.king-experience .king-brand { min-width: 0; gap: 0; min-height: 44px; }
+  .king-page.king-experience .king-sigil { width: 32px; height: 36px; border-radius: 10px; }
+  /* Retain the brand's accessible name without reserving visual width. */
+  .king-page.king-experience .king-wordmark { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .king-page.king-experience .king-actions { width: auto; min-width: 0; display: flex; flex-wrap: nowrap; justify-content: flex-end; gap: 4px; }
+  .king-page.king-experience .king-actions :is(.king-sound-toggle,.ui-theme-toggle,.king-language-trigger) { width: 44px; min-width: 44px; height: 44px; min-height: 44px; padding: 0; justify-content: center; border-radius: 12px; }
+  .king-page.king-experience .king-language-trigger > :is(span,.king-language-chevron) { display: none; }
+  .king-page.king-experience .king-language-picker { position: static; }
+  .king-page.king-experience .king-language-panel { position: absolute; inset-inline-start: auto; inset-inline-end: 0; width: min(248px,calc(100vw - 24px)); }
+  .king-page.king-experience .king-actions :is(.banmao-wallet-button,.banmao-wallet-account-button) { min-width: 0; min-height: 44px; padding: 6px 8px; font-size: 12px; line-height: 1.3; border-radius: 12px; white-space: normal; overflow-wrap: anywhere; }
+  .king-page.king-experience .king-actions .banmao-wallet-button-group { min-width: 0; flex-shrink: 1; }
+  .king-page.king-experience .king-actions .banmao-wallet-button__mark { display: none; }
+  .king-page.king-experience .king-nav { grid-column: 1 / -1; width: 100%; gap: 4px; overflow: visible; }
+  .king-page.king-experience .king-nav [role="tab"] { min-width: 0; min-height: 44px; padding: 6px; font-size: 12px; text-align: center; }
+  .king-page.king-experience .king-hero { padding: 18px 0; }
+  .king-page.king-experience .king-hero h1 { font-size: clamp(26px,7vw,34px); line-height: 1.15; margin: 10px 0; }
+  .king-page.king-experience .king-hero > div > p { font-size: 13px; line-height: 1.6; margin-top: 10px; }
+  .king-page.king-experience .king-hero-actions { margin-top: 12px; gap: 8px; flex-wrap: wrap; }
+  .king-page.king-experience :is(.king-primary-link,.king-secondary-link) { min-height: 44px; padding: 10px 14px; font-size: 13px; }
+  .king-page.king-experience .king-metrics { padding: 8px 0; gap: 0; }
+  .king-page.king-experience .king-metrics > div { min-width: 0; padding: 8px; }
+  .king-page.king-experience .king-metrics strong { font-size: clamp(15px,4vw,19px); overflow-wrap: anywhere; }
+  .king-page.king-experience .king-section-heading { gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .king-page.king-experience .king-section h2 { font-size: 22px; }
+  .king-page.king-experience .king-section-heading p { font-size: 13px; line-height: 1.6; }
+}
+
+
+@media (max-width: 600px) {
+  .king-page.king-experience .king-studio-grid { padding: 12px; gap: 14px; }
+  .king-page.king-experience .king-studio-grid .king-art-frame { width: min(100%,260px); margin-inline: auto; }
+  .king-page.king-experience .king-preview-meta { gap: 6px; padding: 10px 0; flex-wrap: wrap; }
+  .king-page.king-experience .king-customize-title { font-size: 15px; margin-bottom: 10px; }
+  .king-page.king-experience .king-trait-tabs button { padding: 8px; }
+  .king-page.king-experience .king-trait-options { gap: 6px; }
+  .king-page.king-experience .king-trait-options button { min-height: 44px; padding: 8px; overflow-wrap: anywhere; }
+  .king-page.king-experience .king-notice { padding: 12px; font-size: 13px; }
+  .king-page.king-experience .king-studio-presets { margin-top: 16px; }
+  .king-page.king-experience .king-studio-presets .king-theme-library { padding: 12px; }
+  .king-page.king-experience .king-studio-presets .king-preset-grid { gap: 8px; }
+  .king-page.king-experience .king-studio-presets .king-preset-card { padding: 10px; gap: 6px; }
+  .king-page.king-experience .king-studio-presets .king-category-filters { gap: 4px; }
+  .king-page.king-experience .king-studio-presets .king-category-filters button { padding: 6px 8px; }
+  .king-page.king-experience .king-library-actions { gap: 8px; margin-top: 10px; }
+  .king-page.king-experience .king-mint-box { min-width: 0; padding: 14px; }
+  .king-page.king-experience .king-mint-premium .king-mint-workspace { gap: 16px; }
+  .king-page.king-experience .king-mint-premium .king-recipients { margin: 16px 0 12px; }
+  .king-page.king-experience .king-mint-premium .king-mint-checkout { padding-top: 14px; }
+  .king-page.king-experience .king-mint-premium .king-recipient-mode-card { min-height: 56px; padding: 8px 4px; }
+  .king-page.king-experience .king-mint-premium .king-checkout-steps { margin: 12px 0; }
+  .king-page.king-experience .king-lookup-bar { gap: 12px; }
+  .king-page.king-experience .king-lookup-heading h2 { font-size: 22px; }
+  .king-page.king-experience .king-lookup-empty { padding: 16px 12px; }
+  .king-page.king-experience .king-lookup-details h3 { font-size: 22px; }
+  .king-page.king-experience .king-lookup-traits { gap: 8px; }
+  .king-page.king-experience .king-lookup-traits > div { padding: 10px; }
+  .king-page.king-experience .king-directory-toolbar { grid-template-columns: minmax(0,1fr); gap: 10px; }
+  .king-page.king-experience .king-directory-toggle { min-height: 44px; padding: 10px 12px; font-size: 13px; }
+  .king-page.king-experience :is(.king-contract-badge,.king-info-card,.king-contract-card) { padding: 12px; }
+  .king-page.king-experience :is(.king-task-help,.king-task-contracts) { margin: 14px 0; }
+  .king-page.king-experience .king-footer { margin-top: 24px; padding: 16px 0; gap: 8px 14px; font-size: 12px; }
+  .king-page.king-experience .king-footer a { display: inline-flex; align-items: center; min-height: 44px; }
+  /* Native form controls stay at 16px to avoid automatic iOS focus zoom. */
+  .king-page.king-experience :is(input,textarea,select) { min-width: 0; max-width: 100%; box-sizing: border-box; font-size: 16px; }
+  .king-page.king-experience :is(.king-contract-badge code,.king-mint-box > details,.king-lookup-owner,.king-preview-meta) { overflow-wrap: anywhere; }
+}
