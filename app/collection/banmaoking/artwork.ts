@@ -1,6 +1,6 @@
 import { cyborgFinish } from './cyborg';
 import profiles from './choreography.json';
-import { BODY_TRAITS } from './traits';
+import { BODY_TRAITS, EXPRESSION_TRAITS } from './traits';
 import { bodyEffects, cyborgBody } from './body-effects';
 import { actionPoseSvg } from "./anatomy";
 import { refinedCore, expansionFace, whiskersSvg } from './expression-design';
@@ -28,7 +28,7 @@ function peelHighlight(peel: string) {
   }
 }
 export function expressionSvg(id: number) {
-  if (!Number.isInteger(id) || id < 0 || id > 20) throw new RangeError('Invalid expression');
+  if (!Number.isInteger(id) || id < 0 || id >= EXPRESSION_TRAITS.length) throw new RangeError('Invalid expression');
   if (id >= 12) return expansionFace(id);
   const defaultEyes = `<ellipse cx="218" cy="215" rx="21" ry="25" fill="#211d19" stroke="#784727" stroke-width="3"/><ellipse cx="294" cy="215" rx="21" ry="25" fill="#211d19" stroke="#784727" stroke-width="3"/><ellipse cx="211" cy="206" rx="7" ry="9" fill="white"/><ellipse cx="287" cy="206" rx="7" ry="9" fill="white"/>`;
   const happyEyes = `<ellipse cx="224" cy="211" rx="20" ry="24" fill="#211d19" stroke="#80643a" stroke-width="2.5"/><ellipse cx="288" cy="211" rx="20" ry="24" fill="#211d19" stroke="#80643a" stroke-width="2.5"/><ellipse cx="217" cy="202" rx="6.5" ry="8.5" fill="white"/><ellipse cx="281" cy="202" rx="6.5" ry="8.5" fill="white"/><circle cx="230" cy="218" r="3" fill="white" opacity=".78"/><circle cx="294" cy="218" r="3" fill="white" opacity=".78"/>`;

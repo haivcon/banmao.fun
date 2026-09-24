@@ -55,6 +55,8 @@ export const ACCESSORY_IDS: readonly number[] = Array.from({ length: ACCESSORY_T
 /** Convert validated public IDs to the canonical artwork dispatch index. */
 export function accessoryArtworkIndex(id: number): number {
   if (!Number.isInteger(id) || id < 1 || id > ACCESSORY_TRAITS.length) throw new RangeError('Invalid accessory ID');
+  // Artwork slot 23 is retired. Public IDs remain contiguous: 24/25 must
+  // dispatch to slots 24/25 (Green Candles / Ruby Wine Glass), not 23/24.
   return id <= 23 ? id - 1 : id;
 }
 export const accessoryIndex = (id: number): number => ACCESSORY_IDS.indexOf(id);

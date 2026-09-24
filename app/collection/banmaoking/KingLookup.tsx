@@ -3,7 +3,7 @@ import { kingLookupCopy } from './i18n/lookup';
 import { localizedKingAttribute } from './i18n/traits';
 import { xLayerExplorerUrl } from "../../../lib/explorer";
 import { metadataTraits, compositionCode, compositionSharePath } from "./composition";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePublicClient } from "wagmi";
 import { erc721Abi, type PublicClient } from "viem";
 import { kingAbi, kingAddress, decodeKingMetadata } from "./mint";
@@ -19,8 +19,9 @@ export default function KingLookup({ lang }: { lang: Lang }) {
   const [input, setInput] = useState("");
   const [query, setQuery] = useState("");
   const [retry, setRetry] = useState(0);
-  let refreshId: bigint | undefined;
-  try { refreshId = parseKingId(query); } catch { /* Invalid IDs cannot be refreshed. */ }
+  const refreshId = useMemo(() => {
+    try { return parseKingId(query); } catch { return undefined; }
+  }, [query]);
   const [status, setStatus] = useState<"idle" | "loading" | "invalid" | "missing" | "error" | "ready">("idle");
   const [result, setResult] = useState<{ id: bigint; owner: string; metadata: ReturnType<typeof decodeKingMetadata>; image: string }>();
   useEffect(() => {

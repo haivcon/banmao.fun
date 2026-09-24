@@ -40,7 +40,10 @@ export function validateMintState(price: bigint, accepted: boolean, supply: bigi
 export function decodeKingMetadata(uri: string): { name: string; image: string; attributes: { trait_type: string; value: string }[] } {
   const prefix = "data:application/json;base64,";
   if (!uri.startsWith(prefix)) throw new Error("Invalid metadata URI");
-  const data = JSON.parse(atob(uri.slice(prefix.length)));
+  // JSON is UTF-8, whereas atob returns a byte string, not decoded text.
+  const bytes = Uint8Array.from(atob(uri.slice(prefix.length)), char => char.charCodeAt(0));
+  const data = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
+  if (!data || typeof data !== 'object') throw new Error('Invalid metadata');
   if (typeof data.name !== "string" || typeof data.image !== "string" || !data.image.startsWith("data:image/svg+xml;base64,")) throw new Error("Invalid on-chain image");
   return { name: data.name, image: data.image, attributes: Array.isArray(data.attributes) ? data.attributes.filter((a: { trait_type?: unknown; value?: unknown }) => typeof a?.trait_type === "string" && typeof a?.value === "string") : [] };
 }

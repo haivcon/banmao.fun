@@ -1,6 +1,8 @@
 'use client';
 import { useLayoutEffect, useRef, type SVGProps } from 'react';
 // Animation is entirely in the contract-generated SMIL markup.
+// Trusted renderer output only. Never pass user HTML or RPC metadata here;
+// on-chain images belong in isolated <img> contexts (see KingLookup).
 
 type Props = Omit<SVGProps<SVGSVGElement>, 'children' | 'dangerouslySetInnerHTML'> & { markup: string };
 
