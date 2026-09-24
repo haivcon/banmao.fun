@@ -1,0 +1,32 @@
+.king-supply { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); align-items: center; gap: 12px 24px; margin: 8px 0 20px; padding: 16px 20px; border: 1px solid var(--king-border-subtle); border-radius: 16px; background: var(--king-surface-1); font-variant-numeric: tabular-nums; }
+.king-page.king-experience .king-hero .king-supply { grid-column: 1 / -1; grid-row: 4; width: 100%; margin: 20px 0 0; }
+.king-supply-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; padding-top: 14px; border-top: 1px solid var(--king-border-subtle); }
+.king-page.king-experience .king-supply-actions > a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; text-align: center; }
+.king-supply-actions > a:focus-visible { outline: 2px solid var(--king-gold); outline-offset: 3px; }
+.king-supply-detail, .king-supply-fact { min-width: 0; }
+.king-supply-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.king-supply-count { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; }
+.king-supply-count strong, .king-supply-fact > strong { color: var(--king-gold); font-size: clamp(24px, 2.4vw, 28px); line-height: 1.15; overflow-wrap: anywhere; }
+.king-supply-count > span, .king-supply-meta, .king-supply-percent, .king-supply-fact > span, .king-supply-fact small { color: var(--king-text-muted); font-size: 12px; }
+.king-supply-percent { flex-shrink: 0; }
+.king-supply-fact { display: flex; flex-direction: column; gap: 5px; align-self: stretch; justify-content: center; padding-left: 24px; border-left: 1px solid var(--king-border-subtle); }
+.king-supply-fact small { font-size: 11px; }
+.king-supply-currency { display: inline-block; font-size: 12px; font-weight: 600; }
+.king-supply-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; }
+.king-supply-meta b { font-weight: 600; }
+.king-supply-track { height: 6px; margin: 9px 0; overflow: hidden; border-radius: 999px; background: var(--king-surface-2); }
+.king-supply-track > span { display: block; height: 100%; border-radius: inherit; background: var(--king-gold); }
+.king-supply-error { grid-column: 1 / -1; color: var(--king-text-muted); font-size: 12px; }
+.king-supply-error button { min-height: 44px; margin-left: 8px; padding: 0 8px; color: var(--king-gold); background: transparent; border: 0; text-decoration: underline; cursor: pointer; }
+.king-supply-error button:focus-visible { outline: 2px solid var(--king-gold); outline-offset: 2px; }
+.king-supply-error button:disabled { opacity: .6; cursor: wait; }
+/* Reflow from the panel's available width, not only the viewport width. */
+.king-page.king-experience .king-hero .king-supply { min-width: 0; max-width: 100%; box-sizing: border-box; padding: clamp(12px, 3vw, 20px); }
+.king-supply *, .king-supply *::before, .king-supply *::after { box-sizing: border-box; }
+.king-supply { overflow-wrap: anywhere; white-space: normal; }
+.king-supply > *, .king-supply-heading > *, .king-supply-count > * { min-width: 0; max-width: 100%; }
+.king-supply-heading { flex-wrap: wrap; }
+.king-supply-percent { flex-shrink: 1; }
+.king-supply-fact { padding: 12px 0 0; border-left: 0; border-top: 1px solid var(--king-border-subtle); }
+.king-page.king-experience .king-supply-actions > a { flex: 1 1 12rem; min-width: 0; max-width: 100%; height: auto; padding: 12px; white-space: normal; overflow-wrap: anywhere; }
+.king-supply-error button { max-width: 100%; margin-left: 0; white-space: normal; overflow-wrap: anywhere; }

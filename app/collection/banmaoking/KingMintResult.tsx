@@ -7,10 +7,13 @@ import { groupMintResults, type MintedKing, type MintResultState } from './mint-
 import { copyKingAddress } from './king-notifications';
 import { xLayerExplorerUrl } from '../../../lib/explorer';
 import './mint-result.css';
+import { formatUnits } from 'viem';
+import type { KingBatchSummary } from './mint';
+import { kingCheckoutCopy } from './i18n/checkout';
 
-export default function KingMintResult({ lang, status, minted, hash, message, tokenId, onSelect }: {
+export default function KingMintResult({ lang, status, minted, batchSummary, hash, message, tokenId, onSelect }: {
   lang: Lang; status: MintResultState; minted: MintedKing[]; hash?: string; message: string;
-  tokenId?: bigint; onSelect: (id: bigint) => void;
+  tokenId?: bigint; batchSummary?: KingBatchSummary; onSelect: (id: bigint) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const listId = useId();
@@ -28,6 +31,12 @@ export default function KingMintResult({ lang, status, minted, hash, message, to
       <div><h3>{title}</h3><p>{status === 'success' ? copy.summary(total, groups.length) : description}</p></div>
     </div>
     {status === 'error' && message && <p className="king-result-error">{message}</p>}
+    {status === 'success' && batchSummary && <div className="king-batch-summary">
+      <h4>{kingCheckoutCopy(lang, 'Mint summary')} · BatchMinted</h4>
+      <p>{kingCheckoutCopy(lang, 'Quantity')}: <strong>{batchSummary.quantity.toString()} NFT</strong> · #{batchSummary.firstTokenId.toString()}–#{(batchSummary.firstTokenId + batchSummary.quantity - 1n).toString()}</p>
+      <p>{kingCheckoutCopy(lang, 'Total payment')}: <strong>{formatUnits(batchSummary.totalPaid, 18)} BANMAO</strong></p>
+      <small>{kingCheckoutCopy(lang, 'OKB gas is separate')}</small>
+    </div>}
     {groups.length > 0 && <>
       <p>{description}</p>
       <ul id={listId} className="king-result-wallets" aria-label={copy.recipients}>

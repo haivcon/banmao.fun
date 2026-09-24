@@ -1,5 +1,6 @@
 "use client";
 import { kingCheckoutCopy } from './i18n/checkout';
+import { useKingSupply } from './useKingSupply';
 import { localizedKingAttribute } from './i18n/traits';
 import { xLayerExplorerUrl } from "../../../lib/explorer";
 import { metadataTraits } from "./composition";
@@ -8,7 +9,7 @@ import { useAccount, usePublicClient, useSwitchChain, useWalletClient } from "wa
 import { decodeEventLog, encodeFunctionData, erc20Abi, formatUnits, zeroAddress, type Hash, type PublicClient } from "viem";
 import { ConnectButton } from "../../components/wallet/WalletConnection";
 import { BANMAO_KING_DEPLOYMENT as deployment, banmaoKingMintReady } from "./deployment";
-import { kingAbi, kingAddress, paymentAddress, validateMintState, decodeKingMetadata, parseKingRecipients } from "./mint";
+import { kingAbi, kingAddress, paymentAddress, validateMintState, decodeKingMetadata, parseKingRecipients, kingMintCall, decodeKingBatchSummary, type KingBatchSummary } from "./mint";
 import { KING_T, kingError, type Lang } from "./i18n";
 import { identifiedKingImage, kingSharePath } from "./identity";
 import { animatedKingImage } from "./animated-image";
@@ -25,6 +26,7 @@ import { notifyKingSound } from './king-sound';
 
 export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyChange?: (busy: boolean) => void }) {
   const { address, chainId } = useAccount();
+  const { data: publicSupply, refetch: refreshSupply } = useKingSupply();
   const client = usePublicClient({ chainId: 196 }) as PublicClient | undefined;
   const { data: wallet } = useWalletClient();
   const { switchChainAsync } = useSwitchChain();
@@ -61,6 +63,7 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
   const [quantity, setQuantity] = useState("1");
   const [rows, setRows] = useState("");
   const [minted, setMinted] = useState<{ to: string; id: bigint }[]>([]);
+  const [batchSummary, setBatchSummary] = useState<KingBatchSummary>();
   let plan: ReturnType<typeof parseKingRecipients> | undefined;
   let inputError = "";
   try {
@@ -82,7 +85,7 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
   }, [address, chainId]);
   useEffect(() => {
     let active = true;
-    setMinted([]); setDisplayImage(undefined); setPhase('idle'); setOperation(undefined);
+    setMinted([]); setBatchSummary(undefined); setDisplayImage(undefined); setPhase('idle'); setOperation(undefined);
     setFailure('error'); setUncertain(false);
     setPending(false); setState(undefined); setHash(undefined); setTokenId(undefined); setMetadata(undefined); setMessage("");
     try { const saved = localStorage.getItem(storageKey); if (saved && /^0x[0-9a-f]{64}$/i.test(saved)) { setHash(saved as Hash); setPending(true); } } catch { /* Storage is optional. */ }
@@ -122,6 +125,7 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
         setPending(false);
         try { if (localStorage.getItem(storageKey) === receipt.transactionHash) localStorage.removeItem(storageKey); } catch { /* Optional storage. */ }
         setMessage(t.confirmed);
+        void refreshSupply();
         void Promise.all([
           client.readContract({ authorizationList: undefined, address: kingAddress, abi: kingAbi, functionName: "totalSupply" }),
           client.readContract({ authorizationList: undefined, address: kingAddress, abi: kingAbi, functionName: "maxSupply" }),
@@ -141,13 +145,14 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
             if (event.args.payer.toLowerCase() === address?.toLowerCase()) results.push({ to: event.args.to, id: event.args.tokenId });
           } catch { /* Ignore other logs. */ }
         }
+        setBatchSummary(decodeKingBatchSummary(receipt.logs, address));
         setMinted(results);
         setTokenId(results[0]?.id);
       } catch { if (active) { setUncertain(true); setMessage(t.pendingWarning); } }
       finally { checking = false; }
     }
     void check(); return () => { active = false; clearInterval(timer); };
-  }, [hash, client, address, storageKey, t]);
+  }, [hash, client, address, storageKey, t, refreshSupply]);
   useEffect(() => {
     let active = true;
     setMetadata(undefined);
@@ -175,7 +180,7 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
   async function transact() {
     if (pending || lock.current || !client || !wallet || !address || !plan || !banmaoKingMintReady()) return;
     lock.current = true; setBusy(true); setMessage(""); setPhase('checking'); setOperation(undefined);
-    setFailure('error'); setUncertain(false); setHash(undefined); setMinted([]); setTokenId(undefined);
+    setFailure('error'); setUncertain(false); setHash(undefined); setMinted([]); setBatchSummary(undefined); setTokenId(undefined);
     let sent: Hash | undefined;
     const started = session.current;
     const isCurrent = () => session.current === started;
@@ -202,11 +207,10 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
       if (supply + plan.total > max) throw new Error("Not enough remaining supply / Không đủ nguồn cung");
       if (!state || (state.allowance >= price) !== (allowance >= price) || (state.allowance > 0n && state.allowance < price) !== (allowance > 0n && allowance < price)) throw new Error("Allowance updated. Wait for refresh before confirming the next step.");
       if (balance < price) throw new Error("Not enough BANMAO");
+      const mintCall = kingMintCall(plan);
       const data = allowance < price
         ? encodeFunctionData({ abi: erc20Abi, functionName: "approve", args: [kingAddress, allowance > 0n ? 0n : price] })
-        : plan.total === 1n
-          ? encodeFunctionData({ abi: kingAbi, functionName: "mint", args: [plan.recipients[0], paymentAddress] })
-          : encodeFunctionData({ abi: kingAbi, functionName: "mintBatchTo", args: [plan.recipients, plan.quantities, paymentAddress] });
+        : encodeFunctionData({ abi: kingAbi, ...mintCall });
       const [units, fees] = await Promise.all([
         client.estimateGas({ account: address, to: allowance < price ? paymentAddress : kingAddress, data, value: 0n }),
         client.estimateFeesPerGas(),
@@ -221,18 +225,20 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
         sent = await wallet.writeContract(simulation.request);
       } else {
         setTokenId(undefined); setMetadata(undefined); setMinted([]);
-        if (plan.total === 1n) {
-          const simulation = await client.simulateContract({ account: address, address: kingAddress, abi: kingAbi, functionName: "mint", args: [plan.recipients[0], paymentAddress], value: 0n });
-          await verifyWallet();
-          setOperation('mint'); setPhase('signing');
-          sent = await wallet.writeContract(simulation.request);
-        } else {
-          if (!deployment.supportsBatchMint) throw new Error("Batch deployment not verified");
-          const simulation = await client.simulateContract({ account: address, address: kingAddress, abi: kingAbi, functionName: "mintBatchTo", args: [plan.recipients, plan.quantities, paymentAddress], value: 0n });
-          await verifyWallet();
-          setOperation('mint'); setPhase('signing');
-          sent = await wallet.writeContract(simulation.request);
-        }
+        // Narrow each call so viem retains the exact ABI argument tuple.
+        const simulation = mintCall.functionName === 'mint'
+          ? await client.simulateContract({ account: address, address: kingAddress, abi: kingAbi, ...mintCall, value: 0n })
+          : mintCall.functionName === 'mintBatch'
+            ? await client.simulateContract({ account: address, address: kingAddress, abi: kingAbi, ...mintCall, value: 0n })
+            : await client.simulateContract({ account: address, address: kingAddress, abi: kingAbi, ...mintCall, value: 0n });
+        await verifyWallet();
+        setOperation('mint'); setPhase('signing');
+        const request = simulation.request;
+        sent = request.functionName === 'mint'
+          ? await wallet.writeContract(request)
+          : request.functionName === 'mintBatch'
+            ? await wallet.writeContract(request)
+            : await wallet.writeContract(request);
       }
       try { localStorage.setItem(storageKey, sent); } catch { /* Optional storage. */ }
       if (!isCurrent()) return;
@@ -254,7 +260,7 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
   const checkoutStep = phase === 'confirmed' && !pending && !busy ? 2 : pending ? 1 : 0;
   return <section className="king-mint-box king-mint-premium" aria-label={t.mint}>
     <div className="king-mint-title"><h2>{t.mint}</h2></div>
-    <div className="king-mint-facts"><strong>{formatUnits(BigInt(deployment.mintPrice), 18)} BANMAO / NFT</strong><span>{t.supply}: {state ? `${new Intl.NumberFormat(lang).format(state.supply)} / ${new Intl.NumberFormat(lang).format(state.max)}` : t.loading}</span></div>
+    <div className="king-mint-facts"><strong>{formatUnits(BigInt(deployment.mintPrice), 18)} BANMAO / NFT</strong><span>{t.supply}: {publicSupply ? `${new Intl.NumberFormat(lang).format(publicSupply.supply)} / ${new Intl.NumberFormat(lang).format(publicSupply.max)}` : t.loading}</span></div>
     {(busy || pending || phase === 'confirmed') && <ol className="king-checkout-steps" aria-label={kingCheckoutCopy(lang, "Transaction progress")}>{[kingCheckoutCopy(lang, "Wallet confirmation"), kingCheckoutCopy(lang, "Blockchain confirmation"), kingCheckoutCopy(lang, "Transaction complete")].map((label, index) => <li key={index} aria-current={index === checkoutStep ? 'step' : undefined}><span aria-hidden="true">0{index + 1}</span>{label}</li>)}</ol>}
     <fieldset className="king-recipients" disabled={busy || pending}>
       <legend>{kingCheckoutCopy(lang, "NFT recipients")}</legend>
@@ -310,7 +316,7 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
     </fieldset>
     <p className="king-mint-note">{t.mintNote}</p>
     <KingBanmaoGuide t={t} />
-    {(phase !== 'idle' || pending || message) && <KingMintResult key={hash ?? phase} lang={lang} status={resultStatus} minted={minted} hash={hash} message={message} tokenId={tokenId} onSelect={id => {
+    {(phase !== 'idle' || pending || message) && <KingMintResult key={hash ?? phase} lang={lang} status={resultStatus} minted={minted} batchSummary={batchSummary} hash={hash} message={message} tokenId={tokenId} onSelect={id => {
       if (tokenId !== id) { setMetadata(undefined); setDisplayImage(undefined); setTokenId(id); }
     }} />}
     {tokenId !== undefined && (
