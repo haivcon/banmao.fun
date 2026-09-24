@@ -10,6 +10,7 @@ import { animatedKingImage } from "./animated-image";
 import type { Lang } from "./i18n";
 import KingMetadataRefresh from "./KingMetadataRefresh";
 import { copyKingAddress } from "./king-notifications";
+import { notifyKingSound } from './king-sound';
 
 export default function KingLookup({ lang }: { lang: Lang }) {
   const client = usePublicClient({ chainId: 196 }) as PublicClient | undefined;
@@ -33,7 +34,7 @@ export default function KingLookup({ lang }: { lang: Lang }) {
       let id: bigint;
       try { id = parseKingId(query); } catch { setStatus("invalid"); return; }
       setStatus("loading");
-      if (!client) return;
+      if (!client) { setStatus("error"); return; }
       try {
         const blockNumber = await client.getBlockNumber();
         const supply = await client.readContract({ authorizationList: undefined, address: kingAddress, abi: kingAbi, functionName: "totalSupply", blockNumber });
@@ -51,6 +52,10 @@ export default function KingLookup({ lang }: { lang: Lang }) {
     void load();
     return () => { active = false; };
   }, [query, retry, client]);
+  useEffect(() => {
+    if (status === 'ready') notifyKingSound('success');
+    if (status === 'invalid' || status === 'missing' || status === 'error') notifyKingSound('error');
+  }, [status]);
   return <section id="king-lookup" className="king-section king-mint-box">
     <div className="king-lookup-bar"><header className="king-lookup-heading">
       <span className="king-lookup-eyebrow">BANMAO KING · X LAYER</span>
@@ -66,6 +71,7 @@ export default function KingLookup({ lang }: { lang: Lang }) {
       <small id="king-lookup-hint">{vi ? "Nhập số từ 1, có thể kèm dấu #. Nhấn Enter để tra cứu." : "Enter an ID from 1, optionally with #. Press Enter to search."}</small>
     </form></div>
     <p id="king-lookup-status" role="status" aria-live="polite">{status === "loading" ? (vi ? "Đang đọc blockchain…" : "Reading blockchain…") : status === "invalid" ? (vi ? "Mã số không hợp lệ. Nhập số nguyên từ 1." : "Invalid token ID. Enter a whole number from 1.") : status === "missing" ? (vi ? "NFT này chưa được mint. Hãy thử một mã khác." : "This NFT has not been minted. Try another ID.") : status === "error" ? (vi ? "Không đọc được dữ liệu. Mã đã nhập được giữ lại để bạn thử lại." : "Unable to read data. Your ID is saved so you can retry.") : status === "ready" && result ? (vi ? `Đã tìm thấy nhà vua #${result.id}.` : `Found king #${result.id}.`) : ""}</p>
+    {status === 'idle' && <p className="king-lookup-empty">{vi ? 'Nhập mã NFT để xem artwork và chủ sở hữu trên X Layer.' : 'Enter an NFT ID to view its artwork and owner on X Layer.'}</p>}
     {query && <button type="button" disabled={status === "loading"} onClick={() => setRetry(n => n + 1)}>{vi ? "Tải lại metadata (miễn phí)" : "Reload metadata (free)"}</button>}
     {refreshId !== undefined && (status === "ready" || status === "error") && <KingMetadataRefresh tokenId={refreshId} isVi={vi} />}
     {result && <div className="king-lookup-result">

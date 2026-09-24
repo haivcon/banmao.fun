@@ -1,0 +1,62 @@
+/* Balanced help: full-width guide above supporting FAQ, not unequal sidebars. */
+.king-page.king-experience .king-help-grid { grid-template-columns: minmax(0,1fr); gap: 24px; margin: 20px 0; }
+.king-page.king-experience .king-help-grid .king-step-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 16px 0 0; align-items: stretch; }
+.king-page.king-experience .king-help-grid .king-info-card { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--king-border-subtle); border-radius: 14px; background: var(--king-surface-2); }
+.king-page.king-experience .king-help-grid .king-step-top { display: flex; align-items: center; padding: 0; width: 100%; }
+.king-page.king-experience .king-help-grid .king-step-top > svg { display: block; color: var(--king-gold); }
+.king-page.king-experience .king-help-grid .king-step-copy h3 { margin: 0 0 8px; font-size: 15px; line-height: 1.5; }
+.king-page.king-experience .king-help-grid .king-step-copy p { margin: 0; padding: 0; font-size: 13px; line-height: 1.75; color: var(--king-text-muted); }
+.king-page.king-experience .king-help-grid .king-faq { border-top: 1px solid var(--king-border-subtle); padding-top: 20px; }
+.king-page.king-experience .king-checkout-summary { display: grid; gap: 8px; margin: 12px 0; font-size: 13px; }
+.king-checkout-summary > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.king-checkout-summary dt { color: var(--king-text-muted); }
+.king-checkout-summary dd { margin: 0; font-weight: 600; }
+.king-page.king-experience .king-mint-premium .king-checkout-steps { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.king-page.king-experience .king-result-success { display: flex; align-items: center; gap: 8px; color: var(--king-jade); font-size: 13px; }
+.king-result-recipient { font-size: 12px; overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  .king-page.king-experience .king-help-grid .king-step-grid { grid-template-columns: minmax(0,1fr); gap: 8px; }
+  .king-page.king-experience .king-help-grid .king-info-card { display: grid; grid-template-columns: 28px minmax(0,1fr); padding: 12px; gap: 10px; }
+  .king-page.king-experience .king-help-grid .king-step-top { align-items: flex-start; padding-top: 2px; }
+  .king-page.king-experience .king-help-grid .king-step-top > svg { display: none; }
+}
+/* Compact checkout; keep recipient inputs and safety feedback mounted. */
+.king-page.king-experience .king-mint-premium .king-recipients { margin: 16px 0; padding: 12px 0; }
+.king-page.king-experience .king-mint-premium .king-checkout-steps { margin: 12px 0; gap: 6px; }
+.king-page.king-experience .king-mint-premium .king-recipient-modes { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+.king-page.king-experience .king-mint-premium .king-recipient-mode-card { min-height: 48px; padding: 10px 6px; justify-content: center; align-items: center; gap: 6px; text-align: center; }
+.king-page.king-experience .king-mint-premium .king-recipient-mode-card > svg:first-child { position: static; width: 18px; height: 18px; }
+.king-page.king-experience .king-mint-premium .king-recipient-mode-card strong { padding: 0; font-size: 12px; }
+.king-page.king-experience .king-mint-premium .king-mode-description { display: none; }
+.king-page.king-experience .king-mint-premium .king-recipient-selected { top: 6px; right: 6px; width: 12px; height: 12px; }
+.king-page.king-experience .king-mint-premium .king-recipient-inputs { gap: 12px; margin: 14px 0; }
+.king-page.king-experience .king-mint-premium .king-recipient-wallet code { padding: 10px; font-size: 12px; }
+.king-page.king-experience .king-mint-premium .king-recipient-review { padding: 12px; }
+.king-page.king-experience .king-mint-premium .king-recipient-review h3 { font-size: 14px; margin-bottom: 8px; }
+.king-page.king-experience .king-mint-premium .king-recipient-total { gap: 8px; padding: 10px 0; }
+.king-page.king-experience .king-mint-premium .king-recipient-total > strong { font-size: 22px; }
+.king-page.king-experience .king-mint-premium .king-mint-guidance { padding: 10px 12px; margin-top: 10px; border-radius: 12px; }
+.king-page.king-experience .king-mint-progress strong { display: flex; align-items: center; gap: 8px; }
+.king-status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.king-mint-guidance:is([data-state="pending"],[data-state="working"]) .king-status-dot { animation: king-checkout-pulse 1.6s ease-in-out infinite; }
+.king-page.king-experience .king-mint-guidance[data-state="failed"] { border-color: var(--king-ui-error,#ffada5); }
+.king-page.king-experience .king-transaction-receipt { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; min-height: 44px; margin-top: 12px; padding: 12px; border: 1px solid var(--king-border-subtle); border-radius: 12px; color: var(--king-gold); background: var(--king-surface-2); text-decoration: none; font-size: 13px; }
+.king-transaction-receipt small { display: block; margin-top: 4px; color: var(--king-text-muted); }
+.king-transaction-receipt code { font-size: 12px; }
+.king-page.king-experience .king-mint-artwork { position: relative; display: grid; width: min(100%,320px); aspect-ratio: 1; margin: 16px auto; border: 1px solid var(--king-border-subtle); border-radius: 16px; background: var(--king-surface-2); }
+.king-page.king-experience .king-mint-artwork img { grid-area: 1 / 1; width: 100%; height: auto; margin: 0; border-radius: 16px; }
+.king-image-placeholder { grid-area: 1 / 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; padding: 20px; text-align: center; font-size: 13px; line-height: 1.6; color: var(--king-text-muted); z-index: 1; }
+.king-image-placeholder > svg, .king-image-placeholder strong { color: var(--king-jade,#a7e7d9); }
+.king-image-progress { display: block; width: 70%; height: 4px; border-radius: 999px; background: var(--king-gold); animation: king-checkout-pulse 1.6s ease-in-out infinite; }
+.king-page.king-experience .king-mint-detail > a { display: inline-flex; align-items: center; min-height: 44px; margin-inline-end: 12px; font-size: 13px; }
+.king-page.king-experience .king-mint-premium .king-metadata-tools > summary { min-height: 44px; padding: 10px 0; cursor: pointer; font-size: 13px; }
+@keyframes king-checkout-pulse { 50% { opacity: .35; } }
+@media (max-width: 600px) {
+  .king-page.king-experience .king-mint-premium .king-mint-workspace { gap: 12px; }
+  .king-page.king-experience .king-mint-premium .king-mobile-summary { display: none; }
+  .king-page.king-experience .king-mint-premium .king-mint-results { padding: 12px; margin-top: 16px; }
+  .king-page.king-experience .king-mint-premium .king-mint-result-grid { gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .king-image-progress, .king-mint-guidance .king-status-dot { animation: none; }
+}

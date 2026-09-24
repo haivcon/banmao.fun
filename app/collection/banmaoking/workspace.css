@@ -15,18 +15,18 @@
 .king-page.king-experience .king-studio-presets .king-preset-palette i { flex-shrink: 0; width: 14px; height: 14px; box-sizing: border-box; }
 .king-page.king-experience .king-studio-presets .king-preset-palette i:last-of-type { display: none; }
 .king-page.king-experience .king-studio-presets .king-preset-palette svg { position: absolute; bottom: -2px; left: 4px; }
-.king-page.king-experience .king-studio-presets .king-preset-name { font-size: 12px; line-height: 1.4; margin: 0; overflow-wrap: anywhere; }
-.king-page.king-experience .king-studio-presets .king-preset-detail { grid-column: 2; font-size: 10px; line-height: 1.4; margin: 0; }
+.king-page.king-experience .king-studio-presets .king-preset-name { font-size: 14px; line-height: 1.4; margin: 0; overflow-wrap: anywhere; }
+.king-page.king-experience .king-studio-presets .king-preset-detail { grid-column: 2; font-size: 13px; line-height: 1.6; margin: 0; }
 .king-page.king-experience .king-studio-presets .king-preset-detail:last-child { display: none; }
 .king-page.king-experience .king-studio-presets .king-library-heading h3 { display: flex; align-items: center; gap: 8px; font-size: 16px; margin: 0; }
 .king-page.king-experience .king-studio-presets .king-library-heading h3 small { margin-left: auto; color: var(--king-text-muted); font-size: 11px; font-weight: 400; }
 .king-page.king-experience .king-studio-presets .king-library-heading p { font-size: 12px; margin: 6px 0 0; }
 .king-page.king-experience .king-studio-presets .king-category-filters { flex-wrap: wrap; gap: 4px; }
-.king-page.king-experience .king-studio-presets .king-category-filters button { min-height: 36px; padding: 6px 9px; font-size: 11px; }
+.king-page.king-experience .king-studio-presets .king-category-filters button { min-height: 44px; padding: 8px 12px; font-size: 13px; }
 .king-page.king-experience .king-studio-presets .king-library-toolbar { margin: 10px 0; }
 .king-page.king-experience .king-studio-presets .king-theme-search input { min-width: 0; }
 .king-page.king-experience .king-studio-presets .king-preset-card:focus-visible { outline: 2px solid var(--king-gold); outline-offset: 2px; }
-.king-page.king-experience .king-studio-presets .king-catalogue-note { font-size: 11px; }
+.king-page.king-experience .king-studio-presets .king-catalogue-note { font-size: 13px; line-height: 1.6; }
 .king-page.king-experience .king-editor-heading { margin-top: 16px; }
 .king-page.king-experience .king-mint-premium { border: 1px solid #f5d79a60; background: radial-gradient(ellipse at 100% 0, #a879271c, transparent 60%), var(--king-surface-1); box-shadow: 0 20px 60px #0003; }
 .king-checkout-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; list-style: none; padding: 0; margin: 24px 0 32px; }
@@ -193,7 +193,7 @@
 .king-page.king-experience .king-preview-settings { margin: 0 0 16px; border-bottom: 1px solid var(--king-border-subtle); }
 .king-page.king-experience .king-preview-settings summary { color: var(--king-text-muted); font-size: 12px; }
 .king-page.king-experience .king-trait-tabs { padding: 0; gap: 4px; border-radius: 0; background: transparent; }
-.king-page.king-experience .king-trait-tabs button { border-radius: 8px; padding: 12px 8px; }
+.king-page.king-experience .king-trait-tabs button { min-height: 44px; border-radius: 8px; padding: 12px 8px; }
 .king-page.king-experience .king-trait-tabs small { font-size: 11px; }
 .king-page.king-experience .king-trait-options button { background: transparent; box-shadow: none; font-size: 12px; }
 .king-page.king-experience .king-trait-options button[aria-pressed="true"] { background: #f5d79a10; }
