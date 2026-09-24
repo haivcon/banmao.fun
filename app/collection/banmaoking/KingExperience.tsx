@@ -1,4 +1,6 @@
 "use client";
+import { kingControl } from './i18n/controls';
+import { kingUi } from './i18n/interface';
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 
@@ -17,7 +19,7 @@ import { ACCESSORY_IDS, accessoryIndex, BODY_TRAITS, EXPRESSION_TRAITS, ACCESSOR
 // Theme Lab intentionally plays the animated NFT, independent of OS motion settings.
 import KingAnimatedSvg from './KingAnimatedSvg';
 import { previewSvg } from "./smil-preview";
-import { CYBORG_PREVIEW_TOKEN_IDS, cyborgForm, cyborgFormName } from './cyborg';
+import { CYBORG_PREVIEW_TOKEN_IDS, cyborgForm } from './cyborg';
 import { traitLabels } from "./i18n/traits";
 import KingMint from "./KingMint";
 import KingComposition from "./KingComposition";
@@ -80,38 +82,38 @@ export default function KingExperience() {
         if (next >= 0) { event.preventDefault(); const tab = document.getElementById(`task-${kingTaskIds[next]}`); tab?.focus(); tab?.click(); }
         if (event.key === ' ') { event.preventDefault(); event.currentTarget.click(); }
       }}>{[t.explore, t.mint, { en: 'Lookup', vi: 'Tra cứu', zh: '查询', ko: '조회', ru: 'Поиск', id: 'Cari NFT' }[lang]][index]}{id === 'king-mint' && mintBusy && <span className="king-task-pending" role="status" aria-label={t.processing} title={t.processing} />}</a>)}</nav>
-      <div className="king-actions"><KingSoundToggle vi={lang === 'vi'} /><ThemeToggle vi={lang === 'vi'} /><KingLanguageSelector lang={lang} onChange={changeLanguage} /><ConnectButton label={t.connect} accountStatus="address" chainStatus="none" showBalance={false} /></div>
+      <div className="king-actions"><KingSoundToggle lang={lang} /><ThemeToggle label={kingControl(lang, "Toggle light / dark appearance")} /><KingLanguageSelector lang={lang} onChange={changeLanguage} /><ConnectButton label={t.connect} accountStatus="address" chainStatus="none" showBalance={false} /></div>
     </header>
     <Toaster toasterId="king" position="bottom-center" toastOptions={{ ariaProps: { role: 'status', 'aria-live': 'polite' }, style: { background: '#182030', color: '#f4f6fb', border: '1px solid #748298', maxWidth: 'min(420px, calc(100vw - 32px))' } }} />
     <div id="panel-king-studio" className="king-task-panel" role="tabpanel" aria-labelledby="task-king-studio" tabIndex={0} hidden={activeSection !== 'king-studio'}>
-    <section className="king-hero"><div><span className="king-eyebrow"><span className="king-live-dot" />{t.kicker}</span><h1>{t.title}<br /><em>{t.titleAccent}</em></h1><p>{lang === "vi" ? `${new Intl.NumberFormat(lang).format(TOTAL_COMBINATIONS)} tổ hợp trong Theme Lab. Nguồn cung thực tế được đọc từ blockchain trong tab Mint NFT.` : `${new Intl.NumberFormat(lang).format(TOTAL_COMBINATIONS)} Theme Lab combinations. Live supply is read from the blockchain in the Mint NFT tab.`}</p><div className="king-hero-actions"><a className="king-primary-link" href="#king-mint">{t.mint} ↗</a><a className="king-secondary-link" href="#king-studio">{t.explore} ↓</a></div></div></section>
+    <section className="king-hero"><div><span className="king-eyebrow"><span className="king-live-dot" />{t.kicker}</span><h1>{t.title}<br /><em>{t.titleAccent}</em></h1><div className="king-hero-actions"><a className="king-primary-link" href="#king-mint">{t.mint} ↗</a><a className="king-secondary-link" href="#king-studio">{t.explore} ↓</a></div></div></section>
     <div className="king-metrics">{[[new Intl.NumberFormat(lang).format(TOTAL_COMBINATIONS), t.combinations], ["4", t.layers], ["100%", t.onchain], [`${new Intl.NumberFormat(lang).format(6666)} BANMAO`, t.price]].map(([value, label]) => <div key={label}><strong>{value}</strong><span>{label}</span></div>)}</div>
     <section id="king-studio" className="king-section"><div className="king-section-heading"><div><span className="king-eyebrow">{t.explore}</span><h2>{t.studio}</h2><p>{t.studioDesc}</p></div><span className="king-chip">{t.animated}</span></div>
 
-      <div className="king-studio-grid"><div className="king-preview-card"><div className="king-art-frame"><KingAnimatedSvg key={`${traits.body}-${traits.expression}-${traits.accessory}-${traits.background}-${tokenId}`} className="king-art" data-animated="true" viewBox="0 0 512 512" role="img" aria-label={`${t.preview} · Banmao King #${tokenId}`} markup={previewSvg(traits, tokenId, prefix)} /></div><div className="king-preview-meta" aria-live="polite"><div><strong>Banmao King</strong><br /><span>{t.preview} #{tokenId}{traits.body === 4 ? ` · ${cyborgFormName(tokenId)}` : ''}</span></div><KingSvgViewer traits={traits} tokenId={tokenId} vi={lang === 'vi'} /></div></div>
-        <div className="king-trait-panel"><h3 className="king-customize-title">{lang === 'vi' ? 'Tùy chỉnh' : 'Customize'}</h3>
+      <div className="king-studio-grid"><div className="king-preview-card"><div className="king-art-frame"><KingAnimatedSvg key={`${traits.body}-${traits.expression}-${traits.accessory}-${traits.background}-${tokenId}`} className="king-art" data-animated="true" viewBox="0 0 512 512" role="img" aria-label={`${t.preview} · Banmao King #${tokenId}`} markup={previewSvg(traits, tokenId, prefix)} /></div><div className="king-preview-meta" aria-live="polite"><div><strong>Banmao King</strong><br /><span>{t.preview} #{tokenId}{traits.body === 4 ? ` · ${kingUi(lang, cyborgForm(tokenId) ? 'Full Machine' : 'Hybrid')}` : ''}</span></div><KingSvgViewer traits={traits} tokenId={tokenId} lang={lang} /></div></div>
+        <div className="king-trait-panel"><h3 className="king-customize-title">{kingUi(lang, "Customize")}</h3>
           <div className="king-trait-tabs" role="tablist" aria-label={t.studio}>{groups.map((group, i) => <button type="button" role="tab" key={group.key} id={`king-tab-${group.key}`} aria-controls={`king-group-${group.key}`} aria-selected={activeGroup === i} tabIndex={activeGroup === i ? 0 : -1} onClick={() => setActiveGroup(i)} onKeyDown={event => { const next = event.key === 'ArrowRight' ? (i + 1) % 4 : event.key === 'ArrowLeft' ? (i + 3) % 4 : event.key === 'Home' ? 0 : event.key === 'End' ? 3 : -1; if (next >= 0) { event.preventDefault(); setActiveGroup(next); document.getElementById(`king-tab-${groups[next].key}`)?.focus(); } }}><strong>{group.label}</strong><small>{traitLabels[lang][i][traits[group.key]] ?? group.names[group.key === 'accessory' ? accessoryIndex(traits.accessory) : traits[group.key]]}</small></button>)}</div>
           <div className="king-selectors" aria-describedby="king-preview-only-note">{groups.map((group, groupIndex) => <fieldset key={group.key} id={`king-group-${group.key}`} role="tabpanel" aria-labelledby={`king-tab-${group.key}`} hidden={activeGroup !== groupIndex}><legend>{group.label}<span>{group.names.length}</span></legend><div className="king-trait-options">{group.names.map((name, i) => <button key={name} type="button" aria-pressed={traits[group.key] === (group.key === 'accessory' ? ACCESSORY_IDS[i] : i)} onClick={() => setTraits(v => ({ ...v, [group.key]: group.key === 'accessory' ? ACCESSORY_IDS[i] : i }))}>{"colors" in group && <span className="king-color-dot" style={{ background: group.colors[i] }} />}<span>{traitLabels[lang][groupIndex][group.key === 'accessory' ? ACCESSORY_IDS[i] : i] ?? name}</span></button>)}</div></fieldset>)}</div>
           {traits.body === 4 && <div className="king-selectors"><fieldset>
-            <legend>{lang === 'vi' ? 'Dạng Cyborg' : 'Cyborg form'}</legend>
-            <div className="king-trait-options">{CYBORG_PREVIEW_TOKEN_IDS.map((sampleTokenId, form) => <button key={sampleTokenId} type="button" aria-pressed={cyborgForm(tokenId) === form} onClick={() => selectTokenId(sampleTokenId)}>{cyborgFormName(sampleTokenId)}</button>)}</div>
-            <p>{lang === 'vi' ? 'Đổi token mẫu để xem hai dạng. Dạng NFT thật cố định theo token ID, không chọn khi mint.' : 'Switch sample tokens to preview both forms. Actual NFT form is fixed by token ID, not selected at mint.'}</p>
+            <legend>{kingUi(lang, "Cyborg form")}</legend>
+            <div className="king-trait-options">{CYBORG_PREVIEW_TOKEN_IDS.map((sampleTokenId, form) => <button key={sampleTokenId} type="button" aria-pressed={cyborgForm(tokenId) === form} onClick={() => selectTokenId(sampleTokenId)}>{kingUi(lang, cyborgForm(sampleTokenId) ? 'Full Machine' : 'Hybrid')}</button>)}</div>
+            <p>{kingUi(lang, "Switch sample tokens to preview both forms. Actual NFT form is fixed by token ID, not selected at mint.")}</p>
           </fieldset></div>}
           <div className="king-panel-tools"><button type="button" className="king-random" onClick={randomize}><Shuffle size={16} />{t.randomize}</button><button type="button" className="king-reset" title={t.reset} aria-label={t.reset} onClick={() => { setTraits(initial); selectTokenId(0); }}><RotateCcw size={17} /></button></div>
-        </div><div id="king-preview-only-note" className="king-notice"><strong>{t.previewTitle}</strong><p>{t.previewNote}</p></div>
-        <details className="king-composition-drawer"><summary>{lang === 'vi' ? 'Tùy chọn nâng cao · Mã tổ hợp · Chia sẻ · SVG' : 'Advanced options · Composition · Share · SVG'}</summary><div className="king-preview-token-control">
-            <label htmlFor="king-preview-token-id">Token ID · {lang === 'vi' ? 'Xem trước SVG' : 'SVG preview'}</label>
+        </div><div id="king-preview-only-note" className="king-notice"><strong>{t.previewTitle}</strong></div>
+        <details className="king-composition-drawer"><summary>{kingUi(lang, "Advanced options · Composition · Share · SVG")}</summary><div className="king-preview-token-control">
+            <label htmlFor="king-preview-token-id">Token ID · {kingUi(lang, "SVG preview")}</label>
             <input id="king-preview-token-id" type="text" inputMode="numeric" autoComplete="off" spellCheck={false} value={tokenInput} aria-invalid={!tokenInputValid} aria-describedby="king-preview-token-help" onChange={event => {
               const value = event.target.value;
               setTokenInput(value);
               if (/^\d{1,6}$/.test(value)) setTokenId(Number(value));
             }} onBlur={() => { if (tokenInputValid) setTokenInput(String(tokenId)); }} />
             <small id="king-preview-token-help">{!tokenInputValid
-              ? (lang === 'vi' ? 'Nhập số nguyên từ 0 đến 999999. Đang giữ preview hợp lệ gần nhất.' : 'Enter an integer from 0 to 999999. Keeping the last valid preview.')
-              : (lang === 'vi' ? 'Nhập 0–999999 để kiểm tra cách xếp số. Chỉ xem trước, không chọn ID khi mint.' : 'Enter 0–999999 to inspect the digits. Preview only; this does not select a mint ID.')}</small>
+              ? (kingUi(lang, "Enter an integer from 0 to 999999. Keeping the last valid preview."))
+              : (kingUi(lang, "Enter 0–999999 to inspect the digits. Preview only; this does not select a mint ID."))}</small>
           </div>
           <KingComposition traits={traits} onSelect={setTraits} lang={lang} /></details></div>
-      <div className="king-studio-presets"><KingThemeLab traits={traits} vi={lang === 'vi'} onSelect={selection => { setTraits(selection); selectTokenId((tokenId + 1) % 1000000); }} /></div>
+      <div className="king-studio-presets"><KingThemeLab traits={traits} lang={lang} onSelect={selection => { setTraits(selection); selectTokenId((tokenId + 1) % 1000000); }} /></div>
     </section>
     <KingSections t={t} section="features" />
     </div>

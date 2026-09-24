@@ -1,0 +1,22 @@
+.king-page.king-experience .king-transaction-result { margin: 24px 0; padding: 22px; border: 1px solid var(--king-border-subtle, #536073); border-radius: 14px; background: var(--king-surface-1, #141c27); color: inherit; }
+.king-page.king-experience .king-result-heading { display: flex; align-items: flex-start; gap: 12px; }
+.king-page.king-experience .king-result-heading > svg { flex: 0 0 auto; margin-top: 2px; }
+.king-page.king-experience .king-transaction-result[data-tone="success"] { border-color: var(--king-jade, #6cd5ad); }
+.king-page.king-experience .king-transaction-result[data-tone="success"] .king-result-heading > svg { color: var(--king-jade, #6cd5ad); }
+.king-page.king-experience .king-transaction-result[data-tone="error"] { border-color: var(--king-ui-error, #f08b92); }
+.king-page.king-experience .king-transaction-result[data-tone="error"] .king-result-heading > svg { color: var(--king-ui-error, #f08b92); }
+.king-page.king-experience .king-result-heading h3 { margin: 0; font-size: 20px; line-height: 1.4; }
+.king-page.king-experience .king-transaction-result p { margin: 8px 0 16px; line-height: 1.6; }
+.king-page.king-experience .king-result-wallets { list-style: none; padding: 0; margin: 16px 0; display: grid; gap: 10px; }
+.king-page.king-experience .king-result-wallets > li { min-width: 0; padding: 14px; border: 1px solid var(--king-border-subtle, #536073); border-radius: 10px; }
+.king-page.king-experience .king-result-wallet-heading { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.king-page.king-experience .king-result-wallet-heading > strong { margin-inline-start: auto; }
+.king-page.king-experience .king-result-wallet-heading a, .king-page.king-experience .king-result-explorer { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
+.king-page.king-experience .king-result-full-address { display: block; overflow-wrap: anywhere; padding: 10px 0; }
+.king-page.king-experience .king-result-token-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.king-page.king-experience .king-transaction-result button { min-height: 44px; min-width: 44px; padding: 8px 12px; border: 1px solid var(--king-border-subtle, #536073); border-radius: 8px; background: transparent; color: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.king-page.king-experience .king-transaction-result button[aria-pressed="true"] { border-color: var(--king-gold); background: var(--king-ui-selected, #574526); }
+.king-page.king-experience .king-transaction-result summary { cursor: pointer; padding: 10px 0; }
+.king-page.king-experience .king-result-explorer { flex-wrap: wrap; margin-top: 12px; overflow-wrap: anywhere; }
+.king-page.king-experience .king-transaction-result :is(button,a,summary):focus-visible { outline: 2px solid var(--king-gold); outline-offset: 3px; }
+@media (max-width: 600px) { .king-page.king-experience .king-transaction-result { padding: 14px; } }

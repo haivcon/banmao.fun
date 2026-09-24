@@ -1,4 +1,5 @@
 "use client";
+import { kingControl } from './i18n/controls';
 import { useEffect, useState } from 'react';
 import { xLayerExplorerUrl } from "../../../lib/explorer";
 import { copyKingAddress } from "./king-notifications";
@@ -9,7 +10,6 @@ import { contractDescription, directoryCopy } from "./i18n/contract-directory";
 export default function KingContracts({ lang, isVi }: { lang?: Lang; isVi?: boolean }) {
   const language = lang ?? (isVi ? "vi" : "en");
   const t = KING_T[language];
-  const vi = language === 'vi';
   const [expanded, setExpanded] = useState(false);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
@@ -26,7 +26,7 @@ export default function KingContracts({ lang, isVi }: { lang?: Lang; isVi?: bool
     setOpenName(name); setTarget(`contract-${name}`);
   };
   const resetPage = () => { setTarget(''); setPage(0); setOpenName(''); };
-  const categories = ['all', 'Body', 'Expression', 'Accessory', 'Background', 'Motion', 'Identity'];
+  const categories = ['all', 'Body', 'Expression', 'Accessory', 'Background', 'Motion', 'Identity'] as const;
   const technical = KING_CONTRACTS.slice(2);
   const filtered = technical.filter(contract => (category === 'all' || contract.name.includes(category)) && `${contract.name} ${contract.address} ${contractDescription(contract, language)}`.toLowerCase().includes(query.trim().toLowerCase()));
   useEffect(() => {
@@ -81,17 +81,17 @@ export default function KingContracts({ lang, isVi }: { lang?: Lang; isVi?: bool
     <div className="king-contract-primary-grid">{KING_CONTRACTS.slice(0, 2).map(contract => card(contract, true))}</div>
     <button className="king-directory-toggle" type="button" aria-expanded={expanded} aria-controls="king-technical-directory" onClick={() => { setTarget(''); setExpanded(value => !value); }}>{t.technical} · {technical.length} <span aria-hidden="true">{expanded ? '−' : '+'}</span></button>
     {expanded && <div id="king-technical-directory" className="king-directory-panel">
-      <div className="king-directory-toolbar"><label>{vi ? 'Tìm tên, địa chỉ hoặc mô tả' : 'Search name, address or description'}<input type="search" value={query} onChange={event => { resetPage(); setQuery(event.target.value); }} /></label>
-      <label>{vi ? 'Nhóm contract' : 'Contract category'}<select value={category} onChange={event => { resetPage(); setCategory(event.target.value); }}>{categories.map(value => <option key={value} value={value}>{value === 'all' ? (vi ? 'Tất cả' : 'All contracts') : value}</option>)}</select></label></div>
+      <div className="king-directory-toolbar"><label>{kingControl(language, "Search name, address or description")}<input type="search" value={query} onChange={event => { resetPage(); setQuery(event.target.value); }} /></label>
+      <label>{kingControl(language, "Contract category")}<select value={category} onChange={event => { resetPage(); setCategory(event.target.value); }}>{categories.map(value => <option key={value} value={value}>{value === 'all' ? (kingControl(language, "All contracts")) : kingControl(language, value)}</option>)}</select></label></div>
       <p className="king-directory-count" role="status">{filtered.length ? `${currentPage * pageSize + 1}–${Math.min((currentPage + 1) * pageSize, filtered.length)} / ${filtered.length}` : '0'} {t.contracts}</p>
       {filtered.length ? <>
         <div className="king-contract-list">{visible.map(contract => card(contract))}</div>
-        <nav className="king-directory-pagination" aria-label={vi ? 'Phân trang hợp đồng' : 'Contract pagination'}>
-          <button type="button" disabled={currentPage === 0} onClick={() => { setTarget(''); setOpenName(''); setPage(currentPage - 1); }}>{vi ? '← Trước' : '← Previous'}</button>
-          <span>{vi ? 'Trang' : 'Page'} {currentPage + 1} / {pageCount}</span>
-          <button type="button" disabled={currentPage + 1 >= pageCount} onClick={() => { setTarget(''); setOpenName(''); setPage(currentPage + 1); }}>{vi ? 'Sau →' : 'Next →'}</button>
+        <nav className="king-directory-pagination" aria-label={kingControl(language, "Contract pagination")}>
+          <button type="button" disabled={currentPage === 0} onClick={() => { setTarget(''); setOpenName(''); setPage(currentPage - 1); }}>{kingControl(language, "← Previous")}</button>
+          <span>{kingControl(language, "Page")} {currentPage + 1} / {pageCount}</span>
+          <button type="button" disabled={currentPage + 1 >= pageCount} onClick={() => { setTarget(''); setOpenName(''); setPage(currentPage + 1); }}>{kingControl(language, "Next →")}</button>
         </nav>
-      </> : <div className="king-directory-empty"><p>{vi ? 'Không tìm thấy contract phù hợp.' : 'No matching contracts.'}</p><button type="button" className="king-copy-button" onClick={() => { resetPage(); setQuery(''); setCategory('all'); }}>{vi ? 'Xóa bộ lọc' : 'Clear filters'}</button></div>}
+      </> : <div className="king-directory-empty"><p>{kingControl(language, "No matching contracts.")}</p><button type="button" className="king-copy-button" onClick={() => { resetPage(); setQuery(''); setCategory('all'); }}>{kingControl(language, "Clear filters")}</button></div>}
     </div>}
     <footer className="king-contract-footer">
       <div><span>{t.payment}</span><a href={xLayerExplorerUrl("token", BANMAO_KING_DEPLOYMENT.paymentToken, language)} target="_blank" rel="noopener noreferrer" title={BANMAO_KING_DEPLOYMENT.paymentToken}><code>{shortAddress(BANMAO_KING_DEPLOYMENT.paymentToken)}</code> ↗</a><button type="button" onClick={() => void copy(BANMAO_KING_DEPLOYMENT.paymentToken)} aria-label={`${t.copy} — ${t.payment}`}>{t.copy}</button></div>

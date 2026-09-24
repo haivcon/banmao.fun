@@ -1,9 +1,11 @@
 'use client';
+import type { Lang } from './i18n';
+import { kingControl } from './i18n/controls';
 import { useEffect, useRef, useState } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 import { createKingSoundPlayer, KING_SOUND_KEY } from './king-sound';
 
-export default function KingSoundToggle({ vi }: { vi: boolean }) {
+export default function KingSoundToggle({ lang = 'en' }: { lang?: Lang }) {
   const root = useRef<HTMLButtonElement>(null);
   const [enabled, setEnabled] = useState(false);
   const [player] = useState(createKingSoundPlayer);
@@ -45,8 +47,8 @@ export default function KingSoundToggle({ vi }: { vi: boolean }) {
       player.dispose();
     };
   }, [player]);
-  const label = vi ? 'Hiệu ứng âm thanh' : 'Sound effects';
-  return <button ref={root} type="button" className="king-sound-toggle" aria-label={label} title={`${label}: ${enabled ? (vi ? 'Bật' : 'On') : (vi ? 'Tắt' : 'Off')}`} aria-pressed={enabled} onClick={() => {
+  const label = kingControl(lang, "Sound effects");
+  return <button ref={root} type="button" className="king-sound-toggle" aria-label={label} title={`${label}: ${enabled ? (kingControl(lang, "On")) : (kingControl(lang, "Off"))}`} aria-pressed={enabled} onClick={() => {
     const next = !enabled;
     setEnabled(next); player.setEnabled(next);
     try { localStorage.setItem(KING_SOUND_KEY, String(next)); } catch { /* Optional preference. */ }
