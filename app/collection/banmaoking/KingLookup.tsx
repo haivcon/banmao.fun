@@ -1,4 +1,6 @@
 "use client";
+import { kingLookupCopy } from './i18n/lookup';
+import { localizedKingAttribute } from './i18n/traits';
 import { xLayerExplorerUrl } from "../../../lib/explorer";
 import { metadataTraits, compositionCode, compositionSharePath } from "./composition";
 import { useEffect, useState } from "react";
@@ -14,7 +16,6 @@ import { notifyKingSound } from './king-sound';
 
 export default function KingLookup({ lang }: { lang: Lang }) {
   const client = usePublicClient({ chainId: 196 }) as PublicClient | undefined;
-  const vi = lang === "vi";
   const [input, setInput] = useState("");
   const [query, setQuery] = useState("");
   const [retry, setRetry] = useState(0);
@@ -59,21 +60,21 @@ export default function KingLookup({ lang }: { lang: Lang }) {
   return <section id="king-lookup" className="king-section king-mint-box">
     <div className="king-lookup-bar"><header className="king-lookup-heading">
       <span className="king-lookup-eyebrow">BANMAO KING · X LAYER</span>
-      <h2>{vi ? "Tìm nhà vua của bạn" : "Find your king"}</h2>
-      <p>{vi ? "Mỗi mã số, một nhà vua. Khám phá artwork và đặc điểm của NFT đã mint — không cần kết nối ví." : "Every ID, a king of its own. Explore minted artwork and traits — no wallet required."}</p>
+      <h2>{kingLookupCopy(lang, "Find your king")}</h2>
+      <p>{kingLookupCopy(lang, "Every ID, a king of its own. Explore minted artwork and traits — no wallet required.")}</p>
     </header>
     <form className="king-lookup-form" onSubmit={event => { event.preventDefault(); setQuery(input.trim()); setRetry(n => n + 1); }}>
-      <label htmlFor="king-token-input">{vi ? "Mã NFT" : "NFT ID"}</label>
+      <label htmlFor="king-token-input">{kingLookupCopy(lang, "NFT ID")}</label>
       <div className="king-lookup-search">
-        <input id="king-token-input" value={input} onChange={e => setInput(e.target.value)} placeholder={vi ? "Ví dụ: 42" : "Example: 42"} inputMode="numeric" maxLength={79} required aria-describedby="king-lookup-hint king-lookup-status" aria-invalid={status === "invalid" && input.trim() === query} />
-        <button type="submit" disabled={status === "loading"}>{status === "loading" ? (vi ? "Đang tìm…" : "Searching…") : (vi ? "Tìm nhà vua" : "Find king")}</button>
+        <input id="king-token-input" value={input} onChange={e => setInput(e.target.value)} placeholder={kingLookupCopy(lang, "Example: 42")} inputMode="numeric" maxLength={79} required aria-describedby="king-lookup-hint king-lookup-status" aria-invalid={status === "invalid" && input.trim() === query} />
+        <button type="submit" disabled={status === "loading"}>{status === "loading" ? (kingLookupCopy(lang, "Searching…")) : (kingLookupCopy(lang, "Find king"))}</button>
       </div>
-      <small id="king-lookup-hint">{vi ? "Nhập số từ 1, có thể kèm dấu #. Nhấn Enter để tra cứu." : "Enter an ID from 1, optionally with #. Press Enter to search."}</small>
+      <small id="king-lookup-hint">{kingLookupCopy(lang, "Enter an ID from 1, optionally with #. Press Enter to search.")}</small>
     </form></div>
-    <p id="king-lookup-status" role="status" aria-live="polite">{status === "loading" ? (vi ? "Đang đọc blockchain…" : "Reading blockchain…") : status === "invalid" ? (vi ? "Mã số không hợp lệ. Nhập số nguyên từ 1." : "Invalid token ID. Enter a whole number from 1.") : status === "missing" ? (vi ? "NFT này chưa được mint. Hãy thử một mã khác." : "This NFT has not been minted. Try another ID.") : status === "error" ? (vi ? "Không đọc được dữ liệu. Mã đã nhập được giữ lại để bạn thử lại." : "Unable to read data. Your ID is saved so you can retry.") : status === "ready" && result ? (vi ? `Đã tìm thấy nhà vua #${result.id}.` : `Found king #${result.id}.`) : ""}</p>
-    {status === 'idle' && <p className="king-lookup-empty">{vi ? 'Nhập mã NFT để xem artwork và chủ sở hữu trên X Layer.' : 'Enter an NFT ID to view its artwork and owner on X Layer.'}</p>}
-    {query && <button type="button" disabled={status === "loading"} onClick={() => setRetry(n => n + 1)}>{vi ? "Tải lại metadata (miễn phí)" : "Reload metadata (free)"}</button>}
-    {refreshId !== undefined && (status === "ready" || status === "error") && <KingMetadataRefresh tokenId={refreshId} isVi={vi} />}
+    <p id="king-lookup-status" role="status" aria-live="polite">{status === "loading" ? (kingLookupCopy(lang, "Reading blockchain…")) : status === "invalid" ? (kingLookupCopy(lang, "Invalid token ID. Enter a whole number from 1.")) : status === "missing" ? (kingLookupCopy(lang, "This NFT has not been minted. Try another ID.")) : status === "error" ? (kingLookupCopy(lang, "Unable to read data. Your ID is saved so you can retry.")) : status === "ready" && result ? ` ${kingLookupCopy(lang, "King")} #${result.id}` : ""}</p>
+    {status === 'idle' && <p className="king-lookup-empty">{kingLookupCopy(lang, "Enter an NFT ID to view its artwork and owner on X Layer.")}</p>}
+    {query && <button type="button" disabled={status === "loading"} onClick={() => setRetry(n => n + 1)}>{kingLookupCopy(lang, "Reload metadata (free)")}</button>}
+    {refreshId !== undefined && (status === "ready" || status === "error") && <KingMetadataRefresh tokenId={refreshId} lang={lang} />}
     {result && <div className="king-lookup-result">
       <figure className="king-lookup-artwork">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -81,25 +82,25 @@ export default function KingLookup({ lang }: { lang: Lang }) {
         <figcaption>BANMAO KING <span>#{result.id.toString()}</span></figcaption>
       </figure>
       <div className="king-lookup-details">
-        <span className="king-lookup-eyebrow">{vi ? "BỘ SƯU TẬP ON-CHAIN" : "ON-CHAIN COLLECTION"}</span>
-        <h3>{vi ? "Nhà vua" : "King"} #{result.id.toString()}</h3>
+        <span className="king-lookup-eyebrow">{kingLookupCopy(lang, "ON-CHAIN COLLECTION")}</span>
+        <h3>{kingLookupCopy(lang, "King")} #{result.id.toString()}</h3>
         <p className="king-lookup-name">{result.metadata.name}</p>
         <div className="king-lookup-actions">
-          <button type="button" onClick={() => void copyKingAddress(result.id.toString(), lang)}>{vi ? "Sao chép mã" : "Copy ID"}</button>
-          <button type="button" onClick={() => void copyKingAddress(new URL(kingSharePath(result.id), window.location.origin).href, lang)}>{vi ? "Sao chép liên kết" : "Copy link"}</button>
-          <a href={kingSharePath(result.id)}>{vi ? "Liên kết NFT" : "NFT permalink"}</a>
+          <button type="button" onClick={() => void copyKingAddress(result.id.toString(), lang)}>{kingLookupCopy(lang, "Copy ID")}</button>
+          <button type="button" onClick={() => void copyKingAddress(new URL(kingSharePath(result.id), window.location.origin).href, lang)}>{kingLookupCopy(lang, "Copy link")}</button>
+          <a href={kingSharePath(result.id)}>{kingLookupCopy(lang, "NFT permalink")}</a>
         </div>
-        <h4>{vi ? "Đặc điểm nhà vua" : "King traits"}</h4>
-        <dl className="king-lookup-traits">{result.metadata.attributes.map((a, index) => <div key={`${a.trait_type}-${index}`}><dt>{a.trait_type}</dt><dd>{a.value}</dd></div>)}</dl>
-        <div className="king-lookup-owner"><span>{vi ? "Chủ sở hữu on-chain" : "On-chain owner"}</span><a href={xLayerExplorerUrl("address", result.owner, lang)} target="_blank" rel="noopener noreferrer">{result.owner}<span> {vi ? "Xem trên explorer ↗" : "View on explorer ↗"}</span></a></div>
+        <h4>{kingLookupCopy(lang, "King traits")}</h4>
+        <dl className="king-lookup-traits">{result.metadata.attributes.map((a, index) => <div key={`${a.trait_type}-${index}`}><dt>{localizedKingAttribute(lang, a).label}</dt><dd>{localizedKingAttribute(lang, a).value}</dd></div>)}</dl>
+        <div className="king-lookup-owner"><span>{kingLookupCopy(lang, "On-chain owner")}</span><a href={xLayerExplorerUrl("address", result.owner, lang)} target="_blank" rel="noopener noreferrer">{result.owner}<span> {kingLookupCopy(lang, "View on explorer ↗")}</span></a></div>
         <details key={result.id.toString()} className="king-lookup-technical">
-          <summary>{vi ? "Thông tin kỹ thuật & tải SVG" : "Technical details & SVG downloads"}</summary>
-          <p>{vi ? "Mã phối cảnh" : "Composition"}: <a href={compositionSharePath(metadataTraits(result.metadata.attributes))}>{compositionCode(metadataTraits(result.metadata.attributes))}</a></p>
+          <summary>{kingLookupCopy(lang, "Technical details & SVG downloads")}</summary>
+          <p>{kingLookupCopy(lang, "Composition")}: <a href={compositionSharePath(metadataTraits(result.metadata.attributes))}>{compositionCode(metadataTraits(result.metadata.attributes))}</a></p>
           <p>Contract: <a href={xLayerExplorerUrl("address", kingAddress, lang)} target="_blank" rel="noopener noreferrer">{kingAddress}</a></p>
-          <p><a href={result.image} download={`BanmaoKing-${result.id}-preview.svg`}>{vi ? "Tải SVG xem thử có mã phối cảnh" : "Download preview SVG with composition code"}</a></p>
-          <p><a href={result.metadata.image} download={`BanmaoKing-${result.id}-original.svg`}>{vi ? "Tải SVG gốc on-chain" : "Download original on-chain SVG"}</a></p>
+          <p><a href={result.image} download={`BanmaoKing-${result.id}-preview.svg`}>{kingLookupCopy(lang, "Download preview SVG with composition code")}</a></p>
+          <p><a href={result.metadata.image} download={`BanmaoKing-${result.id}-original.svg`}>{kingLookupCopy(lang, "Download original on-chain SVG")}</a></p>
         </details>
-        <p className="king-lookup-disclaimer">{vi ? "Ảnh xem thử không chứng minh quyền sở hữu. Kiểm tra đúng contract và chủ sở hữu trước khi mua." : "A preview is not proof of ownership. Verify the contract and owner before buying."}</p>
+        <p className="king-lookup-disclaimer">{kingLookupCopy(lang, "A preview is not proof of ownership. Verify the contract and owner before buying.")}</p>
       </div>
     </div>}
   </section>;

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { createStandardViewport } from "../../../lib/responsive/displayStandard";
+import { createDesktopViewport } from "../../../lib/responsive/displayStandard";
 
-export const viewport = createStandardViewport("#090b0d");
+export const viewport = createDesktopViewport("#090b0d");
 
 export const metadata: Metadata = {
   title: "Banmao King — On-chain Collection Preview",

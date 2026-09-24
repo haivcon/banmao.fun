@@ -1,0 +1,51 @@
+import type { Lang } from './index';
+import type { KingThemePreset } from '../theme-presets';
+
+const names = {
+  King: ['Đế vương', '帝王', '제왕', 'Король', 'Raja'],
+  Cosmic: ['Vũ trụ', '宇宙', '우주', 'Космос', 'Antariksa'],
+  Bitcoin: ['Bitcoin', '比特币', '비트코인', 'Bitcoin', 'Bitcoin'],
+  Ethereum: ['Ethereum', '以太坊', '이더리움', 'Ethereum', 'Ethereum'],
+  OKB: ['OKB', 'OKB', 'OKB', 'OKB', 'OKB'],
+  Developer: ['Lập trình viên', '程序员', '개발자', 'Разработчик', 'Pengembang'],
+  Office: ['Công sở', '办公', '사무실', 'Офис', 'Kantor'],
+  Nature: ['Thiên nhiên', '自然', '자연', 'Природа', 'Alam'],
+  Royal: ['Hoàng gia', '皇家', '왕실', 'Королевский', 'Kerajaan'],
+  'Frost Monarch': ['Vua băng giá', '冰霜君主', '서리 군주', 'Ледяной монарх', 'Raja es'],
+  'Arctic Explorer': ['Nhà thám hiểm Bắc Cực', '北极探险家', '북극 탐험가', 'Арктический исследователь', 'Penjelajah Arktik'],
+  'Sakura Dream': ['Giấc mơ anh đào', '樱花梦', '벚꽃의 꿈', 'Сон сакуры', 'Mimpi sakura'],
+  'Mint Blaster': ['Xạ thủ bạc hà', '薄荷射手', '민트 슈터', 'Мятный стрелок', 'Penembak mint'],
+  'Cloud Companion': ['Bạn đồng hành trên mây', '云端伙伴', '구름 친구', 'Облачный спутник', 'Sahabat awan'],
+  'Midnight Coder': ['Lập trình lúc nửa đêm', '午夜程序员', '한밤의 개발자', 'Полночный программист', 'Pemrogram tengah malam'],
+  'Neon Guardian': ['Vệ binh neon', '霓虹守卫', '네온 수호자', 'Неоновый страж', 'Penjaga neon'],
+  'Golden Hour': ['Giờ vàng', '黄金时刻', '황금빛 시간', 'Золотой час', 'Jam keemasan'],
+  'Candy Party': ['Tiệc kẹo ngọt', '糖果派对', '사탕 파티', 'Конфетная вечеринка', 'Pesta permen'],
+  'Moonlight Wizard': ['Phù thủy ánh trăng', '月光巫师', '달빛 마법사', 'Лунный волшебник', 'Penyihir cahaya bulan'],
+  'Garden Zen': ['Vườn an nhiên', '禅意花园', '평온한 정원', 'Сад дзен', 'Taman tenang'],
+  'Royal Champion': ['Nhà vô địch hoàng gia', '皇家冠军', '왕실 챔피언', 'Королевский чемпион', 'Juara kerajaan'],
+  'Coffee & Clouds': ['Cà phê và mây', '咖啡与云', '커피와 구름', 'Кофе и облака', 'Kopi dan awan'],
+  'Starlight DJ': ['DJ ánh sao', '星光DJ', '별빛 DJ', 'Звёздный диджей', 'DJ cahaya bintang'],
+  'Peach Blossom': ['Hoa đào', '桃花', '복숭아꽃', 'Цветок персика', 'Bunga persik'],
+  'Green Rally': ['Đà tăng xanh', '绿色涨势', '초록 랠리', 'Зелёное ралли', 'Reli hijau'],
+  'Ruby Toast': ['Nâng ly hồng ngọc', '红宝石祝酒', '루비 건배', 'Рубиновый тост', 'Bersulang rubi'],
+  'Solar Sovereign': ['Chúa tể mặt trời', '太阳君王', '태양 군주', 'Солнечный владыка', 'Penguasa surya'],
+  'Ice Regent': ['Nhiếp chính băng giá', '冰之摄政王', '얼음 섭정', 'Ледяной регент', 'Wali es'],
+  'Peach Princess': ['Công chúa đào', '蜜桃公主', '복숭아 공주', 'Персиковая принцесса', 'Putri persik'],
+  'Emerald Court': ['Triều đình ngọc lục bảo', '翡翠宫廷', '에메랄드 궁정', 'Изумрудный двор', 'Istana zamrud'],
+  'Orbital Pilot': ['Phi công quỹ đạo', '轨道飞行员', '궤도 조종사', 'Орбитальный пилот', 'Pilot orbit'],
+  'Ether Oracle': ['Nhà tiên tri Ether', '以太先知', '이더 예언자', 'Оракул эфира', 'Peramal Ether'],
+  'Neon Frequency': ['Tần số neon', '霓虹频率', '네온 주파수', 'Неоновая частота', 'Frekuensi neon'],
+  'Galaxy Companion': ['Bạn đồng hành ngân hà', '银河伙伴', '은하 친구', 'Галактический спутник', 'Sahabat galaksi'],
+  'Sakura Serenade': ['Khúc ca anh đào', '樱花小夜曲', '벚꽃 세레나데', 'Серенада сакуры', 'Serenada sakura'],
+  'Lime Daydream': ['Mộng mơ xanh chanh', '青柠白日梦', '라임의 백일몽', 'Лаймовая мечта', 'Lamunan limau'],
+  'Golden Orchard': ['Vườn cây vàng', '金色果园', '황금 과수원', 'Золотой сад', 'Kebun emas'],
+  'Winter Halo': ['Hào quang mùa đông', '冬日光环', '겨울 후광', 'Зимний нимб', 'Lingkar cahaya musim dingin'],
+  'After Hours': ['Sau giờ làm', '下班时光', '퇴근 후', 'После работы', 'Sepulang kerja'],
+  'Weekend Gamer': ['Game thủ cuối tuần', '周末玩家', '주말 게이머', 'Игрок выходного дня', 'Pemain akhir pekan'],
+  'Bull Party': ['Tiệc thị trường tăng', '牛市派对', '상승장 파티', 'Бычья вечеринка', 'Pesta pasar naik'],
+  'Cloud Cafe': ['Quán cà phê trên mây', '云端咖啡馆', '구름 카페', 'Облачное кафе', 'Kafe awan'],
+} satisfies Record<string, readonly [string, string, string, string, string]>;
+const index: Record<Exclude<Lang, 'en'>, number> = { vi: 0, zh: 1, ko: 2, ru: 3, id: 4 };
+export function kingPresetName(lang: Lang, preset: Pick<KingThemePreset, 'name'>): string {
+  return lang === 'en' ? preset.name : names[preset.name as keyof typeof names]?.[index[lang]] ?? preset.name;
+}

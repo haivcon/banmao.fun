@@ -1,4 +1,6 @@
 "use client";
+import { kingRefreshCopy } from './i18n/refresh';
+import { KING_T, kingError, type Lang } from './i18n';
 import { xLayerExplorerUrl } from "../../../lib/explorer";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAccount, usePublicClient, useSwitchChain, useWalletClient } from "wagmi";
@@ -6,13 +8,13 @@ import { ConnectButton } from "../../components/wallet/WalletConnection";
 import { type Address, type Hash, type PublicClient } from "viem";
 import { kingAbi, kingAddress } from "./mint";
 
-export default function KingMetadataRefresh({ tokenId, isVi }: { tokenId: bigint; isVi: boolean }) {
+export default function KingMetadataRefresh({ tokenId, lang }: { tokenId: bigint; lang: Lang }) {
   const { address, chainId } = useAccount();
-  return <RefreshAction key={`${tokenId}:${address}:${chainId}`} tokenId={tokenId} account={address} isVi={isVi} />;
+  return <RefreshAction key={`${tokenId}:${address}:${chainId}`} tokenId={tokenId} account={address} lang={lang} />;
 }
 
-function RefreshAction({ tokenId, account, isVi }: {
-  tokenId: bigint; account?: Address; isVi: boolean;
+function RefreshAction({ tokenId, account, lang }: {
+  tokenId: bigint; account?: Address; lang: Lang;
 }) {
   const { chainId } = useAccount();
   const { switchChainAsync } = useSwitchChain();
@@ -47,14 +49,14 @@ function RefreshAction({ tokenId, account, isVi }: {
         if (receipt.status === "success") {
           try { localStorage.setItem(key, "confirmed"); } catch { /* Optional storage. */ }
         } else {
-          setError(isVi ? "Refresh bị revert. NFT vẫn thuộc ví bạn; có thể thử refresh lại." : "Refresh reverted. Your NFT is safe; you can retry refresh.");
+          setError(kingRefreshCopy(lang, "Refresh reverted. Your NFT is safe; you can retry refresh."));
           try { localStorage.removeItem(key); } catch { /* Optional storage. */ }
         }
       } catch { /* Unknown transactions remain locked; poll until a mined receipt is available. */ }
     }
     void check(); const timer = setInterval(check, 5000);
     return () => { active = false; clearInterval(timer); };
-  }, [hash, pending, client, key, isVi]);
+  }, [hash, pending, client, key, lang]);
   const refresh = useCallback(async () => {
     if (lock.current || pending || !client || !wallet || !account) return;
     lock.current = true; setSigning(true); setError(""); setDone(false); setHash(undefined);
@@ -73,16 +75,16 @@ function RefreshAction({ tokenId, account, isVi }: {
       try { localStorage.setItem(key, sent); } catch { /* Optional storage. */ }
       if (mounted.current) { setHash(sent); setPending(true); }
     } catch (e) {
-      if (mounted.current) setError(e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "Refresh unavailable");
+      if (mounted.current) setError(kingError(e, KING_T[lang]));
     } finally { if (mounted.current) setSigning(false); lock.current = false; }
-  }, [pending, client, wallet, account, tokenId, key]);
+  }, [pending, client, wallet, account, tokenId, key, lang]);
   return <div aria-busy={signing || pending}>
-    <p>{isVi ? `Làm mới metadata NFT #${tokenId} trên explorer: phát tín hiệu ERC-4906, chỉ tốn gas OKB, không tốn BANMAO. Không thay đổi ảnh hay quyền sở hữu và không bảo đảm OKX Explorer cập nhật ngay. Chỉ ký nếu bạn muốn gửi yêu cầu.` : `Refresh NFT #${tokenId} metadata on explorers: emit an ERC-4906 signal, paying OKB gas only, no BANMAO. This does not change artwork or ownership and does not guarantee an immediate OKX Explorer update. Sign only if you want to send the request.`}</p>
+    <p>{kingRefreshCopy(lang, "Refresh NFT #{id} metadata on explorers: emit an ERC-4906 signal, paying OKB gas only, no BANMAO. This does not change artwork or ownership and does not guarantee an immediate OKX Explorer update. Sign only if you want to send the request.", tokenId)}</p>
     <div className="king-wallet-row">
-      {!account ? <ConnectButton accountStatus="address" chainStatus="none" showBalance={false} label={isVi ? "Kết nối ví để refresh" : "Connect wallet to refresh"} /> : chainId !== 196 ? <button type="button" onClick={() => void switchChainAsync({ chainId: 196 }).catch(() => setError(isVi ? "Vui lòng chuyển ví sang X Layer." : "Please switch your wallet to X Layer."))}>{isVi ? "Chuyển sang X Layer" : "Switch to X Layer"}</button> : <button type="button" disabled={signing || pending || !wallet || !client} onClick={() => void refresh()}>{signing ? (isVi ? "Chờ ký trong ví…" : "Confirm in wallet…") : pending ? (isVi ? "Chờ xác nhận giao dịch…" : "Waiting for confirmation…") : (isVi ? "Làm mới metadata trên explorer" : "Refresh explorer metadata")}</button>}
+      {!account ? <ConnectButton accountStatus="address" chainStatus="none" showBalance={false} label={kingRefreshCopy(lang, "Connect wallet to refresh")} /> : chainId !== 196 ? <button type="button" onClick={() => void switchChainAsync({ chainId: 196 }).catch(() => setError(kingRefreshCopy(lang, "Please switch your wallet to X Layer.")))}>{kingRefreshCopy(lang, "Switch to X Layer")}</button> : <button type="button" disabled={signing || pending || !wallet || !client} onClick={() => void refresh()}>{signing ? (kingRefreshCopy(lang, "Confirm in wallet…")) : pending ? (kingRefreshCopy(lang, "Waiting for confirmation…")) : (kingRefreshCopy(lang, "Refresh explorer metadata"))}</button>}
     </div>
     {error && <p role="alert">{error}</p>}
-    {hash && <p><a href={xLayerExplorerUrl("tx", hash, isVi ? "vi" : "en")} target="_blank" rel="noopener noreferrer">{isVi ? "Giao dịch refresh ↗" : "Refresh transaction ↗"}</a></p>}
-    {done && <p>{isVi ? "Đã phát tín hiệu refresh. Marketplace có thể cần thêm thời gian để cập nhật." : "Refresh signal confirmed. Marketplace indexing may take more time."}</p>}
+    {hash && <p><a href={xLayerExplorerUrl("tx", hash, lang)} target="_blank" rel="noopener noreferrer">{kingRefreshCopy(lang, "Refresh transaction ↗")}</a></p>}
+    {done && <p>{kingRefreshCopy(lang, "Refresh signal confirmed. Marketplace indexing may take more time.")}</p>}
   </div>;
 }

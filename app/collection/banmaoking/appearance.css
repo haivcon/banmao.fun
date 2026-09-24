@@ -18,6 +18,13 @@ html[data-ui-theme="light"] .king-page.king-experience :is(.king-header,.king-st
   background: var(--king-glass); color: #263348; border-color: #ccd3df;
 }
 html[data-ui-theme="light"] .king-page.king-experience :is(.king-trait-tabs,.king-theme-search,.king-preview-card,.king-recipient-review,.king-mint-premium,.king-zoom-scroll) { background: var(--king-surface-2); border-color: #ccd3df; }
+html[data-ui-theme="light"] .king-page.king-experience .king-header {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
 /* Target UI components rather than HTML tags that can occur inside artwork. */
 html[data-ui-theme="light"] .king-page.king-experience :is(.king-hero p,.king-section-heading p,.king-info-card p,.king-contract-card p,.king-contracts > p,.king-faq p,.king-mint-box p,.king-library-heading p,.king-catalogue-note,.king-preset-detail,.king-theme-empty,.king-preview-token-control small,.king-preview-meta,.king-preview-meta span,.king-trait-tabs small,.king-recipient-field small,.king-recipient-heading p,.king-recipient-number,.king-recipient-total small,.king-recipient-row-help,.king-recipient-empty,.king-mobile-summary small,.king-svg-dialog small,.king-contract-badge-label small) { color: var(--king-text-muted); }
 html[data-ui-theme="light"] .king-page.king-experience :is(.king-hero h1,.king-section h2,.king-info-card h3,.king-contract-card h3,.king-library-heading h3,.king-customize-title,.king-metrics strong,.king-mint-box p strong,.king-recipient-mode-card strong,.king-recipient-total strong,.king-recipient-list strong,.king-mobile-summary strong,.king-mint-progress strong,.king-preset-name,.king-contract-badge code,.king-recipient-review code,.king-preview-token-control label,.king-recipients legend) { color: var(--king-ui-text); }

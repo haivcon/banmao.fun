@@ -1,3 +1,17 @@
+/* Checkout: aligned columns without stretching short recipient forms. */
+.king-page.king-experience .king-mint-premium .king-mint-workspace { grid-template-columns: minmax(0,1.1fr) minmax(0,.9fr); align-items: start; gap: 24px; }
+.king-page.king-experience .king-mint-premium .king-mint-facts { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--king-border-subtle); }
+.king-page.king-experience .king-mint-premium .king-mint-facts > span { text-align: end; }
+.king-page.king-experience .king-mint-premium .king-recipient-review > h3 { margin-top: 0; }
+.king-page.king-experience .king-mint-premium .king-wallet-row > button { width: 100%; }
+@media (max-width: 900px) {
+  .king-page.king-experience .king-mint-premium .king-mint-workspace { grid-template-columns: minmax(0,1fr); gap: 16px; }
+}
+@media (max-width: 480px) {
+  .king-page.king-experience .king-mint-premium .king-mint-facts { grid-template-columns: minmax(0,1fr); gap: 8px; }
+  .king-page.king-experience .king-mint-premium .king-mint-facts > span { text-align: start; }
+}
+
 /* Balanced help: full-width guide above supporting FAQ, not unequal sidebars. */
 .king-page.king-experience .king-help-grid { grid-template-columns: minmax(0,1fr); gap: 24px; margin: 20px 0; }
 .king-page.king-experience .king-help-grid .king-step-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 16px 0 0; align-items: stretch; }
@@ -10,7 +24,11 @@
 .king-page.king-experience .king-checkout-summary { display: grid; gap: 8px; margin: 12px 0; font-size: 13px; }
 .king-checkout-summary > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
 .king-checkout-summary dt { color: var(--king-text-muted); }
-.king-checkout-summary dd { margin: 0; font-weight: 600; }
+.king-checkout-summary dd { margin: 0; font-weight: 600; text-align: end; min-width: 0; }
+.king-page.king-experience .king-summary-address { display: flex; align-items: center; justify-content: flex-end; gap: 6px; min-height: 44px; color: var(--king-gold); }
+.king-page.king-experience .king-mint-premium .king-recipient-total { align-items: baseline; border-top: 1px solid var(--king-border-subtle); margin-top: 12px; padding-top: 20px; }
+.king-page.king-experience .king-mint-premium .king-recipient-total > strong { font-size: clamp(22px, 3vw, 30px); font-variant-numeric: tabular-nums; }
+.king-page.king-experience .king-payment-recipients code { overflow-wrap: anywhere; }
 .king-page.king-experience .king-mint-premium .king-checkout-steps { grid-template-columns: repeat(3,minmax(0,1fr)); }
 .king-page.king-experience .king-result-success { display: flex; align-items: center; gap: 8px; color: var(--king-jade); font-size: 13px; }
 .king-result-recipient { font-size: 12px; overflow-wrap: anywhere; }
