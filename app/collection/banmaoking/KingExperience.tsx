@@ -22,10 +22,11 @@ import { useKingPreview } from './useKingPreview';
 import { CYBORG_PREVIEW_TOKEN_IDS, cyborgForm } from './cyborg';
 import { traitLabels } from "./i18n/traits";
 import KingMint from "./KingMint";
+import KingSupply from './KingSupply';
 import KingComposition from "./KingComposition";
 import KingSvgViewer from './KingSvgViewer';
 import KingLookup from "./KingLookup";
-import { TOTAL_COMBINATIONS } from "./traits";
+
 import KingContracts from "./KingContracts";
 import KingSections from "./KingSections";
 import "./banmaoking.css";
@@ -87,8 +88,7 @@ export default function KingExperience() {
     </header>
     <Toaster toasterId="king" position="bottom-center" toastOptions={{ ariaProps: { role: 'status', 'aria-live': 'polite' }, style: { background: '#182030', color: '#f4f6fb', border: '1px solid #748298', maxWidth: 'min(420px, calc(100vw - 32px))' } }} />
     <div id="panel-king-studio" className="king-task-panel" role="tabpanel" aria-labelledby="task-king-studio" tabIndex={0} hidden={activeSection !== 'king-studio'}>
-    <section className="king-hero"><div><span className="king-eyebrow"><span className="king-live-dot" />{t.kicker}</span><h1>{t.title}<br /><em>{t.titleAccent}</em></h1><div className="king-hero-actions"><a className="king-primary-link" href="#king-mint">{t.mint} ↗</a><a className="king-secondary-link" href="#king-studio">{t.explore} ↓</a></div></div></section>
-    <div className="king-metrics">{[[new Intl.NumberFormat(lang).format(TOTAL_COMBINATIONS), t.combinations], ["4", t.layers], ["100%", t.onchain], [`${new Intl.NumberFormat(lang).format(6666)} BANMAO`, t.price]].map(([value, label]) => <div key={label}><strong>{value}</strong><span>{label}</span></div>)}</div>
+    <section className="king-hero"><div><span className="king-eyebrow"><span className="king-live-dot" />{t.kicker}</span><h1>{t.title}<br /><em>{t.titleAccent}</em></h1><KingSupply lang={lang} /></div></section>
     <section id="king-studio" className="king-section"><div className="king-section-heading"><div><span className="king-eyebrow">{t.explore}</span><h2>{t.studio}</h2><p>{t.studioDesc}</p></div><span className="king-chip">{t.animated}</span></div>
 
       <div className="king-studio-grid"><div className="king-preview-card"><div className="king-art-frame"><KingAnimatedSvg key={`${traits.body}-${traits.expression}-${traits.accessory}-${traits.background}-${tokenId}`} className="king-art" data-animated="true" viewBox="0 0 512 512" role="img" aria-label={`${t.preview} · Banmao King #${tokenId}`} aria-busy={!preview.markup && !preview.failed} markup={preview.markup} />{!preview.markup && <div role="status">{preview.failed ? <button type="button" onClick={preview.retry}>{t.retry}</button> : t.processing}</div>}</div><div className="king-preview-meta" aria-live="polite"><div><strong>Banmao King</strong><br /><span>{t.preview} #{tokenId}{traits.body === 4 ? ` · ${kingUi(lang, cyborgForm(tokenId) ? 'Full Machine' : 'Hybrid')}` : ''}</span></div><KingSvgViewer traits={traits} tokenId={tokenId} lang={lang} /></div></div>

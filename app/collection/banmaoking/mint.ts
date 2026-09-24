@@ -1,4 +1,4 @@
-import { parseAbi, getAddress, isAddress, zeroAddress } from "viem";
+import { decodeEventLog, parseAbi, getAddress, isAddress, zeroAddress, type Hash } from "viem";
 import { BANMAO_KING_DEPLOYMENT as deployment } from "./deployment";
 
 export const kingAddress = deployment.contractAddress as `0x${string}`;
@@ -9,13 +9,35 @@ export const kingAbi = parseAbi([
   "function mintPrice(address) view returns (uint256)",
   "function isPaymentToken(address) view returns (bool)",
   "function mint(address to, address paymentToken) payable returns (uint256)",
+  "function mintBatch(address to, address paymentToken, uint256 quantity) payable returns (uint256)",
   "function mintBatchTo(address[] recipients, uint256[] quantities, address paymentToken) payable returns (uint256)",
   "event BatchMinted(address indexed payer, address indexed paymentToken, uint256 firstTokenId, uint256 quantity, uint256 totalPaid)",
   "function tokenURI(uint256) view returns (string)",
   "function refreshMetadata(uint256 tokenId)",
   "event KingMinted(address indexed payer, address indexed to, uint256 indexed tokenId, address paymentToken, uint256 price, uint32 packedTraits)",
 ]);
-// Deployment capability is deliberately opt-in: the current immutable collection is mint-only.
+export type KingBatchSummary = { firstTokenId: bigint; quantity: bigint; totalPaid: bigint };
+
+export function decodeKingBatchSummary(logs: readonly { address: string; data: Hash; topics?: readonly Hash[] }[], payer: string): KingBatchSummary | undefined {
+  for (const log of logs) {
+    if (!log.topics || log.address.toLowerCase() !== kingAddress.toLowerCase()) continue;
+    try {
+      const { args } = decodeEventLog({ abi: kingAbi, eventName: 'BatchMinted', data: log.data, topics: [...log.topics] as [Hash, ...Hash[]] });
+      if (args.payer.toLowerCase() !== payer.toLowerCase() || args.paymentToken.toLowerCase() !== paymentAddress.toLowerCase()) continue;
+      if (args.quantity < 1n || args.quantity > 50n || args.firstTokenId < 1n) continue;
+      return { firstTokenId: args.firstTokenId, quantity: args.quantity, totalPaid: args.totalPaid };
+    } catch { /* Ignore unrelated or malformed logs. */ }
+  }
+}
+
+export function kingMintCall(plan: ReturnType<typeof parseKingRecipients>) {
+  if (plan.total === 1n) return { functionName: 'mint', args: [plan.recipients[0], paymentAddress] } as const;
+  if (!deployment.supportsBatchMint) throw new Error('Batch deployment not verified');
+  if (plan.recipients.length === 1) return { functionName: 'mintBatch', args: [plan.recipients[0], paymentAddress, plan.total] } as const;
+  return { functionName: 'mintBatchTo', args: [plan.recipients, plan.quantities, paymentAddress] } as const;
+}
+
+// Batch capability is deliberately opt-in through the deployment manifest.
 export function parseKingRecipients(input: string) {
   const rows = input.trim().split(/\r?\n/);
   if (!input.trim() || rows.length > 50) throw new Error("Enter 1–50 recipient rows / Nhập 1–50 dòng người nhận");

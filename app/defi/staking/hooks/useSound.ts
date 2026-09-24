@@ -38,6 +38,4 @@ export function useSound() {
     const playError = useCallback(() => playSound('/sounds/error.wav', 0.8), [playSound]);
 
     return { playClick, playHover, playSuccess, playError };
-
-    return { playClick, playHover, playSuccess, playError };
 }
