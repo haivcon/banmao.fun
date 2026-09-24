@@ -1,0 +1,8 @@
+.king-page.king-experience .king-banmao-guide { min-width: 0; margin: 12px 0; padding: 12px; border: 1px solid var(--king-border-subtle); border-radius: 12px; background: var(--king-surface-2); overflow-wrap: anywhere; }
+.king-page.king-experience .king-banmao-guide > summary { cursor: pointer; color: var(--king-gold); line-height: 1.6; }
+.king-page.king-experience .king-banmao-guide > summary:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.king-page.king-experience .king-banmao-guide ol { display: block; list-style: decimal; margin: 12px 0; padding-inline-start: 22px; }
+.king-page.king-experience .king-banmao-guide li { display: list-item; margin: 8px 0; line-height: 1.7; }
+.king-page.king-experience .king-banmao-guide code { white-space: normal; overflow-wrap: anywhere; user-select: all; }
+.king-page.king-experience .king-banmao-guide svg { display: inline; vertical-align: middle; }
+.king-page.king-experience .king-banmao-guide .king-banmao-warning { color: var(--king-text-muted); line-height: 1.7; }
