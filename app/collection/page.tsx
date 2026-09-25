@@ -1,4 +1,6 @@
-export { generateMetadata } from "./gallery/page";
+import { createSharingMetadata } from "../../lib/sharing/metadata";
+
+export const metadata = createSharingMetadata("/collection");
 import { redirect } from "next/navigation";
 import CollectionLanding from "./CollectionLanding";
 import { legacyCollectionPath } from "./collectionRoutes";
