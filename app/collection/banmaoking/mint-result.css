@@ -20,3 +20,43 @@
 .king-page.king-experience .king-result-explorer { flex-wrap: wrap; margin-top: 12px; overflow-wrap: anywhere; }
 .king-page.king-experience .king-transaction-result :is(button,a,summary):focus-visible { outline: 2px solid var(--king-gold); outline-offset: 3px; }
 @media (max-width: 600px) { .king-page.king-experience .king-transaction-result { padding: 14px; } }
+
+.king-page.king-experience .king-transaction-result[data-tone="warning"] { border-color: #e9b85b; }
+.king-page.king-experience .king-transaction-result[data-tone="warning"] .king-result-heading > svg { color: #e9b85b; }
+.king-page.king-experience .king-receipt-summary { margin-block: 16px; }
+.king-page.king-experience .king-receipt-summary dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; margin: 0 0 10px; }
+.king-page.king-experience .king-receipt-summary dl > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--king-border-subtle, #536073); min-width: 0; }
+.king-page.king-experience .king-receipt-summary dt { font-size: 13px; opacity: .8; flex: 0 1 48%; }
+.king-page.king-experience .king-receipt-summary dd { margin: 0; min-width: 0; text-align: end; font-weight: 600; overflow-wrap: anywhere; }
+.king-page.king-experience .king-receipt-summary .king-receipt-wide { grid-column: 1 / -1; align-items: center; }
+.king-page.king-experience .king-receipt-wide dt { flex: 0 0 25%; }
+.king-page.king-experience .king-receipt-wide dd { flex: 1; font-size: 12px; }
+.king-page.king-experience .king-receipt-wide a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; max-width: 100%; }
+.king-page.king-experience .king-receipt-wide a code { min-width: 0; overflow-wrap: anywhere; }
+.king-page.king-experience .king-receipt-wide a svg { flex-shrink: 0; }
+.king-page.king-experience .king-receipt-summary > button { display: block; margin-top: 14px; }
+.king-page.king-experience .king-result-wallets > li { border: 0; border-top: 1px solid var(--king-border-subtle, #536073); border-radius: 0; padding: 12px 0; }
+@media (max-width: 600px) {
+  .king-page.king-experience .king-receipt-summary dl { grid-template-columns: 1fr; }
+  .king-page.king-experience .king-receipt-summary .king-receipt-wide { flex-direction: column; align-items: stretch; gap: 2px; }
+  .king-page.king-experience .king-receipt-wide dd { text-align: start; }
+}
+
+/* One shared result surface: verified artwork and receipt are not nested cards. */
+.king-page.king-experience .king-result-body { display: grid; gap: 24px; margin-top: 20px; }
+.king-page.king-experience .king-result-body[data-preview="true"] { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); align-items: start; }
+.king-page.king-experience :is(.king-result-preview, .king-result-information) { min-width: 0; }
+.king-page.king-experience .king-result-preview .king-mint-detail { margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; }
+.king-page.king-experience .king-result-preview .king-mint-detail > h3 { margin: 0; font-size: 18px; line-height: 1.5; }
+.king-page.king-experience .king-result-preview .king-mint-artwork { width: min(100%, 320px); }
+.king-page.king-experience .king-result-information .king-receipt-summary { margin-top: 0; }
+.king-page.king-experience .king-result-body[data-preview="true"] .king-receipt-summary dl { grid-template-columns: 1fr; }
+.king-page.king-experience .king-result-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 24px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--king-border-subtle, #536073); }
+.king-page.king-experience .king-result-footer > a { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; min-height: 44px; min-width: 0; max-width: 100%; }
+.king-page.king-experience .king-result-footer code { font-size: 12px; overflow-wrap: anywhere; min-width: 0; flex: 1 1 240px; }
+.king-page.king-experience .king-result-footer svg { flex-shrink: 0; }
+@media (max-width: 760px) {
+  .king-page.king-experience .king-result-body[data-preview="true"] { grid-template-columns: 1fr; }
+  .king-page.king-experience .king-result-preview .king-mint-artwork { width: min(100%, 280px); }
+  .king-page.king-experience .king-result-preview .king-mint-detail > h3 { text-align: center; }
+}

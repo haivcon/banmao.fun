@@ -1,0 +1,44 @@
+/* Gallery utilities and filled trait cards with bounded native scrolling. */
+.king-page.king-experience .king-gallery-utilities {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: 32px;
+  margin: 0 24px;
+  padding: 22px 0;
+  border-top: 1px solid var(--king-border-subtle);
+}
+.king-page.king-experience .king-gallery-utilities h3 { margin: 0 0 6px; font-size: 11px; font-weight: 600; letter-spacing: .06em; color: var(--king-text-muted); }
+.king-page.king-experience .king-gallery-token { min-width: 0; }
+.king-page.king-experience .king-composition-code-row { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.king-page.king-experience .king-gallery-utilities .king-composition-value { padding: 0; border: 0; border-radius: 0; background: none; font-size: 15px; letter-spacing: .01em; }
+.king-page.king-experience .king-gallery-token-value { display: flex; align-items: center; min-height: 44px; font-size: 16px; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.king-page.king-experience .king-composition-code-row button { width: 44px; flex: 0 0 44px; padding: 0; border-color: transparent; background: none; color: var(--king-text-muted); }
+.king-page.king-experience .king-inline-editor > summary { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; list-style: none; font-size: 12px; color: var(--king-text-muted); cursor: pointer; }
+.king-inline-editor > summary::-webkit-details-marker { display: none; }
+.king-inline-editor[open] > summary svg { transform: rotate(180deg); }
+.king-page.king-experience .king-gallery-hint { margin: 6px 0 0; font-size: 12px; line-height: 1.6; color: var(--king-text-muted); }
+.king-page.king-experience .king-gallery-utilities .king-composition-import { margin-top: 12px; padding-top: 0; border: 0; }
+.king-page.king-experience .king-gallery-utilities input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--king-border-subtle); border-radius: 10px; background: var(--king-surface-1); color: inherit; font: inherit; font-size: 13px; }
+.king-page.king-experience .king-gallery-utilities input[aria-invalid="true"] { border-color: #dc6868; }
+.king-page.king-experience .king-gallery-utilities .king-preview-token-control { margin: 12px 0 0; }
+.king-page.king-experience .king-gallery-utilities .king-preview-token-control small { color: var(--king-text-muted); line-height: 1.6; }
+.king-page.king-experience .king-studio-grid { background: var(--king-surface-1); border: 1px solid var(--king-border-subtle); }
+.king-page.king-experience .king-studio-grid .king-trait-panel { background: var(--king-surface-1); }
+.king-page.king-experience .king-studio-grid .king-selectors fieldset { padding: 12px; border: 1px solid var(--king-border-subtle); border-radius: 12px; background: var(--king-surface-2); }
+.king-page.king-experience .king-studio-grid .king-trait-options { max-height: 300px; overflow-y: auto; scrollbar-gutter: stable; padding: 4px 10px 4px 4px; gap: 8px; }
+.king-page.king-experience .king-studio-grid .king-trait-options button { min-height: 48px; padding: 12px; border-radius: 10px; border: 1px solid var(--king-border-subtle); background: var(--king-surface-1); color: inherit; box-shadow: none; }
+.king-page.king-experience .king-studio-grid .king-trait-options button[aria-pressed="true"] { border-color: var(--king-gold); background: color-mix(in srgb, var(--king-gold) 15%, var(--king-surface-1)); color: inherit; }
+.king-page.king-experience .king-studio-grid .king-trait-tabs { gap: 8px; padding: 0; background: none; border: 0; }
+.king-page.king-experience .king-studio-grid .king-trait-tabs button { border: 1px solid var(--king-border-subtle); border-radius: 10px; background: var(--king-surface-2); color: inherit; box-shadow: none; }
+.king-page.king-experience .king-studio-grid .king-trait-tabs button[aria-selected="true"] { border-color: var(--king-gold); background: color-mix(in srgb, var(--king-gold) 15%, var(--king-surface-2)); color: inherit; }
+.king-page.king-experience .king-gallery-utilities :is(button,input,summary):focus-visible,
+.king-page.king-experience .king-studio-grid :is(.king-trait-tabs,.king-trait-options) button:focus-visible { outline: 2px solid var(--king-gold); outline-offset: 2px; }
+@media (hover: hover) {
+  .king-page.king-experience .king-inline-editor > summary:hover { color: inherit; }
+  .king-page.king-experience .king-studio-grid .king-trait-options button:hover { border-color: var(--king-gold); }
+}
+@media (max-width: 800px) {
+  .king-page.king-experience .king-gallery-utilities { margin-inline: 18px; gap: 24px; grid-template-columns: minmax(0, 1fr); }
+}

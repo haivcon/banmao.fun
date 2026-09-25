@@ -2,7 +2,7 @@
 import { kingRecipientCopy } from './i18n/recipients';
 import { useId, useRef, useState } from 'react';
 import { Plus, Trash2, ClipboardList } from 'lucide-react';
-import { parseKingRecipients } from './mint';
+import { KING_MAX_BATCH_SIZE, parseKingRecipients } from './mint';
 import { recipientDiagnostics, recipientRows } from './recipient-editor';
 import type { Lang } from './i18n';
 
@@ -37,7 +37,7 @@ export default function KingRecipientEditor({ value, onChange, lang }: { value: 
     }
   }
   return <div className="king-recipient-editor" ref={container}>
-    <div className="king-recipient-editor-toolbar"><strong>{kingRecipientCopy(lang, "Recipient list")}</strong><span aria-live="polite">{total.toString()} / 50 NFT</span></div>
+    <div className="king-recipient-editor-toolbar"><strong>{kingRecipientCopy(lang, "Recipient list")}</strong><span aria-live="polite">{total.toString()} / {KING_MAX_BATCH_SIZE} NFT</span></div>
     <button type="button" className="king-recipient-tool" aria-expanded={bulk} onClick={() => { setBulk(!bulk); setDraft(value); setError(''); }}><ClipboardList size={16} aria-hidden="true" />{bulk ? (kingRecipientCopy(lang, "Close paste editor")) : (kingRecipientCopy(lang, "Paste a list"))}</button>
     {bulk && <div className="king-recipient-bulk">
       <label className="king-recipient-field" htmlFor={`${prefix}-bulk`}>{kingRecipientCopy(lang, "One row: address, quantity")}<textarea id={`${prefix}-bulk`} rows={5} value={draft} onChange={e => { setDraft(e.target.value); setError(''); }} autoCapitalize="none" autoCorrect="off" spellCheck={false} aria-invalid={!!error} aria-describedby={`${prefix}-bulk-help`} /></label>
@@ -47,15 +47,15 @@ export default function KingRecipientEditor({ value, onChange, lang }: { value: 
     </div>}
     <div className="king-recipient-edit-rows">{rows.map((row, i) => <div className="king-recipient-edit-row" key={i}>
       <label className="king-recipient-field">{kingRecipientCopy(lang, "Recipient")} {i + 1}<input data-recipient-address value={row.address} onChange={e => update(i, 'address', e.target.value.trim())} placeholder="0x…" autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} aria-invalid={!!row.address && !issues[i].validAddress} aria-describedby={`${prefix}-${i}-help`} /></label>
-      <label className="king-recipient-field">NFT<input type="number" inputMode="numeric" min="1" max="50" value={row.quantity} onChange={e => update(i, 'quantity', e.target.value)} aria-invalid={!issues[i].validQuantity || Number(row.quantity) > 50} aria-describedby={`${prefix}-${i}-help`} /></label>
+      <label className="king-recipient-field">NFT<input type="number" inputMode="numeric" min="1" max={KING_MAX_BATCH_SIZE} value={row.quantity} onChange={e => update(i, 'quantity', e.target.value)} aria-invalid={!issues[i].validQuantity || Number(row.quantity) > KING_MAX_BATCH_SIZE} aria-describedby={`${prefix}-${i}-help`} /></label>
       <button type="button" className="king-recipient-tool" disabled={rows.length === 1} aria-label={`${kingRecipientCopy(lang, "Remove recipient")} ${i + 1}`} onClick={() => {
         onChange(rows.filter((_, index) => index !== i).map(item => `${item.address},${item.quantity}`).join('\n'));
         focusRow(Math.max(0, i - 1));
       }}><Trash2 size={16} aria-hidden="true" /></button>
-      <small id={`${prefix}-${i}-help`} className="king-recipient-row-help">{row.address && !issues[i].validAddress ? (kingRecipientCopy(lang, "Invalid address.")) : !issues[i].validQuantity || Number(row.quantity) > 50 ? (kingRecipientCopy(lang, "Enter a whole number from 1 to 50.")) : issues[i].duplicate ? (kingRecipientCopy(lang, "Repeated wallet. Please review; rows are not merged.")) : issues[i].validAddress ? (kingRecipientCopy(lang, "Valid format — verify the intended recipient.")) : (kingRecipientCopy(lang, "Enter a full EVM address."))}</small>
+      <small id={`${prefix}-${i}-help`} className="king-recipient-row-help">{row.address && !issues[i].validAddress ? (kingRecipientCopy(lang, "Invalid address.")) : !issues[i].validQuantity || Number(row.quantity) > KING_MAX_BATCH_SIZE ? (kingRecipientCopy(lang, "Enter a whole number from 1 to 50.")) : issues[i].duplicate ? (kingRecipientCopy(lang, "Repeated wallet. Please review; rows are not merged.")) : issues[i].validAddress ? (kingRecipientCopy(lang, "Valid format — verify the intended recipient.")) : (kingRecipientCopy(lang, "Enter a full EVM address."))}</small>
     </div>)}</div>
     {overLimit && <p className="king-recipient-error" role="alert">{kingRecipientCopy(lang, "The total exceeds the 50 NFT limit.")}</p>}
-    <button type="button" className="king-recipient-tool" disabled={rows.length >= 50} onClick={() => {
+    <button type="button" className="king-recipient-tool" disabled={rows.length >= KING_MAX_BATCH_SIZE} onClick={() => {
       onChange(`${value || ',1'}\n,1`);
       focusRow(rows.length);
     }}><Plus size={16} aria-hidden="true" />{kingRecipientCopy(lang, "Add recipient")}</button>

@@ -15,9 +15,10 @@ export function kingError(error: unknown, t: KingCopy): string {
   const message = error instanceof Error ? error.message : String(error);
   if (/reject|denied|4001/i.test(message)) return t.rejected;
   if (/configuration mismatch/i.test(message)) return t.configError;
-  if (/sold out/i.test(message)) return t.soldOut;
+  if (/UnsupportedPaymentToken|InexactERC20Payment/i.test(message)) return t.configError;
+  if (/sold out|SoldOut/i.test(message)) return t.soldOut;
   if (/allowance updated/i.test(message)) return t.allowanceUpdated;
-  if (/wallet changed/i.test(message)) return t.walletChanged;
+  if (/wallet (?:or network )?changed/i.test(message)) return t.walletChanged;
   if (/switch to X Layer/i.test(message)) return t.switchHelp;
   if (/not enough BANMAO/i.test(message)) return t.insufficient;
   if (/OKB|insufficient funds/i.test(message)) return t.needGas;

@@ -7,6 +7,8 @@ import { useAccount, usePublicClient, useSwitchChain, useWalletClient } from "wa
 import { ConnectButton } from "../../components/wallet/WalletConnection";
 import { type Address, type Hash, type PublicClient } from "viem";
 import { kingAbi, kingAddress } from "./mint";
+import { parsePendingMint, serializePendingMint } from './mint-result';
+import { MINT_RESULT_COPY } from './i18n/mint-result';
 
 export default function KingMetadataRefresh({ tokenId, lang }: { tokenId: bigint; lang: Lang }) {
   const { address, chainId } = useAccount();
@@ -26,6 +28,7 @@ function RefreshAction({ tokenId, account, lang }: {
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
   const lock = useRef(false);
+  const replacement = useRef(false);
   const mounted = useRef(true);
   const key = `king-refresh:196:${kingAddress}:${account}:${tokenId}`;
   useEffect(() => {
@@ -33,32 +36,48 @@ function RefreshAction({ tokenId, account, lang }: {
     try {
       const saved = localStorage.getItem(key);
       if (saved === "confirmed") setDone(true);
-      else if (saved && /^0x[0-9a-f]{64}$/i.test(saved)) { setHash(saved as Hash); setPending(true); }
+      else {
+        const record = parsePendingMint(saved);
+        if (record) { replacement.current = record.replaced ?? false; setHash(record.hash); setPending(true); }
+      }
     } catch { /* Storage is optional. */ }
     return () => { mounted.current = false; };
   }, [key]);
   useEffect(() => {
     if (!hash || !pending || !client) return;
     let active = true;
+    let checking = false;
     async function check() {
+      if (checking) return;
+      checking = true;
       try {
-        const receipt = await client!.getTransactionReceipt({ hash: hash! });
+        const receipt = await client!.waitForTransactionReceipt({ hash: hash!, timeout: 180000, onReplaced: ({ reason, transaction }) => {
+          if (!active) return;
+          replacement.current = replacement.current || reason !== 'repriced';
+          try { localStorage.setItem(key, serializePendingMint(transaction.hash, undefined, replacement.current)); } catch { /* Optional storage. */ }
+        } });
         if (!active) return;
         setPending(false);
-        setDone(receipt.status === "success");
-        if (receipt.status === "success") {
+        setHash(receipt.transactionHash);
+        setDone(receipt.status === "success" && !replacement.current);
+        if (replacement.current) {
+          setError(MINT_RESULT_COPY[lang].states.replaced[1]);
+          try { localStorage.removeItem(key); } catch { /* Optional storage. */ }
+        } else if (receipt.status === "success") {
           try { localStorage.setItem(key, "confirmed"); } catch { /* Optional storage. */ }
         } else {
           setError(kingRefreshCopy(lang, "Refresh reverted. Your NFT is safe; you can retry refresh."));
           try { localStorage.removeItem(key); } catch { /* Optional storage. */ }
         }
       } catch { /* Unknown transactions remain locked; poll until a mined receipt is available. */ }
+      finally { checking = false; }
     }
     void check(); const timer = setInterval(check, 5000);
     return () => { active = false; clearInterval(timer); };
   }, [hash, pending, client, key, lang]);
   const refresh = useCallback(async () => {
     if (lock.current || pending || !client || !wallet || !account) return;
+    replacement.current = false;
     lock.current = true; setSigning(true); setError(""); setDone(false); setHash(undefined);
     try {
       if (await wallet.getChainId() !== 196) throw new Error("Switch to X Layer");

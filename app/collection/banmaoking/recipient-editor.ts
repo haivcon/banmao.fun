@@ -1,4 +1,5 @@
 import { isAddress, zeroAddress } from 'viem';
+import { KING_MAX_BATCH_SIZE } from './mint';
 
 export function recipientRows(value: string) {
   return (value || ',1').split('\n').map(row => {
@@ -19,5 +20,5 @@ export function recipientDiagnostics(value: string) {
     if (validAddress) seen.add(key);
     return { validAddress, validQuantity, duplicate };
   });
-  return { issues, total, overLimit: total > 50n || rows.length > 50 };
+  return { issues, total, overLimit: total > BigInt(KING_MAX_BATCH_SIZE) || rows.length > KING_MAX_BATCH_SIZE };
 }
