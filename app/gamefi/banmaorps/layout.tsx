@@ -1,3 +1,4 @@
+import { createSharingMetadata } from "../../../lib/sharing/metadata";
 // app/gamefi/banmaorps/layout.tsx
 // Server layout with proper manifest metadata for PWA install
 
@@ -8,8 +9,7 @@ import GameLayoutClient from "./GameLayoutClient";
 export const viewport = createDesktopViewport("#FFD700");
 
 export const metadata: Metadata = {
-    title: "BANMAO RPS",
-    description: "Play Rock–Paper–Scissors using $BANMAO on XLayer",
+  ...createSharingMetadata("/gamefi/banmaorps"),
     manifest: "/manifest-game.json",
     appleWebApp: {
         capable: true,
@@ -24,18 +24,6 @@ export const metadata: Metadata = {
         apple: [
             { url: "/games/rps/rps-icon-192x192.png", sizes: "192x192", type: "image/png" },
         ],
-    },
-
-    openGraph: {
-        title: "$banmao+RPS",
-        description: "Play Rock-Paper-Scissors and collect $BANMAO tokens on XLayer",
-        images: ["/games/rps/rps-icon-512x512.png"],
-    },
-    twitter: {
-        card: "summary_large_image",
-        title: "$banmao+RPS",
-        description: "Play Rock-Paper-Scissors and collect $BANMAO tokens on XLayer",
-        images: ["/games/rps/rps-icon-512x512.png"],
     },
 };
 

@@ -1,12 +1,11 @@
+import { createSharingMetadata } from "../../../lib/sharing/metadata";
 import type { Metadata } from "next";
 import { createDesktopViewport } from "../../../lib/responsive/displayStandard";
 
 export const viewport = createDesktopViewport("#090b0d");
 
 export const metadata: Metadata = {
-  title: "Banmao King — On-chain Collection Preview",
-  description:
-    "Development preview of the immutable, fully on-chain Banmao King NFT collection.",
+  ...createSharingMetadata("/collection/banmaoking"),
   robots: { index: false, follow: false },
 };
 

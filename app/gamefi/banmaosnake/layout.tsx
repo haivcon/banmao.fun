@@ -1,3 +1,4 @@
+import { createSharingMetadata } from "../../../lib/sharing/metadata";
 // app/gamefi/banmaosnake/layout.tsx
 // Server layout with proper manifest metadata for PWA install
 
@@ -8,8 +9,7 @@ import SnakeLayoutClient from "./SnakeLayoutClient";
 export const viewport = createStandardViewport("#22d3ee");
 
 export const metadata: Metadata = {
-    title: "$banmao+snake",
-    description: "Play Snake game and collect $BANMAO tokens on XLayer",
+  ...createSharingMetadata("/gamefi/banmaosnake"),
     manifest: "/manifest-snake.json",
     appleWebApp: {
         capable: true,
@@ -25,17 +25,6 @@ export const metadata: Metadata = {
             { url: "/games/snake/snake-icon-192x192.png", sizes: "192x192", type: "image/png" },
         ],
     },
-    openGraph: {
-        title: "$banmao+snake",
-        description: "Play Snake game and collect $BANMAO tokens on XLayer",
-        images: ["/games/snake/snake-icon-512x512.png"],
-    },
-    twitter: {
-        card: "summary_large_image",
-        title: "$banmao+snake",
-        description: "Play Snake game and collect $BANMAO tokens on XLayer",
-        images: ["/games/snake/snake-icon-512x512.png"],
-    }
 };
 
 export default function SnakeLayout({ children }: { children: React.ReactNode }) {

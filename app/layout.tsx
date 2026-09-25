@@ -1,3 +1,5 @@
+import ShareProject from "../components/sharing/ShareProject";
+import { createSharingMetadata } from "../lib/sharing/metadata";
 // app/layout.tsx
 import "./landing.css";
 import "./web2d/web2d.css";
@@ -18,42 +20,13 @@ import "./components/ai/ai-chat.css";
 export const viewport: Viewport = createStandardViewport("#a855f7");
 
 export const metadata: Metadata = {
+  ...createSharingMetadata("/"),
   metadataBase: new URL("https://banmao.fun"),
-  title: "BANMAO — XLayer Gaming Ecosystem",
-  description: "Experience the future of blockchain gaming on XLayer. Play Rock-Paper-Scissors, stake $BANMAO tokens, and compete for rewards in our immersive 3D ecosystem.",
   keywords: ["BANMAO", "XLayer", "Blockchain Gaming", "Web3", "Crypto Game", "NFT", "DeFi Gaming"],
   authors: [{ name: "BANMAO Team" }],
   creator: "BANMAO",
 
   // Note: manifest is set by each sub-app layout for proper PWA install
-
-    openGraph: {
-        type: "website",
-        locale: "en_US",
-        alternateLocale: ["vi_VN", "ko_KR", "zh_CN", "ru_RU", "id_ID"],
-        url: "https://banmao.fun",
-        siteName: "BANMAO Gaming",
-        title: "BANMAO — XLayer Gaming Ecosystem",
-        description: "Experience the future of blockchain gaming on XLayer. Play, stake, and win in our immersive 3D ecosystem.",
-        images: [
-            {
-                url: "/pwa/main/icon-512x512.png",
-                width: 512,
-                height: 512,
-                alt: "BANMAO Logo",
-            },
-        ],
-    },
-
-    // Twitter Cards
-    twitter: {
-        card: "summary_large_image",
-        site: "@banmao_X",
-        creator: "@banmao_X",
-        title: "BANMAO — XLayer Gaming Ecosystem",
-        description: "Experience the future of blockchain gaming on XLayer. Play, stake, and win in our immersive 3D ecosystem.",
-        images: ["/pwa/main/icon-512x512.png"],
-    },
 
   // App metadata
   applicationName: "BANMAO",
@@ -173,7 +146,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={spaceMono.className}>
         <ResponsiveDisplayProvider>
-          <SharedProviders><AIChatMount />{children}</SharedProviders>
+          <SharedProviders><AIChatMount />{children}<ShareProject /></SharedProviders>
         </ResponsiveDisplayProvider>
       </body>
     </html>

@@ -1,11 +1,10 @@
+import { createSharingMetadata } from "../../../lib/sharing/metadata";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { createDesktopViewport } from "../../../lib/responsive/displayStandard";
 
 export const metadata: Metadata = {
-  title: "BanmaoBox | Transferable Time-Locked Token Vault",
-  description:
-    "Pack one or more ERC-20 tokens into a transferable, time-locked NFT on X Layer. Ownership of the assets follows the NFT until its opening time.",
+  ...createSharingMetadata("/defi/box"),
   keywords: [
     "BanmaoBox",
     "ERC-20 vault",
@@ -16,19 +15,6 @@ export const metadata: Metadata = {
     "X Layer",
     "DeFi",
   ],
-  openGraph: {
-    title: "BanmaoBox | Pack assets. Transfer ownership. Open on time.",
-    description:
-      "Pack one or more ERC-20 tokens into a transferable, time-locked NFT on X Layer.",
-    type: "website",
-    siteName: "BANMAO",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "BanmaoBox | Transferable Time-Locked Token Vault",
-    description:
-      "Pack one or more ERC-20 tokens into a transferable, time-locked NFT on X Layer.",
-  },
 };
 
 export const viewport = {

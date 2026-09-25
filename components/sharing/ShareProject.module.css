@@ -1,0 +1,20 @@
+.root { font-family: Arial, sans-serif; }
+.trigger { position: fixed; bottom: max(16px, env(safe-area-inset-bottom)); left: max(16px, env(safe-area-inset-left)); z-index: 90; display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid #76658b; border-radius: 24px; background: #17131f; color: #faf7ff; box-shadow: 0 4px 16px #0003; cursor: pointer; min-height: 44px; }
+.dialog { box-sizing: border-box; width: min(480px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; margin: auto; padding: 24px; border: 1px solid #625472; border-radius: 20px; background: #17131f; color: #faf7ff; box-shadow: 0 24px 80px #0008; }
+.dialog::backdrop { background: #08060dbb; }
+.heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.heading h2 { margin: 0; font-size: 22px; }
+.dialog p { font-size: 14px; line-height: 1.6; color: #d3c9df; }
+.dialog label { display: block; font-size: 13px; font-weight: 600; margin: 16px 0 8px; }
+.dialog textarea, .dialog input { box-sizing: border-box; width: 100%; padding: 12px; border: 1px solid #76658b; border-radius: 10px; background: #0f0c15; color: #faf7ff; font: inherit; font-size: 16px; line-height: 1.5; }
+.dialog textarea { resize: vertical; min-height: 130px; }
+.dialog button { min-height: 44px; padding: 10px 14px; border: 1px solid #76658b; border-radius: 10px; background: #292133; color: #faf7ff; font: inherit; font-size: 14px; cursor: pointer; }
+.dialog .close { display: grid; place-items: center; flex-shrink: 0; padding: 10px; }
+.dialog .primary { width: 100%; margin-top: 20px; background: #dcc4ff; color: #20112f; border-color: #dcc4ff; font-weight: 700; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.actions button { flex: 1; }
+.dialog .status { min-height: 24px; margin: 12px 0 4px; }
+.dialog small { display: block; color: #c2b6ce; line-height: 1.5; }
+.root button:focus-visible, .dialog textarea:focus-visible, .dialog input:focus-visible { outline: 3px solid #cfa6ff; outline-offset: 3px; }
+.root button:disabled { opacity: .6; cursor: wait; }
+@media (max-width: 480px) { .dialog { padding: 18px; } .trigger { bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; } }

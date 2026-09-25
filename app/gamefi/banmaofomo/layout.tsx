@@ -1,3 +1,4 @@
+import { createSharingMetadata } from "../../../lib/sharing/metadata";
 /**
  * BanMaoFomo Layout
  */
@@ -5,21 +6,8 @@ import type { Metadata } from "next";
 import { createStandardViewport } from "../../../lib/responsive/displayStandard";
 
 export const metadata: Metadata = {
-    title: "BANMAO FOMO - Last Attacker Wins!",
-    description: "FOMO3D-style game on XLayer. Attack to win the jackpot!",
+  ...createSharingMetadata("/gamefi/banmaofomo"),
     manifest: "/manifest-gamefi.json",
-    openGraph: {
-        title: "BANMAO FOMO - Last Attacker Wins!",
-        description: "FOMO3D-style game on XLayer. Attack to win the jackpot!",
-        type: "website",
-        images: ["/games/fomo/fomo-icon.jpg"],
-    },
-    twitter: {
-        card: "summary_large_image",
-        title: "BANMAO FOMO - Last Attacker Wins!",
-        description: "FOMO3D-style game on XLayer. Attack to win the jackpot!",
-        images: ["/games/fomo/fomo-icon.jpg"],
-    }
 };
 
 export const viewport = createStandardViewport("#000000");

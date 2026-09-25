@@ -1,4 +1,5 @@
-import type { Metadata, ResolvingMetadata } from "next";
+import type { Metadata } from "next";
+import { createSharingMetadata } from "../../../lib/sharing/metadata";
 import { Suspense } from "react";
 import CollectionClient from "../CollectionClient";
 
@@ -48,12 +49,12 @@ async function fetchOpenGraphImage(filename: string): Promise<string | null> {
 }
 
 export async function generateMetadata(
-    props: Props,
-    parent: ResolvingMetadata
+    props: Props
 ): Promise<Metadata> {
     const searchParams = await props.searchParams;
     const imgName = searchParams?.img;
-    let ogImage = "https://www.banmao.fun/branding/gamefi-logo.jpg"; // High-quality fallback
+    const fallback = createSharingMetadata("/collection/gallery");
+    let ogImage: string | null = null;
 
     if (imgName && typeof imgName === "string") {
         const cleanName = imgName.replace(/[^a-zA-Z0-9_ -]/g, ""); // basic sanitize
@@ -66,6 +67,8 @@ export async function generateMetadata(
             // fail gracefully and use fallback
         }
     }
+
+    if (!ogImage) return fallback;
 
     const titleStr = imgName ? `Banmao Collection - ${imgName}` : "Banmao Collection";
     const descStr = imgName ? `Shared Banmao 3D Sticker from the official collection.` : "Explore the Banmao 3D sticker collection and media hub.";
