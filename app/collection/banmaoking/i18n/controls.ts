@@ -1,6 +1,15 @@
 import type { Lang } from './index';
 
 const copy = {
+  'Edit Token ID': ['Chỉnh sửa Token ID', '编辑 Token ID', 'Token ID 수정', 'Изменить Token ID', 'Edit Token ID'],
+  'Preview only; does not select a mint ID.': ['Chỉ thay đổi bản xem thử, không chọn ID khi mint.', '仅供预览，不选择铸造 ID。', '미리보기 전용이며 민팅 ID를 선택하지 않습니다.', 'Только предпросмотр, не выбор ID при минте.', 'Hanya pratinjau, bukan memilih ID mint.'],
+  'Composition code & Token ID': ['Mã phối & Token ID', '搭配代码与 Token ID', '조합 코드 및 Token ID', 'Код композиции и Token ID', 'Kode komposisi & Token ID'],
+  'Copy preview link': ['Sao chép link', '复制预览链接', '미리보기 링크 복사', 'Копировать ссылку', 'Salin tautan pratinjau'],
+  'Copy composition code': ['Sao chép mã phối', '复制搭配代码', '조합 코드 복사', 'Копировать код', 'Salin kode komposisi'],
+  'Copied': ['Đã sao chép', '已复制', '복사됨', 'Скопировано', 'Disalin'],
+  'Unable to copy.': ['Không thể sao chép.', '无法复制。', '복사할 수 없습니다.', 'Не удалось скопировать.', 'Tidak dapat menyalin.'],
+  'Copy unavailable; use the permalink.': ['Không thể sao chép; hãy dùng link xem trước.', '无法复制；请使用预览链接。', '복사할 수 없습니다. 미리보기 링크를 사용하세요.', 'Не удалось скопировать; используйте ссылку.', 'Tidak dapat menyalin; gunakan tautan pratinjau.'],
+  'Codes contain traits only. Shared links also preserve Token ID and pose. Preview only; not proof of ownership.': ['Mã phối chỉ lưu đặc điểm. Link chia sẻ lưu thêm Token ID và tư thế. Chỉ là bản xem trước, không chứng minh quyền sở hữu.', '代码仅保存特征。分享链接还保存 Token ID 和姿势。仅供预览，不是所有权证明。', '코드는 특성만 저장합니다. 공유 링크는 Token ID와 포즈도 저장합니다. 미리보기이며 소유권 증명이 아닙니다.', 'Код хранит только черты. Ссылка также сохраняет Token ID и позу. Это предпросмотр, не доказательство владения.', 'Kode hanya menyimpan ciri. Tautan juga menyimpan Token ID dan pose. Hanya pratinjau, bukan bukti kepemilikan.'],
   'Unable to display this page. If you submitted a transaction, check your wallet or Explorer before minting again.': ['Không thể hiển thị trang. Nếu vừa gửi giao dịch, hãy kiểm tra ví hoặc trình khám phá trước khi mint lại.', '无法显示页面。如果已提交交易，请先检查钱包或区块链浏览器，再决定是否重新铸造。', '페이지를 표시할 수 없습니다. 거래를 제출했다면 다시 민팅하기 전에 지갑이나 탐색기를 확인하세요.', 'Не удалось показать страницу. Если вы отправили транзакцию, проверьте кошелёк или обозреватель перед повторным минтом.', 'Halaman tidak dapat ditampilkan. Jika Anda mengirim transaksi, periksa dompet atau penjelajah sebelum mint lagi.'],
   'Try again': ['Thử lại', '重试', '다시 시도', 'Повторить', 'Coba lagi'],
   'Body': ['Thân', '身体', '몸체', 'Тело', 'Tubuh'],

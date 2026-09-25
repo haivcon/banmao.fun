@@ -1,0 +1,124 @@
+/* Balanced split workspace. Loaded after the legacy studio/responsive styles. */
+.king-page.king-experience .king-studio-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.king-page.king-experience .king-studio-grid .king-preview-card,
+.king-page.king-experience .king-studio-grid .king-trait-panel {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 24px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.king-page.king-experience .king-studio-grid .king-preview-card {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  background: var(--king-surface-2);
+}
+.king-page.king-experience .king-studio-grid .king-trait-panel {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--king-border-subtle);
+}
+.king-page.king-experience .king-studio-pane-heading,
+.king-page.king-experience .king-studio-grid .king-customize-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 28px;
+  margin: 0 0 20px;
+  font-size: 16px;
+}
+.king-page.king-experience .king-studio-pane-heading h3 { margin: 0; font-size: inherit; }
+.king-page.king-experience .king-studio-token { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--king-text-muted); }
+.king-page.king-experience .king-studio-grid .king-art-frame { width: min(100%, 380px); margin: auto; }
+.king-page.king-experience .king-studio-grid .king-preview-meta { gap: 12px; padding: 16px 0; margin-top: 8px; }
+.king-page.king-experience .king-studio-grid .king-trait-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 20px; }
+.king-page.king-experience .king-studio-grid .king-trait-tabs button { padding: 12px; }
+.king-page.king-experience .king-studio-grid .king-trait-options { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 300px; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-gutter: stable; }
+.king-page.king-experience .king-studio-grid .king-trait-options button { min-height: 44px; overflow-wrap: anywhere; }
+.king-page.king-experience .king-studio-grid .king-panel-tools { margin: auto 0 0; padding-top: 20px; justify-content: space-between; }
+.king-page.king-experience .king-studio-grid .king-preview-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 12px 0 0; border-top: 1px solid var(--king-border-subtle); }
+.king-page.king-experience .king-studio-grid .king-preview-actions :is(a,button) { gap: 6px; padding: 8px; min-width: 0; font-size: 12px; line-height: 1.4; }
+.king-page.king-experience .king-preview-actions svg { flex-shrink: 0; }
+.king-page.king-experience .king-preview-actions [role="status"] { grid-column: 1 / -1; }
+.king-page.king-experience .king-studio-grid .king-composition-drawer { padding: 0 24px; }
+.king-page.king-experience .king-studio-grid .king-composition-drawer > summary { padding: 18px 0; cursor: pointer; }
+.king-page.king-experience .king-studio-grid .king-composition-drawer[open] { padding-bottom: 20px; }
+.king-page.king-experience .king-studio-grid .king-notice { border: 0; border-top: 1px solid var(--king-border-subtle); border-radius: 0; padding: 14px 24px; text-align: center; }
+@media (max-width: 800px) {
+  .king-page.king-experience .king-studio-grid { grid-template-columns: minmax(0, 1fr); }
+  .king-page.king-experience .king-studio-grid .king-preview-card,
+  .king-page.king-experience .king-studio-grid .king-trait-panel { padding: 18px; }
+  .king-page.king-experience .king-studio-grid .king-trait-panel { border-left: 0; border-top: 1px solid var(--king-border-subtle); }
+  .king-page.king-experience .king-studio-grid .king-art-frame { width: min(100%, 320px); }
+  .king-page.king-experience .king-studio-grid .king-trait-options { max-height: none; overflow: visible; scrollbar-gutter: auto; }
+  .king-page.king-experience .king-studio-grid .king-composition-drawer { padding-inline: 18px; }
+}
+
+/* Quiet, theme-aware utility drawer; never reuse checkout styling here. */
+.king-page.king-experience .king-studio-grid .king-composition-drawer {
+  margin: 8px 24px 20px;
+  padding: 0;
+  border: 1px solid var(--king-border-subtle);
+  border-radius: 16px;
+  background: var(--king-surface-2);
+}
+.king-page.king-experience .king-studio-grid .king-composition-drawer[open] { padding-bottom: 0; }
+.king-page.king-experience .king-studio-grid .king-composition-drawer > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 16px;
+}
+.king-composition-drawer > summary::-webkit-details-marker { display: none; }
+.king-composition-icon { display: grid; place-items: center; flex: 0 0 36px; height: 36px; border: 1px solid var(--king-border-subtle); border-radius: 11px; color: var(--king-gold); }
+.king-composition-chevron { flex-shrink: 0; margin-left: auto; color: var(--king-text-muted); transition: transform 180ms ease; }
+.king-composition-drawer[open] .king-composition-chevron { transform: rotate(180deg); }
+.king-composition-content { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 24px; padding: 8px 20px 20px; }
+.king-page.king-experience .king-composition-content .king-preview-token-control { display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 20px; border: 1px solid var(--king-border-subtle); border-radius: 12px; background: var(--king-surface-1); }
+.king-page.king-experience .king-composition-content .king-preview-token-control small { font-size: 12px; line-height: 1.7; color: var(--king-text-muted); }
+.king-page.king-experience .king-composition-card { min-width: 0; }
+.king-page.king-experience .king-composition-card h3 { margin: 0 0 12px; font-size: 13px; font-weight: 600; }
+.king-page.king-experience .king-composition-value { display: block; padding: 14px 16px; border: 1px dashed var(--king-border-subtle); border-radius: 10px; background: var(--king-surface-1); font-size: 15px; letter-spacing: .04em; overflow-wrap: anywhere; }
+.king-page.king-experience .king-composition-card p { margin: 12px 0; font-size: 12px; line-height: 1.7; color: var(--king-text-muted); }
+.king-page.king-experience .king-composition-card [role="status"]:empty { display: none; }
+.king-page.king-experience .king-composition-import { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--king-border-subtle); }
+.king-page.king-experience .king-composition-import label { grid-column: 1 / -1; font-size: 12px; font-weight: 600; }
+.king-page.king-experience .king-composition-content input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 46px; padding: 12px; border: 1px solid var(--king-border-subtle); border-radius: 10px; background: var(--king-surface-1); color: inherit; font: inherit; font-size: 13px; }
+.king-page.king-experience .king-composition-content input[aria-invalid="true"] { border-color: #dc6868; }
+.king-page.king-experience .king-composition-card button { display: inline-flex; justify-content: center; align-items: center; min-height: 44px; padding: 10px 14px; border: 1px solid var(--king-border-subtle); border-radius: 10px; background: var(--king-surface-1); color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
+.king-page.king-experience .king-composition-drawer :is(summary,button,input):focus-visible { outline: 2px solid var(--king-gold); outline-offset: 3px; }
+@media (hover: hover) {
+  .king-page.king-experience .king-composition-card button:hover { border-color: var(--king-gold); }
+  .king-page.king-experience .king-composition-drawer > summary:hover .king-composition-icon { border-color: var(--king-gold); }
+}
+/* Keep native wheel/touch/keyboard scrolling, with a discreet rounded rail. */
+.king-page.king-experience .king-studio-grid .king-trait-options { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--king-text-muted) 35%, transparent) transparent; padding: 4px 10px 4px 4px; }
+.king-page.king-experience .king-studio-grid .king-trait-options:hover { scrollbar-color: color-mix(in srgb, var(--king-text-muted) 60%, transparent) transparent; }
+.king-page.king-experience .king-studio-grid .king-trait-options::-webkit-scrollbar { width: 6px; height: 6px; }
+.king-page.king-experience .king-studio-grid .king-trait-options::-webkit-scrollbar-track { background: transparent; margin-block: 8px; }
+.king-page.king-experience .king-studio-grid .king-trait-options::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--king-text-muted) 35%, transparent); border-radius: 99px; }
+.king-page.king-experience .king-studio-grid .king-trait-options::-webkit-scrollbar-thumb:hover { background: var(--king-text-muted); }
+.king-page.king-experience .king-studio-grid .king-trait-options::-webkit-scrollbar-button { display: none; }
+@media (max-width: 800px) {
+  .king-page.king-experience .king-studio-grid .king-composition-drawer { margin: 0 18px 18px; padding: 0; }
+  .king-composition-content { grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 0 16px 16px; }
+}
+@media (max-width: 480px) {
+  .king-page.king-experience .king-composition-import { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { .king-composition-chevron { transition: none; } }

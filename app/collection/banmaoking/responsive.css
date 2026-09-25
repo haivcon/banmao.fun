@@ -1,3 +1,13 @@
+/* Preview actions stay beside the artwork, wrapping without a sticky mobile panel. */
+.king-page.king-experience .king-preview-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0 0; }
+.king-page.king-experience .king-preview-actions :is(a,button) { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 12px; border: 1px solid var(--king-border-subtle); border-radius: var(--king-radius-control); background: transparent; color: inherit; font: inherit; font-size: 13px; text-decoration: none; cursor: pointer; }
+.king-page.king-experience .king-preview-actions :is(a,button):focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.king-page.king-experience .king-preview-actions button:disabled { opacity: .55; cursor: wait; }
+.king-page.king-experience .king-preview-actions [role="status"] { flex-basis: 100%; font-size: 13px; overflow-wrap: anywhere; }
+.king-page.king-experience .king-preview-actions [role="status"]:empty { display: none; }
+.king-page.king-experience .king-composition-drawer { min-width: 0; }
+.king-page.king-experience .king-composition-drawer code { overflow-wrap: anywhere; }
+
 
 /* Full-width, two-part slogan; long translations may wrap without clipping. */
 .king-page.king-experience .king-hero > div { grid-template-columns: minmax(0, 1fr); }

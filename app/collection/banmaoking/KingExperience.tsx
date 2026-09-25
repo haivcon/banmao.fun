@@ -6,7 +6,7 @@ import { useEffect, useId, useRef, useState } from "react";
 
 import { useKingNavigation } from './useKingNavigation';
 import { kingTaskIds } from './king-task-navigation';
-import { Crown, Shuffle, RotateCcw } from "lucide-react";
+import { Crown, Shuffle, RotateCcw, ChevronDown } from "lucide-react";
 import KingLanguageSelector from './KingLanguageSelector';
 import ThemeToggle from '../../components/theme/ThemeToggle';
 import KingSoundToggle from './KingSoundToggle';
@@ -24,6 +24,7 @@ import { traitLabels } from "./i18n/traits";
 import KingMint from "./KingMint";
 import KingSupply from './KingSupply';
 import KingComposition from "./KingComposition";
+import KingPreviewActions from "./KingPreviewActions";
 import KingSvgViewer from './KingSvgViewer';
 import KingLookup from "./KingLookup";
 
@@ -38,6 +39,8 @@ import './workspace.css';
 import './appearance.css';
 import './responsive.css';
 import './mint-checkout.css';
+import './preview-studio.css';
+import './gallery-studio.css';
 const initial: BanmaoKingTraitSelection = { body: 0, expression: 0, accessory: 1, background: 0 };
 export default function KingExperience() {
   const header = useRef<HTMLElement>(null);
@@ -91,18 +94,18 @@ export default function KingExperience() {
     <section className="king-hero"><div><span className="king-eyebrow"><span className="king-live-dot" />{t.kicker}</span><h1>{t.title}<br /><em>{t.titleAccent}</em></h1><KingSupply lang={lang} /></div></section>
     <section id="king-studio" className="king-section"><div className="king-section-heading"><div><span className="king-eyebrow">{t.explore}</span><h2>{t.studio}</h2><p>{t.studioDesc}</p></div><span className="king-chip">{t.animated}</span></div>
 
-      <div className="king-studio-grid"><div className="king-preview-card"><div className="king-art-frame"><KingAnimatedSvg key={`${traits.body}-${traits.expression}-${traits.accessory}-${traits.background}-${tokenId}`} className="king-art" data-animated="true" viewBox="0 0 512 512" role="img" aria-label={`${t.preview} · Banmao King #${tokenId}`} aria-busy={!preview.markup && !preview.failed} markup={preview.markup} />{!preview.markup && <div role="status">{preview.failed ? <button type="button" onClick={preview.retry}>{t.retry}</button> : t.processing}</div>}</div><div className="king-preview-meta" aria-live="polite"><div><strong>Banmao King</strong><br /><span>{t.preview} #{tokenId}{traits.body === 4 ? ` · ${kingUi(lang, cyborgForm(tokenId) ? 'Full Machine' : 'Hybrid')}` : ''}</span></div><KingSvgViewer traits={traits} tokenId={tokenId} lang={lang} /></div></div>
+      <div className="king-studio-grid"><div className="king-preview-card"><div className="king-studio-pane-heading"><h3>{t.preview}</h3><span className="king-studio-token">#{tokenId}</span></div><div className="king-art-frame"><KingAnimatedSvg key={`${traits.body}-${traits.expression}-${traits.accessory}-${traits.background}-${tokenId}`} className="king-art" data-animated="true" viewBox="0 0 512 512" role="img" aria-label={`${t.preview} · Banmao King #${tokenId}`} aria-busy={!preview.markup && !preview.failed} markup={preview.markup} />{!preview.markup && <div role="status">{preview.failed ? <button type="button" onClick={preview.retry}>{t.retry}</button> : t.processing}</div>}</div><div className="king-preview-meta" aria-live="polite"><div><strong>Banmao King</strong><br /><span>{t.preview} #{tokenId}{traits.body === 4 ? ` · ${kingUi(lang, cyborgForm(tokenId) ? 'Full Machine' : 'Hybrid')}` : ''}</span></div><KingSvgViewer traits={traits} tokenId={tokenId} lang={lang} /></div><KingPreviewActions traits={traits} tokenId={tokenId} markup={preview.markup} failed={preview.failed} retry={preview.retry} lang={lang} /></div>
         <div className="king-trait-panel"><h3 className="king-customize-title">{kingUi(lang, "Customize")}</h3>
           <div className="king-trait-tabs" role="tablist" aria-label={t.studio}>{groups.map((group, i) => <button type="button" role="tab" key={group.key} id={`king-tab-${group.key}`} aria-controls={`king-group-${group.key}`} aria-selected={activeGroup === i} tabIndex={activeGroup === i ? 0 : -1} onClick={() => setActiveGroup(i)} onKeyDown={event => { const next = event.key === 'ArrowRight' ? (i + 1) % 4 : event.key === 'ArrowLeft' ? (i + 3) % 4 : event.key === 'Home' ? 0 : event.key === 'End' ? 3 : -1; if (next >= 0) { event.preventDefault(); setActiveGroup(next); document.getElementById(`king-tab-${groups[next].key}`)?.focus(); } }}><strong>{group.label}</strong><small>{traitLabels[lang][i][traits[group.key]] ?? group.names[group.key === 'accessory' ? accessoryIndex(traits.accessory) : traits[group.key]]}</small></button>)}</div>
-          <div className="king-selectors" aria-describedby="king-preview-only-note">{groups.map((group, groupIndex) => <fieldset key={group.key} id={`king-group-${group.key}`} role="tabpanel" aria-labelledby={`king-tab-${group.key}`} hidden={activeGroup !== groupIndex}><legend>{group.label}<span>{group.names.length}</span></legend><div className="king-trait-options">{group.names.map((name, i) => <button key={name} type="button" aria-pressed={traits[group.key] === (group.key === 'accessory' ? ACCESSORY_IDS[i] : i)} onClick={() => setTraits(v => ({ ...v, [group.key]: group.key === 'accessory' ? ACCESSORY_IDS[i] : i }))}>{"colors" in group && <span className="king-color-dot" style={{ background: group.colors[i] }} />}<span>{traitLabels[lang][groupIndex][group.key === 'accessory' ? ACCESSORY_IDS[i] : i] ?? name}</span></button>)}</div></fieldset>)}</div>
+          <div className="king-selectors" aria-describedby="king-preview-only-note">{groups.map((group, groupIndex) => <fieldset key={group.key} id={`king-group-${group.key}`} role="tabpanel" aria-labelledby={`king-tab-${group.key}`} hidden={activeGroup !== groupIndex}><legend>{group.label}<span>{group.names.length}</span></legend><div className="king-trait-options" id={`king-options-${group.key}`}>{group.names.map((name, i) => <button key={name} type="button" aria-pressed={traits[group.key] === (group.key === 'accessory' ? ACCESSORY_IDS[i] : i)} onClick={() => setTraits(v => ({ ...v, [group.key]: group.key === 'accessory' ? ACCESSORY_IDS[i] : i }))}>{"colors" in group && <span className="king-color-dot" style={{ background: group.colors[i] }} />}<span>{traitLabels[lang][groupIndex][group.key === 'accessory' ? ACCESSORY_IDS[i] : i] ?? name}</span></button>)}</div></fieldset>)}</div>
           {traits.body === 4 && <div className="king-selectors"><fieldset>
             <legend>{kingUi(lang, "Cyborg form")}</legend>
             <div className="king-trait-options">{CYBORG_PREVIEW_TOKEN_IDS.map((sampleTokenId, form) => <button key={sampleTokenId} type="button" aria-pressed={cyborgForm(tokenId) === form} onClick={() => selectTokenId(sampleTokenId)}>{kingUi(lang, cyborgForm(sampleTokenId) ? 'Full Machine' : 'Hybrid')}</button>)}</div>
             <p>{kingUi(lang, "Switch sample tokens to preview both forms. Actual NFT form is fixed by token ID, not selected at mint.")}</p>
           </fieldset></div>}
           <div className="king-panel-tools"><button type="button" className="king-random" onClick={randomize}><Shuffle size={16} />{t.randomize}</button><button type="button" className="king-reset" title={t.reset} aria-label={t.reset} onClick={() => { setTraits(initial); selectTokenId(0); }}><RotateCcw size={17} /></button></div>
-        </div><div id="king-preview-only-note" className="king-notice"><strong>{t.previewTitle}</strong></div>
-        <details className="king-composition-drawer"><summary>{kingUi(lang, "Advanced options · Composition · Share · SVG")}</summary><div className="king-preview-token-control">
+        </div>
+        <div className="king-gallery-utilities"><KingComposition traits={traits} onSelect={setTraits} onTokenId={selectTokenId} lang={lang} /><div className="king-gallery-token"><h3>Token ID · {kingUi(lang, 'SVG preview')}</h3><div className="king-gallery-token-value">#{tokenId.toString().padStart(6, '0')}</div><details className="king-inline-editor"><summary>{kingControl(lang, 'Edit Token ID')}<ChevronDown size={14} aria-hidden="true" /></summary><div className="king-preview-token-control">
             <label htmlFor="king-preview-token-id">Token ID · {kingUi(lang, "SVG preview")}</label>
             <input id="king-preview-token-id" type="text" inputMode="numeric" autoComplete="off" spellCheck={false} value={tokenInput} aria-invalid={!tokenInputValid} aria-describedby="king-preview-token-help" onChange={event => {
               const value = event.target.value;
@@ -113,7 +116,7 @@ export default function KingExperience() {
               ? (kingUi(lang, "Enter an integer from 0 to 999999. Keeping the last valid preview."))
               : (kingUi(lang, "Enter 0–999999 to inspect the digits. Preview only; this does not select a mint ID."))}</small>
           </div>
-          <KingComposition traits={traits} onSelect={setTraits} lang={lang} /></details></div>
+          </details><p className="king-gallery-hint">{kingControl(lang, 'Preview only; does not select a mint ID.')}</p></div></div><div id="king-preview-only-note" className="king-notice"><strong>{t.previewTitle}</strong></div></div>
       <div className="king-studio-presets"><KingThemeLab traits={traits} lang={lang} onSelect={selection => { setTraits(selection); selectTokenId((tokenId + 1) % 1000000); }} /></div>
     </section>
     <KingSections t={t} section="features" />

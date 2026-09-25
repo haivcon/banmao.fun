@@ -32,6 +32,11 @@ export function metadataTraits(attributes: { trait_type: string; value: string }
 export function compositionWatermark(traits: BanmaoKingTraitSelection): string {
   return `${WATERMARK_OPEN} fill="${identityInk(traits.background)}" stroke="${identityOutline(traits.background)}"${WATERMARK_FONT}>${compositionCode(traits)}</text></g>`;
 }
-export function compositionSharePath(traits: BanmaoKingTraitSelection): string {
-  return `/collection/banmaoking?code=${compositionCode(traits)}#king-studio`;
+// Legacy code-only URLs keep their original format. Token ID determines preview pose/form.
+export function compositionSharePath(traits: BanmaoKingTraitSelection, tokenId?: number): string {
+  if (tokenId !== undefined && (!Number.isInteger(tokenId) || tokenId < 0 || tokenId > 999999)) throw new Error('Invalid preview token ID');
+  return `/collection/banmaoking?code=${compositionCode(traits)}${tokenId === undefined ? '' : `&tokenId=${tokenId}`}#king-studio`;
+}
+export function parsePreviewTokenId(value: string | null): number {
+  return value !== null && /^\d{1,6}$/.test(value) ? Number(value) : 0;
 }

@@ -1,0 +1,29 @@
+/* Shared receipt / lookup actions. Keep address links visually lighter. */
+.king-page.king-experience .king-nft-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-block: 16px; }
+.king-page.king-experience .king-nft-action.king-nft-action,
+.king-page.king-experience .king-nft-explorer-tools > summary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 44px; max-width: 100%; min-width: 0; height: auto; margin: 0;
+  padding: 10px 14px; border: 1px solid var(--king-ui-control-border, #536073); border-radius: 10px;
+  background: var(--king-surface-1, #141c27); color: var(--king-ui-text, #f4f0e7);
+  font: inherit; font-size: 14px; font-weight: 600; line-height: 1.5; text-align: center;
+  text-decoration: none; white-space: normal; overflow-wrap: anywhere; cursor: pointer; box-shadow: none;
+}
+.king-page.king-experience .king-nft-action svg { flex: 0 0 auto; }
+.king-page.king-experience .king-nft-action.king-nft-action-featured { border-color: var(--king-gold); background: color-mix(in srgb, var(--king-gold) 10%, var(--king-surface-1, #141c27)); }
+.king-page.king-experience .king-nft-action:hover:not(:disabled),
+.king-page.king-experience .king-nft-explorer-tools > summary:hover { border-color: var(--king-gold); background: var(--king-surface-2, #202936); text-decoration: none; }
+.king-page.king-experience :is(.king-nft-action, .king-nft-explorer-tools > summary):focus-visible { outline: 2px solid var(--king-gold); outline-offset: 3px; }
+.king-page.king-experience .king-nft-action:disabled { opacity: .5; cursor: not-allowed; }
+.king-page.king-experience .king-nft-metadata { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); align-items: start; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--king-border-subtle, #536073); }
+.king-page.king-experience .king-nft-metadata > .king-nft-action { width: 100%; }
+.king-page.king-experience .king-nft-explorer-tools { min-width: 0; margin: 0; padding: 0; border: 0; background: transparent; }
+.king-page.king-experience .king-nft-explorer-tools > summary { display: list-item; list-style-position: inside; width: 100%; }
+.king-page.king-experience .king-nft-explorer-tools p { font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; }
+.king-page.king-experience :is(.king-transaction-result, #king-lookup) a:not(.king-nft-action) { text-underline-offset: 4px; overflow-wrap: anywhere; }
+.king-page.king-experience :is(.king-transaction-result, #king-lookup) a:not(.king-nft-action):hover { text-decoration: underline; }
+.king-page.king-experience #king-lookup a:focus-visible { outline: 2px solid var(--king-gold); outline-offset: 3px; }
+@media (max-width: 600px) {
+  .king-page.king-experience .king-nft-actions > .king-nft-action { flex: 1 1 100%; }
+  .king-page.king-experience .king-nft-metadata { grid-template-columns: minmax(0, 1fr); }
+}
