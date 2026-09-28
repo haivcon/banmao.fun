@@ -1,8 +1,9 @@
 import { Database, Sparkles, Layers, Wallet, ShieldCheck, Crown } from "lucide-react";
-import type { KingCopy } from "./i18n";
+import type { KingCopy, Lang } from "./i18n";
+import KingMetadataNotice from './KingMetadataNotice';
 import KingBanmaoGuide from './KingBanmaoGuide';
 
-export default function KingSections({ t, section = 'all' }: { t: KingCopy; section?: 'all' | 'features' | 'help' }) {
+export default function KingSections({ t, lang, section = 'all' }: { t: KingCopy; lang: Lang; section?: 'all' | 'features' | 'help' }) {
   const features = [[Database, t.feature1, t.feature1Desc], [Sparkles, t.feature2, t.feature2Desc], [Layers, t.feature3, t.feature3Desc]] as const;
   const steps = [[Wallet, t.step1, t.step1Desc], [ShieldCheck, t.step2, t.step2Desc], [Crown, t.step3, t.step3Desc]] as const;
   return <>
@@ -14,7 +15,7 @@ export default function KingSections({ t, section = 'all' }: { t: KingCopy; sect
       <div className="king-section-heading"><div><h2 id="king-guide-title">{t.guide}</h2><p>{t.guideDesc}</p></div><a className="king-secondary-link" href="#king-mint">{t.mint} ↗</a></div>
       <ol className="king-step-grid">{steps.map(([Icon, title, description], i) => <li className="king-info-card" key={title}><div className="king-step-top"><span>0{i + 1}</span><Icon aria-hidden="true" size={21} /></div><div className="king-step-copy"><h3>{title}</h3><p>{description}</p>{i === 0 && <KingBanmaoGuide t={t} />}</div></li>)}</ol>
     </section>
-    <section id="king-faq" className="king-section king-faq" aria-labelledby="king-faq-title"><h2 id="king-faq-title">{t.faqTitle}</h2><p>{t.faqMintPaymentNote}</p>{[[t.faq1, t.faq1Answer], [t.faq2, t.faq2Answer], [t.faq3, t.faq3Answer], [t.faq4, t.faq4Answer]].map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</section>
+    <section id="king-faq" className="king-section king-faq" aria-labelledby="king-faq-title"><h2 id="king-faq-title">{t.faqTitle}</h2><p>{t.faqMintPaymentNote}</p>{[[t.faq1, t.faq1Answer], [t.faq2, t.faq2Answer], [t.faq3, t.faq3Answer], [t.faq4, t.faq4Answer]].map(([question, answer]) => <details key={question}><summary>{question}</summary><p>{answer}</p></details>)}<KingMetadataNotice lang={lang} variant="faq" /></section>
     </div>}
   </>;
 }

@@ -119,11 +119,11 @@ export default function KingExperience() {
           </details><p className="king-gallery-hint">{kingControl(lang, 'Preview only; does not select a mint ID.')}</p></div></div><div id="king-preview-only-note" className="king-notice"><strong>{t.previewTitle}</strong></div></div>
       <div className="king-studio-presets"><KingThemeLab traits={traits} lang={lang} onSelect={selection => { setTraits(selection); selectTokenId((tokenId + 1) % 1000000); }} /></div>
     </section>
-    <KingSections t={t} section="features" />
+    <KingSections t={t} lang={lang} section="features" />
     </div>
     <div id="panel-king-mint" className="king-task-panel" role="tabpanel" aria-labelledby="task-king-mint" tabIndex={0} hidden={activeSection !== 'king-mint'}>
       <div id="king-mint" className="king-section"><KingMint lang={lang} onBusyChange={setMintBusy} /></div>
-      <details className="king-task-help"><summary>{t.guide} · {t.faqTitle}</summary><KingSections t={t} section="help" /></details>
+      <details className="king-task-help"><summary>{t.guide} · {t.faqTitle}</summary><KingSections t={t} lang={lang} section="help" /></details>
     </div>
     <div id="panel-king-lookup" className="king-task-panel" role="tabpanel" aria-labelledby="task-king-lookup" tabIndex={0} hidden={activeSection !== 'king-lookup'}><KingLookup lang={lang} /></div>
     <details className="king-task-contracts"><summary>{t.contracts} · X Layer</summary><KingContracts lang={lang} /></details>

@@ -14,6 +14,7 @@ import { KING_T, kingError, type Lang } from "./i18n";
 import { identifiedKingImage, kingSharePath } from "./identity";
 import { animatedKingImage } from "./animated-image";
 import KingMetadataTools from "./KingMetadataTools";
+import KingMetadataNotice from './KingMetadataNotice';
 import { Download, Share2 } from 'lucide-react';
 import { Wallet, Gift, Users, Check, ShieldCheck, Copy } from "lucide-react";
 import { copyKingAddress } from './king-notifications';
@@ -366,6 +367,7 @@ export default function KingMint({ lang, onBusyChange }: { lang: Lang; onBusyCha
         {address && <p className="king-payment-balance">{t.balance}: {state ? formatKingNumber(formatUnits(state.balance, 18), 4) : '—'} BANMAO</p>}
         {mode !== 'self' && <p className="king-payment-warning">{kingCheckoutCopy(lang, "Gifts cannot be recalled. Review the full recipient addresses before confirming.")}</p>}
       </div> : <div className="king-recipient-review king-recipient-empty"><ShieldCheck size={28} aria-hidden="true" /><h3>{kingCheckoutCopy(lang, "Mint summary")}</h3><p>{!address && mode === 'self' ? t.connect : kingCheckoutCopy(lang, "Complete the recipient details to review NFT quantity and total payment.")}</p><strong>— BANMAO</strong></div>}
+    <KingMetadataNotice lang={lang} variant="mint" />
     <div className="king-wallet-row">{!address && <ConnectButton accountStatus="address" chainStatus="none" showBalance={false} label={t.connect} />}
       {address && (chainId !== 196 ? <button type="button" onClick={() => void switchChainAsync({ chainId: 196 }).catch(() => setMessage(t.switchHelp))}>{t.switchNetwork}</button> : <button type="button" disabled={!address || !state || !plan || busy || pending || state.balance < price || state.supply + (plan?.total ?? 1n) > state.max} onClick={() => void transact()}>{busy || pending ? t.processing : !state ? t.waiting : state.supply >= state.max ? t.soldOut : state.balance < price ? t.insufficient : state.allowance >= price ? mintLabel : state.allowance > 0n ? t.resetAllowance : approveLabel}</button>)}
     </div>

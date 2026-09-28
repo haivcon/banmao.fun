@@ -12,6 +12,7 @@ import { animatedKingImage } from "./animated-image";
 import type { Lang } from "./i18n";
 import KingMetadataTools from "./KingMetadataTools";
 import KingContractSvg from './KingContractSvg';
+import KingMetadataNotice from './KingMetadataNotice';
 import { Copy, Download, ExternalLink, Link2 } from 'lucide-react';
 import { copyKingAddress } from "./king-notifications";
 import { notifyKingSound } from './king-sound';
@@ -76,6 +77,7 @@ export default function KingLookup({ lang }: { lang: Lang }) {
     </form></div>
     <p id="king-lookup-status" role="status" aria-live="polite">{status === "loading" ? (kingLookupCopy(lang, "Reading blockchain…")) : status === "invalid" ? (kingLookupCopy(lang, "Invalid token ID. Enter a whole number from 1.")) : status === "missing" ? (kingLookupCopy(lang, "This NFT has not been minted. Try another ID.")) : status === "error" ? (kingLookupCopy(lang, "Unable to read data. Your ID is saved so you can retry.")) : status === "ready" && result ? ` ${kingLookupCopy(lang, "King")} #${result.id}` : ""}</p>
     {status === 'idle' && <p className="king-lookup-empty">{kingLookupCopy(lang, "Enter an NFT ID to view its artwork and owner on X Layer.")}</p>}
+    <KingMetadataNotice lang={lang} />
     <KingContractSvg client={client} metadata={result ? { id: result.id, blockNumber: result.blockNumber, image: result.metadata.image } : undefined} lang={lang} />
     {result && <div className="king-lookup-result">
       <figure className="king-lookup-artwork">
