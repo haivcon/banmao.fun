@@ -21,6 +21,7 @@ export const kingAbi = parseAbi([
   "function mintBatchTo(address[] recipients, uint256[] quantities, address paymentToken) payable returns (uint256)",
   "event BatchMinted(address indexed payer, address indexed paymentToken, uint256 firstTokenId, uint256 quantity, uint256 totalPaid)",
   "function tokenURI(uint256) view returns (string)",
+  "function renderSVG(uint256) view returns (string)",
   "function refreshMetadata(uint256 tokenId)",
   "event KingMinted(address indexed payer, address indexed to, uint256 indexed tokenId, address paymentToken, uint256 price, uint32 packedTraits)",
 ]);

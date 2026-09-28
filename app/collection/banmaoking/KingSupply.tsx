@@ -5,6 +5,7 @@ import { BANMAO_KING_DEPLOYMENT as deployment } from './deployment';
 import { formatUnits } from 'viem';
 import { ExternalLink } from 'lucide-react';
 import './supply.css';
+import KingMetadataNotice from './KingMetadataNotice';
 import { formatKingNumber } from './format-number';
 
 const marketplaceCopy = {
@@ -53,6 +54,7 @@ export default function KingSupply({ lang }: { lang: Lang }) {
         <a className="king-primary-link" href="#king-mint">{t.mint} ↗</a>
         <a className="king-secondary-link" href="https://web3.okx.com/nft/collection/xlayer/banmao-king-3" target="_blank" rel="noopener noreferrer"><span>{marketplaceCopy[lang]}</span><ExternalLink size={16} aria-hidden="true" /></a>
       </div>
+      <KingMetadataNotice lang={lang} variant="marketplace" />
     </div>
     {isError && <div className="king-supply-error" role="status">{failed} <button type="button" disabled={isFetching} onClick={() => { void refetch(); }}>{KING_T[lang].retry}</button></div>}
   </section>;

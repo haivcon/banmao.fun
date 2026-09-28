@@ -1,3 +1,11 @@
+.king-metadata-notice { box-sizing: border-box; min-width: 0; margin-block: 16px; padding: 16px; border: 1px solid #d7b76566; border-left: 3px solid #d7b765; border-radius: 12px; background: #d7b7650d; color: #e4dcc9; font-size: 13px; line-height: 1.7; overflow-wrap: anywhere; }
+.king-metadata-notice > strong { color: #f5dba2; font-size: 14px; }
+.king-metadata-notice p { margin: 10px 0; }
+.king-metadata-notice summary { min-height: 44px; align-content: center; cursor: pointer; color: #f5dba2; }
+.king-metadata-notice summary:focus-visible { outline: 2px solid #ebca7b; outline-offset: 3px; border-radius: 4px; }
+.king-metadata-marketplace-note { max-width: 42ch; margin: 10px 0 0; color: #e4dcc9; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+
+
 
 .king-preview-token-control { display: grid; gap: 8px; margin-bottom: 16px; }
 .king-preview-token-control label { color: #f5dba2; font-size: 13px; font-weight: 600; }
@@ -6,6 +14,12 @@
 .king-preview-token-control input[aria-invalid="true"] { border-color: #ffaaa0; }
 .king-preview-token-control small { color: #c4c9ca; font-size: 12px; line-height: 1.5; }
 
+
+.king-contract-svg { margin-block: 24px; padding: 20px; border: 1px solid var(--king-ui-control-border, #d7b765); border-radius: 12px; }
+.king-contract-svg h4 { margin-top: 0; }
+.king-contract-svg .king-wallet-row { align-items: center; gap: 16px; }
+.king-contract-svg .king-preview-token-control { flex: 1 1 220px; margin-bottom: 0; }
+.king-contract-svg textarea { box-sizing: border-box; }
 
 /* NFT lookup follows the mint panel and remains usable on narrow screens. */
 #king-token-input, #king-composition-input { min-width: 0; width: min(100%, 220px); min-height: 48px; padding: 10px 14px; border: 1px solid #d7b765; border-radius: 12px; background: #171923; color: #fff; font: inherit; }

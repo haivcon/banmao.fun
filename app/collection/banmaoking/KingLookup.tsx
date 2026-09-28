@@ -11,6 +11,8 @@ import { identifiedKingImage, kingSharePath, parseKingId } from "./identity";
 import { animatedKingImage } from "./animated-image";
 import type { Lang } from "./i18n";
 import KingMetadataTools from "./KingMetadataTools";
+import KingContractSvg from './KingContractSvg';
+import KingMetadataNotice from './KingMetadataNotice';
 import { Copy, Download, ExternalLink, Link2 } from 'lucide-react';
 import { copyKingAddress } from "./king-notifications";
 import { notifyKingSound } from './king-sound';
@@ -24,7 +26,7 @@ export default function KingLookup({ lang }: { lang: Lang }) {
     try { return parseKingId(query); } catch { return undefined; }
   }, [query]);
   const [status, setStatus] = useState<"idle" | "loading" | "invalid" | "missing" | "error" | "ready">("idle");
-  const [result, setResult] = useState<{ id: bigint; owner: string; metadata: ReturnType<typeof decodeKingMetadata>; image: string }>();
+  const [result, setResult] = useState<{ id: bigint; blockNumber: bigint; owner: string; metadata: ReturnType<typeof decodeKingMetadata>; image: string }>();
   useEffect(() => {
     const token = new URLSearchParams(window.location.search).get("token");
     if (token) { setInput(token); setQuery(token); }
@@ -49,7 +51,7 @@ export default function KingLookup({ lang }: { lang: Lang }) {
         ]);
         const metadata = decodeKingMetadata(uri);
         const image = identifiedKingImage(animatedKingImage(metadata.image), metadataTraits(metadata.attributes));
-        if (active) { setResult({ id, owner, metadata, image }); setStatus("ready"); }
+        if (active) { setResult({ id, blockNumber, owner, metadata, image }); setStatus("ready"); }
       } catch { if (active) setStatus("error"); }
     }
     void load();
@@ -75,6 +77,8 @@ export default function KingLookup({ lang }: { lang: Lang }) {
     </form></div>
     <p id="king-lookup-status" role="status" aria-live="polite">{status === "loading" ? (kingLookupCopy(lang, "Reading blockchain…")) : status === "invalid" ? (kingLookupCopy(lang, "Invalid token ID. Enter a whole number from 1.")) : status === "missing" ? (kingLookupCopy(lang, "This NFT has not been minted. Try another ID.")) : status === "error" ? (kingLookupCopy(lang, "Unable to read data. Your ID is saved so you can retry.")) : status === "ready" && result ? ` ${kingLookupCopy(lang, "King")} #${result.id}` : ""}</p>
     {status === 'idle' && <p className="king-lookup-empty">{kingLookupCopy(lang, "Enter an NFT ID to view its artwork and owner on X Layer.")}</p>}
+    <KingMetadataNotice lang={lang} />
+    <KingContractSvg client={client} metadata={result ? { id: result.id, blockNumber: result.blockNumber, image: result.metadata.image } : undefined} lang={lang} />
     {result && <div className="king-lookup-result">
       <figure className="king-lookup-artwork">
         {/* eslint-disable-next-line @next/next/no-img-element */}
