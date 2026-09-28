@@ -1,5 +1,12 @@
 import type { Lang } from './index';
 const copy = {
+  'Direct contract SVG': ['SVG trực tiếp từ hợp đồng', '合约直接生成的SVG', '컨트랙트 직접 SVG', 'SVG напрямую из контракта', 'SVG langsung dari kontrak'],
+  'Read renderSVG': ['Đọc renderSVG', '读取renderSVG', 'renderSVG 읽기', 'Прочитать renderSVG', 'Baca renderSVG'],
+  'Read-only RPC call. No wallet or gas payment required.': ['Lệnh RPC chỉ đọc. Không cần ví hoặc trả phí gas.', '只读RPC调用，无需钱包或支付Gas。', '읽기 전용 RPC 호출입니다. 지갑이나 가스 결제가 필요 없습니다.', 'RPC-вызов только для чтения. Кошелёк и оплата газа не нужны.', 'Panggilan RPC hanya baca. Tidak perlu dompet atau membayar gas.'],
+  'SVG read failed. The RPC may limit large responses. Retry.': ['Không đọc được SVG. RPC có thể giới hạn dữ liệu lớn. Hãy thử lại.', 'SVG读取失败，RPC可能限制大型响应。请重试。', 'SVG 읽기 실패. RPC가 큰 응답을 제한할 수 있습니다. 다시 시도하세요.', 'Не удалось прочитать SVG. RPC может ограничивать большие ответы. Повторите попытку.', 'Gagal membaca SVG. RPC mungkin membatasi respons besar. Coba lagi.'],
+  'SVG matches metadata exactly.': ['SVG khớp chính xác với metadata.', 'SVG与元数据完全一致。', 'SVG가 메타데이터와 정확히 일치합니다.', 'SVG точно совпадает с метаданными.', 'SVG sama persis dengan metadata.'],
+  'Warning: SVG differs from metadata.': ['Cảnh báo: SVG khác với metadata.', '警告：SVG与元数据不同。', '경고: SVG가 메타데이터와 다릅니다.', 'Внимание: SVG отличается от метаданных.', 'Peringatan: SVG berbeda dari metadata.'],
+  'SVG source': ['Mã nguồn SVG', 'SVG源代码', 'SVG 소스', 'Исходный код SVG', 'Sumber SVG'],
   'Find your king': ['Tìm King của bạn', '寻找你的King', '나의 King 찾기', 'Найти своего King', 'Temukan King Anda'],
   'Every ID, a king of its own. Explore minted artwork and traits — no wallet required.': ['Mỗi ID, một King riêng. Khám phá hình ảnh và đặc điểm NFT đã mint — không cần ví.', '每个ID都有专属King。探索已铸造的作品和特征，无需钱包。', '각 ID마다 고유한 King이 있습니다. 지갑 없이 민팅된 작품과 특성을 살펴보세요.', 'У каждого ID свой King. Изучайте выпущенные NFT и их черты без кошелька.', 'Setiap ID memiliki King tersendiri. Jelajahi karya dan ciri NFT yang sudah dicetak tanpa dompet.'],
   'NFT ID': ['ID NFT', 'NFT编号', 'NFT ID', 'ID NFT', 'ID NFT'],
