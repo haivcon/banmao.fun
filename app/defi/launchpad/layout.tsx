@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { createPreviewMetadata, SHARING_IMAGES } from "../../../lib/sharing/metadata";
 import { notFound } from "next/navigation";
 import { ThemeProvider } from "./theme/ThemeContext";
 import { I18nProvider } from "./i18n/I18nContext";
@@ -11,20 +12,14 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-    title: "Memecoin Launchpad | BANMAO",
-    description: "Create and trade memecoins on XLayer. Bonding curve pricing with Uniswap V4 graduation. Powered by $BANMAO.",
     keywords: ["BANMAO", "Memecoin", "Launchpad", "XLayer", "Uniswap V4", "Bonding Curve", "DeFi"],
-    openGraph: {
-        title: "Memecoin Launchpad | BANMAO",
-        description: "Create and trade memecoins on XLayer. Bonding curve pricing with Uniswap V4 graduation.",
-        images: ["/icons/icon_stats.png"],
-    },
-    twitter: {
-        card: "summary_large_image",
-        title: "Memecoin Launchpad | BANMAO",
-        description: "Create and trade memecoins on XLayer. Bonding curve pricing with Uniswap V4 graduation.",
-        images: ["/icons/icon_stats.png"],
-    },
+    ...createPreviewMetadata(
+        "/defi/launchpad",
+        "Memecoin Launchpad | BANMAO",
+        "Create and trade memecoins on XLayer. Bonding curve pricing with Uniswap V4 graduation.",
+        SHARING_IMAGES["/defi/launchpad"],
+    ),
+    description: "Create and trade memecoins on XLayer. Bonding curve pricing with Uniswap V4 graduation. Powered by $BANMAO.",
     robots: {
         index: false,
         follow: false,
