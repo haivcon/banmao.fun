@@ -146,8 +146,8 @@ export const zh: LandingTranslations = {
     defiBurnTooltip: "永久退出流通的 $BANMAO 总量。",
     // DeFi Services
     defiStakingName: "质押",
-    defiStakingDesc: "锁定$BANMAO，APY高达75%",
-    defiStakingDetails: "通过锁定 $BANMAO 代币最大化您的收益。锁定越久，奖励倍数越高。\n\n机制：\n• 锁定期：从灵活到 365 天可选。\n• 倍数：长期锁定可获得高达 2 倍的份额。\n• 惩罚：提前解除质押将收取费用，返还至奖励池。\n• 奖励：以 $BANMAO 支付，随时可领取。\n\n智能合约确保所有逻辑在链上透明执行。",
+    defiStakingDesc: "质押 $BANMAO，获得随链上数据变化的奖励",
+    defiStakingDetails: "质押 $BANMAO，获得随链上数据变化的奖励\n\n选择合约当前配置的锁定期限。\n\n份额倍数以合约当前设置为准。\n\n提前惩罚: 提前解押费用返还至奖励池。\n\n奖励: 以 $BANMAO 支付，随时可领取。",
     defiPoolsName: "流动池",
     defiPoolsDesc: "提供流动性赚取交易费和奖励",
     defiFarmingName: "收益农场",
@@ -163,9 +163,9 @@ export const zh: LandingTranslations = {
     // Staking Infographic Bullets
     defiStakingIntro: "通过锁定 $BANMAO 代币最大化收益。锁定越久，奖励倍数越高。",
     defiStakingBullet1Title: "锁定期",
-    defiStakingBullet1Desc: "从灵活到 365 天可选。",
+    defiStakingBullet1Desc: "选择合约当前配置的锁定期限。",
     defiStakingBullet2Title: "倍数",
-    defiStakingBullet2Desc: "长期锁定可获高达 2 倍份额。",
+    defiStakingBullet2Desc: "份额倍数以合约当前设置为准。",
     defiStakingBullet3Title: "提前惩罚",
     defiStakingBullet3Desc: "提前解押费用返还至奖励池。",
     defiStakingBullet4Title: "奖励",

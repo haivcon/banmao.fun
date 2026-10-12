@@ -146,8 +146,8 @@ export const ko: LandingTranslations = {
     defiBurnTooltip: "유통량에서 영구적으로 소각된 $BANMAO의 총량입니다.",
     // DeFi Services
     defiStakingName: "스테이킹",
-    defiStakingDesc: "$BANMAO 잠금, 최대 75% APY 보상",
-    defiStakingDetails: "$BANMAO 토큰을 잠궈 수익을 극대화하세요. 오래 잠글수록 보상 배수(Share Booster)가 높아집니다.\n\n작동 방식:\n• 잠금 기간: 유동적 기간부터 365일까지 선택 가능.\n• 배수: 장기 잠금 시 최대 2배 지분 획득.\n• 페널티: 조기 출금 시 수수료가 부과되며, 이는 보상 풀로 반환됩니다.\n• 보상: $BANMAO로 지급되며 언제든지 청구 가능.\n\n스마트 계약이 체인 상에서 모든 로직을 투명하게 검증합니다.",
+    defiStakingDesc: "$BANMAO 스테이킹, 온체인 조건에 따라 변동하는 보상",
+    defiStakingDetails: "$BANMAO 스테이킹, 온체인 조건에 따라 변동하는 보상\n\n현재 온체인 설정에 따른 잠금 기간을 선택하세요.\n\n지분 배수는 현재 컨트랙트 설정을 따릅니다.\n\n조기 페널티: 조기 출금 수수료는 보상 풀로 반환.\n\n보상: $BANMAO로 지급, 언제든 청구 가능.",
     defiPoolsName: "유동성 풀",
     defiPoolsDesc: "유동성을 제공하여 거래 수수료와 보상을 받으세요",
     defiFarmingName: "이자 농사",
@@ -163,9 +163,9 @@ export const ko: LandingTranslations = {
     // Staking Infographic Bullets
     defiStakingIntro: "$BANMAO 토큰을 잠궈 수익을 극대화하세요. 오래 잠글수록 보상 배수가 높아집니다.",
     defiStakingBullet1Title: "잠금 기간",
-    defiStakingBullet1Desc: "유동적부터 365일까지 선택 가능.",
+    defiStakingBullet1Desc: "현재 온체인 설정에 따른 잠금 기간을 선택하세요.",
     defiStakingBullet2Title: "배수",
-    defiStakingBullet2Desc: "장기 잠금 시 최대 2배 지분.",
+    defiStakingBullet2Desc: "지분 배수는 현재 컨트랙트 설정을 따릅니다.",
     defiStakingBullet3Title: "조기 페널티",
     defiStakingBullet3Desc: "조기 출금 수수료는 보상 풀로 반환.",
     defiStakingBullet4Title: "보상",

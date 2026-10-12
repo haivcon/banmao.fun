@@ -2,17 +2,17 @@
    Shared navigation and Web3 status for all public /defi routes. */
 
 :root {
-  --defi-shell-bg: #05070d;
+  --defi-shell-bg: var(--bm-surface-deep);
   --defi-shell-surface: rgba(10, 14, 24, 0.92);
   --defi-shell-surface-strong: #0d1220;
   --defi-shell-border: rgba(148, 163, 184, 0.16);
   --defi-shell-border-active: rgba(34, 211, 238, 0.48);
-  --defi-shell-text: #f8fafc;
-  --defi-shell-muted: #94a3b8;
-  --defi-shell-primary: #22d3ee;
-  --defi-shell-primary-strong: #06b6d4;
-  --defi-shell-danger: #fb7185;
-  --defi-shell-success: #34d399;
+  --defi-shell-text: var(--bm-text);
+  --defi-shell-muted: var(--bm-text-muted);
+  --defi-shell-primary: var(--bm-accent-light);
+  --defi-shell-primary-strong: var(--bm-accent);
+  --defi-shell-danger: var(--bm-error);
+  --defi-shell-success: var(--bm-success);
   --defi-shell-radius: 14px;
   --defi-shell-header-height: 68px;
   --defi-context-header-height: 52px;
@@ -160,7 +160,7 @@ html:has(.defi-app-shell) body {
   border: 1px solid rgba(245, 158, 11, 0.34);
   border-radius: 999px;
   background: rgba(245, 158, 11, 0.12);
-  color: #fbbf24;
+  color: var(--bm-warning);
   font-size: 8px;
   font-weight: 800;
   letter-spacing: 0.02em;
@@ -605,7 +605,7 @@ body > .defi-lang-dropdown .defi-lang-check {
     padding: 1px 3px;
     border-radius: 4px;
     background: rgba(245, 158, 11, 0.18);
-    color: #fbbf24;
+    color: var(--bm-warning);
     font-size: 7px;
     font-weight: 900;
     line-height: 1.2;
@@ -664,4 +664,24 @@ body > .defi-lang-dropdown .defi-lang-check {
     padding-block: 4px !important;
   }
 
+}
+/* Shared treasury chrome. Keep module layout rules above intact. */
+.defi-app-shell { font-family: var(--font-sans), sans-serif; }
+.defi-app-shell__header { background: color-mix(in srgb, var(--bm-surface-deep) 94%, transparent); }
+.defi-app-shell__header-inner { gap: 16px; }
+.defi-app-shell__nav-link[aria-current="page"]::after { display: none; }
+.defi-app-shell__actions, .defi-app-shell__wallet-target { min-width: 0; }
+.defi-app-shell__wallet-target .banmao-wallet-button { min-height: 44px; max-width: 100%; white-space: normal; background: var(--bm-warning); color: var(--bm-ink); border-color: var(--bm-warning-border); }
+@media (max-width: 900px) {
+  .defi-app-shell__header-inner { grid-template-columns: auto minmax(0, 1fr); }
+  .defi-app-shell__brand { min-width: 0; }
+  .defi-network-status { width: 44px; min-width: 44px; min-height: 44px; }
+  .defi-app-shell__bottom-nav { display: flex; box-sizing: border-box; background: var(--bm-surface-raised); }
+  .defi-app-shell__bottom-link { flex: 1 1 0; overflow-wrap: anywhere; text-align: center; padding: 4px 2px; }
+  .defi-app-shell__bottom-link[aria-current="page"] { color: var(--bm-accent-light); background: var(--bm-accent-soft); }
+}
+@media (max-width: 520px) {
+  .defi-app-shell__header-inner { gap: 8px; }
+  .defi-app-shell__actions { gap: 4px; }
+  .defi-app-shell__wallet-target .banmao-wallet-button { padding: 8px 10px; font-size: 12px; }
 }

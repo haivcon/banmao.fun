@@ -1,9 +1,9 @@
 import { createSharingMetadata } from "../../lib/sharing/metadata";
 import type { Metadata } from "next";
-import { createDesktopViewport } from "../../lib/responsive/displayStandard";
+import { createStandardViewport } from "../../lib/responsive/displayStandard";
 import DeFiLayoutClient from "./DeFiLayoutClient";
 
-export const viewport = createDesktopViewport("#05070d");
+export const viewport = createStandardViewport("#05070d");
 
 export const metadata: Metadata = {
   ...createSharingMetadata("/defi"),

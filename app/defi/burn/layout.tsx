@@ -1,3 +1,5 @@
+import { createDesktopViewport } from "../../../lib/responsive/displayStandard";
+export const viewport = createDesktopViewport("#05070d");
 import { createSharingMetadata } from "../../../lib/sharing/metadata";
 import type { Metadata } from "next";
 

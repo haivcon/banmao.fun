@@ -147,8 +147,8 @@ export const en: LandingTranslations = {
     defiBurnTooltip: "Total amount of $BANMAO permanently removed from supply.",
     // DeFi Services
     defiStakingName: "Staking",
-    defiStakingDesc: "Lock $BANMAO, earn up to 75% APY",
-    defiStakingDetails: "Maximize your returns by locking $BANMAO tokens. The longer you lock, the higher your reward multiplier (Share Booster). \n\nMechanisms:\n• Lock Period: Choose from flexible to 365 days.\n• Multiplier: Up to 2x shares for longer locks.\n• Penalty: Early unstaking incurs a fee that goes back to the reward pool.\n• Rewards: Paid in $BANMAO, claimable anytime.\n\nSmart Contract verifies all logic on-chain for complete transparency.",
+    defiStakingDesc: "Stake $BANMAO with variable on-chain rewards",
+    defiStakingDetails: "Stake $BANMAO with variable on-chain rewards\n\nChoose from the lock periods currently configured on-chain.\n\nShare multipliers follow the current contract settings.\n\nEarly Penalty: Early unstake fee goes back to reward pool.\n\nRewards: Paid in $BANMAO, claimable anytime.",
     defiPoolsName: "Liquidity Pools",
     defiPoolsDesc: "Provide liquidity to earn trading fees and rewards",
     defiFarmingName: "Yield Farming",
@@ -164,9 +164,9 @@ export const en: LandingTranslations = {
     // Staking Infographic Bullets
     defiStakingIntro: "Maximize your returns by locking $BANMAO tokens. The longer you lock, the higher your reward multiplier.",
     defiStakingBullet1Title: "Lock Period",
-    defiStakingBullet1Desc: "Choose from flexible to 365 days.",
+    defiStakingBullet1Desc: "Choose from the lock periods currently configured on-chain.",
     defiStakingBullet2Title: "Multiplier",
-    defiStakingBullet2Desc: "Up to 2x shares for longer locks.",
+    defiStakingBullet2Desc: "Share multipliers follow the current contract settings.",
     defiStakingBullet3Title: "Early Penalty",
     defiStakingBullet3Desc: "Early unstake fee goes back to reward pool.",
     defiStakingBullet4Title: "Rewards",
