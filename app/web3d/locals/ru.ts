@@ -146,8 +146,8 @@ export const ru: LandingTranslations = {
     defiBurnTooltip: "Общая сумма $BANMAO, навсегда изъятая из обращения.",
     // DeFi Services
     defiStakingName: "Стейкинг",
-    defiStakingDesc: "Заблокируйте $BANMAO, APY до 75%",
-    defiStakingDetails: "Увеличьте прибыль, заблокировав токены $BANMAO. Чем дольше срок, тем выше множитель наград.\n\nМеханизмы:\n• Срок: От гибкого до 365 дней.\n• Множитель: До 2x акций для долгих сроков.\n• Штраф: Ранний вывод имеет комиссию, возвращаемую в пул.\n• Награды: В $BANMAO, можно забрать в любое время.\n\nСмарт-контракт гарантирует прозрачность всех операций.",
+    defiStakingDesc: "Стейкинг $BANMAO с переменными наградами в сети",
+    defiStakingDetails: "Стейкинг $BANMAO с переменными наградами в сети\n\nВыберите срок блокировки из текущих настроек контракта.\n\nМножители долей определяются текущими настройками контракта.\n\nШтраф за вывод: Комиссия возвращается в пул наград.\n\nНаграды: Выплата в $BANMAO, получение в любое время.",
     defiPoolsName: "Пулы ликвидности",
     defiPoolsDesc: "Предоставляйте ликвидность и зарабатывайте на комиссиях",
     defiFarmingName: "Фермерство",
@@ -163,9 +163,9 @@ export const ru: LandingTranslations = {
     // Staking Infographic Bullets
     defiStakingIntro: "Увеличьте прибыль, заблокировав токены $BANMAO. Чем дольше — тем выше множитель.",
     defiStakingBullet1Title: "Период блокировки",
-    defiStakingBullet1Desc: "От гибкого до 365 дней.",
+    defiStakingBullet1Desc: "Выберите срок блокировки из текущих настроек контракта.",
     defiStakingBullet2Title: "Множитель",
-    defiStakingBullet2Desc: "До 2x акций для долгих сроков.",
+    defiStakingBullet2Desc: "Множители долей определяются текущими настройками контракта.",
     defiStakingBullet3Title: "Штраф за вывод",
     defiStakingBullet3Desc: "Комиссия возвращается в пул наград.",
     defiStakingBullet4Title: "Награды",

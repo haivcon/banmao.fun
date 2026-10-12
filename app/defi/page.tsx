@@ -22,11 +22,13 @@ import {
   type ComponentType,
   type CSSProperties,
 } from "react";
-import { formatEther } from "viem";
+import { parseAbi } from "viem";
+import { estimatedNetApr, formatAmount, formatApiTokenAmount, oldestUpdate, supplyPercentage } from "./lib/overviewMetrics";
 import {
   useAccount,
   useBalance,
   useReadContract,
+  useReadContracts,
   useSwitchChain,
 } from "wagmi";
 import { ConnectButton } from "../components/wallet/WalletConnection";
@@ -52,13 +54,12 @@ import {
 } from "./components";
 import { BANMAO_BOX_CONTRACT_ADDRESS } from "./box/contracts";
 import { MetricInfoPopover } from "./components/MetricInfoPopover";
+import { BANMAO_TOKEN_ADDRESS, STAKING_CONTRACT_ADDRESS } from "./staking/contracts";
 import "./defi.css";
 
 const COMMUNITY_WALLET = "0x92809f2837f708163d375960063c8a3156fceacb";
 const DEAD_WALLET = "0x000000000000000000000000000000000000dead";
-const BANMAO_TOKEN_ADDRESS = "0x16d91d1615fc55b76d5f92365bd60c069b46ef78";
-const STAKING_CONTRACT_ADDRESS =
-  "0xa553f61F2a4fa61f6DDC8bf2b0B66F65c7eAA172";
+
 const AIRDROP_CONTRACT_ADDRESS =
   "0xf2d471711D24646b2C50E1F74a063caA7a6863a0";
 const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
@@ -191,10 +192,8 @@ type OverviewCopy = {
   stakedLabel: string;
   stakersLabel: string;
   burnedLabel: string;
-  maxApyLabel: string;
+  maxAprLabel: string;
   liveProducts: string;
-  liveProductsDescription: string;
-  appsLive: string;
   learnMore: string;
   openApp: string;
   sentLabel: string;
@@ -228,7 +227,7 @@ type OverviewCopy = {
     staked: string;
     stakers: string;
     burned: string;
-    apy: string;
+    apr: string;
   };
 };
 
@@ -255,18 +254,14 @@ const OVERVIEW_COPY: Record<Language, OverviewCopy> = {
     unavailable: "Data unavailable",
     retry: "Retry",
     stakedLabel: "BANMAO staked",
-    stakersLabel: "Stakers",
+    stakersLabel: "Wallets ever staked",
     burnedLabel: "BANMAO burned",
-    maxApyLabel: "Max APY",
+    maxAprLabel: "Max current APR",
     liveProducts: "Products",
-    liveProductsDescription: IS_DEVELOPMENT
-      ? "Three live applications on X Layer, plus Launchpad in local development."
-      : "Three live applications on X Layer.",
-    appsLive: IS_DEVELOPMENT ? "3 live · 1 in development" : "3 apps live",
     learnMore: "Learn more",
     openApp: "Open app",
     sentLabel: "Sent",
-    walletsLabel: "Wallets",
+    walletsLabel: "Recipient entries",
     launchedLabel: "Launch",
     comingNext: "Coming next",
     comingDescription:
@@ -298,8 +293,8 @@ const OVERVIEW_COPY: Record<Language, OverviewCopy> = {
     metricHelp: {
       staked: "Total BANMAO currently locked in the staking contract.",
       stakers: "Total wallets that have participated in staking.",
-      burned: "BANMAO permanently held by the dead wallet.",
-      apy: "Maximum annual percentage yield available for the longest lock.",
+      burned: "BANMAO held by the dead and zero addresses.",
+      apr: "Annualized estimate after the current reward fee, without compounding. Changes with pool shares and reward rate; not guaranteed.",
     },
   },
   vi: {
@@ -324,18 +319,14 @@ const OVERVIEW_COPY: Record<Language, OverviewCopy> = {
     unavailable: "Không thể tải dữ liệu",
     retry: "Thử lại",
     stakedLabel: "BANMAO đang khóa",
-    stakersLabel: "Người staking",
+    stakersLabel: "Ví từng staking",
     burnedLabel: "BANMAO đã đốt",
-    maxApyLabel: "APY tối đa",
+    maxAprLabel: "APR hiện tại tối đa",
     liveProducts: "Ứng dụng DeFi",
-    liveProductsDescription: IS_DEVELOPMENT
-      ? "Ba ứng dụng đang hoạt động trên X Layer; Launchpad chỉ đang triển khai ở local."
-      : "Ba ứng dụng đang hoạt động trên X Layer.",
-    appsLive: IS_DEVELOPMENT ? "3 hoạt động · 1 đang triển khai" : "3 ứng dụng",
     learnMore: "Tìm hiểu",
     openApp: "Mở ứng dụng",
     sentLabel: "Đã gửi",
-    walletsLabel: "Số ví",
+    walletsLabel: "Lượt nhận ghi nhận",
     launchedLabel: "Ra mắt",
     comingNext: "Sắp ra mắt",
     comingDescription:
@@ -367,8 +358,8 @@ const OVERVIEW_COPY: Record<Language, OverviewCopy> = {
     metricHelp: {
       staked: "Tổng BANMAO đang được khóa trong hợp đồng staking.",
       stakers: "Tổng số ví đã tham gia staking.",
-      burned: "BANMAO được giữ vĩnh viễn tại ví dead.",
-      apy: "Lợi suất năm tối đa dành cho kỳ khóa dài nhất.",
+      burned: "BANMAO tại ví dead và địa chỉ zero.",
+      apr: "Ước tính theo năm sau phí thưởng hiện tại, không gộp lãi. Thay đổi theo cổ phần và tốc độ thưởng; không đảm bảo lợi nhuận.",
     },
   },
   zh: {
@@ -392,18 +383,14 @@ const OVERVIEW_COPY: Record<Language, OverviewCopy> = {
     unavailable: "数据不可用",
     retry: "重试",
     stakedLabel: "已质押 BANMAO",
-    stakersLabel: "质押用户",
+    stakersLabel: "历史质押钱包",
     burnedLabel: "已销毁 BANMAO",
-    maxApyLabel: "最高 APY",
+    maxAprLabel: "当前最高 APR",
     liveProducts: "DeFi 产品",
-    liveProductsDescription: IS_DEVELOPMENT
-      ? "三个应用已在 X Layer 上线；Launchpad 仅在本地开发。"
-      : "三个应用已在 X Layer 上线。",
-    appsLive: IS_DEVELOPMENT ? "3 个在线 · 1 个开发中" : "3 个应用在线",
     learnMore: "了解更多",
     openApp: "打开应用",
     sentLabel: "已发送",
-    walletsLabel: "钱包",
+    walletsLabel: "接收记录",
     launchedLabel: "发行",
     comingNext: "即将推出",
     comingDescription: "流动性、挖矿和借贷正在为下一阶段开发。",
@@ -432,8 +419,8 @@ const OVERVIEW_COPY: Record<Language, OverviewCopy> = {
     metricHelp: {
       staked: "当前锁定在质押合约中的 BANMAO 总量。",
       stakers: "参与过质押的钱包总数。",
-      burned: "永久存放在销毁地址的 BANMAO。",
-      apy: "最长锁定期限可获得的最高年化收益。",
+      burned: "dead 和零地址持有的 BANMAO。",
+      apr: "扣除当前奖励费用的年化估算，不含复利。随份额和奖励速率变化，不保证收益。",
     },
   },
   ko: {
@@ -457,18 +444,14 @@ const OVERVIEW_COPY: Record<Language, OverviewCopy> = {
     unavailable: "데이터를 불러올 수 없음",
     retry: "다시 시도",
     stakedLabel: "스테이킹된 BANMAO",
-    stakersLabel: "스테이커",
+    stakersLabel: "참여한 지갑",
     burnedLabel: "소각된 BANMAO",
-    maxApyLabel: "최대 APY",
+    maxAprLabel: "현재 최대 APR",
     liveProducts: "DeFi 제품",
-    liveProductsDescription: IS_DEVELOPMENT
-      ? "X Layer에서 앱 3개가 운영 중이며 Launchpad는 로컬에서 개발 중입니다."
-      : "X Layer에서 앱 3개가 운영 중입니다.",
-    appsLive: IS_DEVELOPMENT ? "3개 라이브 · 1개 개발 중" : "3개 앱 라이브",
     learnMore: "자세히",
     openApp: "앱 열기",
     sentLabel: "전송량",
-    walletsLabel: "지갑",
+    walletsLabel: "수신 기록",
     launchedLabel: "출시",
     comingNext: "출시 예정",
     comingDescription: "유동성, 파밍 및 대출 기능을 개발 중입니다.",
@@ -497,8 +480,8 @@ const OVERVIEW_COPY: Record<Language, OverviewCopy> = {
     metricHelp: {
       staked: "스테이킹 컨트랙트에 잠긴 BANMAO 총량입니다.",
       stakers: "스테이킹에 참여한 지갑 수입니다.",
-      burned: "소각 주소에 영구 보관된 BANMAO입니다.",
-      apy: "가장 긴 락업 기간의 최대 연 수익률입니다.",
+      burned: "dead 및 영 주소의 BANMAO.",
+      apr: "현재 보상 수수료 차감 후 연환산 추정치이며 복리 미포함. 지분 및 보상률에 따라 변동하며 보장되지 않습니다.",
     },
   },
   ru: {
@@ -522,18 +505,14 @@ const OVERVIEW_COPY: Record<Language, OverviewCopy> = {
     unavailable: "Данные недоступны",
     retry: "Повторить",
     stakedLabel: "BANMAO в стейкинге",
-    stakersLabel: "Стейкеры",
+    stakersLabel: "Участвовавшие кошельки",
     burnedLabel: "BANMAO сожжено",
-    maxApyLabel: "Макс. APY",
+    maxAprLabel: "Текущий макс. APR",
     liveProducts: "Продукты DeFi",
-    liveProductsDescription: IS_DEVELOPMENT
-      ? "Три приложения работают в X Layer; Launchpad доступен только локально."
-      : "Три приложения работают в X Layer.",
-    appsLive: IS_DEVELOPMENT ? "3 работают · 1 в разработке" : "3 приложения",
     learnMore: "Подробнее",
     openApp: "Открыть",
     sentLabel: "Отправлено",
-    walletsLabel: "Кошельки",
+    walletsLabel: "Записи получателей",
     launchedLabel: "Запуск",
     comingNext: "Скоро",
     comingDescription: "Ликвидность, фарминг и кредитование находятся в разработке.",
@@ -562,8 +541,8 @@ const OVERVIEW_COPY: Record<Language, OverviewCopy> = {
     metricHelp: {
       staked: "Общий объём BANMAO, заблокированный в контракте стейкинга.",
       stakers: "Общее число кошельков, участвовавших в стейкинге.",
-      burned: "BANMAO, навсегда находящиеся на адресе сжигания.",
-      apy: "Максимальная годовая доходность для самого долгого срока.",
+      burned: "BANMAO на dead и нулевом адресах.",
+      apr: "Годовая оценка после текущей комиссии, без сложного процента. Зависит от долей и скорости наград; не гарантирована.",
     },
   },
   id: {
@@ -587,18 +566,14 @@ const OVERVIEW_COPY: Record<Language, OverviewCopy> = {
     unavailable: "Data tidak tersedia",
     retry: "Coba lagi",
     stakedLabel: "BANMAO di-stake",
-    stakersLabel: "Staker",
+    stakersLabel: "Dompet pernah staking",
     burnedLabel: "BANMAO dibakar",
-    maxApyLabel: "APY maksimum",
+    maxAprLabel: "APR maksimum saat ini",
     liveProducts: "Produk DeFi",
-    liveProductsDescription: IS_DEVELOPMENT
-      ? "Tiga aplikasi aktif di X Layer; Launchpad hanya dikembangkan secara lokal."
-      : "Tiga aplikasi aktif di X Layer.",
-    appsLive: IS_DEVELOPMENT ? "3 aktif · 1 dikembangkan" : "3 aplikasi aktif",
     learnMore: "Pelajari",
     openApp: "Buka aplikasi",
     sentLabel: "Terkirim",
-    walletsLabel: "Dompet",
+    walletsLabel: "Entri penerima",
     launchedLabel: "Luncurkan",
     comingNext: "Segera hadir",
     comingDescription: "Likuiditas, farming, dan lending sedang dikembangkan.",
@@ -627,8 +602,8 @@ const OVERVIEW_COPY: Record<Language, OverviewCopy> = {
     metricHelp: {
       staked: "Total BANMAO yang terkunci di kontrak staking.",
       stakers: "Total dompet yang pernah mengikuti staking.",
-      burned: "BANMAO yang tersimpan permanen di alamat burn.",
-      apy: "Imbal hasil tahunan maksimum untuk durasi kunci terlama.",
+      burned: "BANMAO di alamat dead dan nol.",
+      apr: "Estimasi tahunan setelah biaya hadiah saat ini, tanpa bunga majemuk. Berubah menurut saham dan laju hadiah; tidak dijamin.",
     },
   },
 };
@@ -744,45 +719,15 @@ function trackDeFiEvent(
   analyticsWindow.gtag?.("event", eventName, payload);
 }
 
-function formatCompact(value?: bigint) {
-  if (value === undefined) return "—";
-  const number = Number(value) / 1e18;
-  if (number === 0) return "0";
-  if (number >= 1_000_000_000)
-    return `${(number / 1_000_000_000).toFixed(2)}B`;
-  if (number >= 1_000_000) return `${(number / 1_000_000).toFixed(2)}M`;
-  if (number >= 1_000) return `${(number / 1_000).toFixed(1)}K`;
-  if (number >= 1)
-    return number.toLocaleString(undefined, { maximumFractionDigits: 0 });
-  return number.toFixed(2);
+function DataFreshness({ timestamp, copy, failed }: { timestamp: number; copy: OverviewCopy; failed: boolean }) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
+  const seconds = Math.max(0, Math.floor((now - timestamp) / 1000));
+  return <span className="defi-metrics__freshness">{failed ? copy.unavailable : !timestamp ? copy.loading : seconds < 2 ? copy.updatedNow : copy.updatedSeconds(seconds)}</span>;
 }
-
-function formatApiCompact(value?: number) {
-  if (value === undefined) return "—";
-  if (value === 0) return "0";
-  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(2)}B`;
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
-  return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
-}
-
-function formatTokenAmount(value?: bigint) {
-  if (value === undefined) return "—";
-  const number = Number(value) / 1e18;
-  if (number === 0) return "0";
-  return number.toLocaleString(undefined, {
-    maximumFractionDigits: number >= 1 ? 2 : 4,
-  });
-}
-
-function formatOkb(value?: bigint) {
-  if (value === undefined) return "—";
-  const number = Number(formatEther(value));
-  return number.toLocaleString(undefined, {
-    maximumFractionDigits: number >= 1 ? 4 : 6,
-  });
-}
-
+const YIELD_ABI = parseAbi([
+ "function rewardRatePerSecond() view returns (uint256)", "function totalShares() view returns (uint256)", "function rewardBucket() view returns (uint256)", "function devFee() view returns (uint256)", "function lockOptions(uint256) view returns (uint256,uint256)"
+]);
 function shortAddress(address?: string) {
   if (!address) return "—";
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
@@ -869,13 +814,17 @@ export default function DeFiPage() {
   const [airdropStats, setAirdropStats] = useState<AirdropStats | null>(null);
   const [airdropLoading, setAirdropLoading] = useState(true);
   const [airdropError, setAirdropError] = useState(false);
-  const [lastUpdatedAt, setLastUpdatedAt] = useState(0);
-  const [now, setNow] = useState(() => Date.now());
+  const [airdropUpdatedAt, setAirdropUpdatedAt] = useState(0);
+  const airdropInFlight = useRef(false);
   const [selectedService, setSelectedService] =
     useState<ProductModalService | null>(null);
   const connectedTracked = useRef(false);
 
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
+  const { switchChain, isPending: switchingNetwork, error: switchError } = useSwitchChain();
+  const formatCompact = (value?: bigint) => formatAmount(value, lang, true);
+  const formatTokenAmount = (value?: bigint) => formatAmount(value, lang);
+  const formatOkb = (value?: bigint) => formatAmount(value, lang, false, 6);
   const copy = OVERVIEW_COPY[lang];
 
   const t = useCallback(
@@ -920,12 +869,9 @@ export default function DeFiPage() {
     if (!isConnected) connectedTracked.current = false;
   }, [isConnected]);
 
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
 
   const okbBalanceQuery = useBalance({
+    chainId: XLAYER_CHAIN_ID,
     address,
     query: {
       enabled: Boolean(address),
@@ -934,6 +880,7 @@ export default function DeFiPage() {
   });
 
   const banmaoBalanceQuery = useReadContract({
+    chainId: XLAYER_CHAIN_ID,
     address: BANMAO_TOKEN_ADDRESS,
     abi: ERC20_ABI,
     functionName: "balanceOf",
@@ -945,6 +892,7 @@ export default function DeFiPage() {
   });
 
   const totalStakedQuery = useReadContract({
+    chainId: XLAYER_CHAIN_ID,
     address: STAKING_CONTRACT_ADDRESS,
     abi: STAKING_STATS_ABI,
     functionName: "totalStaked",
@@ -952,6 +900,7 @@ export default function DeFiPage() {
   });
 
   const totalStakersQuery = useReadContract({
+    chainId: XLAYER_CHAIN_ID,
     address: STAKING_CONTRACT_ADDRESS,
     abi: STAKING_STATS_ABI,
     functionName: "getTotalStakers",
@@ -959,6 +908,7 @@ export default function DeFiPage() {
   });
 
   const burnedBalanceQuery = useReadContract({
+    chainId: XLAYER_CHAIN_ID,
     address: BANMAO_TOKEN_ADDRESS,
     abi: ERC20_ABI,
     functionName: "balanceOf",
@@ -966,11 +916,31 @@ export default function DeFiPage() {
     query: { refetchInterval: 15_000 },
   });
 
+  const zeroBalanceQuery = useReadContract({ chainId: XLAYER_CHAIN_ID, address: BANMAO_TOKEN_ADDRESS, abi: ERC20_ABI, functionName: "balanceOf", args: ["0x0000000000000000000000000000000000000000"], query: { refetchInterval: 15_000 } });
+  // The deployed contract has four options, editable but not appendable.
+  const yieldQuery = useReadContracts({ allowFailure: false, contracts: [
+    ...(["rewardRatePerSecond", "totalShares", "rewardBucket", "devFee"] as const).map(functionName => ({ chainId: XLAYER_CHAIN_ID, address: STAKING_CONTRACT_ADDRESS, abi: YIELD_ABI, functionName })),
+    ...[0n, 1n, 2n, 3n].map(index => ({ chainId: XLAYER_CHAIN_ID, address: STAKING_CONTRACT_ADDRESS, abi: YIELD_ABI, functionName: "lockOptions" as const, args: [index] as const })),
+  ], query: { refetchInterval: 15_000 } });
+  const yd = yieldQuery.data;
+  const apr = yd ? estimatedNetApr(yd[0] as bigint, yd[1] as bigint, yd[2] as bigint, yd[3] as bigint, yd.slice(4).map(option => (option as readonly [bigint, bigint])[1])) : undefined;
+  const aprDisplay = apr === undefined || yieldQuery.isError ? "—" : new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(apr) + "%";
+  const burned = burnedBalanceQuery.data !== undefined && zeroBalanceQuery.data !== undefined ? burnedBalanceQuery.data + zeroBalanceQuery.data : undefined;
+  const supplyQuery = useReadContract({ chainId: XLAYER_CHAIN_ID, address: BANMAO_TOKEN_ADDRESS, abi: parseAbi(["function totalSupply() view returns (uint256)"]), functionName: "totalSupply", query: { refetchInterval: 15_000 } });
+  const burnedPercent = supplyPercentage(burned, supplyQuery.data);
+  const protocolQueries = [totalStakedQuery, totalStakersQuery, burnedBalanceQuery, zeroBalanceQuery, supplyQuery, yieldQuery];
+  const lastUpdatedAt = oldestUpdate(protocolQueries.map(query => query.dataUpdatedAt));
+  const protocolError = protocolQueries.some(query => query.isError);
+
   const fetchAirdropStats = useCallback(async () => {
+    if (airdropInFlight.current) return;
+    airdropInFlight.current = true;
     setAirdropLoading(true);
-    setAirdropError(false);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
     try {
-      const response = await fetch("/api/airdrop-records?type=stats", {
+      const response = await fetch(`/api/airdrop-records?type=stats&token=${BANMAO_TOKEN_ADDRESS}`, {
+        signal: controller.signal,
         cache: "no-store",
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -979,11 +949,15 @@ export default function DeFiPage() {
         data?: AirdropStats;
       };
       if (!payload.success || !payload.data) throw new Error("Invalid data");
+      if (![payload.data.total_distributed, payload.data.total_recipients].every(value => typeof value === "number" && Number.isFinite(value) && value >= 0)) throw new Error("Invalid metrics");
       setAirdropStats(payload.data);
-      setLastUpdatedAt(Date.now());
+      setAirdropError(false);
+      setAirdropUpdatedAt(Date.now());
     } catch {
       setAirdropError(true);
     } finally {
+      window.clearTimeout(timeout);
+      airdropInFlight.current = false;
       setAirdropLoading(false);
     }
   }, []);
@@ -996,66 +970,52 @@ export default function DeFiPage() {
     return () => window.clearInterval(timer);
   }, [fetchAirdropStats]);
 
-  useEffect(() => {
-    if (
-      totalStakedQuery.data !== undefined ||
-      totalStakersQuery.data !== undefined ||
-      burnedBalanceQuery.data !== undefined
-    ) {
-      setLastUpdatedAt(Date.now());
-    }
-  }, [
-    burnedBalanceQuery.data,
-    totalStakedQuery.data,
-    totalStakersQuery.data,
-  ]);
-
   const retryProtocolData = useCallback(() => {
     void totalStakedQuery.refetch();
     void totalStakersQuery.refetch();
     void burnedBalanceQuery.refetch();
     void fetchAirdropStats();
-    setNow(Date.now());
+    void zeroBalanceQuery.refetch();
+    void yieldQuery.refetch();
+    void supplyQuery.refetch();
     trackDeFiEvent("defi_data_retry");
   }, [
     burnedBalanceQuery,
+    zeroBalanceQuery,
+    yieldQuery,
+    supplyQuery,
     fetchAirdropStats,
     totalStakedQuery,
     totalStakersQuery,
   ]);
 
-  const tvlDisplay = formatCompact(totalStakedQuery.data);
+  const tvlDisplay = totalStakedQuery.isError ? "—" : formatCompact(totalStakedQuery.data);
   const stakersDisplay =
     totalStakersQuery.data === undefined
       ? "—"
-      : Number(totalStakersQuery.data).toLocaleString();
-  const burnedDisplay = formatCompact(burnedBalanceQuery.data);
-  const airdropSentDisplay = formatApiCompact(
-    airdropStats?.total_distributed,
-  );
+      : totalStakersQuery.data.toLocaleString(lang);
+  const burnedDisplay = burnedBalanceQuery.isError || zeroBalanceQuery.isError ? "—" : formatCompact(burned);
+  const airdropSentDisplay = formatApiTokenAmount(airdropStats?.total_distributed, lang);
   const airdropRecipientsDisplay =
     airdropStats?.total_recipients === undefined
       ? "—"
-      : airdropStats.total_recipients.toLocaleString();
+      : airdropStats.total_recipients.toLocaleString(lang);
 
-  const freshnessSeconds = lastUpdatedAt
-    ? Math.max(0, Math.floor((now - lastUpdatedAt) / 1000))
-    : 0;
 
   const productStats = useMemo(
     () => ({
       staking: [
-        { label: copy.maxApyLabel, value: "75%" },
+        { label: copy.maxAprLabel, value: aprDisplay },
         { label: copy.stakedLabel, value: tvlDisplay },
       ],
       airdrop: [
         {
-          label: copy.sentLabel,
-          value: airdropLoading ? "…" : airdropError ? "—" : airdropSentDisplay,
+          label: `${copy.sentLabel} (BANMAO)`,
+          value: airdropLoading && !airdropStats ? "…" : airdropError ? "—" : airdropSentDisplay,
         },
         {
           label: copy.walletsLabel,
-          value: airdropLoading
+          value: airdropLoading && !airdropStats
             ? "…"
             : airdropError
               ? "—"
@@ -1076,6 +1036,8 @@ export default function DeFiPage() {
       ],
     }),
     [
+      aprDisplay,
+      airdropStats,
       airdropError,
       airdropLoading,
       airdropRecipientsDisplay,
@@ -1237,10 +1199,7 @@ export default function DeFiPage() {
     );
   }
 
-  const protocolLoading =
-    totalStakedQuery.isPending ||
-    totalStakersQuery.isPending ||
-    burnedBalanceQuery.isPending;
+  const protocolLoading = protocolQueries.some(query => query.isPending);
 
   return (
     <div className="defi-overview">
@@ -1327,6 +1286,7 @@ export default function DeFiPage() {
               </div>
             ) : (
               <>
+                {chainId !== XLAYER_CHAIN_ID && <div role="alert"><strong>{copy.wrongNetworkTitle}</strong><p>{copy.wrongNetworkDescription}</p><button type="button" disabled={switchingNetwork} onClick={() => switchChain({ chainId: XLAYER_CHAIN_ID })}>{copy.switchNetwork}</button>{switchError && <p>{copy.unavailable}</p>}</div>}
                 <div className="defi-wallet-card__balances">
                   <div className="defi-balance-tile">
                     <span>BANMAO</span>
@@ -1334,7 +1294,7 @@ export default function DeFiPage() {
                       <span className="defi-skeleton defi-skeleton--balance" />
                     ) : (
                       <strong>
-                        {formatTokenAmount(banmaoBalanceQuery.data)}
+                        {banmaoBalanceQuery.isError ? copy.unavailable : formatTokenAmount(banmaoBalanceQuery.data)}
                       </strong>
                     )}
                   </div>
@@ -1343,7 +1303,7 @@ export default function DeFiPage() {
                     {okbBalanceQuery.isPending ? (
                       <span className="defi-skeleton defi-skeleton--balance" />
                     ) : (
-                      <strong>{formatOkb(okbBalanceQuery.data?.value)}</strong>
+                      <strong>{okbBalanceQuery.isError ? copy.unavailable : formatOkb(okbBalanceQuery.data?.value)}</strong>
                     )}
                   </div>
                 </div>
@@ -1364,24 +1324,15 @@ export default function DeFiPage() {
           <div className="defi-metrics__header">
             <h2 id="protocol-overview-title">{copy.protocolOverview}</h2>
             <div className="defi-metrics__controls">
-              <span className="defi-metrics__freshness" aria-live="polite">
-                <span
-                  className="defi-metrics__freshness-dot"
-                  aria-hidden="true"
-                />
-                {lastUpdatedAt
-                  ? freshnessSeconds < 2
-                    ? copy.updatedNow
-                    : copy.updatedSeconds(freshnessSeconds)
-                  : copy.loading}
-              </span>
+              <span>X Layer: <DataFreshness timestamp={lastUpdatedAt} copy={copy} failed={protocolError} /></span>
+              <span>Airdrop: <DataFreshness timestamp={airdropUpdatedAt} copy={copy} failed={airdropError} /></span>
               <button
                 type="button"
                 className="defi-metrics__refresh"
                 onClick={retryProtocolData}
                 aria-label={copy.refreshData}
                 title={copy.refreshData}
-                disabled={protocolLoading || airdropLoading}
+                disabled={protocolQueries.some(query => query.isFetching) || airdropLoading}
               >
                 <RefreshCw aria-hidden="true" />
               </button>
@@ -1436,9 +1387,9 @@ export default function DeFiPage() {
               </div>
               <MetricValue
                 value={burnedDisplay}
-                unit="BANMAO"
-                isLoading={burnedBalanceQuery.isPending}
-                isError={burnedBalanceQuery.isError}
+                unit={burnedPercent !== undefined && !supplyQuery.isError ? `BANMAO (${new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(burnedPercent)}%)` : "BANMAO"}
+                isLoading={burnedBalanceQuery.isPending || zeroBalanceQuery.isPending}
+                isError={burnedBalanceQuery.isError || zeroBalanceQuery.isError}
                 copy={copy}
                 onRetry={retryProtocolData}
               />
@@ -1446,16 +1397,16 @@ export default function DeFiPage() {
 
             <div className="defi-metric">
               <div className="defi-metric__label-row">
-                <span className="defi-metric__label">{copy.maxApyLabel}</span>
+                <span className="defi-metric__label">{copy.maxAprLabel}</span>
                 <MetricInfoPopover
-                  label={copy.metricHelp.apy}
-                  description={copy.metricHelp.apy}
+                  label={copy.metricHelp.apr}
+                  description={copy.metricHelp.apr}
                 />
               </div>
               <MetricValue
-                value="75%"
-                isLoading={false}
-                isError={false}
+                value={aprDisplay}
+                isLoading={yieldQuery.isPending}
+                isError={yieldQuery.isError}
                 copy={copy}
                 onRetry={retryProtocolData}
               />
@@ -1471,7 +1422,7 @@ export default function DeFiPage() {
           <div className="defi-section-heading">
             <div>
               <h2 id="live-products-title">{copy.liveProducts}</h2>
-              <p>{copy.liveProductsDescription}</p>
+              <p>{PRODUCT_COUNT_COPY[lang]}</p>
             </div>
             <span className="defi-section-heading__count">
               {PRODUCT_COUNT_COPY[lang]}
@@ -1699,7 +1650,7 @@ export default function DeFiPage() {
       <ServiceDetailModal
         isOpen={Boolean(selectedService)}
         onClose={() => setSelectedService(null)}
-        service={selectedService}
+        service={selectedService ? { ...selectedService, stats: productStats[selectedService.id as ProductConfig["id"]] } : null}
         bullets={
           selectedConfig ? getBullets(selectedConfig.id) : undefined
         }
@@ -1711,7 +1662,7 @@ export default function DeFiPage() {
         enterAppLabel={copy.openApp}
         comingSoonLabel={t("defiComingSoon")}
         liveLabel={t("defiLive")}
-        contractAddressLabel={copy.smartContract}
+        contractAddressLabel={selectedService?.contractAddress === COMMUNITY_WALLET ? copy.communityWallet : copy.smartContract}
         viewExplorerLabel={copy.viewExplorer}
       />
     </div>

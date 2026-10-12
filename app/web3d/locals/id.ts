@@ -146,8 +146,8 @@ export const id: LandingTranslations = {
     defiBurnTooltip: "Total $BANMAO yang dihapus secara permanen dari pasokan.",
     // DeFi Services
     defiStakingName: "Staking",
-    defiStakingDesc: "Kunci $BANMAO, raih hadiah APY 75%",
-    defiStakingDetails: "Maksimalkan keuntungan dengan mengunci token $BANMAO. Semakin lama dikunci, semakin tinggi pengganda hadiahnya.\n\nMekanisme:\n• Periode Kunci: Pilih dari fleksibel hingga 365 hari.\n• Pengganda: Hingga 2x saham untuk penguncian lama.\n• Penalti: Unstake awal dikenakan biaya yang kembali ke pool hadiah.\n• Hadiah: Dibayar dalam $BANMAO, dapat diklaim kapan saja.\n\nSmart Contract memverifikasi semua logika secara transparan di on-chain.",
+    defiStakingDesc: "Stake $BANMAO dengan hadiah on-chain yang berubah",
+    defiStakingDetails: "Stake $BANMAO dengan hadiah on-chain yang berubah\n\nPilih periode penguncian sesuai konfigurasi kontrak saat ini.\n\nPengali saham mengikuti pengaturan kontrak saat ini.\n\nPenalti Awal: Biaya unstake awal kembali ke pool hadiah.\n\nHadiah: Dibayar dalam $BANMAO, klaim kapan saja.",
     defiPoolsName: "Pool Likuiditas",
     defiPoolsDesc: "Sediakan likuiditas untuk mendapatkan biaya trading dan hadiah",
     defiFarmingName: "Yield Farming",
@@ -163,9 +163,9 @@ export const id: LandingTranslations = {
     // Staking Infographic Bullets
     defiStakingIntro: "Maksimalkan keuntungan dengan mengunci token $BANMAO. Semakin lama dikunci, semakin tinggi pengganda.",
     defiStakingBullet1Title: "Periode Kunci",
-    defiStakingBullet1Desc: "Pilih dari fleksibel hingga 365 hari.",
+    defiStakingBullet1Desc: "Pilih periode penguncian sesuai konfigurasi kontrak saat ini.",
     defiStakingBullet2Title: "Pengganda",
-    defiStakingBullet2Desc: "Hingga 2x saham untuk penguncian lama.",
+    defiStakingBullet2Desc: "Pengali saham mengikuti pengaturan kontrak saat ini.",
     defiStakingBullet3Title: "Penalti Awal",
     defiStakingBullet3Desc: "Biaya unstake awal kembali ke pool hadiah.",
     defiStakingBullet4Title: "Hadiah",

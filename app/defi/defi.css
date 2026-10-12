@@ -3,18 +3,18 @@
 
 .defi-overview {
   --overview-max-width: 1180px;
-  --overview-surface: rgba(11, 16, 29, 0.82);
-  --overview-surface-raised: rgba(15, 23, 42, 0.92);
-  --overview-border: rgba(148, 163, 184, 0.15);
-  --overview-border-strong: rgba(148, 163, 184, 0.26);
-  --overview-text: #f8fafc;
-  --overview-muted: #94a3b8;
-  --overview-subtle: #64748b;
-  --overview-primary: #22d3ee;
-  --overview-primary-strong: #06b6d4;
-  --overview-success: #34d399;
-  --overview-danger: #fb7185;
-  --overview-warning: #fbbf24;
+  --overview-surface: var(--bm-surface-raised);
+  --overview-surface-raised: var(--bm-surface-card);
+  --overview-border: var(--bm-border-subtle);
+  --overview-border-strong: var(--bm-border-strong);
+  --overview-text: var(--bm-text);
+  --overview-muted: var(--bm-text-muted);
+  --overview-subtle: var(--bm-text-muted);
+  --overview-primary: var(--bm-accent-light);
+  --overview-primary-strong: var(--bm-accent);
+  --overview-success: var(--bm-success);
+  --overview-danger: var(--bm-error);
+  --overview-warning: var(--bm-warning);
   position: relative;
   min-height: 100%;
   overflow: hidden;
@@ -22,7 +22,7 @@
   background:
     radial-gradient(circle at 12% -8%, rgba(34, 211, 238, 0.11), transparent 34%),
     radial-gradient(circle at 91% 18%, rgba(168, 85, 247, 0.09), transparent 31%),
-    #05070d;
+    var(--bm-surface-deep);
   color: var(--overview-text);
   font-family: var(--font-sans), "Noto Sans", sans-serif;
 }
@@ -181,7 +181,7 @@
 
 .defi-button--primary {
   border-color: rgba(103, 232, 249, 0.52);
-  background: linear-gradient(135deg, #22d3ee, #0891b2);
+  background: linear-gradient(135deg, var(--bm-accent-light), #0891b2);
   color: #021014;
   box-shadow: 0 10px 28px rgba(6, 182, 212, 0.19);
 }
@@ -666,7 +666,7 @@
 }
 
 .defi-product-card {
-  --product-color: #22d3ee;
+  --product-color: var(--bm-accent-light);
   position: relative;
   display: flex;
   min-height: 280px;
@@ -1072,8 +1072,8 @@
   min-height: calc(100dvh - 128px);
   place-items: center;
   padding: 30px;
-  background: #05070d;
-  color: var(--overview-text, #f8fafc);
+  background: var(--bm-surface-deep);
+  color: var(--overview-text, var(--bm-text));
   text-align: center;
 }
 
@@ -1096,7 +1096,7 @@
 
 .defi-overview-state p {
   margin: 0 0 20px;
-  color: #94a3b8;
+  color: var(--bm-text-muted);
   font-size: 13px;
   line-height: 1.6;
 }
@@ -1324,4 +1324,76 @@
   .defi-skeleton::after {
     display: none;
   }
+}
+/* Treasury hierarchy, scoped to the overview. */
+.defi-overview { padding-block: 28px; background: radial-gradient(ellipse at 15% 0%, var(--bm-warning-soft), transparent 45%), var(--bm-surface-deep); }
+.defi-overview::before { opacity: .35; }
+.defi-overview *, .defi-overview *::before, .defi-overview *::after { box-sizing: border-box; }
+.defi-overview__hero { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 20px; }
+.defi-overview__hero-copy { min-height: 280px; padding: 32px; background: linear-gradient(120deg, var(--bm-warning-soft), transparent 75%), var(--overview-surface); border-color: var(--bm-warning-border); }
+.defi-overview__hero-content { position: relative; z-index: 1; }
+.defi-overview__hero-mascot { opacity: .3; width: 42%; }
+.defi-overview__title { font-size: clamp(32px, 3.4vw, 48px); max-width: 620px; }
+.defi-overview__title-accent { color: var(--bm-warning); }
+.defi-overview__subtitle { color: var(--overview-muted); font-size: 15px; margin-top: 14px; }
+.defi-overview__eyebrow { margin-bottom: 16px; color: var(--overview-primary); background: var(--bm-accent-pale); border-color: var(--bm-accent-border); letter-spacing: .04em; }
+.defi-overview__hero-actions { margin-top: 22px; }
+.defi-button { min-width: 0; white-space: normal; text-align: center; padding-block: 10px; border-radius: var(--bm-radius-pill); }
+.defi-button svg { flex-shrink: 0; }
+.defi-button--primary { background: var(--bm-warning); color: var(--bm-ink); border-color: var(--bm-warning-border); box-shadow: none; }
+.defi-button--primary:hover { background: var(--bm-warning); box-shadow: 0 4px 20px var(--bm-warning-soft); }
+.defi-button--secondary { background: var(--overview-surface-raised); }
+.defi-wallet-card { min-width: 0; min-height: 280px; padding: 24px; background: radial-gradient(ellipse at top right, var(--bm-secondary-pale), transparent 70%), var(--overview-surface-raised); box-shadow: none; }
+.defi-wallet-card__empty { padding-block: 16px 0; }
+.defi-wallet-card__empty-icon { width: 44px; height: 44px; margin-bottom: 10px; color: var(--bm-secondary-light); background: var(--bm-secondary-pale); border-color: var(--bm-secondary-border); }
+.defi-metrics { padding: 18px 24px; margin-bottom: 32px; background: var(--bm-surface-raised); box-shadow: none; }
+.defi-metrics__header { margin-bottom: 8px; flex-wrap: wrap; }
+.defi-metrics__controls { flex-wrap: wrap; }
+.defi-metric__label { text-transform: none; letter-spacing: 0; font-size: 12px; }
+.defi-metric__value { font-variant-numeric: tabular-nums; }
+.defi-metrics__refresh, .defi-info-button, .defi-contract-copy, .defi-contract-row a { width: 44px; height: 44px; flex-shrink: 0; }
+.defi-section { margin-bottom: 32px; }
+.defi-products-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.defi-product-card { min-width: 0; min-height: 230px; padding: 20px; box-shadow: none; background: var(--overview-surface); }
+.defi-product-card__name { white-space: normal; font-size: 18px; }
+.defi-product-card__top { flex-wrap: wrap; gap: 8px; }
+.defi-product-card__description { max-width: 100%; }
+.defi-product-card__illustration { opacity: .08; }
+.defi-product-card__stats { gap: 16px; }
+.defi-product-stat { min-width: 0; }
+.defi-product-stat strong { overflow-wrap: anywhere; }
+.defi-product-card__footer { gap: 8px; }
+.defi-product-card__cta { min-height: 44px; white-space: normal; }
+.defi-product-card:hover { background: var(--overview-surface-raised); }
+.defi-upcoming { box-shadow: none; background: transparent; padding: 18px 22px; }
+.defi-trust-panel { box-shadow: none; background: var(--overview-surface); }
+.defi-contract-row { background: var(--bm-surface-deep); }
+.defi-overview-state { font-family: var(--font-sans), sans-serif; }
+.defi-overview-state__card { background: var(--bm-surface-raised); border-color: var(--bm-border); }
+.defi-skeleton { max-width: 100%; }
+@media (min-width: 1200px) { .defi-products-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 900px) {
+  .defi-overview__hero { grid-template-columns: minmax(0, 1fr); }
+  .defi-wallet-card { min-height: auto; }
+}
+@media (max-width: 680px) {
+  .defi-overview { padding-block: 16px; }
+  .defi-overview__hero { gap: 12px; }
+  .defi-overview__hero-copy { min-height: auto; padding: 22px 18px; }
+  .defi-overview__title { font-size: clamp(30px, 8vw, 38px); }
+  .defi-overview__subtitle { font-size: 14px; line-height: 1.5; }
+  .defi-overview__hero-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .defi-wallet-card { padding: 18px; }
+  .defi-wallet-card__empty { text-align: left; padding-top: 12px; }
+  .defi-wallet-card__empty > div { width: 100%; }
+  .defi-wallet-card__empty-icon { float: left; margin: 0 12px 8px 0; }
+  .defi-wallet-card__empty p { max-width: none; margin: 4px 0 12px; }
+  .defi-wallet-card__empty .banmao-wallet-button { width: 100%; }
+  .defi-metrics { padding: 14px 10px; }
+  .defi-metrics__header { padding-inline: 6px; gap: 8px; }
+  .defi-products-grid { grid-template-columns: minmax(0, 1fr); }
+  .defi-product-card { min-height: 210px; padding: 18px; }
+  .defi-product-card__description { margin-block: 12px; }
+  .defi-live-badge { font-size: 10px; padding-inline: 8px; }
+  .defi-contract-row { gap: 8px; }
 }

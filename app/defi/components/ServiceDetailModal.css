@@ -468,4 +468,10 @@
         font-size: 1.1rem;
     }
 
+}/* Match the treasury surface while preserving modal focus and scroll behavior. */
+.service-modal-content { background: var(--bm-surface-raised); color: var(--bm-text); border-color: var(--bm-border-strong); font-family: var(--font-sans), sans-serif; box-sizing: border-box; }
+.service-modal-close { min-width: 44px; min-height: 44px; color: var(--bm-text-muted); }
+@media (max-width: 680px) {
+  .service-modal-overlay { align-items: flex-end; padding-top: calc(var(--defi-shell-header-height) + 12px); }
+  .service-modal-content, .service-modal-content.infographic-mode { width: 100%; max-height: calc(100dvh - var(--defi-shell-header-height) - 12px); border-radius: 22px 22px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom)); overscroll-behavior: contain; }
 }

@@ -136,6 +136,11 @@ export const DISPLAY_PROFILES = Object.freeze([
 
 export function resolveDisplayProfile(pathname: string | null | undefined): DisplayProfile {
   const normalizedPath = pathname?.startsWith("/") ? pathname : "/";
+  // Only the overview opts in; legacy product canvases retain their profiles.
+  if (normalizedPath === "/defi") {
+    const defi = DISPLAY_PROFILES.find((profile) => profile.id === "defi")!;
+    return { ...defi, mode: "responsive", minimumLayoutWidth: 320 };
+  }
   return DISPLAY_PROFILES.find((profile) => (
     profile.routePrefix === "/"
       ? true

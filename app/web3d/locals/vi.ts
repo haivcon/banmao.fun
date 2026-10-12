@@ -146,8 +146,8 @@ export const vi: LandingTranslations = {
     defiBurnTooltip: "Tổng lượng $BANMAO đã bị đốt vĩnh viễn ra khỏi nguồn cung.",
     // DeFi Services
     defiStakingName: "Staking",
-    defiStakingDesc: "Khóa $BANMAO, nhận thưởng APY đến 75%",
-    defiStakingDetails: "Tối đa hóa lợi nhuận bằng cách khóa token $BANMAO. Khóa càng lâu, hệ số thưởng (Share Booster) càng cao.\n\nCơ chế hoạt động:\n• Thời gian khóa: Tùy chọn từ linh hoạt đến 365 ngày.\n• Hệ số nhân: Tăng gấp 2 lần số lượng cổ phần cho kỳ hạn dài.\n• Phạt rút sớm: Rút trước hạn sẽ chịu phí phạt, phí này được đưa lại vào bể thưởng.\n• Phần thưởng: Trả bằng $BANMAO, có thể nhận bất cứ lúc nào.\n\nSmart Contract đảm bảo mọi tính toán minh bạch trên chuỗi.",
+    defiStakingDesc: "Stake $BANMAO, nhận thưởng biến động theo dữ liệu on-chain",
+    defiStakingDetails: "Stake $BANMAO, nhận thưởng biến động theo dữ liệu on-chain\n\nChọn kỳ khóa theo cấu hình hiện tại trên hợp đồng.\n\nHệ số cổ phần tuân theo cấu hình hiện tại của hợp đồng.\n\nPhạt rút sớm: Phí phạt được đưa lại vào bể thưởng.\n\nPhần thưởng: Trả bằng $BANMAO, nhận bất cứ lúc nào.",
     defiPoolsName: "Pool Thanh Khoản",
     defiPoolsDesc: "Cung cấp thanh khoản để kiếm phí giao dịch và thưởng",
     defiFarmingName: "Yield Farming",
@@ -163,9 +163,9 @@ export const vi: LandingTranslations = {
     // Staking Infographic Bullets
     defiStakingIntro: "Tối đa hóa lợi nhuận bằng cách khóa token $BANMAO. Khóa càng lâu, hệ số thưởng càng cao.",
     defiStakingBullet1Title: "Thời gian khóa",
-    defiStakingBullet1Desc: "Tùy chọn từ linh hoạt đến 365 ngày.",
+    defiStakingBullet1Desc: "Chọn kỳ khóa theo cấu hình hiện tại trên hợp đồng.",
     defiStakingBullet2Title: "Hệ số nhân",
-    defiStakingBullet2Desc: "Tăng gấp 2 lần cổ phần cho kỳ hạn dài.",
+    defiStakingBullet2Desc: "Hệ số cổ phần tuân theo cấu hình hiện tại của hợp đồng.",
     defiStakingBullet3Title: "Phạt rút sớm",
     defiStakingBullet3Desc: "Phí phạt được đưa lại vào bể thưởng.",
     defiStakingBullet4Title: "Phần thưởng",
