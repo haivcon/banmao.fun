@@ -2617,25 +2617,27 @@ export default function BanmaoWebsite() {
                         </div>
                     )}
 
-                    <div className="web3d-controls-cluster">
-                        <ViewModeToggle
-                            viewMode={activeViewMode}
-                            setViewMode={setViewMode}
-                            canUse3D={canUse3D}
-                            reason={modeUnavailableReason}
-                            lang={lang}
-                        />
-                        {activeViewMode === "3d" && (
-                            <Web3DQualityControls
-                                quality={quality}
-                                preference={preference}
-                                setPreference={setPreference}
-                                reducedMotion={reducedMotion}
-                                webGLSupported={webGLSupported}
+                    {isClient && (
+                        <div className="web3d-controls-cluster">
+                            <ViewModeToggle
+                                viewMode={activeViewMode}
+                                setViewMode={setViewMode}
+                                canUse3D={canUse3D}
+                                reason={modeUnavailableReason}
                                 lang={lang}
                             />
-                        )}
-                    </div>
+                            {activeViewMode === "3d" && (
+                                <Web3DQualityControls
+                                    quality={quality}
+                                    preference={preference}
+                                    setPreference={setPreference}
+                                    reducedMotion={reducedMotion}
+                                    webGLSupported={webGLSupported}
+                                    lang={lang}
+                                />
+                            )}
+                        </div>
+                    )}
 
                     {qualityConfig.enableScanlines && <div className="scanlines" />}
 
