@@ -193,9 +193,7 @@ export function OKXLogo3D({ position = [0, 0, 0] as [number, number, number] }) 
         wasHovered.current = isHovered;
     });
 
-    // OKX logo pixel patterns - O has center as "eye"
-    const letterO = [[1, 1, 1], [1, 0, 1], [1, 1, 1]];
-    const letterK = [[1, 0, 1], [1, 1, 0], [1, 0, 1]];
+    // X logo pixel pattern - 5 cubes forming an X shape
     const letterX = [[1, 0, 1], [0, 1, 0], [1, 0, 1]];
 
     // Build cubes with animation data
@@ -210,9 +208,6 @@ export function OKXLogo3D({ position = [0, 0, 0] as [number, number, number] }) 
                         (pattern.length / 2 - y) * unit,
                         0
                     ];
-                    // Eye position is center of O (would be at y=1, x=1 but it's empty)
-                    // So use the cubes around the center as "eye frame"
-                    const isEyeFrame = letterIndex === 0 && (y === 1 || x === 1);
 
                     cubes.push(
                         <AnimatedCube
@@ -222,7 +217,7 @@ export function OKXLogo3D({ position = [0, 0, 0] as [number, number, number] }) 
                             isHovered={isHovered}
                             cubeIndex={cubeIdx}
                             letterIndex={letterIndex}
-                            isEyePosition={isEyeFrame}
+                            isEyePosition={false}
                         />
                     );
                     cubeIdx++;
@@ -243,12 +238,8 @@ export function OKXLogo3D({ position = [0, 0, 0] as [number, number, number] }) 
             {/* Particle trail */}
             <LogoParticles isHovered={isHovered} position={position} />
 
-            {/* O */}
-            {buildLetter(letterO, -0.85, 0)}
-            {/* K */}
-            {buildLetter(letterK, 0, 1)}
             {/* X */}
-            {buildLetter(letterX, 0.85, 2)}
+            {buildLetter(letterX, 0, 0)}
 
             {/* "Powered by" text - bounces with logo */}
             <Text
