@@ -98,7 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning className={`${orbitron.variable} ${rajdhani.variable} ${shareTech.variable} ${spaceMono.variable}`}>
       <head>
-        <script id="banmao-ui-theme-init" dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <Script id="banmao-ui-theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {/* Early PWA: inject manifest and capture install prompt BEFORE browser checks */}
         <Script
           id="pwa-manifest-script"
