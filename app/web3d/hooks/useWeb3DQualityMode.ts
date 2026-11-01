@@ -77,11 +77,21 @@ function readSavedPreference(): Web3DQualityPreference {
 }
 
 export function useWeb3DQualityMode(): Web3DQualityState {
-    const [quality, setQuality] = useState<Web3DQualityMode>("medium");
-    const [preference, setPreferenceState] = useState<Web3DQualityPreference>("medium");
-    const [reducedMotion, setReducedMotion] = useState(false);
-    const [isLowPowerDevice, setIsLowPowerDevice] = useState(true);
-    const [webGLSupported, setWebGLSupported] = useState(false);
+    // Synchronous initializers prevent the false→true flash that causes
+    // the 2D/3D view layer to flicker on every page load.
+    const [quality, setQuality] = useState<Web3DQualityMode>(() => {
+        if (typeof window === "undefined") return "medium";
+        const pref = readSavedPreference();
+        const rm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const lp = detectLowPowerDevice();
+        return pref === "auto" ? detectInitialQuality(rm, lp) : pref;
+    });
+    const [preference, setPreferenceState] = useState<Web3DQualityPreference>(() => readSavedPreference());
+    const [reducedMotion, setReducedMotion] = useState(() =>
+        typeof window !== "undefined" ? window.matchMedia("(prefers-reduced-motion: reduce)").matches : false,
+    );
+    const [isLowPowerDevice, setIsLowPowerDevice] = useState(() => detectLowPowerDevice());
+    const [webGLSupported, setWebGLSupported] = useState(() => hasWebGLSupport());
 
     const applyDetection = useCallback(() => {
         const shouldReduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -101,12 +111,21 @@ export function useWeb3DQualityMode(): Web3DQualityState {
 
         applyDetection();
 
+        // Debounce resize to avoid rapid re-renders when the 3D Canvas
+        // mounts/unmounts and changes the viewport dimensions.
+        let resizeTimer: ReturnType<typeof setTimeout> | undefined;
+        const debouncedResize = () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(applyDetection, 300);
+        };
+
         motionQuery.addEventListener?.("change", applyDetection);
-        window.addEventListener("resize", applyDetection, { passive: true });
+        window.addEventListener("resize", debouncedResize, { passive: true });
 
         return () => {
+            clearTimeout(resizeTimer);
             motionQuery.removeEventListener?.("change", applyDetection);
-            window.removeEventListener("resize", applyDetection);
+            window.removeEventListener("resize", debouncedResize);
         };
     }, [applyDetection]);
 
