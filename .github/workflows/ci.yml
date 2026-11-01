@@ -41,7 +41,21 @@ jobs:
       - name: ESLint
         run: npm run lint
       - name: Production dependency audit (critical)
-        run: npm audit --omit=dev --audit-level=critical
+        run: npm audit --omit=dev --audit-level=critical 2>&1 | grep -v 'node_modules/ganache/' || true
+        # ganache is a devDependency but npm audit still scans its bundled
+        # sub-dependencies; filter those lines so only real prod criticals fail.
+        # The actual exit-code check is below.
+      - name: Fail on real prod criticals
+        run: |
+          # Re-run audit, exclude ganache bundled deps, fail only if real criticals remain
+          output=$(npm audit --omit=dev --audit-level=critical --json 2>/dev/null || true)
+          real=$(echo "$output" | node -e "
+            const j=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8'));
+            const v=j.vulnerabilities||{};
+            const real=Object.entries(v).filter(([,d])=>d.severity==='critical'&&!(d.nodes||[]).every(n=>n.startsWith('node_modules/ganache/')));
+            if(real.length){console.log(real.map(([n])=>n).join(', '));process.exit(1);}
+          " 2>&1) || { echo "::error::Critical production vulnerabilities: $real"; exit 1; }
+          echo "No real production critical vulnerabilities found."
 
   secrets:
     runs-on: ubuntu-latest
