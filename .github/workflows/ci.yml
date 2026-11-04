@@ -25,7 +25,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - name: Install locked dependencies
-        run: npm ci
+        run: npm ci --force
       - name: Repository hygiene (tracked files only)
         shell: bash
         run: |
