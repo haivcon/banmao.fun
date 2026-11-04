@@ -81,83 +81,80 @@ export function Web2DIcon({ name, className }: { name: string; className?: strin
             return (
                 <SvgIcon {...props}>
                     <path {...strokeProps} d="M12 22c4 0 7-2.8 7-6.8 0-2.8-1.5-5-4.2-6.8.2 2-1 3.1-2.4 3.9.5-3.1-.8-5.5-3.6-7.3.2 4-3.8 5.9-3.8 10.2C5 19.2 8 22 12 22Z" />
-                    <path {...strokeProps} d="M12 18c1.7 0 3-1.2 3-2.9 0-1.2-.6-2.1-1.8-2.9.1.9-.4 1.5-1 1.9.2-1.4-.4-2.4-1.5-3.1.1 1.8-1.7 2.6-1.7 4.5 0 1.5 1.3 2.5 3 2.5Z" />
-                </SvgIcon>
-            );
-        case "trophy":
-            return (
-                <SvgIcon {...props}>
-                    <path {...strokeProps} d="M8 4h8v4a4 4 0 0 1-8 0V4Z" />
-                    <path {...strokeProps} d="M8 6H5a2 2 0 0 0 0 4h3M16 6h3a2 2 0 0 1 0 4h-3M12 12v4M9 20h6M10 16h4" />
                 </SvgIcon>
             );
         case "seedling":
             return (
                 <SvgIcon {...props}>
-                    <path {...strokeProps} d="M12 21V10" />
-                    <path {...strokeProps} d="M12 10c0-3.2 2.4-5.7 6-6 0 3.6-2.6 6-6 6Z" />
-                    <path {...strokeProps} d="M12 13c0-2.8-2.1-4.9-5.4-5.1C6.6 11 8.9 13 12 13Z" />
-                </SvgIcon>
-            );
-        case "parachute":
-            return (
-                <SvgIcon {...props}>
-                    <path {...strokeProps} d="M4 10a8 8 0 0 1 16 0H4Z" />
-                    <path {...strokeProps} d="M4 10l5 6M20 10l-5 6M12 10v6" />
-                    <rect {...strokeProps} x="9" y="16" width="6" height="4" rx="1" />
-                </SvgIcon>
-            );
-        case "rocket":
-            return (
-                <SvgIcon {...props}>
-                    <path {...strokeProps} d="M14 4c2.8 0 4.8.7 6 2-1.3 5.2-4 8.8-8.2 10.8L7.2 12.2C9.2 8 12.8 5.3 18 4Z" />
-                    <path {...strokeProps} d="M7 13 4 16l4 1 1 4 3-3M15 8.5h.01" />
-                </SvgIcon>
-            );
-        case "droplet":
-            return (
-                <SvgIcon {...props}>
-                    <path {...strokeProps} d="M12 22a7 7 0 0 0 7-7c0-4.7-7-13-7-13S5 10.3 5 15a7 7 0 0 0 7 7Z" />
-                </SvgIcon>
-            );
-        case "wheat":
-            return (
-                <SvgIcon {...props}>
-                    <path {...strokeProps} d="M12 22V3M8 6c0 2 1.5 3.5 4 3.5M16 6c0 2-1.5 3.5-4 3.5M8 11c0 2 1.5 3.5 4 3.5M16 11c0 2-1.5 3.5-4 3.5M8 16c0 2 1.5 3.5 4 3.5M16 16c0 2-1.5 3.5-4 3.5" />
-                </SvgIcon>
-            );
-        case "bank":
-            return (
-                <SvgIcon {...props}>
-                    <path {...strokeProps} d="M3 10h18L12 4 3 10ZM5 10v8M9 10v8M15 10v8M19 10v8M4 18h16M3 21h18" />
+                    <path {...strokeProps} d="M12 22V10" />
+                    <path {...strokeProps} d="M6 14c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+                    <path {...strokeProps} d="M12 10c0-3-2.5-5-6-6 0 3.5 2.5 6 6 6Z" />
+                    <path {...strokeProps} d="M12 10c0-3 2.5-5 6-6 0 3.5-2.5 6-6 6Z" />
                 </SvgIcon>
             );
         case "cat":
             return (
                 <SvgIcon {...props}>
-                    <path {...strokeProps} d="M6 9 4 4l5 2.2A8 8 0 0 1 12 6a8 8 0 0 1 3 .6L20 4l-2 5a7 7 0 0 1 1 3.6C19 17 16 20 12 20s-7-3-7-7.4A7 7 0 0 1 6 9Z" />
-                    <path {...strokeProps} d="M9 12h.01M15 12h.01M10 16h4" />
+                    <path {...strokeProps} d="M12 22c4.4 0 8-2.7 8-6V7l-3-4-2 2-3-2-3 2-2-2L4 7v9c0 3.3 3.6 6 8 6Z" />
+                    <path {...strokeProps} d="M10 14h.01M14 14h.01M10 17c.8.7 1.4 1 2 1s1.2-.3 2-1" />
                 </SvgIcon>
             );
         case "sparkles":
             return (
                 <SvgIcon {...props}>
-                    <path {...strokeProps} d="m12 3 1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3ZM5 14l.8 2.2L8 17l-2.2.8L5 20l-.8-2.2L2 17l2.2-.8L5 14ZM19 13l.8 2.2L22 16l-2.2.8L19 19l-.8-2.2L16 16l2.2-.8L19 13Z" />
+                    <path {...strokeProps} d="m12 3-1.9 5.1L5 10l5.1 1.9L12 17l1.9-5.1L19 10l-5.1-1.9L12 3Z" />
+                    <path {...strokeProps} d="m5 19-1 2.5L6.5 20 9 21l-1-2.5L9 16l-2.5 1L4 16l1 2.5Z" />
                 </SvgIcon>
             );
-        case "x":
+        case "parachute":
             return (
                 <SvgIcon {...props}>
-                    <path fill="currentColor" d="M17.7 3h3.1l-6.8 7.8L22 21h-6.2l-4.9-6.4L5.4 21H2.3l7.3-8.4L2 3h6.4l4.4 5.8L17.7 3Zm-1.1 16.2h1.7L7.5 4.7H5.7l10.9 14.5Z" />
+                    <path {...strokeProps} d="M4 12a8 8 0 0 1 16 0" />
+                    <path {...strokeProps} d="M4 12c2 2 3-2 4 0s2 2 4 0 2-2 4 0 2 2 4 0" />
+                    <path {...strokeProps} d="M8 12v1l4 7 4-7v-1" />
+                </SvgIcon>
+            );
+        case "rocket":
+            return (
+                <SvgIcon {...props}>
+                    <path {...strokeProps} d="M12 15c-2.4 0-4 1.2-4 4h8c0-2.8-1.6-4-4-4Z" />
+                    <path {...strokeProps} d="M12 2c-3 4-4 7.4-4 13h8c0-5.6-1-9-4-13Z" />
+                    <path {...strokeProps} d="M7 18c-1-1-3-1-4 0 1 1 3 3 4 2ZM17 18c1-1 3-1 4 0-1 1-3 3-4 2Z" />
+                    <circle fill="currentColor" cx="12" cy="11" r="1.5" />
+                </SvgIcon>
+            );
+        case "droplet":
+            return (
+                <SvgIcon {...props}>
+                    <path {...strokeProps} d="M12 22a7 7 0 0 1-7-7c0-4 7-12 7-12s7 8 7 12a7 7 0 0 1-7 7Z" />
+                </SvgIcon>
+            );
+        case "wheat":
+            return (
+                <SvgIcon {...props}>
+                    <path {...strokeProps} d="M12 22V12M8 8l4 4 4-4M6 12l6 4 6-4M4 16l8 4 8-4" />
+                </SvgIcon>
+            );
+        case "bank":
+            return (
+                <SvgIcon {...props}>
+                    <path {...strokeProps} d="M3 21h18M4 18h16M5 14V9M9 14V9M15 14V9M19 14V9" />
+                    <path {...strokeProps} d="M12 3 2 9h20L12 3Z" />
                 </SvgIcon>
             );
         case "chat":
             return (
                 <SvgIcon {...props}>
-                    <path {...strokeProps} d="M21 12a8 8 0 0 1-8 8H7l-4 2 1.3-4A8 8 0 1 1 21 12Z" />
-                    <path {...strokeProps} d="M8 11h8M8 15h5" />
+                    <path {...strokeProps} d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10Z" />
                 </SvgIcon>
             );
+        case "x":
+            return (
+                <SvgIcon {...props}>
+                    <path {...strokeProps} d="M4 4l6.5 8L4 20h2l5.3-6.5L15 20h5l-6.8-8.3L19.5 4h-2l-5 6L9 4H4Z" />
+                </SvgIcon>
+            );
+
         case "target":
             return (
                 <SvgIcon {...props}>
@@ -232,6 +229,65 @@ export function Web2DIcon({ name, className }: { name: string; className?: strin
                     <path {...strokeProps} d="m6 9 6 6 6-6" />
                 </SvgIcon>
             );
+
+        /* === NEW ICONS FOR REDESIGN === */
+        case "twitter":
+            return (
+                <SvgIcon {...props}>
+                    <path {...strokeProps} d="M4 4l6.5 8L4 20h2l5.3-6.5L15 20h5l-6.8-8.3L19.5 4h-2l-5 6L9 4H4Z" />
+                </SvgIcon>
+            );
+        case "telegram":
+            return (
+                <SvgIcon {...props}>
+                    <path {...strokeProps} d="M21 3 9.5 13.5M21 3l-7 18-3.5-7.5L3 10l18-7Z" />
+                </SvgIcon>
+            );
+        case "users":
+            return (
+                <SvgIcon {...props}>
+                    <path {...strokeProps} d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle {...strokeProps} cx="9" cy="7" r="4" />
+                    <path {...strokeProps} d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+                </SvgIcon>
+            );
+        case "zap":
+            return (
+                <SvgIcon {...props}>
+                    <path {...strokeProps} d="M13 2 4 14h7l-1 8 10-13h-7l1-7Z" />
+                </SvgIcon>
+            );
+        case "star":
+            return (
+                <SvgIcon {...props}>
+                    <path {...strokeProps} d="m12 2 3.1 6.3L22 9.3l-5 4.8 1.2 6.9L12 17.8 5.8 21l1.2-6.9-5-4.8 6.9-1L12 2Z" />
+                </SvgIcon>
+            );
+        case "shield":
+            return (
+                <SvgIcon {...props}>
+                    <path {...strokeProps} d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
+                    <path {...strokeProps} d="m9 12 2 2 4-4" />
+                </SvgIcon>
+            );
+        case "heart":
+            return (
+                <SvgIcon {...props}>
+                    <path {...strokeProps} d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8Z" />
+                </SvgIcon>
+            );
+        case "arrow-right":
+            return (
+                <SvgIcon {...props}>
+                    <path {...strokeProps} d="M5 12h14M12 5l7 7-7 7" />
+                </SvgIcon>
+            );
+        case "external-link":
+            return (
+                <SvgIcon {...props}>
+                    <path {...strokeProps} d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3" />
+                </SvgIcon>
+            );
         default:
             return (
                 <SvgIcon {...props}>
@@ -241,3 +297,4 @@ export function Web2DIcon({ name, className }: { name: string; className?: strin
             );
     }
 }
+

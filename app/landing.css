@@ -650,7 +650,7 @@ img.interactive {
   }
 }
 
-/* ===================== PWA SPLASH SCREEN ===================== */
+/* ===================== SPLASH SCREEN ===================== */
 .splash-screen {
   position: fixed;
   inset: 0;
@@ -659,11 +659,13 @@ img.interactive {
   align-items: center;
   justify-content: center;
   background: radial-gradient(ellipse at center, #0a0a20 0%, #010108 100%);
-  transition: opacity 0.5s ease-out;
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out, filter 0.6s ease-out;
 }
 
 .splash-screen--fading {
   opacity: 0;
+  transform: scale(1.15);
+  filter: blur(12px);
   pointer-events: none;
 }
 
@@ -672,16 +674,55 @@ img.interactive {
   flex-direction: column;
   align-items: center;
   gap: 20px;
-  animation: splash-pulse 2s ease-in-out infinite;
+  animation: splash-pulse 2.5s ease-in-out infinite;
 }
 
-.splash-screen__icon {
+/* Neon ring wrapper — spinning border around the icon */
+.splash-screen__ring {
+  position: relative;
   width: 200px;
   height: 200px;
   border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Outer spinning neon ring */
+.splash-screen__ring::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: #facc15;
+  border-right-color: #a78bfa;
+  animation: splash-ring-spin 1.8s linear infinite;
+  filter: drop-shadow(0 0 8px rgba(250, 204, 21, 0.6));
+}
+
+/* Second ring — counter-rotate */
+.splash-screen__ring::after {
+  content: "";
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-bottom-color: #22d3ee;
+  border-left-color: #f472b6;
+  animation: splash-ring-spin 2.6s linear infinite reverse;
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.5));
+}
+
+.splash-screen__icon {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
   overflow: hidden;
-  box-shadow: 0 0 60px rgba(168, 85, 247, 0.5),
-    0 0 120px rgba(34, 211, 238, 0.3);
+  box-shadow:
+    0 0 40px rgba(168, 85, 247, 0.45),
+    0 0 80px rgba(34, 211, 238, 0.25),
+    inset 0 0 30px rgba(250, 204, 21, 0.1);
 }
 
 .splash-screen__icon img {
@@ -699,36 +740,51 @@ img.interactive {
   margin: 0;
 }
 
+/* Progress bar */
+.splash-screen__progress {
+  width: 180px;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.splash-screen__progress-bar {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #facc15, #22d3ee, #a78bfa);
+  transition: width 0.15s linear;
+  box-shadow: 0 0 8px rgba(250, 204, 21, 0.5);
+}
+
 .splash-screen__subtitle {
   font-family: 'Space Mono', monospace;
-  font-size: 14px;
+  font-size: 13px;
   color: #22d3ee;
   margin: 0;
-  animation: splash-blink 1s ease-in-out infinite;
+  animation: splash-blink 1.2s ease-in-out infinite;
+}
+
+@keyframes splash-ring-spin {
+  to { transform: rotate(360deg); }
 }
 
 @keyframes splash-pulse {
-
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.02);
-  }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
 }
 
 @keyframes splash-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
 
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.4;
-  }
+@media (prefers-reduced-motion: reduce) {
+  .splash-screen__ring::before,
+  .splash-screen__ring::after { animation: none; }
+  .splash-screen__content { animation: none; }
+  .splash-screen__subtitle { animation: none; }
+  .splash-screen--fading { transform: none; filter: none; }
 }
 
 /* ===================== PWA INSTALL BANNER ===================== */

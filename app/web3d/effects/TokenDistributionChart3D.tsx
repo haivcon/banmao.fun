@@ -191,6 +191,7 @@ export function TokenDistributionChart3D({
     translations = DEFAULT_TRANSLATIONS
 }: TokenDistributionChart3DProps) {
     const groupRef = useRef<THREE.Group>(null);
+    const mascotRef = useRef<THREE.Group>(null);
     const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);
     const glowPhaseRef = useRef(0);
     const rotationYRef = useRef(0);
@@ -324,6 +325,10 @@ export function TokenDistributionChart3D({
         if (groupRef.current) {
             groupRef.current.rotation.y = localTime.current * 0.08;
             groupRef.current.position.y = position[1] + Math.sin(localTime.current * 0.4) * 0.08;
+        }
+        // Sync mascot billboard Y with donut bobbing (no rotation)
+        if (mascotRef.current) {
+            mascotRef.current.position.y = position[1] + 1.8 + Math.sin(localTime.current * 0.4) * 0.08;
         }
         glowPhaseRef.current = Math.sin(localTime.current * 2) * 0.5 + 0.5;
         rotationYRef.current = localTime.current;
@@ -609,30 +614,6 @@ export function TokenDistributionChart3D({
 
                 {/* ==================== LIVING CENTER CORE ==================== */}
 
-                {/* Breathing center orb - pulsing like a heartbeat */}
-                <mesh position={[0, 0, 0]} scale={[1 + glowPhaseRef.current * 0.15, 1 + glowPhaseRef.current * 0.15, 1 + glowPhaseRef.current * 0.15]}>
-                    <sphereGeometry args={[innerRadius * 0.35, 64, 64]} />
-                    <meshStandardMaterial
-                        color="#facc15"
-                        emissive="#f59e0b"
-                        emissiveIntensity={0.3 + glowPhaseRef.current * 0.4}
-                        transparent
-                        opacity={0.25 + glowPhaseRef.current * 0.15}
-                        metalness={0.8}
-                        roughness={0.2}
-                    />
-                </mesh>
-
-                {/* Inner energy core */}
-                <mesh position={[0, 0, 0]} scale={[1 + glowPhaseRef.current * 0.3, 1 + glowPhaseRef.current * 0.3, 1 + glowPhaseRef.current * 0.3]}>
-                    <sphereGeometry args={[innerRadius * 0.15, 32, 32]} />
-                    <meshBasicMaterial
-                        color="#ffffff"
-                        transparent
-                        opacity={0.5 + glowPhaseRef.current * 0.3}
-                    />
-                </mesh>
-
                 {/* Multiple rotating energy rings */}
                 <mesh rotation={[Math.PI / 2, 0, rotationYRef.current * 0.8]} position={[0, 0, 0]}>
                     <ringGeometry args={[innerRadius * 0.4, innerRadius * 0.45, 64]} />
@@ -664,10 +645,10 @@ export function TokenDistributionChart3D({
                     />
                 </mesh>
 
-                {/* Total Supply label */}
-                <Billboard position={[0, 0.12, 0]}>
+                {/* Total Supply label — below mascot */}
+                <Billboard position={[0, -0.22, 0]}>
                     <Text
-                        fontSize={0.1}
+                        fontSize={0.08}
                         color="#8892a8"
                         anchorX="center"
                         anchorY="middle"
@@ -675,9 +656,9 @@ export function TokenDistributionChart3D({
                         {translations.totalSupply}
                     </Text>
                 </Billboard>
-                <Billboard position={[0, -0.1, 0]}>
+                <Billboard position={[0, -0.38, 0]}>
                     <Text
-                        fontSize={0.25}
+                        fontSize={0.22}
                         color="#facc15"
                         anchorX="center"
                         anchorY="middle"
@@ -690,9 +671,9 @@ export function TokenDistributionChart3D({
 
                 {/* Top 10 Holders % label */}
                 {advancedInfo?.top10HoldPercent && (
-                    <Billboard position={[0, -0.32, 0]}>
+                    <Billboard position={[0, -0.54, 0]}>
                         <Text
-                            fontSize={0.08}
+                            fontSize={0.07}
                             color="#c084fc"
                             anchorX="center"
                             anchorY="middle"
@@ -1020,6 +1001,43 @@ export function TokenDistributionChart3D({
                     </Html>
                 </Billboard>
             )}
+
+            {/* Mascot GIF — outside rotating group so it stays fixed facing camera */}
+            <group ref={mascotRef} position={[position[0], position[1] + 1.3, position[2]]}>
+                <Html
+                    center
+                    distanceFactor={3.5}
+                    occlude={false}
+                    zIndexRange={[100, 0]}
+                    style={{
+                        overflow: "visible",
+                        background: "transparent",
+                        border: "0",
+                        borderRadius: 0,
+                        boxShadow: "none",
+                        outline: "none",
+                        padding: 0,
+                        margin: 0,
+                        pointerEvents: "none",
+                    }}
+                >
+                    <div style={{
+                        width: "1000px",
+                        height: "1000px",
+                        borderRadius: "50%",
+                        overflow: "hidden",
+                    }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src="/branding/animated-icon.gif"
+                            alt="Banmao"
+                            width={1000}
+                            height={1000}
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                        />
+                    </div>
+                </Html>
+            </group>
         </>
     );
 }
