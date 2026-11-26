@@ -18,3 +18,12 @@
 .root button:focus-visible, .dialog textarea:focus-visible, .dialog input:focus-visible { outline: 3px solid #cfa6ff; outline-offset: 3px; }
 .root button:disabled { opacity: .6; cursor: wait; }
 @media (max-width: 480px) { .dialog { padding: 18px; } .trigger { bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; } }
+.inline { font-family: inherit; }
+.inline .trigger { position: static; gap: 6px; padding: 0 10px; border-color: var(--scene-line); border-radius: 10px; background: var(--scene-card); color: var(--scene-text); box-shadow: none; font-size: .78rem; font-weight: 700; }
+.inline .trigger:hover { background: var(--scene-card-hover); }
+.inline .trigger svg { width: 16px; height: 16px; }
+.inline .dialog { border-color: var(--scene-line); background: var(--scene-shell); color: var(--scene-text); }
+.inline .heading h2 { margin: 0; color: inherit; }
+.inline .dialog :is(p, small) { color: var(--scene-muted); }
+.inline .dialog :is(textarea, input) { border-color: var(--scene-line); background: var(--scene-page); color: var(--scene-text); }
+.inline .dialog button:not(.primary) { border-color: var(--scene-line); background: var(--scene-card); color: var(--scene-text); }

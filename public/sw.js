@@ -6,6 +6,7 @@ const CACHE_VERSION = 'v3';
 const MAIN_CACHE = `banmao-main-${CACHE_VERSION}`;
 const STATIC_CACHE = `banmao-static-${CACHE_VERSION}`;
 const COLLECTION_CACHE = `banmao-collection-${CACHE_VERSION}`;
+const IS_LOOPBACK = ['localhost', '127.0.0.1', '[::1]'].includes(self.location.hostname);
 
 // Cloudinary thumbnail pattern (from old sw.js collection cache)
 const CLOUDINARY_THUMB = /res\.cloudinary\.com.*\/image\/upload\/c_fill,w_400,h_400,f_auto,q_auto/;
@@ -108,6 +109,8 @@ self.addEventListener('fetch', (event) => {
 
     // Skip non-http(s) (e.g. chrome-extension://)
     if (!url.protocol.startsWith('http')) return;
+    // Next.js can reuse chunk URLs for changed CSS and JS during local development.
+    if (IS_LOOPBACK && url.origin === self.location.origin && url.pathname.startsWith('/_next/')) return;
 
     // ── Cloudinary thumbnail cache (cache-first) ──
     if (CLOUDINARY_THUMB.test(request.url)) {

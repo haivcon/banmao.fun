@@ -73,6 +73,8 @@ import { DexWindowProvider } from "./contexts/DexWindowContext";
 import { useResponsiveLayout } from "./web3d/layouts";
 import { SoundManager } from "./web3d/effects/SharedEffects";
 import { Web2DLanding } from "./web2d/Web2DLanding";
+import { HomeShare } from "../components/sharing/ShareProject";
+import { web2dSceneCopies } from "./web2d/locals";
 import { useWeb3DQualityMode } from "./web3d/hooks/useWeb3DQualityMode";
 import { type Web3DQualityConfig, type Web3DQualityMode } from "./web3d/config/performanceConfig";
 import { type Web3DQualityPreference } from "./web3d/hooks/useWeb3DQualityMode";
@@ -2492,9 +2494,7 @@ export default function BanmaoWebsite() {
     const pageVisible = usePageVisible();
     const { config: qualityConfig, quality, preference, setPreference, reducedMotion, webGLSupported } = useWeb3DQualityMode();
     const canUse3D = webGLSupported;
-    const modeUnavailableReason = !webGLSupported
-        ? "WebGL không khả dụng trên trình duyệt này."
-        : undefined;
+    const modeUnavailableReason = !webGLSupported ? web2dSceneCopies[lang].noWebGL : undefined;
     const activeViewMode: ViewMode = canUse3D ? viewMode : "2d";
     const canvasGlConfig = useMemo(
         () => ({
@@ -2517,10 +2517,19 @@ export default function BanmaoWebsite() {
     const setLang = useCallback((newLang: Language) => {
         setLangState(newLang);
         if (typeof window !== "undefined") {
-            localStorage.setItem("banmao_language", newLang);
+            try {
+                localStorage.setItem("banmao_language", newLang);
+            } catch { /* The current view can still switch languages. */ }
             window.dispatchEvent(new CustomEvent<Language>("banmao:language-change", { detail: newLang }));
         }
     }, []);
+
+    useEffect(() => {
+        const root = document.documentElement;
+        const previous = root.lang;
+        root.lang = lang;
+        return () => { root.lang = previous; };
+    }, [lang]);
 
     useEffect(() => {
         setIsClient(true);
@@ -2569,7 +2578,7 @@ export default function BanmaoWebsite() {
                             <ErrorBoundary>
                                 <Web2DLanding
                                     reason={modeUnavailableReason}
-                                    manual={canUse3D}
+                                    active={activeViewMode === "2d"}
                                     lang={lang}
                                     onLanguageChange={setLang}
                                     onSwitchTo3D={canUse3D ? () => setViewMode("3d") : undefined}
@@ -2608,7 +2617,7 @@ export default function BanmaoWebsite() {
                         </div>
                     )}
 
-                    {isClient && (
+                    {isClient && activeViewMode === "3d" && (
                         <div className="web3d-controls-cluster">
                             <ViewModeToggle
                                 viewMode={activeViewMode}
@@ -2617,24 +2626,23 @@ export default function BanmaoWebsite() {
                                 reason={modeUnavailableReason}
                                 lang={lang}
                             />
-                            {activeViewMode === "3d" && (
-                                <Web3DQualityControls
-                                    quality={quality}
-                                    preference={preference}
-                                    setPreference={setPreference}
-                                    reducedMotion={reducedMotion}
-                                    webGLSupported={webGLSupported}
-                                    lang={lang}
-                                />
-                            )}
+                            <Web3DQualityControls
+                                quality={quality}
+                                preference={preference}
+                                setPreference={setPreference}
+                                reducedMotion={reducedMotion}
+                                webGLSupported={webGLSupported}
+                                lang={lang}
+                            />
                         </div>
                     )}
 
-                    {qualityConfig.enableScanlines && <div className="scanlines" />}
+                    {activeViewMode === "3d" && qualityConfig.enableScanlines && <div className="scanlines" />}
+                    {isClient && activeViewMode === "3d" && <HomeShare language={lang} />}
 
                     {/* PWA Components */}
-                    <OfflineIndicator position="top" />
-                    <PWAInstallBanner />
+                    <OfflineIndicator position="top" lang={lang} />
+                    <PWAInstallBanner lang={lang} />
                     <SplashScreen minDisplayTime={2000} />
                 </div>
             </LanguageContext.Provider>

@@ -12,7 +12,7 @@
 
 - Keep primary navigation equivalent to the 3D landing page.
 - Use semantic HTML and keyboard-accessible controls.
-- Respect `prefers-reduced-motion`.
+- Respect `prefers-reduced-motion` for decorative transitions. Character sprites play automatically while visible.
 - Avoid Three.js and other WebGL-only dependencies.
 - Keep mobile controls clear of safe-area insets.
 - Test narrow screens, landscape orientation, keyboard navigation, and screen readers.

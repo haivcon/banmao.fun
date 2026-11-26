@@ -1,59 +1,38 @@
 "use client";
 
 import Image from "next/image";
-import ThemeToggle from '../components/theme/ThemeToggle';
 import Link from "next/link";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Box, MessageCircleMore } from "lucide-react";
+import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { HomeShare } from "../../components/sharing/ShareProject";
+import { aiText } from "../../lib/ai/client/i18n";
+import { requestAIChatOpen } from "../../lib/ai/client/openContract";
+import ThemeToggle from "../components/theme/ThemeToggle";
+import { KawaiiSprite, type SpriteName } from "./KawaiiSprite";
+import { Web2DLanguageMenu } from "./Web2DLanguageMenu";
 import { Web2DIcon } from "./icons";
-import {
-    web2dFallbackCopies,
-    type Language,
-    type Web2DFallbackCard,
-    type Web2DTabKey,
-} from "./locals";
+import { web2dFallbackCopies, web2dSceneCopies, type Language, type Web2DFallbackCard, type Web2DTabKey } from "./locals";
 
 export type Web2DLandingProps = {
     reason?: string;
     manual?: boolean;
+    active?: boolean;
     lang?: Language;
     onLanguageChange?: (lang: Language) => void;
     onSwitchTo3D?: () => void;
 };
 
-const TAB_ORDER: Web2DTabKey[] = [
-    "overview",
-    "gamefi",
-    "defi",
-    "collection",
-    "community",
-    "token",
-];
+const ZONES = {
+    gamefi: { icon: "gamepad", sprite: "mini_gamefi", href: "/gamefi" },
+    defi: { icon: "diamond", sprite: "mini_defi", href: "/defi" },
+    collection: { icon: "gallery", sprite: "mini_collection", href: "/collection" },
+} satisfies Record<string, { icon: string; sprite: SpriteName; href: string }>;
 
-const TAB_ICONS: Record<Web2DTabKey, string> = {
-    overview: "compass",
-    gamefi: "gamepad",
-    defi: "diamond",
-    collection: "gallery",
-    community: "chat",
-    token: "chart-bar",
-};
-
-const LANGUAGE_OPTIONS: Array<{
-    code: Language;
-    name: string;
-    nativeName: string;
-    flag: string;
-}> = [
-    { code: "en", name: "English", nativeName: "EN", flag: "/flags/en.png" },
-    { code: "vi", name: "Tiếng Việt", nativeName: "VI", flag: "/flags/vi.png" },
-    { code: "zh", name: "中文", nativeName: "ZH", flag: "/flags/zh.png" },
-    { code: "ko", name: "한국어", nativeName: "KO", flag: "/flags/ko.png" },
-    { code: "ru", name: "Русский", nativeName: "RU", flag: "/flags/ru.png" },
-    { code: "id", name: "Indonesia", nativeName: "ID", flag: "/flags/id.png" },
-];
-
-const HEADER_TABS: Web2DTabKey[] = ["gamefi", "defi", "collection"];
-const IS_DEVELOPMENT = process.env.NODE_ENV === "development";
+const ZONE_TABS = ["gamefi", "defi", "collection"] as const;
+const OTHER_TABS = { overview: "compass", community: "chat", token: "chart-bar" } as const;
+const OTHER_TAB_ORDER = ["overview", "community", "token"] as const;
+const TAB_ORDER: readonly Web2DTabKey[] = [...ZONE_TABS, ...OTHER_TAB_ORDER];
+const SPIRIT_SPRITES = ["spirit_humor", "spirit_unity", "spirit_create"] as const;
 
 const SOCIAL_LINKS = [
     { href: "https://x.com/banmao_x", icon: "twitter", label: "X / Twitter" },
@@ -62,368 +41,258 @@ const SOCIAL_LINKS = [
 
 const CONTRACT_ADDRESS = "0x16d91d1615fc55b76d5f92365bd60c069b46ef78";
 
-function isExternalHref(href: string) {
-    return href.startsWith("http");
+function isZone(tab: Web2DTabKey): tab is keyof typeof ZONES {
+    return Object.hasOwn(ZONES, tab);
 }
 
-function getLanguage(code: Language) {
-    return LANGUAGE_OPTIONS.find((language) => language.code === code) ?? LANGUAGE_OPTIONS[0];
-}
-
-/* ─── EcosystemCard ─── */
-const EcosystemCard = memo(function EcosystemCard({
-    card,
-    featured = false,
-    compact = false,
-}: {
-    card: Web2DFallbackCard;
-    featured?: boolean;
-    compact?: boolean;
-}) {
-    const external = isExternalHref(card.href);
+function RouteLink({ card }: { card: Web2DFallbackCard }) {
+    const external = card.href.startsWith("http");
     const unavailable = card.statusType === "soon";
-    const className = [
-        "web2d-card",
-        featured ? "web2d-card--featured" : "",
-        compact ? "web2d-card--compact" : "",
-        unavailable ? "web2d-card--soon" : "",
-    ].filter(Boolean).join(" ");
-
     const content = (
         <>
-            <span className="web2d-card__icon" aria-hidden="true">
-                <Web2DIcon name={card.icon} />
-            </span>
-            <span className="web2d-card__body">
-                <span className="web2d-card__topline">
-                    <span className={`web2d-card__status web2d-card__status--${card.statusType}`}>
-                        <i aria-hidden="true" />
-                        {card.status}
-                    </span>
-                    {card.meta && <span className="web2d-card__meta">{card.meta}</span>}
-                </span>
+            <span className="web2d-route__icon" aria-hidden="true"><Web2DIcon name={card.icon} /></span>
+            <span className="web2d-route__label">
                 <strong>{card.label}</strong>
-                {!compact && <small>{card.desc}</small>}
+                {unavailable && <small>{card.status}</small>}
             </span>
-            {!unavailable && <span className="web2d-card__arrow" aria-hidden="true">{external ? "↗" : "→"}</span>}
+            {!unavailable && <Web2DIcon name={external ? "external-link" : "arrow-right"} />}
         </>
     );
 
-    if (unavailable) {
-        return <article className={className} aria-label={`${card.label}: ${card.status}`}>{content}</article>;
-    }
+    if (unavailable) return <div className="web2d-route web2d-route--soon">{content}</div>;
 
-    if (external) {
-        return <a className={className} href={card.href} target="_blank" rel="noopener noreferrer" aria-label={`${card.label} — ${card.desc}`}>{content}</a>;
-    }
+    const label = `${card.label} — ${card.desc}`;
+    return external ? (
+        <a className="web2d-route" href={card.href} aria-label={label} target="_blank" rel="noopener noreferrer">{content}</a>
+    ) : (
+        <Link className="web2d-route" href={card.href} aria-label={label} prefetch={false}>{content}</Link>
+    );
+}
 
-    return <Link className={className} href={card.href} aria-label={`${card.label} — ${card.desc}`}>{content}</Link>;
-});
-
-
-/* ─── Main Component ─── */
 export function Web2DLanding({
     reason,
-    manual = false,
+    active = true,
     lang = "en",
     onLanguageChange,
     onSwitchTo3D,
 }: Web2DLandingProps) {
     const [activeTab, setActiveTab] = useState<Web2DTabKey>("overview");
-    const [langOpen, setLangOpen] = useState(false);
-    const langRef = useRef<HTMLDivElement>(null);
-    const headerRef = useRef<HTMLElement>(null);
-    const [scrolled, setScrolled] = useState(false);
+    const tabRefs = useRef<Partial<Record<Web2DTabKey, HTMLButtonElement | null>>>({});
+    const panelRef = useRef<HTMLDivElement>(null);
 
     const copy = web2dFallbackCopies[lang] ?? web2dFallbackCopies.en;
-    const currentLang = getLanguage(lang);
+    const scene = web2dSceneCopies[lang] ?? web2dSceneCopies.en;
+    const zone = isZone(activeTab) ? activeTab : undefined;
 
-    // Scroll-based header background
-    useEffect(() => {
-        const onScroll = () => setScrolled(window.scrollY > 24);
-        window.addEventListener("scroll", onScroll, { passive: true });
-        onScroll();
-        return () => window.removeEventListener("scroll", onScroll);
-    }, []);
-
-    // Close language dropdown on outside click
-    useEffect(() => {
-        if (!langOpen) return;
-        const handler = (e: MouseEvent) => {
-            if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false);
-        };
-        document.addEventListener("mousedown", handler);
-        return () => document.removeEventListener("mousedown", handler);
-    }, [langOpen]);
-
-    // Scroll reveal observer
-    useEffect(() => {
-        const els = document.querySelectorAll(".web2d-reveal");
-        if (!els.length) return;
-        const io = new IntersectionObserver(
-            (entries) => entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("is-visible"); io.unobserve(e.target); } }),
-            { threshold: 0.12 }
-        );
-        els.forEach((el) => io.observe(el));
-        return () => io.disconnect();
-    }, [activeTab]);
-
-    const selectTab = useCallback((tab: Web2DTabKey) => {
+    function selectTab(tab: Web2DTabKey, initiatedByPointer: boolean) {
         setActiveTab(tab);
-        document.getElementById("web2d-explore")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, []);
 
-    const subtitle = manual ? copy.subtitleManual : copy.subtitleAuto;
+        const panel = panelRef.current;
+        if (!initiatedByPointer || !panel || !window.matchMedia("(max-width: 640px)").matches) return;
 
-    const cards = useMemo(() => copy.cards[activeTab] ?? [], [copy, activeTab]);
-    const featuredCards = useMemo(() => {
-        const all = Object.values(copy.cards).flat();
-        return all.filter((c) => c.statusType === "live").slice(0, 3);
-    }, [copy]);
-    const utilityCards = useMemo(() => {
-        return [
-            ...(copy.cards.gamefi?.filter((c) => c.statusType === "live").slice(0, 2) ?? []),
-            ...(copy.cards.defi?.filter((c) => c.statusType === "live").slice(0, 2) ?? []),
-        ];
-    }, [copy]);
+        // Keep the user's place when the panel heading and first row are already visible.
+        if (panel.getBoundingClientRect().top < window.innerHeight - 132) return;
+        panel.scrollIntoView({
+            block: "start",
+            behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        });
+    }
 
+    function handleTabKey(event: KeyboardEvent<HTMLButtonElement>, tab: Web2DTabKey) {
+        const index = TAB_ORDER.indexOf(tab);
+        const last = TAB_ORDER.length - 1;
+        let next = index;
+
+        if (event.key === "ArrowRight" || event.key === "ArrowDown") next = (index + 1) % TAB_ORDER.length;
+        else if (event.key === "ArrowLeft" || event.key === "ArrowUp") next = (index + last) % TAB_ORDER.length;
+        else if (event.key === "Home") next = 0;
+        else if (event.key === "End") next = last;
+        else return;
+
+        event.preventDefault();
+        const nextTab = TAB_ORDER[next];
+        setActiveTab(nextTab);
+        tabRefs.current[nextTab]?.focus();
+    }
+
+    function renderTab(tab: Web2DTabKey, className: string, content: ReactNode) {
+        return (
+            <button
+                key={tab}
+                type="button"
+                role="tab"
+                id={`web2d-tab-${tab}`}
+                className={className}
+                data-zone={tab}
+                aria-selected={activeTab === tab}
+                aria-controls="web2d-zone-panel"
+                tabIndex={activeTab === tab ? 0 : -1}
+                ref={(element) => { tabRefs.current[tab] = element; }}
+                onClick={(event) => selectTab(tab, event.detail > 0)}
+                onKeyDown={(event) => handleTabKey(event, tab)}
+            >
+                {content}
+            </button>
+        );
+    }
 
     return (
-        <div className="web2d" aria-label={copy.ariaLabels.experience}>
-            {/* ── HEADER ── */}
-            <header className={`web2d-header${scrolled ? " is-scrolled" : ""}`} ref={headerRef}>
-                <div className="web2d-header__inner web2d-container">
-                    <Link className="web2d-brand" href="/" aria-label={copy.ariaLabels.home}>
-                        <span className="web2d-brand__mark">
-                            <Image src="/branding/banmao_logo.png" alt="" width={38} height={38} />
-                        </span>
-                        <span className="web2d-brand__copy">
-                            <strong>BANMAO</strong>
-                            <small>{copy.logoSubtitle ?? "NEBULA"}</small>
-                        </span>
+        <div className="web2d" lang={lang} aria-label={copy.ariaLabels.experience}>
+            <header className="web2d-topbar">
+                <div className="web2d-topbar__inner web2d-container">
+                    <Link className="web2d-logo" href="/" aria-label={copy.ariaLabels.home}>
+                        <Image src="/branding/banmao_logo.png" alt="" width={34} height={34} />
+                        <strong>BANMAO</strong>
                     </Link>
-
-                    <nav className="web2d-header__nav" aria-label={copy.ariaLabels.featureTabs}>
-                        {HEADER_TABS.map((tab) => (
+                    <a className="web2d-topbar__explore" href="#web2d-explore">{scene.explore}</a>
+                    <div className="web2d-topbar__settings">
+                        {onSwitchTo3D && (
                             <button
-                                key={tab}
                                 type="button"
-                                className={activeTab === tab ? "is-active" : ""}
-                                onClick={() => selectTab(tab)}
+                                className="web2d-topbar__control web2d-topbar__mode"
+                                onClick={onSwitchTo3D}
+                                aria-label={scene.switchTo3D}
+                                title={scene.switchTo3D}
                             >
-                                {copy.tabs[tab]}
+                                <Box aria-hidden="true" /><span>3D</span>
                             </button>
-                        ))}
-                    </nav>
-
-                    <ThemeToggle vi={lang === 'vi'} />
-
-                    <div className="web2d-language" ref={langRef}>
-                        <button
-                            type="button"
-                            className="web2d-language__trigger"
-                            onClick={() => setLangOpen((o) => !o)}
-                            aria-expanded={langOpen}
-                            aria-label={copy.ariaLabels.selectLanguage}
-                        >
-                            <Image src={currentLang.flag} alt="" width={18} height={18} />
-                            {currentLang.nativeName}
-                            <Web2DIcon name="chevron-down" />
-                        </button>
-                        {langOpen && (
-                            <div className="web2d-language__menu" role="listbox" aria-label={copy.ariaLabels.selectLanguage}>
-                                {LANGUAGE_OPTIONS.map((opt) => (
-                                    <button
-                                        key={opt.code}
-                                        type="button"
-                                        role="option"
-                                        aria-selected={lang === opt.code}
-                                        className={lang === opt.code ? "is-active" : ""}
-                                        onClick={() => { onLanguageChange?.(opt.code); setLangOpen(false); }}
-                                    >
-                                        <Image src={opt.flag} alt="" width={18} height={18} />
-                                        {opt.name}
-                                    </button>
-                                ))}
-                            </div>
+                        )}
+                        <ThemeToggle label={scene.appearance} />
+                        {onLanguageChange && (
+                            <Web2DLanguageMenu language={lang} label={copy.ariaLabels.selectLanguage} onChange={onLanguageChange} />
                         )}
                     </div>
                 </div>
             </header>
 
-
-            {/* ── MAIN ── */}
-            <main>
-                {/* ── HERO ── */}
-                <section className="web2d-hero web2d-container">
-                    <div className="web2d-hero__content">
-                        <span className="web2d-eyebrow"><i aria-hidden="true" />{copy.eyebrow}</span>
-                        <h1>
-                            {copy.title.split(" ").map((word, i) => (
-                                <span key={i}>
-                                    {i === 0 ? <span className="web2d-gradient-text">{word}</span> : ` ${word}`}
-                                </span>
-                            ))}
-                        </h1>
-                        <p className="web2d-hero__lead">{subtitle}</p>
-
-                        {reason && (
-                            <p className="web2d-hero__notice">
-                                <Web2DIcon name="bolt" />
-                                {copy.reasonPrefix} {reason}
-                            </p>
-                        )}
-
-                        {/* Stats Bar */}
-                        <div className="web2d-hero__stats">
-                            {copy.stats.map((stat) => (
-                                <div className="web2d-hero__stat" key={stat.label}>
-                                    <strong>{stat.value}</strong>
-                                    <small>{stat.tone}</small>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* CTA Buttons */}
-                        <div className="web2d-hero__actions">
-                            <Link href="/gamefi" className="web2d-button web2d-button--primary">
-                                <Web2DIcon name="gamepad" />
-                                {copy.launchApp}
-                            </Link>
-                            {onSwitchTo3D && (
-                                <button type="button" className="web2d-button web2d-button--secondary" onClick={onSwitchTo3D}>
-                                    <Web2DIcon name="sparkles" />
-                                    3D Mode
-                                </button>
-                            )}
-                            <Link href="/defi/staking" className="web2d-button web2d-button--ghost">
-                                <Web2DIcon name="diamond" />
-                                Staking
-                            </Link>
-                        </div>
-                    </div>
-
-                    {/* Hero Visual */}
-                    <div className="web2d-hero__visual">
-                        <Image
-                            src="/branding/banmao-hero.jpg"
-                            alt="Banmao Universe"
-                            fill
-                            priority
-                            sizes="(max-width: 860px) 100vw, 50vw"
+            <main className="web2d-main web2d-container">
+                <section className="web2d-world" aria-labelledby="web2d-world-title" data-active={active}>
+                    <div className="web2d-world__floor" aria-hidden="true" />
+                    <div className="web2d-world__art" aria-hidden="true">
+                        <div className="web2d-world__orbit" />
+                        <div className="web2d-world__spark web2d-world__spark--top" />
+                        <div className="web2d-world__spark web2d-world__spark--bottom" />
+                        <KawaiiSprite
+                            name="hero_eastwest"
+                            mobileName="hero_eastwest_1"
+                            enabled={active}
+                            className="web2d-world__mascot"
+                            eager
                         />
-                        <div className="web2d-hero__mascot">
-                            <Image
-                                src="/branding/animated-icon.gif"
-                                alt="Banmao Mascot"
-                                width={80}
-                                height={80}
-                                unoptimized
-                            />
+                        <KawaiiSprite
+                            name="buddy_greet"
+                            enabled={active}
+                            className="web2d-world__buddy"
+                        />
+                    </div>
+                    <div className="web2d-world__title">
+                        <h1 id="web2d-world-title">BANMAO</h1>
+                        <p>{scene.tagline}</p>
+                    </div>
+                    <div className="web2d-world__actions">
+                        <a className="web2d-action" href="#web2d-explore">
+                            <Web2DIcon name="compass" />{scene.explore}<Web2DIcon name="arrow-right" />
+                        </a>
+                        {reason && <small className="web2d-world__notice">{reason}</small>}
+                    </div>
+                </section>
+
+                <section className="web2d-explore" id="web2d-explore" aria-labelledby="web2d-explore-title">
+                    <h2 id="web2d-explore-title">{scene.chooseZone}</h2>
+                    <div className="web2d-selector" role="tablist" aria-labelledby="web2d-explore-title">
+                        <div className="web2d-portals" role="presentation">
+                            {ZONE_TABS.map((tab) => renderTab(tab, "web2d-portal", (
+                                <>
+                                    <span className="web2d-portal__art" aria-hidden="true">
+                                        <KawaiiSprite
+                                            name={ZONES[tab].sprite}
+                                            enabled={active}
+                                            className="web2d-portal__mascot"
+                                        />
+                                    </span>
+                                    <span className="web2d-portal__caption">
+                                        <Web2DIcon name={ZONES[tab].icon} />
+                                        <span><strong>{copy.tabs[tab]}</strong><small>{scene.zones[tab]}</small></span>
+                                        <Web2DIcon name="chevron-down" />
+                                    </span>
+                                </>
+                            )))}
+                        </div>
+                        <div className="web2d-selector__extras" role="presentation">
+                            {OTHER_TAB_ORDER.map((tab) => renderTab(tab, "web2d-selector__chip", (
+                                <><Web2DIcon name={OTHER_TABS[tab]} />{copy.tabs[tab]}</>
+                            )))}
                         </div>
                     </div>
+
+                    <div
+                        className="web2d-zone-panel"
+                        data-zone={activeTab}
+                        id="web2d-zone-panel"
+                        ref={panelRef}
+                        role="tabpanel"
+                        aria-labelledby={`web2d-tab-${activeTab}`}
+                    >
+                        <div className="web2d-zone-panel__heading">
+                            <h3><Web2DIcon name={isZone(activeTab) ? ZONES[activeTab].icon : OTHER_TABS[activeTab]} />{copy.tabs[activeTab]}</h3>
+                            {zone && (
+                                <Link href={ZONES[zone].href} className="web2d-zone-panel__open" prefetch={false}>
+                                    {scene.openZone[zone]} <Web2DIcon name="arrow-right" />
+                                </Link>
+                            )}
+                        </div>
+                        <ul className="web2d-zone-panel__routes" key={activeTab}>
+                            {copy.cards[activeTab].map((card) => (
+                                <li key={`${card.href}-${card.label}`}><RouteLink card={card} /></li>
+                            ))}
+                        </ul>
+                    </div>
                 </section>
 
-
-                {/* ── FEATURED ── */}
-                <section className="web2d-featured web2d-container web2d-reveal" aria-label={copy.ariaLabels.quickLinks}>
-                    <div className="web2d-section-head web2d-section-head--compact">
-                        <div><span className="web2d-eyebrow"><i aria-hidden="true" />{copy.tabs.overview}</span><h2>{copy.sectionTitles.overview}</h2></div>
-                        <p>{copy.sectionDesc.overview}</p>
-                    </div>
-                    <div className="web2d-featured__grid">
-                        {featuredCards.map((card) => <EcosystemCard key={card.href} card={card} featured />)}
-                    </div>
-                    <div className="web2d-utilities" aria-label={copy.ariaLabels.quickLinks}>
-                        {utilityCards.map((card) => <EcosystemCard key={`${card.href}-${card.label}`} card={card} compact />)}
-                    </div>
-                </section>
-
-                {/* ── EXPLORE / TABS ── */}
-                <section className="web2d-explore web2d-container web2d-reveal" id="web2d-explore" aria-label={copy.ariaLabels.hierarchicalNavigation}>
-                    <div className="web2d-section-head">
-                        <div><span className="web2d-eyebrow"><i aria-hidden="true" />{copy.tabs[activeTab]}</span><h2>{copy.sectionTitles[activeTab]}</h2></div>
-                        <p>{copy.sectionDesc[activeTab]}</p>
-                    </div>
-                    <div className="web2d-tabs" role="tablist" aria-label={copy.ariaLabels.featureTabs}>
-                        {TAB_ORDER.map((tab) => (
-                            <button
-                                key={tab}
-                                type="button"
-                                id={`web2d-tab-${tab}`}
-                                className={activeTab === tab ? "is-active" : ""}
-                                role="tab"
-                                aria-selected={activeTab === tab}
-                                aria-controls="web2d-tab-panel"
-                                onClick={() => selectTab(tab)}
-                            >
-                                <Web2DIcon name={TAB_ICONS[tab]} /><span>{copy.tabs[tab]}</span>
-                            </button>
+                <section className="web2d-spirit" aria-labelledby="web2d-spirit-title">
+                    <h2 id="web2d-spirit-title">{scene.valuesTitle}</h2>
+                    <div className="web2d-spirit__grid">
+                        {SPIRIT_SPRITES.map((sprite, index) => (
+                            <figure className="web2d-spirit__item" key={sprite}>
+                                <KawaiiSprite name={sprite} enabled={active} className="web2d-spirit__mascot" />
+                                <figcaption>{scene.values[index]}</figcaption>
+                            </figure>
                         ))}
                     </div>
-                    <div className={`web2d-card-grid web2d-card-grid--${activeTab}`} id="web2d-tab-panel" role="tabpanel" aria-labelledby={`web2d-tab-${activeTab}`}>
-                        {cards.map((card) => <EcosystemCard key={`${activeTab}-${card.href}-${card.label}`} card={card} />)}
-                    </div>
-                </section>
-
-                {/* ── VALUES / HIGHLIGHTS ── */}
-                <section className="web2d-values web2d-container web2d-reveal" aria-label={copy.ariaLabels.informationPanels}>
-                    {copy.highlights.map((highlight) => (
-                        <article key={highlight.title}>
-                            <span className="web2d-values__icon"><Web2DIcon name={highlight.icon} /></span>
-                            <span><strong>{highlight.title}</strong><small>{highlight.desc}</small></span>
-                        </article>
-                    ))}
                 </section>
             </main>
 
-
-            {/* ── MEGA FOOTER ── */}
-            <footer className="web2d-footer">
-                <div className="web2d-container web2d-footer__inner">
-                    <div className="web2d-footer__brand">
-                        <strong>BANMAO</strong>
-                        <p>{copy.footer}</p>
-                        <div className="web2d-footer__social">
-                            {SOCIAL_LINKS.map((link) => (
-                                <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.label}>
-                                    <Web2DIcon name={link.icon} />
-                                </a>
-                            ))}
-                        </div>
+            <footer className="web2d-end">
+                <div className="web2d-end__inner web2d-container">
+                    <div className="web2d-end__brand">
+                        <KawaiiSprite name="sleepy_footer" enabled={active} className="web2d-end__mascot" />
+                        <span><strong>BANMAO</strong><small>© {new Date().getFullYear()} · X LAYER</small></span>
                     </div>
-
-                    <div className="web2d-footer__col">
-                        <h4>Ecosystem</h4>
-                        <Link href="/gamefi">{copy.tabs.gamefi}</Link>
-                        <Link href="/defi">{copy.tabs.defi}</Link>
-                        <Link href="/collection">{copy.tabs.collection}</Link>
-                        <Link href="/defi/staking">Staking</Link>
+                    <nav className="web2d-end__social" aria-label={copy.tabs.community}>
+                        {SOCIAL_LINKS.map((link) => (
+                            <a key={link.href} href={link.href} target="_blank" rel="noopener noreferrer" aria-label={link.label}>
+                                <Web2DIcon name={link.icon} />
+                            </a>
+                        ))}
+                    </nav>
+                    <div className="web2d-end__tools">
+                        {active && <HomeShare language={lang} inline />}
+                        <button
+                            type="button"
+                            className="web2d-end__assistant"
+                            aria-haspopup="dialog"
+                            aria-label={aiText(lang, "ask")}
+                            onClick={() => requestAIChatOpen(window)}
+                        >
+                            <MessageCircleMore aria-hidden="true" /> BANMAO AI
+                        </button>
                     </div>
-
-                    <div className="web2d-footer__col">
-                        <h4>Community</h4>
-                        <a href="https://x.com/banmao_x" target="_blank" rel="noopener noreferrer">X / Twitter</a>
-                        <a href="https://t.me/banmaofun" target="_blank" rel="noopener noreferrer">Telegram</a>
-                    </div>
-
-                    <div className="web2d-footer__contract">
-                        <h4>Contract</h4>
+                    <details className="web2d-end__contract">
+                        <summary>{scene.contract}</summary>
                         <code>{CONTRACT_ADDRESS}</code>
-                    </div>
-
-                    <div className="web2d-footer__bottom">
-                        <span>© {new Date().getFullYear()} BANMAO · X LAYER</span>
-                        <nav aria-label={copy.ariaLabels.footerLinks}>
-                            <Link href="/gamefi">{copy.tabs.gamefi}</Link>
-                            <Link href="/defi">{copy.tabs.defi}</Link>
-                            <Link href="/collection">{copy.tabs.collection}</Link>
-                        </nav>
-                    </div>
+                    </details>
                 </div>
             </footer>
-
         </div>
     );
 }
-

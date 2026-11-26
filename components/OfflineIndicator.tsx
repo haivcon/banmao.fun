@@ -8,6 +8,7 @@ import { useOnlineStatus } from "../lib/offlineUtils";
 interface OfflineIndicatorProps {
     /** Position of the indicator */
     position?: "top" | "bottom";
+    lang?: string;
     /** Labels for i18n */
     labels?: {
         offline?: string;
@@ -51,6 +52,7 @@ function getBrowserLanguage(): string {
 
 export default function OfflineIndicator({
     position = "top",
+    lang,
     labels,
 }: OfflineIndicatorProps) {
     const { isOnline, wasOffline } = useOnlineStatus();
@@ -76,7 +78,7 @@ export default function OfflineIndicator({
 
     if (!show) return null;
 
-    const msg = MESSAGES[browserLang] || MESSAGES.en;
+    const msg = MESSAGES[lang ?? browserLang] || MESSAGES.en;
     const offlineText = labels?.offline || msg.offline;
     const onlineText = labels?.backOnline || msg.backOnline;
 

@@ -144,7 +144,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       </head>
-      <body className={spaceMono.className}>
+      <body className={spaceMono.className} data-banmao-ai-enabled={process.env.AI_CHAT_ENABLED === "true" || undefined}>
         <ResponsiveDisplayProvider>
           <SharedProviders><AIChatMount />{children}<ShareProject /></SharedProviders>
         </ResponsiveDisplayProvider>
