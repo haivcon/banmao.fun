@@ -7,10 +7,10 @@ import { useEffect } from "react";
 
 export { initInstallPrompt };
 
-export default function PWAInstallBanner() {
+export default function PWAInstallBanner({ lang }: { lang?: string }) {
     useEffect(() => {
         initInstallPrompt();
     }, []);
 
-    return <BasePWABanner appId="main" />;
+    return <BasePWABanner appId="main" lang={lang} />;
 }

@@ -19,8 +19,7 @@ export function registerServiceWorker(): void {
         return;
     }
 
-    // Register after page load for better performance
-    window.addEventListener('load', () => {
+    const register = () => {
         navigator.serviceWorker
             .register('/sw.js', { scope: '/' })
             .then((registration) => {
@@ -41,7 +40,10 @@ export function registerServiceWorker(): void {
             .catch((error) => {
                 console.error('[PWA] Service worker registration failed:', error);
             });
-    });
+    };
+
+    if (document.readyState === 'complete') register();
+    else window.addEventListener('load', register, { once: true });
 }
 
 /**
